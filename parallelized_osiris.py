@@ -22,6 +22,7 @@ from copy import copy
 from astropy.stats import mad_std
 import scipy.io as scio
 from scipy.optimize import minimize
+import sys
 
 #Logic to test mkl exists
 try:
@@ -209,71 +210,91 @@ def _process_pixels(row_indices,col_indices,psfs_func_list, padcenter,hr8799_spe
 
 
 
-outputdir = "/home/sda/Dropbox (GPI)/TEST_SCRATCH/scratch/JB/OSIRIS_utils/bruce_inspired_outputs/"
-
-
-if 1:# HR 8799 c 20100715
-    inputDir = "/home/sda/jruffio/osiris_data/HR_8799_c/20100715/reduced_quinn/"
-    # inputDir = "/home/sda/jruffio/osiris_data/HR_8799_c/20100715/reduced_jb/"
-    telluric_cube = "/home/sda/jruffio/osiris_data/HR_8799_c/20100715/reduced_telluric/HD_210501/s100715_a005001_Kbb_020.fits"
-    filelist = glob.glob(os.path.join(inputDir,"s100715*20.fits"))
-    filelist.sort()
-    sep_planet = 0.950
-    planet_coords = [[11,32],[12,27],[12,33],[12,39],[10,33],[9,28],[8,38],[10,32.5],[9,32],[10,33],[10,35],[10,33], #in order: image 10 to 21
-                     [7,34],[5,35],[8,35],[7.5,33],[9.5,34.5]]
-    file_centers = [[x-sep_planet/ 0.0203,y] for x,y in planet_coords]
-
-# #------------------------------------------------
-# im_index=1
-# with pyfits.open(os.path.join(outputdir,os.path.basename(filelist[im_index]).replace(".fits","_output.fits"))) as hdulist:
-#     output = hdulist[0].data
-#     prihdr = hdulist[0].header
-# finaloutput = output[0,:,:]/output[1,:,:]
-#
-# output2 = np.zeros((3,output.shape[1],output.shape[2]))
-# output2[0,:,:] = output[0,:,:]
-# output2[1,:,:] = output[1,:,:]
-# output2[2,:,:] = output[0,:,:]/output[1,:,:]
-# hdulist = pyfits.HDUList()
-# hdulist.append(pyfits.PrimaryHDU(data=output2))
-# try:
-#     hdulist.writeto(os.path.join(outputdir,os.path.basename(filelist[im_index]).replace(".fits","_output.fits")), overwrite=True)
-# except TypeError:
-#     hdulist.writeto(os.path.join(outputdir,os.path.basename(filelist[im_index]).replace(".fits","_output.fits")), clobber=True)
-# hdulist.close()
-# plt.imshow(finaloutput,interpolation="nearest")
-# plt.show()
-
 #------------------------------------------------
+if __name__ == "__main__":
+    try:
+        import mkl
+        mkl.set_num_threads(1)
+    except:
+        pass
 
-for im_index in np.arange(1):#range(12):
+    print('Number of arguments:', len(sys.argv), 'arguments.')
+    print('Argument List:', str(sys.argv))
+    print("CPU COUNT: {0}".format(mp.cpu_count()))
+
+
+    if 1:# HR 8799 c 20100715
+        outputdir = "/home/sda/Dropbox (GPI)/TEST_SCRATCH/scratch/JB/OSIRIS_utils/bruce_inspired_outputs/"
+        inputDir = "/home/sda/jruffio/osiris_data/HR_8799_c/20100715/reduced_quinn/"
+        # inputDir = "/home/sda/jruffio/osiris_data/HR_8799_c/20100715/reduced_jb/"
+        telluric_cube = "/home/sda/jruffio/osiris_data/HR_8799_c/20100715/reduced_telluric/HD_210501/s100715_a005001_Kbb_020.fits"
+        filelist = glob.glob(os.path.join(inputDir,"s100715*20.fits"))
+        filelist.sort()
+        filename = filelist[1]
+        sep_planet = 0.950
+        # planet_coords = [[11,32],[12,27],[12,33],[12,39],[10,33],[9,28],[8,38],[10,32.5],[9,32],[10,33],[10,35],[10,33], #in order: image 10 to 21
+        #                  [7,34],[5,35],[8,35],[7.5,33],[9.5,34.5]]
+        # file_centers = [[x-sep_planet/ 0.0203,y] for x,y in planet_coords]
+    else:
+        inputDir = sys.argv[1]
+        outputdir = sys.argv[2]
+        filename = sys.argv[3]
+        telluric_cube = sys.argv[4]
+        sep_planet = sys.argv[5]
+
+    if not os.path.exists(os.path.join(outputdir)):
+        os.makedirs(os.path.join(outputdir))
+
+    # #------------------------------------------------
+    # im_index=1
+    # with pyfits.open(os.path.join(outputdir,os.path.basename(filelist[im_index]).replace(".fits","_output.fits"))) as hdulist:
+    #     output = hdulist[0].data
+    #     prihdr = hdulist[0].header
+    # finaloutput = output[0,:,:]/output[1,:,:]
+    #
+    # output2 = np.zeros((3,output.shape[1],output.shape[2]))
+    # output2[0,:,:] = output[0,:,:]
+    # output2[1,:,:] = output[1,:,:]
+    # output2[2,:,:] = output[0,:,:]/output[1,:,:]
+    # hdulist = pyfits.HDUList()
+    # hdulist.append(pyfits.PrimaryHDU(data=output2))
+    # try:
+    #     hdulist.writeto(os.path.join(outputdir,os.path.basename(filelist[im_index]).replace(".fits","_output.fits")), overwrite=True)
+    # except TypeError:
+    #     hdulist.writeto(os.path.join(outputdir,os.path.basename(filelist[im_index]).replace(".fits","_output.fits")), clobber=True)
+    # hdulist.close()
+    # plt.imshow(finaloutput,interpolation="nearest")
+    # plt.show()
+
+
     numthreads = 32
     dtype = ctypes.c_float
     nan_mask_boxsize=3
 
     # im_index = 1
 
-    with pyfits.open(filelist[im_index]) as hdulist:
+    with pyfits.open(filename) as hdulist:
         imgs = np.rollaxis(np.rollaxis(hdulist[0].data,2),2,1)
         prihdr = hdulist[0].header
+
     if 0:
-        center = file_centers[im_index]
+        pass
+        # center = file_centers[im_index]
         #Center= [-35.79802955665025, 32]
     else:
         suffix = "_centerADI"
-        center = [-32.40914067, 32.94444444]
-        print(filelist[im_index:(im_index+1)])
-        exit()
-        dataset = osi.Ifs(filelist[im_index:(im_index+1)],telluric_cube, #[filelist[0],filelist[7]] filelist[0:12]
+        # center = [-32.40914067, 32.94444444]
+        # print(filelist[im_index:(im_index+1)])
+        # exit()
+        dataset = osi.Ifs([filename],telluric_cube, #[filelist[0],filelist[7]] filelist[0:12]
                          guess_center=[19//2-sep_planet/ 0.0203,64//2],recalculate_center_cadi=True, centers = None,
                          psf_cube_size=21,
                          coaddslices=None, nan_mask_boxsize=0,median_filter_boxsize = 0,badpix2nan=False,ignore_PAs=True)
 
-        print(dataset.centers)
         center = dataset.centers[0]
         #Center= [-32.40914067  32.94444444]
     print("Center=",center)
-    # exit()
+    exit()
 
     nl,ny,nx = imgs.shape
     init_wv = prihdr["CRVAL1"]/1000. # wv for first slice in mum
@@ -289,10 +310,7 @@ for im_index in np.arange(1):#range(12):
 
 
     padimgs = np.pad(imgs,((0,0),(5,5),(5,5)),mode="constant",constant_values=np.nan)
-    if 0:
-        padcenter = [planet_coords[im_index][0]-sep_planet/0.0203+5, planet_coords[im_index][1]+5]
-    else:
-        padcenter = [-32.40914067+5, 32.94444444+5]
+    padcenter = [center[0]+5, center[1]+5]
     padnl,padny,padnx = padimgs.shape
 
     # #-------------------------
@@ -417,12 +435,12 @@ for im_index in np.arange(1):#range(12):
     # print(len(glob.glob(os.path.join(inputDir,"4drescaled",os.path.basename(filelist[im_index]).replace(".fits","_4drescaled_pad_badpixv2.fits")))) == 1)
     # exit()
 
-    if len(glob.glob(os.path.join(inputDir,"4drescaled",os.path.basename(filelist[im_index]).replace(".fits","_4drescaled_pad_badpixv2.fits")))) == 1:
+    if len(glob.glob(os.path.join(inputDir,"4drescaled",os.path.basename(filename).replace(".fits","_4drescaled_pad_badpixv2.fits")))) == 1:
         print("coucou")
-        with pyfits.open(os.path.join(inputDir,"4drescaled",os.path.basename(filelist[im_index]).replace(".fits","_4drescaled_pad_badpixv2.fits"))) as hdulist: #padv2
+        with pyfits.open(os.path.join(inputDir,"4drescaled",os.path.basename(filename).replace(".fits","_4drescaled_pad_badpixv2.fits"))) as hdulist: #padv2
             scaled_imgs_np[:] = hdulist[0].data
             hdulist.close()
-        print("Loaded 4drescaled file: "+os.path.join(inputDir,"4drescaled",os.path.basename(filelist[im_index]).replace(".fits","_4drescaled_pad_badpixv2.fits")))
+        print("Loaded 4drescaled file: "+os.path.join(inputDir,"4drescaled",os.path.basename(filename).replace(".fits","_4drescaled_pad_badpixv2.fits")))
     else:
         # print("No!!!")
         # exit()
@@ -494,9 +512,9 @@ for im_index in np.arange(1):#range(12):
     hdulist = pyfits.HDUList()
     hdulist.append(pyfits.PrimaryHDU(data=output_maps_np))
     try:
-        hdulist.writeto(os.path.join(outputdir,os.path.basename(filelist[im_index]).replace(".fits","_output"+suffix+".fits")), overwrite=True)
+        hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_output"+suffix+".fits")), overwrite=True)
     except TypeError:
-        hdulist.writeto(os.path.join(outputdir,os.path.basename(filelist[im_index]).replace(".fits","_output"+suffix+".fits")), clobber=True)
+        hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_output"+suffix+".fits")), clobber=True)
     hdulist.close()
 
     print("Closing threadpool")
