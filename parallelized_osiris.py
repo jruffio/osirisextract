@@ -241,8 +241,8 @@ if __name__ == "__main__":
         outputdir = sys.argv[2]
         filename = sys.argv[3]
         telluric_cube = sys.argv[4]
-        sep_planet = sys.argv[5]
-        numthreads = sys.argv[6]
+        sep_planet = float(sys.argv[5])
+        numthreads = int(sys.argv[6])
 
     if not os.path.exists(os.path.join(outputdir)):
         os.makedirs(os.path.join(outputdir))
