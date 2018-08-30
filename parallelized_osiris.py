@@ -223,7 +223,7 @@ if __name__ == "__main__":
     print("CPU COUNT: {0}".format(mp.cpu_count()))
 
 
-    if 1:# HR 8799 c 20100715
+    if 0:# HR 8799 c 20100715
         outputdir = "/home/sda/Dropbox (GPI)/TEST_SCRATCH/scratch/JB/OSIRIS_utils/bruce_inspired_outputs/"
         inputDir = "/home/sda/jruffio/osiris_data/HR_8799_c/20100715/reduced_quinn/"
         # inputDir = "/home/sda/jruffio/osiris_data/HR_8799_c/20100715/reduced_jb/"
