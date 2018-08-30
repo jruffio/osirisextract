@@ -235,12 +235,14 @@ if __name__ == "__main__":
         # planet_coords = [[11,32],[12,27],[12,33],[12,39],[10,33],[9,28],[8,38],[10,32.5],[9,32],[10,33],[10,35],[10,33], #in order: image 10 to 21
         #                  [7,34],[5,35],[8,35],[7.5,33],[9.5,34.5]]
         # file_centers = [[x-sep_planet/ 0.0203,y] for x,y in planet_coords]
+        numthreads = 32
     else:
         inputDir = sys.argv[1]
         outputdir = sys.argv[2]
         filename = sys.argv[3]
         telluric_cube = sys.argv[4]
         sep_planet = sys.argv[5]
+        numthreads = sys.argv[6]
 
     if not os.path.exists(os.path.join(outputdir)):
         os.makedirs(os.path.join(outputdir))
@@ -267,7 +269,6 @@ if __name__ == "__main__":
     # plt.show()
 
 
-    numthreads = 32
     dtype = ctypes.c_float
     nan_mask_boxsize=3
 
