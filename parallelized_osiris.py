@@ -301,7 +301,7 @@ if __name__ == "__main__":
     init_wv = prihdr["CRVAL1"]/1000. # wv for first slice in mum
     dwv = prihdr["CDELT1"]/1000. # wv interval between 2 slices in mum
     wvs=np.arange(init_wv,init_wv+dwv*nl,dwv)
-    with pyfits.open(os.path.join(outputdir,os.path.basename(telluric_cube).replace(".fits","_medcombinedpsfs.fits"))) as hdulist:
+    with pyfits.open(os.path.join(inputDir,"../../../../..","s100715_a005001_Kbb_020_medcombinedpsfs.fits")) as hdulist:
         psfs = hdulist[0].data
         hdulist.close()
 
