@@ -295,7 +295,7 @@ if __name__ == "__main__":
         center = dataset.centers[0]
         #Center= [-32.40914067  32.94444444]
     print("Center=",center)
-    exit()
+    # exit()
 
     nl,ny,nx = imgs.shape
     init_wv = prihdr["CRVAL1"]/1000. # wv for first slice in mum
