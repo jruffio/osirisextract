@@ -228,6 +228,7 @@ if __name__ == "__main__":
         inputDir = "/home/sda/jruffio/osiris_data/HR_8799_c/20100715/reduced_quinn/"
         # inputDir = "/home/sda/jruffio/osiris_data/HR_8799_c/20100715/reduced_jb/"
         telluric_cube = "/home/sda/jruffio/osiris_data/HR_8799_c/20100715/reduced_telluric/HD_210501/s100715_a005001_Kbb_020.fits"
+        template_spec="/data/Dropbox (GPI)/TEST_SCRATCH/scratch/JB/hr8799c_osiris_template.save"
         filelist = glob.glob(os.path.join(inputDir,"s100715*20.fits"))
         filelist.sort()
         filename = filelist[1]
@@ -241,8 +242,9 @@ if __name__ == "__main__":
         outputdir = sys.argv[2]
         filename = sys.argv[3]
         telluric_cube = sys.argv[4]
-        sep_planet = float(sys.argv[5])
-        numthreads = int(sys.argv[6])
+        template_spec = sys.argv[5]
+        sep_planet = float(sys.argv[6])
+        numthreads = int(sys.argv[7])
 
     if not os.path.exists(os.path.join(outputdir)):
         os.makedirs(os.path.join(outputdir))
@@ -305,7 +307,7 @@ if __name__ == "__main__":
         psfs = hdulist[0].data
         hdulist.close()
 
-    travis_spectrum = scio.readsav("/data/Dropbox (GPI)/TEST_SCRATCH/scratch/JB/hr8799c_osiris_template.save")
+    travis_spectrum = scio.readsav(template_spec)
     hr8799c_spec = np.array(travis_spectrum["fk_bin"])
     hr8799_spec = np.nanmean(imgs,axis=(1,2))
 
