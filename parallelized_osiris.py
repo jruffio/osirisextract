@@ -246,6 +246,17 @@ if __name__ == "__main__":
         sep_planet = float(sys.argv[6])
         numthreads = int(sys.argv[7])
 
+    # Sorry hardcoded
+    radialfile_list = ["s100715_a025001_tlc_Kbb_020.fits",
+                       "s100715_a026001_tlc_Kbb_020.fits",
+                       "s100715_a027001_tlc_Kbb_020.fits",
+                       "s100715_a028001_tlc_Kbb_020.fits",
+                       "s100715_a029001_tlc_Kbb_020.fits"]
+    if os.path.basename(filename) in radialfile_list:
+        radialfile = True
+    else:
+        radialfile = False
+
     if not os.path.exists(os.path.join(outputdir)):
         os.makedirs(os.path.join(outputdir))
 
@@ -289,8 +300,12 @@ if __name__ == "__main__":
         # center = [-32.40914067, 32.94444444]
         # print(filelist[im_index:(im_index+1)])
         # exit()
+        if radialfile:
+            guess_center = [19//2,64//2+sep_planet/ 0.0203]
+        else:
+            guess_center = [19//2-sep_planet/ 0.0203,64//2]
         dataset = osi.Ifs([filename],telluric_cube, #[filelist[0],filelist[7]] filelist[0:12]
-                         guess_center=[19//2-sep_planet/ 0.0203,64//2],recalculate_center_cadi=True, centers = None,
+                         guess_center=guess_center,recalculate_center_cadi=True, centers = None,
                          psf_cube_size=21,
                          coaddslices=None, nan_mask_boxsize=0,median_filter_boxsize = 0,badpix2nan=False,ignore_PAs=True)
 
