@@ -291,10 +291,17 @@ if __name__ == "__main__":
         imgs = np.rollaxis(np.rollaxis(hdulist[0].data,2),2,1)
         prihdr = hdulist[0].header
 
-    if 0:
-        pass
+    if 1:
         # center = file_centers[im_index]
         #Center= [-35.79802955665025, 32]
+        suffix = "_defcen"
+        # center = [-32.40914067, 32.94444444]
+        # print(filelist[im_index:(im_index+1)])
+        # exit()
+        if radialfile:
+            center = [19//2,64//2+sep_planet/ 0.0203]
+        else:
+            center = [19//2-sep_planet/ 0.0203,64//2]
     else:
         suffix = "_centerADI"
         # center = [-32.40914067, 32.94444444]
