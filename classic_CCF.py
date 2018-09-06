@@ -72,7 +72,7 @@ if __name__ == "__main__":
     #################
     # Load planet template spectrum
     import scipy.io as scio
-    travis_spectrum = scio.readsav("/data/Dropbox (GPI)/TEST_SCRATCH/scratch/JB/hr8799c_osiris_template.save")
+    travis_spectrum = scio.readsav(template_spec)
     hr8799c_spec = np.array(travis_spectrum["fk_bin"])
     lambdas = np.array(travis_spectrum["kwave"])
 
