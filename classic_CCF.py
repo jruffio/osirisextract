@@ -39,6 +39,7 @@ if __name__ == "__main__":
         #                  [7,34],[5,35],[8,35],[7.5,33],[9.5,34.5]]
         # file_centers = [[x-sep_planet/ 0.0203,y] for x,y in planet_coords]
         numthreads = 32
+        fileinfos_filename = "/home/sda/jruffio/pyOSIRIS/osirisextract/fileinfos.xml"
     else:
         inputDir = sys.argv[1]
         outputdir = sys.argv[2]
@@ -47,13 +48,13 @@ if __name__ == "__main__":
         template_spec = sys.argv[5]
         sep_planet = float(sys.argv[6])
         numthreads = int(sys.argv[7])
+        fileinfos_filename = "/home/users/jruffio/OSIRIS/osirisextract/fileinfos.xml"
 
 
     with pyfits.open(filename) as hdulist:
         input0 = np.rollaxis(np.rollaxis(hdulist[0].data,2),2,1)
     nl,ny,nx = input0.shape
 
-    fileinfos_filename = "/home/sda/jruffio/pyOSIRIS/osirisextract/fileinfos.xml"
     out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
     tree = ET.parse(fileinfos_filename)
     root = tree.getroot()
