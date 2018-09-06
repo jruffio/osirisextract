@@ -39,35 +39,48 @@ for filename in filelist:
     print(filename)
     filebasename = os.path.basename(filename)
     if planet_c.find(filebasename) is None:
-        userelement = ET.Element(filebasename)
-        planet_c.append(userelement)
+        fileelement = ET.Element(filebasename)
+        planet_c.append(fileelement)
     else:
         fileelement = planet_c.find(filebasename)
-        print(fileelement.tag)
-        print(fileelement.attrib)
 
-        if 1:
-            # Sorry hardcoded
-            radialfile_list = ["s100715_a025001_tlc_Kbb_020.fits",
-                               "s100715_a026001_tlc_Kbb_020.fits",
-                               "s100715_a027001_tlc_Kbb_020.fits",
-                               "s100715_a028001_tlc_Kbb_020.fits",
-                               "s100715_a029001_tlc_Kbb_020.fits"]
-            if os.path.basename(filename) in radialfile_list:
-                fileelement.set("stardir","down")
-            else:
-                fileelement.set("stardir","left")
+    print(fileelement.tag)
+    print(fileelement.attrib)
 
-        if 0:
-            logfile = os.path.join(os.path.dirname(filename),"sherlock","logs","parallelized_osiris_"+filebasename.replace(".fits",".out"))
-            fileobj = open(logfile,"r")
-            for line in fileobj:
+    if 0:
+        # Sorry hardcoded
+        radialfile_list = ["s100715_a025001_tlc_Kbb_020.fits",
+                           "s100715_a026001_tlc_Kbb_020.fits",
+                           "s100715_a027001_tlc_Kbb_020.fits",
+                           "s100715_a028001_tlc_Kbb_020.fits",
+                           "s100715_a029001_tlc_Kbb_020.fits"]
+        if os.path.basename(filename) in radialfile_list:
+            fileelement.set("stardir","down")
+        else:
+            fileelement.set("stardir","left")
+
+    if 1:
+        logfile = os.path.join(os.path.dirname(filename),"sherlock","logs","parallelized_osiris_"+filebasename.replace(".fits",".out"))
+        fileobj = open(logfile,"r")
+        for line in fileobj:
+            if line.startswith("('Center=',"):
                 print(line)
-                if line.startswith("('Center=',"):
-                    center = re.findall("\d+\.\d+",line)
-                    fileelement.set("xADIcen",center[0])
-                    fileelement.set("yADIcen",center[1])
-                    break
+                # center = re.findall("\d+\.\d+",line)
+                center = line.replace("('Center=', array([","").replace("]))","").split(",")
+                fileelement.set("xADIcen",center[0].strip())
+                fileelement.set("yADIcen",center[1].strip())
+                if fileelement.attrib["stardir"] == "left":
+                    fileelement.set("xdefcen",str(19//2-float(fileelement.attrib["sep"])/ 0.0203))
+                    fileelement.set("ydefcen",str(64//2))
+                elif fileelement.attrib["stardir"] == "down":
+                    fileelement.set("xdefcen",str(19//2))
+                    fileelement.set("ydefcen",str(64//2+float(fileelement.attrib["sep"])/ 0.0203))
+                print(fileelement.attrib)
+                break
+                # exit()
+
+    if 0:
+        fileelement.set("sep",str(sep))
 
 if 1:
     tree = ET.ElementTree(root)
