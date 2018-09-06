@@ -39,15 +39,15 @@ for ax,filename in zip(ax_list,filelist):
     print(fileelement.attrib["xADIcen"],fileelement.attrib["yADIcen"])
 
     try:
-        hdulist = pyfits.open(os.path.join(os.path.dirname(filename),"sherlock","polyfit_ADIcenter",
-                                           os.path.basename(filename).replace(".fits","_output_centerADI.fits")))
-        image = hdulist[0].data[2,:,:]
-        prihdr = hdulist[0].header
-
         # hdulist = pyfits.open(os.path.join(os.path.dirname(filename),"sherlock","polyfit_ADIcenter",
-        #                                    os.path.basename(filename).replace(".fits","_output_defcen.fits")))
+        #                                    os.path.basename(filename).replace(".fits","_output_centerADI.fits")))
         # image = hdulist[0].data[2,:,:]
         # prihdr = hdulist[0].header
+
+        hdulist = pyfits.open(os.path.join(os.path.dirname(filename),"sherlock","polyfit_ADIcenter",
+                                           os.path.basename(filename).replace(".fits","_output_defcen.fits")))
+        image = hdulist[0].data[2,:,:]
+        prihdr = hdulist[0].header
 
         # hdulist = pyfits.open(filename)
         # cube = np.rollaxis(np.rollaxis(hdulist[0].data,2),2,1)

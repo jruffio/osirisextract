@@ -50,6 +50,8 @@ if __name__ == "__main__":
         numthreads = int(sys.argv[7])
         fileinfos_filename = "/home/users/jruffio/OSIRIS/osirisextract/fileinfos.xml"
 
+    if not os.path.exists(os.path.join(outputdir)):
+        os.makedirs(os.path.join(outputdir))
 
     with pyfits.open(filename) as hdulist:
         input0 = np.rollaxis(np.rollaxis(hdulist[0].data,2),2,1)
