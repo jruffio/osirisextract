@@ -294,7 +294,7 @@ if __name__ == "__main__":
     if 1:
         # center = file_centers[im_index]
         #Center= [-35.79802955665025, 32]
-        suffix = "_defcen"
+        suffix = "_defcen_2ndorder"
         # center = [-32.40914067, 32.94444444]
         # print(filelist[im_index:(im_index+1)])
         # exit()
