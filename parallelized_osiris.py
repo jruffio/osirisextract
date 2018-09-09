@@ -135,7 +135,7 @@ def costfunc(amplitude,data,model,forjac=False):
                     res[k,wherefinite[0],m,n] = np.nan
                     # print("skip")
                     continue
-                poly_coefs = np.polyfit(x[wherefinite],myvec[wherefinite],1)# polynomial for speckles
+                poly_coefs = np.polyfit(x[wherefinite],myvec[wherefinite],2)# polynomial for speckles
                 res[k,wherefinite[0],m,n] -= np.polyval(poly_coefs, x[wherefinite])
 
     localres = res[np.arange(nl),np.arange(nl),:,:]

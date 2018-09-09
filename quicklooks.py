@@ -24,58 +24,193 @@ year = "*"
 reductionname = "reduced_quinn"
 filenamefilter = "s*_a*001_tlc_Kbb_020.fits"
 
-filelist = glob.glob(os.path.join(OSIRISDATA,foldername,year,reductionname,filenamefilter))
-filelist.sort()
-planet_c = root.find("c")
-print(len(filelist))
-f,ax_list = plt.subplots(4,len(filelist)//4+1,sharey="row",sharex="col",figsize=(18,0.59*18))
-print(len(ax_list))
-ax_list = [myax for rowax in ax_list for myax in rowax ]
-print(len(ax_list))
-for ax,filename in zip(ax_list,filelist):
-    print(filename)
-    filebasename = os.path.basename(filename)
-    fileelement = planet_c.find(filebasename)
-    print(fileelement.attrib["xADIcen"],fileelement.attrib["yADIcen"])
 
-    try:
-        # hdulist = pyfits.open(os.path.join(os.path.dirname(filename),"sherlock","polyfit_ADIcenter",
-        #                                    os.path.basename(filename).replace(".fits","_output_centerADI.fits")))
-        # image = hdulist[0].data[2,:,:]
-        # prihdr = hdulist[0].header
 
-        hdulist = pyfits.open(os.path.join(os.path.dirname(filename),"sherlock","polyfit_ADIcenter",
-                                           os.path.basename(filename).replace(".fits","_output_defcen.fits")))
-        image = hdulist[0].data[2,:,:]
-        prihdr = hdulist[0].header
+# medHPF + CCF
+if 1:
+    filelist = glob.glob(os.path.join(OSIRISDATA,foldername,year,reductionname,filenamefilter))
+    filelist.sort()
+    planet_c = root.find("c")
+    print(len(filelist))
+    f,ax_list = plt.subplots(4,len(filelist)//4+1,sharey="row",sharex="col",figsize=(18,0.59*18))
+    print(len(ax_list))
+    ax_list = [myax for rowax in ax_list for myax in rowax ]
+    print(len(ax_list))
+    for ax,filename in zip(ax_list,filelist):
+        print(filename)
+        filebasename = os.path.basename(filename)
+        fileelement = planet_c.find(filebasename)
+        print(fileelement.attrib["xADIcen"],fileelement.attrib["yADIcen"])
 
-        # hdulist = pyfits.open(filename)
-        # cube = np.rollaxis(np.rollaxis(hdulist[0].data,2),2,1)
-        # image = np.nansum(cube,axis=0)
-        # prihdr = hdulist[0].header
+        try:
 
-        plt.sca(ax)
-        ny,nx = image.shape
-        plt.imshow(image,interpolation="nearest")
+            hdulist = pyfits.open(os.path.join(os.path.dirname(filename),"sherlock","medfilt_ccmap",
+                                               os.path.basename(filename).replace(".fits","_output_medfilt_ccmapconvo.fits")))
+            image = hdulist[0].data
+            prihdr = hdulist[0].header
 
-        xcen,ycen = float(fileelement.attrib["xADIcen"]),float(fileelement.attrib["yADIcen"])
-        import matplotlib.patches as mpatches
-        myarrow = mpatches.Arrow(xcen,ycen,nx//2-xcen,ny//2-ycen,color="pink",linestyle="--",linewidth=0.5)
-        myarrow.set_clip_on(False)
-        # myarrow.set_clip_box(ax.bbox)
-        ax.add_artist(myarrow)
-        if fileelement.attrib["stardir"] == "left":
-            myarrow = mpatches.Arrow(xcen,ycen,float(fileelement.attrib["sep"])/ 0.0203,0,color="red",linestyle="-",linewidth=1)
-        elif fileelement.attrib["stardir"] == "down":
-            myarrow = mpatches.Arrow(xcen,ycen,0,-float(fileelement.attrib["sep"])/ 0.0203,color="red",linestyle="-",linewidth=1)
-        myarrow.set_clip_on(False)
-        # myarrow.set_clip_box(ax.bbox)
-        ax.add_artist(myarrow)
-    except:
-        pass
 
-f.subplots_adjust(wspace=0,hspace=0)
-plt.show()
-exit()
-plt.savefig(os.path.join(out_pngs,"HR8799c_raw_ADIcenter.pdf"),bbox_inches='tight')
-plt.show()
+            plt.sca(ax)
+            ny,nx = image.shape
+            plt.imshow(image,interpolation="nearest")
+
+            # xcen,ycen = float(fileelement.attrib["xdefcen"]),float(fileelement.attrib["ydefcen"])
+            # import matplotlib.patches as mpatches
+            # myarrow = mpatches.Arrow(xcen,ycen,nx//2-xcen,ny//2-ycen,color="pink",linestyle="--",linewidth=0.5)
+            # myarrow.set_clip_on(False)
+            # # myarrow.set_clip_box(ax.bbox)
+            # ax.add_artist(myarrow)
+            # if fileelement.attrib["stardir"] == "left":
+            #     myarrow = mpatches.Arrow(xcen,ycen,float(fileelement.attrib["sep"])/ 0.0203,0,color="red",linestyle="-",linewidth=1)
+            # elif fileelement.attrib["stardir"] == "down":
+            #     myarrow = mpatches.Arrow(xcen,ycen,0,-float(fileelement.attrib["sep"])/ 0.0203,color="red",linestyle="-",linewidth=1)
+            # myarrow.set_clip_on(False)
+            # # myarrow.set_clip_box(ax.bbox)
+            # ax.add_artist(myarrow)
+        except:
+            pass
+
+    f.subplots_adjust(wspace=0,hspace=0)
+    plt.savefig(os.path.join(out_pngs,"HR8799c_medfilt_ccmapconvo.pdf"),bbox_inches='tight')
+    plt.savefig(os.path.join(out_pngs,"HR8799c_medfilt_ccmapconvo.png"),bbox_inches='tight')
+
+# polyfit + default center
+if 1:
+    filelist = glob.glob(os.path.join(OSIRISDATA,foldername,year,reductionname,filenamefilter))
+    filelist.sort()
+    planet_c = root.find("c")
+    print(len(filelist))
+    f,ax_list = plt.subplots(4,len(filelist)//4+1,sharey="row",sharex="col",figsize=(18,0.59*18))
+    print(len(ax_list))
+    ax_list = [myax for rowax in ax_list for myax in rowax ]
+    print(len(ax_list))
+    for ax,filename in zip(ax_list,filelist):
+        print(filename)
+        filebasename = os.path.basename(filename)
+        fileelement = planet_c.find(filebasename)
+        print(fileelement.attrib["xADIcen"],fileelement.attrib["yADIcen"])
+
+        try:
+
+            hdulist = pyfits.open(os.path.join(os.path.dirname(filename),"sherlock","polyfit_ADIcenter",
+                                               os.path.basename(filename).replace(".fits","_output_defcen.fits")))
+            image = hdulist[0].data[2,:,:]
+            prihdr = hdulist[0].header
+
+
+            plt.sca(ax)
+            ny,nx = image.shape
+            plt.imshow(image,interpolation="nearest")
+
+            xcen,ycen = float(fileelement.attrib["xdefcen"]),float(fileelement.attrib["ydefcen"])
+            import matplotlib.patches as mpatches
+            myarrow = mpatches.Arrow(xcen,ycen,nx//2-xcen,ny//2-ycen,color="pink",linestyle="--",linewidth=0.5)
+            myarrow.set_clip_on(False)
+            # myarrow.set_clip_box(ax.bbox)
+            ax.add_artist(myarrow)
+            if fileelement.attrib["stardir"] == "left":
+                myarrow = mpatches.Arrow(xcen,ycen,float(fileelement.attrib["sep"])/ 0.0203,0,color="red",linestyle="-",linewidth=1)
+            elif fileelement.attrib["stardir"] == "down":
+                myarrow = mpatches.Arrow(xcen,ycen,0,-float(fileelement.attrib["sep"])/ 0.0203,color="red",linestyle="-",linewidth=1)
+            myarrow.set_clip_on(False)
+            # myarrow.set_clip_box(ax.bbox)
+            ax.add_artist(myarrow)
+        except:
+            pass
+
+    f.subplots_adjust(wspace=0,hspace=0)
+    plt.savefig(os.path.join(out_pngs,"HR8799c_polyfit_defcen.pdf"),bbox_inches='tight')
+    plt.savefig(os.path.join(out_pngs,"HR8799c_polyfit_defcen.png"),bbox_inches='tight')
+
+# Raw frames + ADI center
+if 0:
+    filelist = glob.glob(os.path.join(OSIRISDATA,foldername,year,reductionname,filenamefilter))
+    filelist.sort()
+    planet_c = root.find("c")
+    print(len(filelist))
+    f,ax_list = plt.subplots(4,len(filelist)//4+1,sharey="row",sharex="col",figsize=(18,0.59*18))
+    print(len(ax_list))
+    ax_list = [myax for rowax in ax_list for myax in rowax ]
+    print(len(ax_list))
+    for ax,filename in zip(ax_list,filelist):
+        print(filename)
+        filebasename = os.path.basename(filename)
+        fileelement = planet_c.find(filebasename)
+        print(fileelement.attrib["xADIcen"],fileelement.attrib["yADIcen"])
+
+        try:
+
+            hdulist = pyfits.open(filename)
+            cube = np.rollaxis(np.rollaxis(hdulist[0].data,2),2,1)
+            image = np.nansum(cube,axis=0)
+            prihdr = hdulist[0].header
+
+            plt.sca(ax)
+            ny,nx = image.shape
+            plt.imshow(image,interpolation="nearest")
+
+            xcen,ycen = float(fileelement.attrib["xADIcen"]),float(fileelement.attrib["yADIcen"])
+            import matplotlib.patches as mpatches
+            myarrow = mpatches.Arrow(xcen,ycen,nx//2-xcen,ny//2-ycen,color="pink",linestyle="--",linewidth=0.5)
+            myarrow.set_clip_on(False)
+            # myarrow.set_clip_box(ax.bbox)
+            ax.add_artist(myarrow)
+            if fileelement.attrib["stardir"] == "left":
+                myarrow = mpatches.Arrow(xcen,ycen,float(fileelement.attrib["sep"])/ 0.0203,0,color="red",linestyle="-",linewidth=1)
+            elif fileelement.attrib["stardir"] == "down":
+                myarrow = mpatches.Arrow(xcen,ycen,0,-float(fileelement.attrib["sep"])/ 0.0203,color="red",linestyle="-",linewidth=1)
+            myarrow.set_clip_on(False)
+            # myarrow.set_clip_box(ax.bbox)
+            ax.add_artist(myarrow)
+        except:
+            pass
+
+    f.subplots_adjust(wspace=0,hspace=0)
+    plt.savefig(os.path.join(out_pngs,"HR8799c_raw_ADIcenter.pdf"),bbox_inches='tight')
+    plt.savefig(os.path.join(out_pngs,"HR8799c_raw_ADIcenter.png"),bbox_inches='tight')
+
+#ADI center + polyfit
+if 0:
+    filelist = glob.glob(os.path.join(OSIRISDATA,foldername,year,reductionname,filenamefilter))
+    filelist.sort()
+    planet_c = root.find("c")
+    print(len(filelist))
+    f,ax_list = plt.subplots(4,len(filelist)//4+1,sharey="row",sharex="col",figsize=(18,0.59*18))
+    print(len(ax_list))
+    ax_list = [myax for rowax in ax_list for myax in rowax ]
+    print(len(ax_list))
+    for ax,filename in zip(ax_list,filelist):
+        print(filename)
+        filebasename = os.path.basename(filename)
+        fileelement = planet_c.find(filebasename)
+        print(fileelement.attrib["xADIcen"],fileelement.attrib["yADIcen"])
+
+        try:
+            hdulist = pyfits.open(os.path.join(os.path.dirname(filename),"sherlock","polyfit_ADIcenter",
+                                               os.path.basename(filename).replace(".fits","_output_centerADI.fits")))
+            image = hdulist[0].data[2,:,:]
+            prihdr = hdulist[0].header
+
+            plt.sca(ax)
+            ny,nx = image.shape
+            plt.imshow(image,interpolation="nearest")
+
+            xcen,ycen = float(fileelement.attrib["xADIcen"]),float(fileelement.attrib["yADIcen"])
+            import matplotlib.patches as mpatches
+            myarrow = mpatches.Arrow(xcen,ycen,nx//2-xcen,ny//2-ycen,color="pink",linestyle="--",linewidth=0.5)
+            myarrow.set_clip_on(False)
+            # myarrow.set_clip_box(ax.bbox)
+            ax.add_artist(myarrow)
+            if fileelement.attrib["stardir"] == "left":
+                myarrow = mpatches.Arrow(xcen,ycen,float(fileelement.attrib["sep"])/ 0.0203,0,color="red",linestyle="-",linewidth=1)
+            elif fileelement.attrib["stardir"] == "down":
+                myarrow = mpatches.Arrow(xcen,ycen,0,-float(fileelement.attrib["sep"])/ 0.0203,color="red",linestyle="-",linewidth=1)
+            myarrow.set_clip_on(False)
+            # myarrow.set_clip_box(ax.bbox)
+            ax.add_artist(myarrow)
+        except:
+            pass
+
+    f.subplots_adjust(wspace=0,hspace=0)
+    plt.savefig(os.path.join(out_pngs,"HR8799c_polyfit_ADIcenter.pdf"),bbox_inches='tight')
+    plt.savefig(os.path.join(out_pngs,"HR8799c_polyfit_ADIcenter.png"),bbox_inches='tight')
