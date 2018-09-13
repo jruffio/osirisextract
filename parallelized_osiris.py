@@ -23,6 +23,7 @@ from astropy.stats import mad_std
 import scipy.io as scio
 from scipy.optimize import minimize
 import sys
+import xml.etree.ElementTree as ET
 
 #Logic to test mkl exists
 try:
@@ -135,7 +136,7 @@ def costfunc(amplitude,data,model,forjac=False):
                     res[k,wherefinite[0],m,n] = np.nan
                     # print("skip")
                     continue
-                poly_coefs = np.polyfit(x[wherefinite],myvec[wherefinite],2)# polynomial for speckles
+                poly_coefs = np.polyfit(x[wherefinite],myvec[wherefinite],1)# polynomial for speckles
                 res[k,wherefinite[0],m,n] -= np.polyval(poly_coefs, x[wherefinite])
 
     localres = res[np.arange(nl),np.arange(nl),:,:]
@@ -237,6 +238,8 @@ if __name__ == "__main__":
         #                  [7,34],[5,35],[8,35],[7.5,33],[9.5,34.5]]
         # file_centers = [[x-sep_planet/ 0.0203,y] for x,y in planet_coords]
         numthreads = 32
+        centermode = "visu" #ADI #def
+        fileinfos_filename = "/home/sda/jruffio/pyOSIRIS/osirisextract/fileinfos.xml"
     else:
         inputDir = sys.argv[1]
         outputdir = sys.argv[2]
@@ -245,17 +248,17 @@ if __name__ == "__main__":
         template_spec = sys.argv[5]
         sep_planet = float(sys.argv[6])
         numthreads = int(sys.argv[7])
+        centermode = sys.argv[8]
+        fileinfos_filename = "/home/users/jruffio/OSIRIS/osirisextract/fileinfos.xml"
 
-    # Sorry hardcoded
-    radialfile_list = ["s100715_a025001_tlc_Kbb_020.fits",
-                       "s100715_a026001_tlc_Kbb_020.fits",
-                       "s100715_a027001_tlc_Kbb_020.fits",
-                       "s100715_a028001_tlc_Kbb_020.fits",
-                       "s100715_a029001_tlc_Kbb_020.fits"]
-    if os.path.basename(filename) in radialfile_list:
-        radialfile = True
-    else:
-        radialfile = False
+    tree = ET.parse(fileinfos_filename)
+    root = tree.getroot()
+
+    filebasename = os.path.basename(filename)
+    planet_c = root.find("c")
+    fileelement = planet_c.find(filebasename)
+    center = [float(fileelement.attrib["x"+centermode+"cen"]),float(fileelement.attrib["y"+centermode+"cen"])]
+    suffix = "polyfit_"+centermode+"cen"
 
     if not os.path.exists(os.path.join(outputdir)):
         os.makedirs(os.path.join(outputdir))
@@ -291,33 +294,6 @@ if __name__ == "__main__":
         imgs = np.rollaxis(np.rollaxis(hdulist[0].data,2),2,1)
         prihdr = hdulist[0].header
 
-    if 1:
-        # center = file_centers[im_index]
-        #Center= [-35.79802955665025, 32]
-        suffix = "_defcen_2ndorder"
-        # center = [-32.40914067, 32.94444444]
-        # print(filelist[im_index:(im_index+1)])
-        # exit()
-        if radialfile:
-            center = [19//2,64//2+sep_planet/ 0.0203]
-        else:
-            center = [19//2-sep_planet/ 0.0203,64//2]
-    else:
-        suffix = "_centerADI"
-        # center = [-32.40914067, 32.94444444]
-        # print(filelist[im_index:(im_index+1)])
-        # exit()
-        if radialfile:
-            guess_center = [19//2,64//2+sep_planet/ 0.0203]
-        else:
-            guess_center = [19//2-sep_planet/ 0.0203,64//2]
-        dataset = osi.Ifs([filename],telluric_cube, #[filelist[0],filelist[7]] filelist[0:12]
-                         guess_center=guess_center,recalculate_center_cadi=True, centers = None,
-                         psf_cube_size=21,
-                         coaddslices=None, nan_mask_boxsize=0,median_filter_boxsize = 0,badpix2nan=False,ignore_PAs=True)
-
-        center = dataset.centers[0]
-        #Center= [-32.40914067  32.94444444]
     print("Center=",center)
     # exit()
 
