@@ -72,7 +72,21 @@ if 1:
     template_spec = os.path.join(OSIRISDATA,"hr8799c_osiris_template.save")
 year = "*"
 reductionname = "reduced_quinn"
-filenamefilter = "s*_a*001_tlc_Kbb_020.fits"
+
+# hdulist = pyfits.open(os.path.join(OSIRISDATA,"HR_8799_c/20100715/raw/","s100715_a010001.fits"))
+# image = hdulist[0].data
+# print(image.shape)
+# plt.subplot(1,3,1)
+# plt.imshow(hdulist[0].data,interpolation="nearest")
+# plt.clim([0,0.1])
+# plt.subplot(1,3,2)
+# plt.imshow(hdulist[1].data,interpolation="nearest")
+# plt.clim([0,0.001])
+# plt.subplot(1,3,3)
+# plt.imshow(hdulist[2].data,interpolation="nearest")
+# plt.show()
+# exit()
+
 
 # estimate visual locationof hr8799c
 if 0:
@@ -236,6 +250,7 @@ if 0:
                            [[9,32],[9,28],[9,28],[9,24]]+\
                            [[9,29],[8,40],[8,21]]+\
                            [[19//2,64//2]]+[[9,31]]+[[9,31]]
+    bad_list = ["s101104_a014001_tlc_Kbb_020.fits","s101104_a016001_tlc_Kbb_020.fits","s101104_a034001_tlc_Kbb_020.fits","s101104_a035001_tlc_Kbb_020.fits","s101104_a036001_tlc_Kbb_020.fits","s101104_a037001_tlc_Kbb_020.fits","s101104_a038001_tlc_Kbb_020.fits","s110724_a030001_tlc_Kbb_020.fits"]
 
     OSIRISDATA = "/home/sda/jruffio/osiris_data/"
     if 1:
@@ -263,6 +278,38 @@ if 0:
         elif fileelement.attrib["stardir"] == "down":
             fileelement.set("xvisucen",str(guess_planet[0]))
             fileelement.set("yvisucen",str(guess_planet[1]+float(fileelement.attrib["sep"])/ 0.0203))
+
+if 0:
+    filenamefilter = "s*_a*001_tlc_Kbb_020.fits"
+
+    visual_planet_coords_hor = [[11,32],[12,27],[12,33],[12,39],[10,33],[9,28],[8,38],[10,32.5],[9,32],[10,33],[10,35],[10,33]] #in order: image 10 to 21
+    visual_planet_coords_ver = [[7,34],[5,35],[8,35],[7.5,33],[9.5,34.5]]
+    visual_planet_coords=visual_planet_coords_hor+visual_planet_coords_ver
+    visual_planet_coords = visual_planet_coords +\
+                           [[19//2,64//2]]+[[19//2,64//2]]+[[9,31]]+\
+                           [[19//2,64//2],[19//2,64//2],[19//2,64//2],[19//2,64//2],[19//2,64//2]]+\
+                           [[9,28],[9,22]]+\
+                           [[9,32],[9,28],[9,28],[9,24]]+\
+                           [[9,29],[8,40],[8,21]]+\
+                           [[19//2,64//2]]+[[9,31]]+[[9,31]]
+    sequences = [12,5,1,1,1,5,2,4,3,1,1,1]
+    cumseq = np.roll(np.cumsum(sequences),1)
+    cumseq[0] = 0
+    filelist = glob.glob(os.path.join(OSIRISDATA,foldername,year,reductionname,filenamefilter))
+    filelist.sort()
+    deltas = []
+    hdrs_deltas_coords = []
+    fileid = 0
+    planet_c = root.find("c")
+    for seqid,(nfiles,ind0) in enumerate(zip(sequences,cumseq)):
+        print(nfiles,ind0)
+        for k in range(nfiles):
+            filename = filelist[fileid]
+            filebasename = os.path.basename(filename)
+            fileelement = planet_c.find(filebasename)
+            fileelement.set("sequence",str(seqid))
+            fileid += 1
+
 
 if 1:
     tree = ET.ElementTree(root)

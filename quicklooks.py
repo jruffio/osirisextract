@@ -26,7 +26,7 @@ filenamefilter = "s*_a*001_tlc_Kbb_020.fits"
 
 
 # medHPF + CCF
-if 0:
+if 1:
     filelist = glob.glob(os.path.join(OSIRISDATA,foldername,year,reductionname,filenamefilter))
     filelist.sort()
     planet_c = root.find("c")
@@ -58,6 +58,55 @@ if 0:
     plt.savefig(os.path.join(out_pngs,"HR8799c_medfilt_ccmapconvo.pdf"),bbox_inches='tight')
     plt.savefig(os.path.join(out_pngs,"HR8799c_medfilt_ccmapconvo.png"),bbox_inches='tight')
 
+
+# polyfit + visual center
+if 0:
+    filelist = glob.glob(os.path.join(OSIRISDATA,foldername,year,reductionname,filenamefilter))
+    filelist.sort()
+    planet_c = root.find("c")
+    print(len(filelist))
+    f,ax_list = plt.subplots(4,len(filelist)//4+1,sharey="row",sharex="col",figsize=(18,0.59*18))
+    print(len(ax_list))
+    ax_list = [myax for rowax in ax_list for myax in rowax ]
+    print(len(ax_list))
+    for ax,filename in zip(ax_list,filelist):
+        print(filename)
+        filebasename = os.path.basename(filename)
+        fileelement = planet_c.find(filebasename)
+        print(fileelement.attrib["xADIcen"],fileelement.attrib["yADIcen"])
+
+        try:
+            #polyfit_visucen/s101104_a016001_tlc_Kbb_020_outputpolyfit_visucen.fit
+            hdulist = pyfits.open(os.path.join(os.path.dirname(filename),"sherlock","polyfit_visucen",
+                                               os.path.basename(filename).replace(".fits","_outputpolyfit_visucen.fits")))
+            image = hdulist[0].data[2,:,:]
+            prihdr = hdulist[0].header
+
+
+            plt.sca(ax)
+            ny,nx = image.shape
+            plt.imshow(image,interpolation="nearest")
+
+            xcen,ycen = float(fileelement.attrib["xvisucen"])+5,float(fileelement.attrib["yvisucen"])+5
+            import matplotlib.patches as mpatches
+            # myarrow = mpatches.Arrow(xcen,ycen,nx//2-xcen,ny//2-ycen,color="pink",linestyle="--",linewidth=0.5)
+            # myarrow.set_clip_on(False)
+            # # myarrow.set_clip_box(ax.bbox)
+            # ax.add_artist(myarrow)
+            if fileelement.attrib["stardir"] == "left":
+                myarrow = mpatches.Arrow(xcen,ycen,float(fileelement.attrib["sep"])/ 0.0203-2,0,color="pink",linestyle="--",linewidth=1)
+            elif fileelement.attrib["stardir"] == "down":
+                myarrow = mpatches.Arrow(xcen,ycen,0,-float(fileelement.attrib["sep"])/ 0.0203-2,color="pink",linestyle="--",linewidth=1)
+            myarrow.set_clip_on(False)
+            # myarrow.set_clip_box(ax.bbox)
+            ax.add_artist(myarrow)
+        except:
+            pass
+
+    f.subplots_adjust(wspace=0,hspace=0)
+    plt.savefig(os.path.join(out_pngs,"HR8799c_polyfit_visucen.pdf"),bbox_inches='tight')
+    plt.savefig(os.path.join(out_pngs,"HR8799c_polyfit_visucen.png"),bbox_inches='tight')
+    # exit()
 
 # polyfit + default center
 if 0:
@@ -205,7 +254,7 @@ if 0:
     plt.savefig(os.path.join(out_pngs,"HR8799c_raw_ADIcenter.png"),bbox_inches='tight')
 
 #ADI center + polyfit
-if 1:
+if 0:
     filelist = glob.glob(os.path.join(OSIRISDATA,foldername,year,reductionname,filenamefilter))
     filelist.sort()
     planet_c = root.find("c")
