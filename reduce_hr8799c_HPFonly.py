@@ -303,8 +303,13 @@ def _process_pixels_onlyHPF(real_k_indices,real_l_indices,row_indices,col_indice
                 HPFmodel_H0 = HPFmodel[:,1::]
                 HPFmodel_H1 = HPFmodel[:,0:1]
 
-                # plt.plot(np.sqrt(LPFdata))
-                # print(LPFdata[np.where(LPFdata<=0)])
+                # plt.plot(ravelHPFdata)
+                # # print(LPFdata[np.where(LPFdata<=0)])
+                # plt.show()
+                # print(HPFmodel.shape)
+                # for k in range(HPFmodel.shape[-1]):
+                #     plt.plot(HPFmodel[:,k],label="{0}".format(k))
+                # plt.legend()
                 # plt.show()
 
                 # t1 = time.time()
@@ -355,11 +360,6 @@ def _process_pixels_onlyHPF(real_k_indices,real_l_indices,row_indices,col_indice
                 # AIC_HPF_H1 = 2*(HPFmodel_H1.shape[-1])+minus2logL_HPF_H1
                 AIC_HPF_H0 = 2*(HPFmodel_H0.shape[-1])+minus2logL_HPF_H0
 
-                # print(HPFmodel.shape)
-                # for k in range(HPFmodel.shape[-1]):
-                #     plt.plot(HPFmodel[:,k],label="{0}".format(k))
-                # plt.legend()
-                # plt.show()
                 covphi =  HPFchi2/Npixs_HPFdata*np.linalg.inv(np.dot(HPFmodel.T,HPFmodel))
                 slogdet_icovphi0 = np.linalg.slogdet(np.dot(HPFmodel.T,HPFmodel))
                 slogdet_Sigma = np.sum(np.log(sigmas**2))
@@ -394,7 +394,7 @@ if __name__ == "__main__":
     print("CPU COUNT: {0}".format(mp.cpu_count()))
 
 
-    if 0:# HR 8799 c 20100715
+    if 1:# HR 8799 c 20100715
         # planet = "b"
         planet = "c"
         date = "100715"
@@ -428,6 +428,7 @@ if __name__ == "__main__":
         #                  [7,34],[5,35],[8,35],[7.5,33],[9.5,34.5]]
         # file_centers = [[x-sep_planet/ 0.0203,y] for x,y in planet_coords]
         numthreads = 25
+        phoenix_folder = os.path.join("/home/sda/jruffio/osiris_data/phoenix")#"/home/sda/jruffio/osiris_data/phoenix/"
     else:
         inputDir = sys.argv[1]
         outputdir = sys.argv[2]
@@ -448,7 +449,9 @@ if __name__ == "__main__":
         # print(os.path.join(os.path.dirname(filename),"..","reduced_telluric_jb/*/"))
         # exit()
 
-    phoenix_folder = os.path.join(os.path.dirname(filename),"..","..","..","phoenix")#"/home/sda/jruffio/osiris_data/phoenix/"
+        phoenix_folder = os.path.join(os.path.dirname(filename),"..","..","..","phoenix")#"/home/sda/jruffio/osiris_data/phoenix/"
+        #nice -n 15 /home/anaconda/bin/python ./reduce_hr8799c_HPFonly.py /home/sda/jruffio/osiris_data/HR_8799_c/20100715/reduced_jb/ /home/sda/jruffio/osiris_data/HR_8799_c/20100715/reduced_jb/20181205_HPF_only/ /home/sda/jruffio/osiris_data/HR_8799_c/20100715/reduced_jb/s100715_a010001_Kbb_020.fits 15
+
     if IFSfilter=="Kbb": #Kbb 1965.0 0.25
         CRVAL1 = 1965.
         CDELT1 = 0.25
@@ -473,11 +476,11 @@ if __name__ == "__main__":
     # real_k,real_l = 39+5,12
     #for astro
     real_k,real_l = real_k+padding,real_l+padding
-    dl_grid,dk_grid = np.meshgrid(np.linspace(-0.5,0.5,4*10),np.linspace(-0.5,0.5,4*10))
-    # dl_grid,dk_grid = np.array([[0]]),np.array([[0]])
+    # dl_grid,dk_grid = np.meshgrid(np.linspace(-0.5,0.5,4*10),np.linspace(-0.5,0.5,4*10))
+    dl_grid,dk_grid = np.array([[0]]),np.array([[0]])
 
-    # wvshifts_array = np.concatenate([np.arange(-3*dwv,3*dwv,dwv/20),np.arange(-100*dwv,100*dwv,dwv)])
-    wvshifts_array = np.arange(-3*dwv,3*dwv,dwv/10)
+    wvshifts_array = np.concatenate([np.arange(-2*dwv,2*dwv,dwv/100),np.arange(-100*dwv,100*dwv,dwv)])
+    # wvshifts_array = np.arange(-2*dwv,2*dwv,dwv/50)
     # wvshifts_array = np.linspace(-1.1*dwv,-.7*dwv,40)#np.arange(-1.1*dwv,-.8*dwv,dwv/100)
 
     dtype = ctypes.c_float
@@ -508,7 +511,8 @@ if __name__ == "__main__":
     #     print(filename)
     #     filename2 = filelist[3]
     #     suffix = "HPF_cutoff{0}_new_sig_phoenix_wvshift_centroid".format(cutoff)
-        suffix = "HPF_cutoff{0}_new_sig_phoenix_wvshift".format(cutoff)
+    #     suffix = "HPF_cutoff{0}_new_sig_phoenix_wvshift_normalcruncher".format(cutoff)
+        suffix = "HPF_cutoff{0}_sherlock_v0".format(cutoff)
 
         # hdulist = pyfits.HDUList()
         # hdulist.append(pyfits.PrimaryHDU(data=wvshifts_array))
@@ -791,7 +795,7 @@ if __name__ == "__main__":
             bad_pix_task.wait()
 
         # plt.plot(np.ravel(originalLPF_imgs_np[:,:,:]),linestyle=":",label="LPF")
-        # plt.plot(np.ravel(originalHPF_imgs_np[:,:,:]),linestyle=":",label="HPF")
+        # plt.plot(np.ravel(originalHPF_imgs_np[:,:,:]),linestyle="-",label="HPF")
         # plt.legend()
         # plt.show()
 
