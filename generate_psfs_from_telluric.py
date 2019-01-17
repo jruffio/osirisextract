@@ -34,23 +34,121 @@ def align_and_scale_star(params):
 OSIRISDATA = "/home/sda/jruffio/osiris_data/"
 if 1:
     foldername = "HR_8799_c"
-    sep = 0.950
-    # telluric = os.path.join(OSIRISDATA,"HR_8799_c/20100715/reduced_telluric/HD_210501","s100715_a005001_Kbb_020.fits")
-    telluric1 = os.path.join(OSIRISDATA,"HR_8799_c/20100715/reduced_telluric_JB/HD_210501","s100715_a005001_Kbb_020.fits")
-    telluric2 = os.path.join(OSIRISDATA,"HR_8799_c/20100715/reduced_telluric_JB/HD_210501","s100715_a005002_Kbb_020.fits")
-    outputdir = os.path.join(OSIRISDATA,"HR_8799_c/20100715/reduced_telluric_JB/")
+    # date = "20100715"
+    # date = "20101104"
+    date = "20110723"
+    # sep = 0.950
+    # foldername = "HR_8799_d"
+    # date = "20150720"
+    # date = "20150722"
+    # date = "20150723"
+    # date = "20150828"
+    # # telluric = os.path.join(OSIRISDATA,"HR_8799_c/20100715/reduced_telluric/HD_210501","s100715_a005001_Kbb_020.fits")
+    # telluric1 = os.path.join(OSIRISDATA,"HR_8799_c/20100715/reduced_telluric_JB/HD_210501","s100715_a005001_Kbb_020.fits")
+    # telluric2 = os.path.join(OSIRISDATA,"HR_8799_c/20100715/reduced_telluric_JB/HD_210501","s100715_a005002_Kbb_020.fits")
+    # outputdir = os.path.join(OSIRISDATA,"HR_8799_c/20100715/reduced_telluric_JB/")
+
+
 
 # filename_filer = "HD_210501/s100715_a00500*_Kbb_020.fits"
-filename_filter = "*/*.fits"
+filename_filter = "*/*020.fits"
 # generate psfs
-if 0:
-    telluric_list = glob.glob(os.path.join(OSIRISDATA,"HR_8799_c/20100715/reduced_telluric_JB/",filename_filter))
+if 1:
+    badpix = False
+    telluric_list = glob.glob(os.path.join(OSIRISDATA,foldername,date,"reduced_telluric_jb",filename_filter))
     for telluric in telluric_list:
+        print(telluric)
         psf_cube_size = 15
         with pyfits.open(telluric) as hdulist:
             oripsfs = hdulist[0].data # Nwvs, Ny, Nx
             # Move dimensions of input array to match pyklip conventions
             oripsfs = np.rollaxis(np.rollaxis(oripsfs,2),2,1)
+            if badpix:
+                numthreads = 32
+                prihdr = hdulist[0].header
+                oripsfs = np.moveaxis(oripsfs,0,2)
+                ny,nx,nz = oripsfs.shape
+                init_wv = prihdr["CRVAL1"]/1000. # wv for first slice in mum
+                dwv = prihdr["CDELT1"]/1000. # wv interval between 2 slices in mum
+                wvs=np.arange(init_wv,init_wv+dwv*nz,dwv)
+                import ctypes
+                dtype = ctypes.c_float
+                nan_mask_boxsize=3
+                from parallelized_polyfit_cov_HPF_osiris import _tpool_init
+                from parallelized_polyfit_cov_HPF_osiris import _remove_bad_pixels_xy
+                from parallelized_polyfit_cov_HPF_osiris import _remove_bad_pixels_z
+                from parallelized_polyfit_cov_HPF_osiris import _remove_edges
+                from parallelized_polyfit_cov_HPF_osiris import _arraytonumpy
+                original_imgs = mp.Array(dtype, np.size(oripsfs))
+                original_imgs_shape = oripsfs.shape
+                original_imgs_np = _arraytonumpy(original_imgs, original_imgs_shape,dtype=dtype)
+                original_imgs_np[:] = oripsfs
+                badpix_imgs = mp.Array(dtype, np.size(oripsfs))
+                badpix_imgs_shape = oripsfs.shape
+                badpix_imgs_np = _arraytonumpy(badpix_imgs, badpix_imgs_shape,dtype=dtype)
+                badpix_imgs_np[:] = 0
+                badpix_imgs_np[np.where(original_imgs_np==0)] = np.nan
+                originalHPF_imgs = mp.Array(dtype, 1)
+                originalHPF_imgs_shape = (1,)
+                originalLPF_imgs = mp.Array(dtype, 1)
+                originalLPF_imgs_shape = (1,)
+                output_maps_shape = (1,)
+                output_maps = mp.Array(dtype, 1)
+                wvs_imgs = wvs
+                psfs_stamps = mp.Array(dtype, 1)
+                psfs_stamps_shape = (1,)
+
+
+                ######################
+                # INIT threads and shared memory
+                tpool = mp.Pool(processes=numthreads, initializer=_tpool_init,
+                                initargs=(original_imgs,badpix_imgs,originalLPF_imgs,originalHPF_imgs, original_imgs_shape, output_maps,
+                                          output_maps_shape,wvs_imgs,psfs_stamps, psfs_stamps_shape),
+                                maxtasksperchild=50)
+
+
+                # plt.plot(np.ravel(original_imgs_np[30,:,:]),label="original")
+
+                ######################
+                # CLEAN IMAGE
+
+
+                chunk_size = nz//(3*numthreads)
+                N_chunks = nz//chunk_size
+                wvs_indices_list = []
+                for k in range(N_chunks-1):
+                    wvs_indices_list.append(np.arange((k*chunk_size),((k+1)*chunk_size)))
+                wvs_indices_list.append(np.arange(((N_chunks-1)*chunk_size),nz))
+
+
+                # tasks = [tpool.apply_async(_remove_bad_pixels_xy, args=(wvs_indices,dtype))
+                #          for wvs_indices in wvs_indices_list]
+                # #save it to shared memory
+                # for chunk_index, rmedge_task in enumerate(tasks):
+                #     print("Finished rm bad pixel xy chunk {0}".format(chunk_index))
+                #     rmedge_task.wait()
+                ######################
+
+                # plt.plot(np.ravel(original_imgs_np[30,:,:]),linestyle=":",label="bad pix xy")
+
+                tasks = [tpool.apply_async(_remove_bad_pixels_z, args=(col_index,nan_mask_boxsize, dtype,100,15.0))
+                         for col_index in range(nx)]
+                #save it to shared memory
+                for col_index, bad_pix_task in enumerate(tasks):
+                    print("Finished rm bad pixel z col {0}".format(col_index))
+                    bad_pix_task.wait()
+
+                # plt.plot(np.ravel(original_imgs_np[30,:,:]),linestyle=":",label="bad pix z")
+
+                # tasks = [tpool.apply_async(_remove_edges, args=(wvs_indices,nan_mask_boxsize,dtype))
+                #          for wvs_indices in wvs_indices_list]
+                # #save it to shared memory
+                # for chunk_index, rmedge_task in enumerate(tasks):
+                #     print("Finished rm edge chunk {0}".format(chunk_index))
+                #     rmedge_task.wait()
+
+                oripsfs = np.moveaxis(original_imgs_np,2,0)
+
             nwvs,ny,nx = oripsfs.shape
             init_wv = hdulist[0].header["CRVAL1"]/1000. # wv for first slice in mum
             dwv = hdulist[0].header["CDELT1"]/1000. # wv interval between 2 slices in mum
@@ -66,7 +164,9 @@ if 0:
             psfs_centers = np.array(psfs_centers)
             center0 = np.median(psfs_centers,axis=0)
 
-            psfs_centers = []
+            psfs_xcenters = []
+            psfs_ycenters = []
+            psfs_stamps_centers = []
             psfs_stampcenters = []
             star_peaks = []
             psf_stamps = np.zeros((nwvs,psf_cube_size,psf_cube_size))
@@ -74,12 +174,16 @@ if 0:
                 print("center",k)
                 corrflux, fwhm, spotx, spoty = gaussfit2d(im, center0[0], center0[1], searchrad=5, guessfwhm=3, guesspeak=np.nanmax(im), refinefit=True)
                 #spotx, spoty = center0
-                psfs_centers.append((spotx, spoty))
+                psfs_xcenters.append(spotx)
+                psfs_ycenters.append(spoty)
                 star_peaks.append(corrflux)
 
+            xarr_spot = int(np.round(np.mean(psfs_xcenters)))
+            yarr_spot = int(np.round(np.mean(psfs_ycenters)))
+            for k,(im,spotx, spoty) in enumerate(zip(oripsfs,psfs_xcenters,psfs_ycenters)):
                 # Get the closest pixel
-                xarr_spot = int(np.round(spotx))
-                yarr_spot = int(np.round(spoty))
+                # xarr_spot = int(np.round(spotx))
+                # yarr_spot = int(np.round(spoty))
                 # Extract a stamp around the sat spot
                 stamp = im[(yarr_spot-pixelsbefore):(yarr_spot+pixelsafter),\
                                 (xarr_spot-pixelsbefore):(xarr_spot+pixelsafter)]
@@ -95,45 +199,144 @@ if 0:
                 # plt.imshow(stamp)
                 # plt.show()
 
+                psfs_stamps_centers.append((dx+psf_cube_size//2, dy+psf_cube_size//2))
                 psf_stamps[k,:,:] = stamp
+                # print((spotx, spoty))
+                # print(psf_cube_size,dx,dy,psf_cube_size//2)
+                # exit()
 
+        if badpix:
+            suffix = "_badpix"
+        else:
+            suffix = ""
         hdulist = pyfits.HDUList()
         hdulist.append(pyfits.PrimaryHDU(data=psf_stamps))
         try:
-            hdulist.writeto(telluric.replace(".fits","_psfs.fits"), overwrite=True)
+            hdulist.writeto(telluric.replace(".fits","_psfs"+suffix+".fits"), overwrite=True)
         except TypeError:
-            hdulist.writeto(telluric.replace(".fits","_psfs.fits"), clobber=True)
+            hdulist.writeto(telluric.replace(".fits","_psfs"+suffix+".fits"), clobber=True)
         hdulist.close()
         hdulist = pyfits.HDUList()
-        hdulist.append(pyfits.PrimaryHDU(data=np.array(psfs_centers)))
+        hdulist.append(pyfits.PrimaryHDU(data=np.array(psfs_stamps_centers)))
         try:
-            hdulist.writeto(telluric.replace(".fits","_psfs_centers.fits"), overwrite=True)
+            hdulist.writeto(telluric.replace(".fits","_psfs_centers"+suffix+".fits"), overwrite=True)
         except TypeError:
-            hdulist.writeto(telluric.replace(".fits","_psfs_centers.fits"), clobber=True)
+            hdulist.writeto(telluric.replace(".fits","_psfs_centers"+suffix+".fits"), clobber=True)
         hdulist.close()
+        # exit()
+
+# PLOT telluric spectra
+if 0:
+    from scipy import interpolate
+    filename_filter = "*/*Kbb_020_psfs.fits"
+    psfs_tlc_filelist = glob.glob(os.path.join(OSIRISDATA,foldername,date,"reduced_telluric_jb",filename_filter))
+    psfs_tlc_filelist.sort()
+    psfs_tlc = []
+    tlc_spec_list = []
+    for psfs_tlc_filename in psfs_tlc_filelist:
+        with pyfits.open(psfs_tlc_filename) as hdulist:
+            mypsfs = hdulist[0].data
+            # psfs_tlc_prihdr = hdulist[0].header
+            mypsfs = np.moveaxis(mypsfs,0,2)
+            mypsfs[np.where(np.isnan(mypsfs))] = 0
+            psfs_tlc.append(mypsfs)
+            tlc_spec_list.append(np.nansum(mypsfs,axis=(0,1)))
+
+    psfs_tlc = [cube[None,:,:,:] for cube in psfs_tlc]
+    psfs_tlc = np.concatenate(psfs_tlc,axis=0)
+    print(psfs_tlc.shape)
+
+    Npsfs, ny_psf,nx_psf,nz_psf = psfs_tlc.shape
+    x_psf_vec, y_psf_vec = np.arange(nx_psf * 1.)-nx_psf//2,np.arange(ny_psf* 1.)-ny_psf//2
+    x_psf_grid, y_psf_grid = np.meshgrid(x_psf_vec, y_psf_vec)
+    x_psf_vec_hd, y_psf_vec_hd = np.linspace(0,nx_psf * 1.,100)-nx_psf//2,np.linspace(0,ny_psf* 1.,100)-ny_psf//2
+    print(x_psf_vec.shape, y_psf_vec.shape, x_psf_grid.shape)
+    x_psf_grid_list = np.zeros((len(psfs_tlc_filelist),)+x_psf_grid.shape)
+    y_psf_grid_list = np.zeros((len(psfs_tlc_filelist),)+y_psf_grid.shape)
+    for k,(psfs_tlc_filename,tmp) in enumerate(zip(psfs_tlc_filelist,psfs_tlc)):
+        centers_filename = psfs_tlc_filename.replace("_psfs.fits","_psfs_centers.fits")
+        with pyfits.open(centers_filename) as hdulist:
+            psfs_centers = hdulist[0].data
+            # xcoords= psfs_centers[:,0]
+            # ycoords= psfs_centers[:,0]
+            avg_center = np.mean(psfs_centers,axis=0)
+            x_psf_grid_list[k,:,:] = x_psf_grid+(nx_psf//2-avg_center[0])
+            y_psf_grid_list[k,:,:] = y_psf_grid+(ny_psf//2-avg_center[1])
+            # plt.figure(k+1)
+            # print(k+1,avg_center)
+            # plt.subplot(1,2,1)
+            # plt.imshow(np.sqrt((x_psf_grid+(nx_psf//2-avg_center[0]))**2+(y_psf_grid+(ny_psf//2-avg_center[1]))**2))
+            # plt.subplot(1,2,2)
+            # plt.imshow(np.sum(tmp/np.sum(tmp,axis=(0,1))[None,None,:],axis=2),interpolation="nearest")
+    # plt.show()
+
+    psfs_func_list = []
+    normalized_psfs_func_list = []
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        for wv_index in range(nz_psf):
+            print(wv_index)
+            model_psf = psfs_tlc[:,:, :, wv_index]
+            # print(np.sqrt(np.nansum(model_psf**2,axis=(1,2))))
+            # print(np.nanmax(model_psf**2,axis=(1,2)))
+            model_psf = model_psf/np.sqrt(np.nansum(model_psf**2,axis=(1,2)))[:,None,None]
+            print(model_psf.shape)
+            print(x_psf_grid_list.shape)
+            print(y_psf_grid_list.shape)
+            print(np.sqrt(np.nansum(model_psf**2,axis=(1,2))))
+            print(np.nanmax(model_psf**2,axis=(1,2)))
+            # exit()
+            psf_func = interpolate.LSQBivariateSpline(x_psf_grid_list.ravel(),y_psf_grid_list.ravel(),model_psf.ravel(),x_psf_grid[0,0:nx_psf-1]+0.5,y_psf_grid[0:ny_psf-1,0]+0.5)
+            normalized_psfs_func_list.append(psf_func)
+            if wv_index%100 == 0:
+                plt.imshow(normalized_psfs_func_list[wv_index](x_psf_vec_hd, y_psf_vec_hd).transpose(),interpolation="nearest")
+                plt.show()
+    exit()
 
 # PLOT telluric spectra
 if 1:
-    filename_filter = "*/*_psfs.fits"
+    badpix = False
+    if badpix:
+        suffix = "_badpix"
+    else:
+        suffix = ""
+    filename_filter = "*/*Kbb_020_psfs"+suffix+".fits"
 
     plt.figure(1)
-    telluric_list = glob.glob(os.path.join(OSIRISDATA,"HR_8799_c/20100715/reduced_telluric_JB/",filename_filter))
+    telluric_list = glob.glob(os.path.join(OSIRISDATA,foldername,date,"reduced_telluric_jb",filename_filter))
     for telluric in telluric_list:
+        print(telluric)
         psf_cube_size = 15
         with pyfits.open(telluric) as hdulist:
             oripsfs = hdulist[0].data # Nwvs, Ny, Nx
         tlc_spec = np.nansum(oripsfs,axis=(1,2))
         plt.plot(tlc_spec/np.median(tlc_spec),label=os.path.basename(telluric))
+        try:
+            with pyfits.open(telluric.replace(".fits","_badpix"+".fits")) as hdulist:
+                oripsfs_bp = hdulist[0].data # Nwvs, Ny, Nx
+            tlc_spec_bp = np.nansum(oripsfs_bp,axis=(1,2))
+            plt.plot(tlc_spec_bp/np.median(tlc_spec_bp),linestyle="--",label=os.path.basename(telluric)+" bad pix")
+            plt.plot((tlc_spec-tlc_spec_bp)/np.median(tlc_spec_bp),linestyle=":",label=os.path.basename(telluric)+" bad pix")
+        except:
+            pass
     plt.legend()
 
-    center_filename_filter = "*/*_psfs_centers.fits"
+    center_filename_filter = "*/*Kbb_020_psfs_centers.fits"
     plt.figure(2)
-    telluric_list = glob.glob(os.path.join(OSIRISDATA,"HR_8799_c/20100715/reduced_telluric_JB/",center_filename_filter))
+    telluric_list = glob.glob(os.path.join(OSIRISDATA,foldername,date,"reduced_telluric_jb",center_filename_filter))
+    print(os.path.join(OSIRISDATA,foldername,date,"reduced_telluric_jb",center_filename_filter))
+    # print(telluric_list)
+    # exit()
     for telluric in telluric_list:
+        print(telluric)
         psf_cube_size = 15
         with pyfits.open(telluric) as hdulist:
             oripsfs_center = hdulist[0].data # Nwvs, Ny, Nx
-        plt.plot(oripsfs_center,label=os.path.basename(telluric))
+        plt.subplot(1,2,1)
+        plt.plot(oripsfs_center[:,0],label=os.path.basename(telluric)+suffix)
+        plt.subplot(1,2,2)
+        plt.plot(oripsfs_center[:,1],label=os.path.basename(telluric)+suffix)
     plt.legend()
     plt.show()
 

@@ -90,7 +90,7 @@ def _tpool_init(original_imgs,badpix_imgs,originalLPF_imgs,originalHPF_imgs, ori
     Npixtot=0
 
 
-def _remove_bad_pixels_z(col_index,nan_mask_boxsize,dtype):
+def _remove_bad_pixels_z(col_index,nan_mask_boxsize,dtype,window_size=100,threshold=7.):
     global original,badpix,originalLPF,originalHPF, original_shape, output, output_shape, lambdas, img_center, psfs, psfs_shape, Npixproc, Npixtot
     original_np = _arraytonumpy(original, original_shape,dtype=dtype)
     tmpcube = copy(original_np[:,col_index,:])
@@ -101,12 +101,12 @@ def _remove_bad_pixels_z(col_index,nan_mask_boxsize,dtype):
             # wherefinite = np.where(np.isfinite(myvec))
             # if np.size(wherefinite[0])==0:
             #     continue
-            smooth_vec = median_filter(myvec,footprint=np.ones(100),mode="constant",
+            smooth_vec = median_filter(myvec,footprint=np.ones(window_size),mode="constant",
                                        cval=np.nanmedian(myvec[np.where(np.isfinite(badpix_np[m,col_index,:]))]))
             myvec = myvec - smooth_vec
             wherefinite = np.where(np.isfinite(myvec))
             mad = mad_std(myvec[wherefinite])
-            whereoutliers = np.where(np.abs(myvec)>7*mad)[0]
+            whereoutliers = np.where(np.abs(myvec)>threshold*mad)[0]
             badpix_np[m,col_index,whereoutliers] = np.nan
             widen_nans = np.where(np.isnan(np.correlate(badpix_np[m,col_index,:],np.ones(nan_mask_boxsize),mode="same")))[0]
             badpix_np[m,col_index,widen_nans] = np.nan
@@ -240,7 +240,7 @@ def solve_known_cov(paras,model_blocks,data_blocks,sqdwvsmatrix_blocks):
 
     return minus2logL,theta
 
-def _process_pixels(real_k_indices,real_l_indices,row_indices,col_indices,psfs_func_list,star_spec,planet_spec, dtype,sep_planet,usecov,corrlen,q):
+def _process_pixels(real_k_indices,real_l_indices,row_indices,col_indices,psfs_func_list,star_spec,planet_spec, dtype,sep_planet,usecov,corrlen,q,stardir):
     global original,badpix,originalLPF,originalHPF, original_shape, output, output_shape, lambdas, img_center, psfs, psfs_shape, Npixproc, Npixtot
     original_np = _arraytonumpy(original, original_shape,dtype=dtype)
     badpix_np = _arraytonumpy(badpix, original_shape,dtype=dtype)
@@ -395,7 +395,7 @@ def LPFvsHPF(myvec,cutoff):
     HPF_myvec = myvec - LPF_myvec
     return LPF_myvec,HPF_myvec
 
-def _process_pixels_splitLPFvsHPF(real_k_indices,real_l_indices,row_indices,col_indices,psfs_func_list,star_spec,planet_spec, dtype,sep_planet,usecov,corrlen,q,cutoff):
+def _process_pixels_splitLPFvsHPF(real_k_indices,real_l_indices,row_indices,col_indices,psfs_func_list,star_spec,planet_spec, dtype,sep_planet,usecov,corrlen,q,cutoff,stardir):
     global original,badpix,originalLPF,originalHPF, original_shape, output, output_shape, lambdas, img_center, psfs, psfs_shape, Npixproc, Npixtot
     original_np = _arraytonumpy(original, original_shape,dtype=dtype)
     originalLPF_np = _arraytonumpy(originalLPF, original_shape,dtype=dtype)
@@ -422,7 +422,20 @@ def _process_pixels_splitLPFvsHPF(real_k_indices,real_l_indices,row_indices,col_
         # data_ys = np.tile(np.arange(data_ny)[:,None,None],(1,data_nx,data_nz))
         # data_xs = np.tile(np.arange(data_nx)[None,:,None],(data_ny,1,data_nz))
 
-        x_vec, y_vec = np.arange(padnx * 1.)-real_l+sep_planet/0.0203,np.arange(padny* 1.)-real_k
+                    # if fileelement.attrib["stardir"] == "left":
+                    #     fileelement.set("xdefcen",str(19//2-float(fileelement.attrib["sep"])/ 0.0203))
+                    #     fileelement.set("ydefcen",str(64//2))
+                    # elif fileelement.attrib["stardir"] == "down":
+                    #     fileelement.set("xdefcen",str(19//2))
+                    #     fileelement.set("ydefcen",str(64//2+float(fileelement.attrib["sep"])/ 0.0203))
+        if stardir == "left":
+            x_vec, y_vec = np.arange(padnx * 1.)-real_l+sep_planet/0.0203,np.arange(padny* 1.)-real_k
+        elif stardir == "down":
+            x_vec, y_vec = np.arange(padnx * 1.)-real_l,np.arange(padny* 1.)-real_k-sep_planet/0.0203
+        elif stardir == "right":
+            pass
+        elif stardir == "up":
+            pass
         x_grid, y_grid = np.meshgrid(x_vec, y_vec)
         x_data_grid, y_data_grid = x_grid[k-w:k+w+1,:], y_grid[k-w:k+w+1,:]
         r_data_grid = np.sqrt(x_data_grid**2+y_data_grid**2)
@@ -458,53 +471,37 @@ def _process_pixels_splitLPFvsHPF(real_k_indices,real_l_indices,row_indices,col_
         ## CAUTION: the LPFspeckle_model is not rigorously defined, To be exact I should filter each speckle model the
         # same way I do the original science image, but I don't think it is a big deal which is why I didn't bother.
         ####################################
-        if 1: #test to reduce resolution of LPF data
-            Npixs = np.size(LPFindices)*data_ny*data_nx
-            wv_ref = wvs[0]
-            LPFspeckle_model = np.zeros((data_ny,data_nx,data_ny,data_nx,np.size(LPFindices)))
-            footprint_normalization = LPFtlc_spec[LPFindices]
-            footprint_overlap = np.zeros((data_ny,data_nx))
-            for sp_k in range(data_ny):
-                for sp_l in range(data_nx):
-                    sp_r,sp_th = r_data_grid[sp_k,sp_l],th_data_grid[sp_k,sp_l]
-                    for z in range(np.size(LPFindices)):
-                        sp_x = sp_r*wvs[LPFindices[z]]/wv_ref*np.cos(sp_th)
-                        sp_y = sp_r*wvs[LPFindices[z]]/wv_ref*np.sin(sp_th)
-                        sp_x_vec = x_data_grid[0,:]-sp_x
-                        sp_y_vec = y_data_grid[:,0]-sp_y
-                        LPFspeckle_model[sp_k,sp_l,:,:,z] = psfs_func_list[LPFindices[z]](sp_x_vec,sp_y_vec).transpose()/tlc_spec[LPFindices[z]]*LPFtlc_spec[LPFindices[z]]
-                    speckle_footprint = np.abs(np.nansum(LPFspeckle_model[sp_k,sp_l,:,:,:]/footprint_normalization[None,None,:],axis=2))
-                    speckle_footprint = speckle_footprint/np.nanmax(speckle_footprint)
+        Npixs = np.size(LPFindices)*data_ny*data_nx
+        wv_ref = wvs[0]
+        LPFspeckle_model = np.zeros((data_ny,data_nx,data_ny,data_nx,np.size(LPFindices)))
+        footprint_normalization = LPFtlc_spec[LPFindices]
+        footprint_overlap = np.zeros((data_ny,data_nx))
+        for sp_k in range(data_ny):
+            for sp_l in range(data_nx):
+                sp_r,sp_th = r_data_grid[sp_k,sp_l],th_data_grid[sp_k,sp_l]
+                for z in range(np.size(LPFindices)):
+                    sp_x = sp_r*wvs[LPFindices[z]]/wv_ref*np.cos(sp_th)
+                    sp_y = sp_r*wvs[LPFindices[z]]/wv_ref*np.sin(sp_th)
+                    sp_x_vec = x_data_grid[0,:]-sp_x
+                    sp_y_vec = y_data_grid[:,0]-sp_y
+                    LPFspeckle_model[sp_k,sp_l,:,:,z] = psfs_func_list[LPFindices[z]](sp_x_vec,sp_y_vec).transpose()/tlc_spec[LPFindices[z]]*LPFtlc_spec[LPFindices[z]]
+                speckle_footprint = np.abs(np.nansum(LPFspeckle_model[sp_k,sp_l,:,:,:]/footprint_normalization[None,None,:],axis=2))
+                speckle_footprint = speckle_footprint/np.nanmax(speckle_footprint)
 
-                    footprint_overlap[sp_k,sp_l] = np.sum(planet_footprint*speckle_footprint)
+                footprint_overlap[sp_k,sp_l] = np.sum(planet_footprint*speckle_footprint)
 
-            footprint_overlap_ravel = footprint_overlap.ravel()
-            # relevant_speckles = np.where(footprint_overlap_ravel>0.5)[0]
-            relevant_speckles = np.where(footprint_overlap_ravel>-1)[0]
-        else:
-            LPFindices = np.arange(0,data_nz)
-            wv_ref = wvs[0]
-            LPFspeckle_model = np.zeros((data_ny,data_nx,data_ny,data_nx,data_nz))
-            footprint_normalization = np.nanmax(psfs_tlc,axis=(0,1))
-            footprint_overlap = np.zeros((data_ny,data_nx))
-            for sp_k in range(data_ny):
-                for sp_l in range(data_nx):
-                    sp_r,sp_th = r_data_grid[sp_k,sp_l],th_data_grid[sp_k,sp_l]
-                    for z in range(data_nz):
-                        sp_x = sp_r*wvs[z]/wv_ref*np.cos(sp_th)
-                        sp_y = sp_r*wvs[z]/wv_ref*np.sin(sp_th)
-                        sp_x_vec = x_data_grid[0,:]-sp_x
-                        sp_y_vec = y_data_grid[:,0]-sp_y
-                        LPFspeckle_model[sp_k,sp_l,:,:,z] = psfs_func_list[z](sp_x_vec,sp_y_vec).transpose()/tlc_spec[z]*LPFtlc_spec[z]
-                    speckle_footprint = np.abs(np.nansum(LPFspeckle_model[sp_k,sp_l,:,:,:]/footprint_normalization[None,None,:],axis=2))
-                    speckle_footprint = speckle_footprint/np.nanmax(speckle_footprint)
+                # plt.subplot(3,1,1)
+                # plt.imshow(speckle_footprint,interpolation="nearest")
+                # plt.subplot(3,1,2)
+                # plt.imshow(LPFspeckle_model[sp_k,sp_l,:,:,0],interpolation="nearest")
+                # plt.subplot(3,1,3)
+                # plt.imshow(LPFspeckle_model[sp_k,sp_l,:,:,-1],interpolation="nearest")
+                # plt.show()
+                # exit()
 
-                    footprint_overlap[sp_k,sp_l] = np.sum(planet_footprint*speckle_footprint)
-
-            footprint_overlap_ravel = footprint_overlap.ravel()
-            # relevant_speckles = np.where(footprint_overlap_ravel>0.5)[0]
-            relevant_speckles = np.where(footprint_overlap_ravel>-1)[0]
-            Npixs = data_nz*data_ny*data_nx
+        footprint_overlap_ravel = footprint_overlap.ravel()
+        # relevant_speckles = np.where(footprint_overlap_ravel>0.5)[0]
+        relevant_speckles = np.where(footprint_overlap_ravel>-1)[0]
 
         bkg_model = np.zeros((2*w+1,2*w+1,2*w+1,2*w+1,data_nz))
         for bkg_k in range(2*w+1):
@@ -530,15 +527,6 @@ def _process_pixels_splitLPFvsHPF(real_k_indices,real_l_indices,row_indices,col_
         # plt.plot(np.ravel(HPFdata),label="HPFdata")
         # plt.legend()
         # plt.show()
-        # if 1: #test to reduce resolution of LPF data
-        #     LPFdata = np.ravel(data[:,:,LPFindices])
-        #     data_badpix = np.ravel(data_badpix[:,:,LPFindices])
-        #     where_finite_data = np.where(np.isfinite(np.ravel(data_badpix)))
-        #     LPFmodel = LPFmodel[np.concatenate([LPFindices+k*data_nz for k in range(data_ny*data_nx)],axis=0),:]
-        #     LPFdata = LPFdata[where_finite_data]
-        #     LPFmodel = LPFmodel[where_finite_data[0],:]
-        #     LPFmodel_H0 = LPFmodel[:,1::]
-        # else:
         LPFdata = np.ravel(data[:,:,LPFindices])
         LPFmodel = np.reshape(LPFmodel,(Npixs,LPFmodel.shape[-1]))
         where_finite_data = np.where(np.isfinite(np.ravel(data_badpix[:,:,LPFindices])))
@@ -721,6 +709,149 @@ def _process_pixels_splitLPFvsHPF(real_k_indices,real_l_indices,row_indices,col_
         # exit()
     return
 
+
+def _process_pixels_onlyHPF(real_k_indices,real_l_indices,row_indices,col_indices,normalized_psfs_func_list,tlc_spec_list,star_spec,planet_spec, dtype,sep_planet,usecov,corrlen,q,cutoff,stardir):
+    global original,badpix,originalLPF,originalHPF, original_shape, output, output_shape, lambdas, img_center, psfs, psfs_shape, Npixproc, Npixtot
+    original_np = _arraytonumpy(original, original_shape,dtype=dtype)
+    originalLPF_np = _arraytonumpy(originalLPF, original_shape,dtype=dtype)
+    originalHPF_np = _arraytonumpy(originalHPF, original_shape,dtype=dtype)
+    badpix_np = _arraytonumpy(badpix, original_shape,dtype=dtype)
+    output_maps_np = _arraytonumpy(output_maps, output_maps_shape,dtype=dtype)
+    psfs_tlc = _arraytonumpy(psfs, psfs_shape,dtype=dtype)
+    padny,padnx,padnz = original_shape
+
+    norma_planet_spec = planet_spec/star_spec
+    HPFtlc_spec_list = []
+    for tlc_spectrum in tlc_spec_list:
+        mytlchpfspec = LPFvsHPF(tlc_spectrum,cutoff)[1]
+        HPFtlc_spec_list.append(mytlchpfspec/np.nanstd(mytlchpfspec))
+
+    for real_k,real_l,row,col in zip(real_k_indices,real_l_indices,row_indices,col_indices):
+        # real_k,real_l = 32+padding,-35.79802955665025+46.8+padding
+        k,l = int(np.floor(real_k)),int(np.floor(real_l))
+        # print(k,l)
+
+        w = 2
+        HPFdata = copy(originalHPF_np[k-w:k+w+1,l-w:l+w+1,:])
+        LPFdata = copy(originalLPF_np[k-w:k+w+1,l-w:l+w+1,:])
+        HPFdata_badpix = badpix_np[k-w:k+w+1,l-w:l+w+1,:]
+        data_ny,data_nx,data_nz = HPFdata.shape
+
+        x_vec, y_vec = np.arange(padnx * 1.)-real_l,np.arange(padny* 1.)-real_k
+        x_grid, y_grid = np.meshgrid(x_vec, y_vec)
+        x_data_grid, y_data_grid = x_grid[k-w:k+w+1,l-w:l+w+1], y_grid[k-w:k+w+1,l-w:l+w+1]
+
+        planet_model = np.zeros(HPFdata.shape)
+        pl_x_vec = x_data_grid[0,:]
+        pl_y_vec = y_data_grid[:,0]
+        for z in range(data_nz):
+            planet_model[:,:,z] = normalized_psfs_func_list[z](pl_x_vec,pl_y_vec).transpose()
+
+        # HPFtlc_spec = LPFvsHPF(np.nanmax(planet_model,axis=(0,1)),cutoff)[1]
+
+
+
+        LPFtlcplanet_spec,HPFtlcplanet_spec = LPFvsHPF(tlc_spec_list[0]*norma_planet_spec,cutoff)
+        # plt.figure(2)
+        # plt.plot(HPFtlcplanet_spec)
+        HPFplanet_model = planet_model*(HPFtlcplanet_spec/np.nanstd(HPFtlcplanet_spec)*np.nanstd(HPFtlc_spec_list[0]))[None,None,:]
+
+
+        HPFpolydeg = 0
+        HPFmodel_list = []
+        # plt.figure(1)
+        for HPFtlc_spectrum in HPFtlc_spec_list:
+            # plt.plot(HPFtlc_spectrum)
+            for k in range(HPFpolydeg+1):
+                bkg_model = np.zeros((2*w+1,2*w+1,2*w+1,2*w+1,data_nz))
+                for bkg_k in range(2*w+1):
+                    for bkg_l in range(2*w+1):
+                        myspec = LPFdata[bkg_k,bkg_l,:]*(HPFtlc_spectrum*(wvs**k))
+                        bkg_model[bkg_k,bkg_l,bkg_k,bkg_l,:] = myspec/np.nanstd(myspec)
+                HPFmodel_list.append(np.reshape(bkg_model,((2*w+1)**2,(2*w+1)**2*data_nz)).transpose())
+        HPFmodel = np.concatenate([np.ravel(HPFplanet_model)[:,None],]+HPFmodel_list,axis=1)
+        # plt.show()
+
+        # for bkg_k in range(2*w+1):
+        #     for bkg_l in range(2*w+1):
+        #         plt.subplot(2*w+1,2*w+1,bkg_k*(2*w+1)+bkg_l+1)
+        #         plt.plot(HPFdata[bkg_k,bkg_l,:]/np.nanstd(HPFdata[bkg_k,bkg_l,:]),label="data",color="red")
+        #         for HPFtlc_spectrum in HPFtlc_spec_list:
+        #             myspec = HPFtlc_spectrum*LPFdata[bkg_k,bkg_l,:]
+        #             plt.plot(myspec/np.nanstd(myspec),linestyle="--",label="tlc",alpha=0.5)
+        #
+        # plt.show()
+
+        HPFdata = np.ravel(HPFdata)
+        HPFmodel = np.reshape(HPFmodel,((2*w+1)**2*data_nz,HPFmodel.shape[-1]))
+        where_finite_data = np.where(np.isfinite(np.ravel(HPFdata_badpix)))
+        HPFdata = HPFdata[where_finite_data]
+        HPFmodel = HPFmodel[where_finite_data[0],:]
+        HPFmodel_H0 = HPFmodel[:,1::]
+        HPFmodel_H1 = HPFmodel[:,0:1]
+
+        # t1 = time.time()
+        HPFparas,HPFchi2,rank,s = np.linalg.lstsq(HPFmodel,HPFdata)
+        HPFparas_H1,HPFchi2_H1,rank,s = np.linalg.lstsq(HPFmodel_H1,HPFdata)
+        HPFparas_H0,HPFchi2_H0,rank,s = np.linalg.lstsq(HPFmodel_H0,HPFdata)
+
+        data_model = np.dot(HPFmodel,HPFparas)
+        data_model_H1 = np.dot(HPFmodel_H1,HPFparas_H1)
+        data_model_H0 = np.dot(HPFmodel_H0,HPFparas_H0)
+        HPFchi2 = np.nansum((data_model-HPFdata)**2)
+        HPFchi2_H1 = np.nansum((data_model_H1-HPFdata)**2)
+        HPFchi2_H0 = np.nansum((data_model_H0-HPFdata)**2)
+
+
+        # plt.figure(1)
+        # plt.plot(HPFdata,label="HPFdata")
+        # plt.plot(data_model,label="data_model")
+        # tmp = np.zeros(HPFparas.shape)
+        # tmp[0] = HPFparas[0]
+        # plt.plot(np.dot(HPFmodel,tmp),label="planet")
+        # plt.plot(data_model_H1,label="data_model_H1")
+        # plt.plot(data_model_H0,label="data_model_H0")
+        # plt.legend()
+        # plt.figure(2)
+        # plt.plot(HPFdata,label="HPFdata")
+        # plt.plot(HPFdata-data_model,label="data_model")
+        # # tmp = np.zeros(HPFparas.shape)
+        # # tmp[0] = HPFparas[0]
+        # # plt.plot(np.dot(HPFmodel,tmp),label="planet")
+        # # plt.plot(HPFdata-data_model_H1,label="data_model_H1")
+        # # plt.plot(HPFdata-data_model_H0,label="data_model_H0")
+        # plt.legend()
+        # plt.show()
+
+        # print(LPFchi2,LPFchi2_H0,HPFchi2,HPFchi2_H0)
+        Npixs_HPFdata = np.size(HPFdata)
+        minus2logL_HPF = Npixs_HPFdata*np.log(HPFchi2/Npixs_HPFdata)+1./Npixs_HPFdata
+        minus2logL_HPF_H1 = Npixs_HPFdata*np.log(HPFchi2_H1/Npixs_HPFdata)+1./Npixs_HPFdata
+        minus2logL_HPF_H0 = Npixs_HPFdata*np.log(HPFchi2_H0/Npixs_HPFdata)+1./Npixs_HPFdata
+        AIC_HPF = 2*(HPFmodel.shape[-1])+minus2logL_HPF
+        AIC_HPF_H1 = 2*(HPFmodel_H1.shape[-1])+minus2logL_HPF_H1
+        AIC_HPF_H0 = 2*(HPFmodel_H0.shape[-1])+minus2logL_HPF_H0
+        output_maps_np[0,row,col] = HPFparas[0]
+        output_maps_np[1,row,col] = AIC_HPF
+        output_maps_np[2,row,col] = AIC_HPF_H0
+        output_maps_np[3,row,col] = AIC_HPF_H0-AIC_HPF
+        if HPFparas[0] >= 0:
+            output_maps_np[4,row,col] = AIC_HPF_H0-AIC_HPF
+        else:
+            output_maps_np[4,row,col] = 0
+
+        output_maps_np[5,row,col] = HPFparas_H1[0]
+        output_maps_np[6,row,col] = AIC_HPF_H1
+        output_maps_np[7,row,col] = AIC_HPF_H0
+        output_maps_np[8,row,col] = AIC_HPF_H0-AIC_HPF_H1
+        if HPFparas_H1[0] >= 0:
+            output_maps_np[9,row,col] = AIC_HPF_H0-AIC_HPF_H1
+        else:
+            output_maps_np[9,row,col] = 0
+        # print(output_maps_np[:,row,col])
+        # exit()
+    return
+
 #------------------------------------------------
 if __name__ == "__main__":
     try:
@@ -735,12 +866,16 @@ if __name__ == "__main__":
 
 
     if 1:# HR 8799 c 20100715
-        inputDir = "/home/sda/jruffio/osiris_data/HR_8799_c/20100715/reduced_jb/"
-        outputdir = "/home/sda/jruffio/osiris_data/HR_8799_c/20100715/reduced_jb/20181120_out/"
-        filelist = glob.glob(os.path.join(inputDir,"s100715*20.fits"))
+        # date = "100715"
+        date = "101104"
+        inputDir = "/home/sda/jruffio/osiris_data/HR_8799_c/20"+date+"/reduced_jb/"
+        outputdir = "/home/sda/jruffio/osiris_data/HR_8799_c/20"+date+"/reduced_jb/20181120_out/"
+        outputdir = "/home/sda/jruffio/osiris_data/HR_8799_c/20"+date+"/reduced_jb/20181205_HPF_only/"
+        filelist = glob.glob(os.path.join(inputDir,"s"+date+"*20.fits"))
         filelist.sort()
-        filename = filelist[0]
-        psfs_tlc_filename = "/home/sda/jruffio/osiris_data/HR_8799_c/20100715/reduced_telluric_JB/HD_210501/s100715_a005002_Kbb_020_psfs.fits"
+        # filename = filelist[12]
+        # psfs_tlc_filename = "/home/sda/jruffio/osiris_data/HR_8799_c/20"+date+"/reduced_telluric_JB/HD_210501/s"+date+"_a005002_Kbb_020_psfs.fits"
+        psfs_tlc_filelist = glob.glob("/home/sda/jruffio/osiris_data/HR_8799_c/20"+date+"/reduced_telluric_JB/*/s*_psfs_badpix.fits")[0:1]
         template_spec_filename="/home/sda/jruffio/osiris_data/HR_8799_c/hr8799c_osiris_template.save"
         star_spec_filename = "/home/sda/jruffio/osiris_data/HR_8799_c/hr_8799_c_pickles_spectrum_Kbb.csv"
         # planet_coords = [[11,32],[12,27],[12,33],[12,39],[10,33],[9,28],[8,38],[10,32.5],[9,32],[10,33],[10,35],[10,33], #in order: image 10 to 21
@@ -753,12 +888,12 @@ if __name__ == "__main__":
         padding = 5
         planet_search = True
         debug = False
-        # real_k,real_l = 32+padding,-35.79802955665025+46.8+padding
-        real_k,real_l = 50,15
+        real_k,real_l = 32+padding,-35.79802955665025+46.8+padding
+        # real_k,real_l = 50,15
         # real_k,real_l = 32+padding-10,-35.79802955665025+46.8+padding
         # real_k,real_l = 51,17
         # real_k,real_l = 39,16
-        # real_k,real_l = 50,16
+        real_k,real_l = 39+5,12
         #for astro
         # real_l_grid,real_k_grid = np.meshgrid(np.linspace(-3,3,7),np.linspace(-3,3,7))
         real_l_grid,real_k_grid = np.array([[0]]),np.array([[0]])
@@ -832,14 +967,15 @@ if __name__ == "__main__":
     else:
         cutoff = 80#80
 
-    for cutoff in np.arange(10,200,10):
-
+    for filename in filelist:#[13::]:
+    # if 1:
         # suffix = "polyfit_"+centermode+"cen"+"_testmaskbadpix"
         # suffix = "polyfit_"+centermode+"cen"+"_resmask_maskbadpix"
         # suffix = "polyfit_"+centermode+"cen"+"_resmask_norma"
         # suffix = "polyfit_"+centermode+"cen"+"_resmask_norma_bkg"
         # suffix = "polyfit_"+centermode+"cen"+"_cov_all"
-        suffix = "test_splitLPFHPF_all_LPFbinned_cutoff{0}".format(cutoff)
+        suffix = "HPF_cutoff{0}_new".format(cutoff)
+        # suffix = "HPFtestmultipletlc_cutoff{0}".format(cutoff)
 
         if 0:
             out_file = os.path.join(outputdir,os.path.basename(filename).replace(".fits","_output"+suffix+".fits"))
@@ -855,6 +991,11 @@ if __name__ == "__main__":
         filebasename = os.path.basename(filename)
         planet_c = root.find("c")
         fileelement = planet_c.find(filebasename)
+        stardir = fileelement.attrib["stardir"]
+        # if stardir != "left":
+        #     continue
+        # print(stardir)
+        # continue
         center = [float(fileelement.attrib["x"+centermode+"cen"]),float(fileelement.attrib["y"+centermode+"cen"])]
         sep_planet = float(fileelement.attrib["sep"])
 
@@ -866,25 +1007,31 @@ if __name__ == "__main__":
             imgs = np.rollaxis(np.rollaxis(hdulist[0].data,2),2,1)
             prihdr = hdulist[0].header
             imgs = np.moveaxis(imgs,0,2)
+            # print(filename)
+            # plt.imshow(np.nansum(imgs,axis=2))
+            # plt.show()
+            # exit()
         # imgs[np.where(imgs==0)] = np.nan
         ny,nx,nz = imgs.shape
         init_wv = prihdr["CRVAL1"]/1000. # wv for first slice in mum
         dwv = prihdr["CDELT1"]/1000. # wv interval between 2 slices in mum
         wvs=np.arange(init_wv,init_wv+dwv*nz,dwv)
 
-
-        with pyfits.open(psfs_tlc_filename) as hdulist:
-            psfs_tlc = hdulist[0].data
-            psfs_tlc_prihdr = hdulist[0].header
-            psfs_tlc = np.moveaxis(psfs_tlc,0,2)
-        print(psfs_tlc.shape)
+        psfs_tlc = []
+        tlc_spec_list = []
+        for psfs_tlc_filename in psfs_tlc_filelist:
+            with pyfits.open(psfs_tlc_filename) as hdulist:
+                mypsfs = hdulist[0].data
+                # psfs_tlc_prihdr = hdulist[0].header
+                mypsfs = np.moveaxis(mypsfs,0,2)
+                psfs_tlc.append(mypsfs)
+                tlc_spec_list.append(np.nansum(mypsfs,axis=(0,1)))
 
 
         travis_spectrum = scio.readsav(template_spec_filename)
         planet_spec = np.array(travis_spectrum["fk_bin"])
         planet_spec = planet_spec/np.mean(planet_spec)
 
-        tlc_spec = np.nanmax(psfs_tlc,axis=(0,1))
 
         with open(star_spec_filename, 'r') as csvfile:
             csv_reader = csv.reader(csvfile, delimiter=' ')
@@ -895,10 +1042,10 @@ if __name__ == "__main__":
             star_spec = star_spec/np.mean(star_spec)
             star_spec_wvs = starspec_str_arr[1::,0].astype(np.float)
 
-
         # reduce dimensionality
         if smalldata:
-            psfs_tlc = psfs_tlc[:,:,::10]
+            for k in range(len(psfs_tlc_filelist)):
+                psfs_tlc[k] = psfs_tlc[k][:,:,::10]
             wvs = wvs[::10]
             imgs = imgs[:,:,::10]
             planet_spec = planet_spec[::10]
@@ -935,10 +1082,11 @@ if __name__ == "__main__":
         output_maps_np = _arraytonumpy(output_maps,output_maps_shape,dtype=dtype)
         output_maps_np[:] = np.nan
         wvs_imgs = wvs
-        psfs_stamps = mp.Array(dtype, np.size(psfs_tlc))
-        psfs_stamps_shape = psfs_tlc.shape
+        psfs_stamps = mp.Array(dtype, len(psfs_tlc_filelist)*np.size(psfs_tlc[0]))
+        psfs_stamps_shape = [len(psfs_tlc_filelist),psfs_tlc[0].shape[0],psfs_tlc[0].shape[1],psfs_tlc[0].shape[2]]
         psfs_stamps_np = _arraytonumpy(psfs_stamps, psfs_stamps_shape,dtype=dtype)
-        psfs_stamps_np[:] = psfs_tlc
+        for k in range(len(psfs_tlc_filelist)):
+            psfs_stamps_np[k,:,:,:] = psfs_tlc[k]
 
 
         ######################
@@ -1046,19 +1194,22 @@ if __name__ == "__main__":
         # plt.legend()
         # plt.show()
 
-        ny_psf,nx_psf,nz_psf = psfs_tlc.shape
+        ny_psf,nx_psf,nz_psf = psfs_tlc[0].shape
         x_psf_vec, y_psf_vec = np.arange(nx_psf * 1.)-nx_psf//2,np.arange(ny_psf* 1.)-ny_psf//2
         x_psf_grid, y_psf_grid = np.meshgrid(x_psf_vec, y_psf_vec)
         psfs_func_list = []
-        psfs_tlc[np.where(np.isnan(psfs_tlc))] = 0
+        normalized_psfs_func_list = []
+        psfs_tlc[0][np.where(np.isnan(psfs_tlc[0]))] = 0
         import warnings
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             for wv_index in range(nz_psf):
                 print(wv_index)
-                model_psf = psfs_tlc[:, :, wv_index]
+                model_psf = psfs_tlc[0][:, :, wv_index]
                 psf_func = interpolate.LSQBivariateSpline(x_psf_grid.ravel(),y_psf_grid.ravel(),model_psf.ravel(),x_psf_grid[0,0:nx_psf-1]+0.5,y_psf_grid[0:ny_psf-1,0]+0.5)
                 psfs_func_list.append(psf_func)
+                psf_func = interpolate.LSQBivariateSpline(x_psf_grid.ravel(),y_psf_grid.ravel(),(model_psf/np.nansum(model_psf)).ravel(),x_psf_grid[0,0:nx_psf-1]+0.5,y_psf_grid[0:ny_psf-1,0]+0.5)
+                normalized_psfs_func_list.append(psf_func)
 
         # 1: planet search, 0: astrometry
         if planet_search:
@@ -1094,9 +1245,10 @@ if __name__ == "__main__":
             _tpool_init(original_imgs,badpix_imgs,originalLPF_imgs,originalHPF_imgs, original_imgs_shape, output_maps,
                                       output_maps_shape,wvs_imgs,psfs_stamps, psfs_stamps_shape)
             if splitLPFvsHPF:
-                _process_pixels_splitLPFvsHPF(real_k_valid_pix[::-1],real_l_valid_pix[::-1],row_valid_pix[::-1],col_valid_pix[::-1],psfs_func_list,star_spec,planet_spec, dtype,sep_planet,usecov,corrlen,q,cutoff)
+                _process_pixels_onlyHPF(real_k_valid_pix[::-1],real_l_valid_pix[::-1],row_valid_pix[::-1],col_valid_pix[::-1],normalized_psfs_func_list,tlc_spec_list,star_spec,planet_spec, dtype,sep_planet,usecov,corrlen,q,cutoff,stardir)
+                # _process_pixels_splitLPFvsHPF(real_k_valid_pix[::-1],real_l_valid_pix[::-1],row_valid_pix[::-1],col_valid_pix[::-1],psfs_func_list,star_spec,planet_spec, dtype,sep_planet,usecov,corrlen,q,cutoff,stardir)
             else:
-                _process_pixels(real_k_valid_pix,real_l_valid_pix,row_valid_pix,col_valid_pix,psfs_func_list,star_spec,planet_spec, dtype,sep_planet,usecov,corrlen,q)
+                _process_pixels(real_k_valid_pix,real_l_valid_pix,row_valid_pix,col_valid_pix,psfs_func_list,star_spec,planet_spec, dtype,sep_planet,usecov,corrlen,q,stardir)
             exit()
         else:
             chunk_size = N_valid_pix//(3*numthreads)
@@ -1128,10 +1280,12 @@ if __name__ == "__main__":
             #     plt.show()
 
             if splitLPFvsHPF:
-                tasks = [tpool.apply_async(_process_pixels_splitLPFvsHPF, args=(real_k_indices,real_l_indices,row_indices,col_indices,psfs_func_list,star_spec,planet_spec, dtype,sep_planet,usecov,corrlen,q,cutoff))
+                tasks = [tpool.apply_async(_process_pixels_onlyHPF, args=(real_k_indices,real_l_indices,row_indices,col_indices,normalized_psfs_func_list,tlc_spec_list,star_spec,planet_spec, dtype,sep_planet,usecov,corrlen,q,cutoff,stardir))
                          for real_k_indices, real_l_indices, row_indices, col_indices in zip(real_k_indices_list,real_l_indices_list, row_indices_list, col_indices_list)]
+                # tasks = [tpool.apply_async(_process_pixels_splitLPFvsHPF, args=(real_k_indices,real_l_indices,row_indices,col_indices,psfs_func_list,star_spec,planet_spec, dtype,sep_planet,usecov,corrlen,q,cutoff,stardir))
+                #          for real_k_indices, real_l_indices, row_indices, col_indices in zip(real_k_indices_list,real_l_indices_list, row_indices_list, col_indices_list)]
             else:
-                tasks = [tpool.apply_async(_process_pixels, args=(real_k_indices,real_l_indices,row_indices,col_indices,psfs_func_list,star_spec,planet_spec, dtype,sep_planet,usecov,corrlen,q))
+                tasks = [tpool.apply_async(_process_pixels, args=(real_k_indices,real_l_indices,row_indices,col_indices,psfs_func_list,star_spec,planet_spec, dtype,sep_planet,usecov,corrlen,q,stardir))
                          for real_k_indices, real_l_indices, row_indices, col_indices in zip(real_k_indices_list,real_l_indices_list, row_indices_list, col_indices_list)]
 
         #save it to shared memory
