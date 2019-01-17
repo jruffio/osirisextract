@@ -7,16 +7,19 @@ import glob
 import time
 
 print("coucou")
+os.system("module load python/3.6.1")
+
 
 OSIRISDATA = "/scratch/groups/bmacint/osiris_data/"
 if 1:
     foldername = "HR_8799_c"
     sep = 0.950
-    telluric = os.path.join(OSIRISDATA,"HR_8799_c/20100715/reduced_telluric/HD_210501","s100715_a005001_Kbb_020.fits")
-    template_spec = os.path.join(OSIRISDATA,"hr8799c_osiris_template.save")
-year = "*"
-reductionname = "reduced_quinn"
-filenamefilter = "s*_a*001_tlc_Kbb_020.fits"
+    #telluric = os.path.join(OSIRISDATA,"HR_8799_c/20100715/reduced_telluric/HD_210501","s100715_a005001_Kbb_020.fits")
+    #template_spec = os.path.join(OSIRISDATA,"hr8799c_osiris_template.save")
+year = "20100715"
+reductionname = "reduced_jb"
+#filenamefilter = "s*_a*001_tlc_Kbb_020.fits"
+filenamefilter = "s100715_a010001_Kbb_020.fits"
 
 filelist = glob.glob(os.path.join(OSIRISDATA,foldername,year,reductionname,filenamefilter))
 filelist.sort()
@@ -40,7 +43,7 @@ for filename in filelist:
 
     outputdir = os.path.join(inputdir,"sherlock","20190117_HPFonly")
     numthreads = 16
-    bsub_str= 'sbatch --partition=hns,owners,iric --qos=normal --time=0-10:00:00 --mem=40G --output='+outfile+' --error='+errfile+' --nodes=1 --ntasks-per-node='+str(numthreads)+' --mail-type=END,FAIL,BEGIN --mail-user=jruffio@stanford.edu --wrap="python ' + script
+    bsub_str= 'sbatch --partition=hns,owners,iric --qos=normal --time=0-10:00:00 --mem=40G --output='+outfile+' --error='+errfile+' --nodes=1 --ntasks-per-node='+str(numthreads)+' --mail-type=END,FAIL,BEGIN --mail-user=jruffio@stanford.edu --wrap="python3 ' + script
     params = ' {0} {1} {2} {3}"'.format(inputdir,outputdir,filename,numthreads)
     # if 1:
     #     cenmode = "visu"
