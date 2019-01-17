@@ -43,7 +43,7 @@ for filename in filelist:
 
     outputdir = os.path.join(inputdir,"sherlock","20190117_HPFonly")
     numthreads = 16
-    bsub_str= 'sbatch --partition=hns,owners,iric --qos=normal --time=0-10:00:00 --mem=40G --output='+outfile+' --error='+errfile+' --nodes=1 --ntasks-per-node='+str(numthreads)+' --mail-type=END,FAIL,BEGIN --mail-user=jruffio@stanford.edu --wrap="python3 ' + script
+    bsub_str= 'sbatch --partition=hns,owners,iric --qos=normal --time=0-10:00:00 --mem=60G --output='+outfile+' --error='+errfile+' --nodes=1 --ntasks-per-node='+str(numthreads)+' --mail-type=END,FAIL,BEGIN --mail-user=jruffio@stanford.edu --wrap="python ' + script
     params = ' {0} {1} {2} {3}"'.format(inputdir,outputdir,filename,numthreads)
     # if 1:
     #     cenmode = "visu"
