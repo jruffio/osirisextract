@@ -1,6 +1,6 @@
 __author__ = 'jruffio'
 
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import astropy.io.fits as pyfits
 import numpy as np
 from scipy.ndimage.filters import median_filter
