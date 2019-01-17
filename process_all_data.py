@@ -28,7 +28,8 @@ for filename in filelist:
 
     #script = "~/OSIRIS/20180905_defcen_parallelized_osiris.py"
     # script = "~/OSIRIS/20180909_2ndorderpoly_parallelized_osiris.py"
-    script = "~/OSIRIS/osirisextract/parallelized_osiris.py"
+    # script = "~/OSIRIS/osirisextract/parallelized_osiris.py"
+    script = "~/OSIRIS/osirisextract/reduce_hr8799c_HPFonly.py"
     #script = "~/OSIRIS/osirisextract/classic_CCF.py"
     
     logdir = os.path.join(inputdir,"sherlock","logs")
@@ -37,17 +38,21 @@ for filename in filelist:
     outfile = os.path.join(logdir,os.path.basename(script).replace(".py","")+"_"+os.path.basename(filename).replace(".fits",".out"))
     errfile = os.path.join(logdir,os.path.basename(script).replace(".py","")+"_"+os.path.basename(filename).replace(".fits",".err"))
 
-    if 1:
-        cenmode = "visu"
-        outputdir = os.path.join(inputdir,"sherlock","polyfit_"+cenmode+"cen")
-        numthreads = 20
-        bsub_str= 'sbatch --partition=hns,owners,iric --qos=normal --time=0-12:00:00 --mem=120G --output='+outfile+' --error='+errfile+' --nodes=1 --ntasks-per-node='+str(numthreads)+' --mail-type=END,FAIL,BEGIN --mail-user=jruffio@stanford.edu --wrap="python ' + script
-        params = ' {0} {1} {2} {3} {4} {5} {6} {7}"'.format(inputdir,outputdir,filename,telluric,template_spec,sep,numthreads,cenmode)
-    else:
-        outputdir = os.path.join(inputdir,"sherlock","medfilt_ccmap")
-        numthreads = 1
-        bsub_str= 'sbatch --partition=hns,owners,iric --qos=normal --time=0-01:00:00 --mem=10G --output='+outfile+' --error='+errfile+' --nodes=1 --ntasks-per-node='+str(numthreads)+' --mail-type=END,FAIL,BEGIN --mail-user=jruffio@stanford.edu --wrap="python ' + script
-        params = ' {0} {1} {2} {3} {4} {5} {6}"'.format(inputdir,outputdir,filename,telluric,template_spec,sep,numthreads)
+    outputdir = os.path.join(inputdir,"sherlock","20190117_HPFonly")
+    numthreads = 16
+    bsub_str= 'sbatch --partition=hns,owners,iric --qos=normal --time=0-10:00:00 --mem=40G --output='+outfile+' --error='+errfile+' --nodes=1 --ntasks-per-node='+str(numthreads)+' --mail-type=END,FAIL,BEGIN --mail-user=jruffio@stanford.edu --wrap="python ' + script
+    params = ' {0} {1} {2} {3}"'.format(inputdir,outputdir,filename,numthreads)
+    # if 1:
+    #     cenmode = "visu"
+    #     outputdir = os.path.join(inputdir,"sherlock","polyfit_"+cenmode+"cen")
+    #     numthreads = 20
+    #     bsub_str= 'sbatch --partition=hns,owners,iric --qos=normal --time=0-12:00:00 --mem=120G --output='+outfile+' --error='+errfile+' --nodes=1 --ntasks-per-node='+str(numthreads)+' --mail-type=END,FAIL,BEGIN --mail-user=jruffio@stanford.edu --wrap="python ' + script
+    #     params = ' {0} {1} {2} {3} {4} {5} {6} {7}"'.format(inputdir,outputdir,filename,telluric,template_spec,sep,numthreads,cenmode)
+    # else:
+    #     outputdir = os.path.join(inputdir,"sherlock","medfilt_ccmap")
+    #     numthreads = 1
+    #     bsub_str= 'sbatch --partition=hns,owners,iric --qos=normal --time=0-01:00:00 --mem=10G --output='+outfile+' --error='+errfile+' --nodes=1 --ntasks-per-node='+str(numthreads)+' --mail-type=END,FAIL,BEGIN --mail-user=jruffio@stanford.edu --wrap="python ' + script
+    #     params = ' {0} {1} {2} {3} {4} {5} {6}"'.format(inputdir,outputdir,filename,telluric,template_spec,sep,numthreads)
 
     print(bsub_str+params)
     bsub_out = os.popen(bsub_str + params).read()

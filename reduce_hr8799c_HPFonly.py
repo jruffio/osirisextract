@@ -394,7 +394,7 @@ if __name__ == "__main__":
     print("CPU COUNT: {0}".format(mp.cpu_count()))
 
 
-    if 1:# HR 8799 c 20100715
+    if 0:# HR 8799 c 20100715
         # planet = "b"
         planet = "c"
         date = "100715"
@@ -416,7 +416,6 @@ if __name__ == "__main__":
         # filename = filelist[12]
         # psfs_tlc_filename = "/home/sda/jruffio/osiris_data/HR_8799_c/20"+date+"/reduced_telluric_JB/HD_210501/s"+date+"_a005002_Kbb_020_psfs.fits"
         psfs_tlc_filelist = glob.glob("/home/sda/jruffio/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_telluric_jb/*/s*"+IFSfilter+"_020_psfs.fits")
-        phoenix_folder = "/home/sda/jruffio/phoenix/"
         # psfs_tlc_filelist = [psfs_tlc_filelist[0]]
         # print(psfs_tlc_filelist)
         # template_spec_filename="/home/sda/jruffio/osiris_data/HR_8799_c/hr8799c_osiris_template.save"
@@ -429,48 +428,57 @@ if __name__ == "__main__":
         #                  [7,34],[5,35],[8,35],[7.5,33],[9.5,34.5]]
         # file_centers = [[x-sep_planet/ 0.0203,y] for x,y in planet_coords]
         numthreads = 25
-
-        if IFSfilter=="Kbb": #Kbb 1965.0 0.25
-            CRVAL1 = 1965.
-            CDELT1 = 0.25
-            nl=1665
-            R=4000
-        elif IFSfilter=="Hbb": #Hbb 1651 1473.0 0.2
-            CRVAL1 = 1473.
-            CDELT1 = 0.2
-            nl=1651
-            R=5000
-        dwv = CDELT1/1000.
-
-        padding = 5
-        planet_search = False
-        debug = False
-        # real_k,real_l = 2,2
-        real_k,real_l = 32,-35.79802955665025+46.8
-        # real_k,real_l = 50,15
-        # real_k,real_l = 32+padding-10,-35.79802955665025+46.8+padding
-        # real_k,real_l = 51,17
-        # real_k,real_l = 39,16
-        # real_k,real_l = 39+5,12
-        #for astro
-        real_k,real_l = real_k+padding,real_l+padding
-        dl_grid,dk_grid = np.meshgrid(np.linspace(-0.5,0.5,4*10),np.linspace(-0.5,0.5,4*10))
-        # dl_grid,dk_grid = np.array([[0]]),np.array([[0]])
-
-        # wvshifts_array = np.concatenate([np.arange(-3*dwv,3*dwv,dwv/20),np.arange(-100*dwv,100*dwv,dwv)])
-        # wvshifts_array = np.arange(-5*dwv,5*dwv,dwv/5)
-        wvshifts_array = np.linspace(-1.1*dwv,-.7*dwv,40)#np.arange(-1.1*dwv,-.8*dwv,dwv/100)
     else:
         inputDir = sys.argv[1]
         outputdir = sys.argv[2]
         filename = sys.argv[3]
-        psfs_tlc_filename = sys.argv[4]
-        template_spec_filename = sys.argv[5]
+        numthreads = int(sys.argv[4])
         # star_spec_filename  = sys.argv[6]
-        numthreads = int(sys.argv[7])
-        centermode = sys.argv[8]
-        fileinfos_filename = "/home/users/jruffio/OSIRIS/osirisextract/fileinfos_jb.xml"
-        padding = 5
+        # centermode = sys.argv[8]
+
+        filelist = [filename]
+        IFSfilter = filename.split("_")[-2]
+        psfs_tlc_filelist = glob.glob(os.path.join(os.path.dirname(filename),"..","reduced_telluric_jb/*/s*"+IFSfilter+"_020_psfs.fits"))
+        # fileinfos_filename = "/home/users/jruffio/OSIRIS/osirisextract/fileinfos_jb.xml"
+        template_spec_filename=os.path.join(os.path.dirname(filename),"..","..","HR8799c_"+IFSfilter[0:1]+"_3Oct2018_conv"+IFSfilter+".csv")
+
+        # print(psfs_tlc_filelist)
+        # print(template_spec_filename)
+        # print(os.path.join(os.path.dirname(filename),"..","/educed_telluric_jb/*/s*"+IFSfilter+"_020_psfs.fits"))
+        # print(os.path.join(os.path.dirname(filename),"..","reduced_telluric_jb/*/"))
+        # exit()
+
+    phoenix_folder = os.path.join(os.path.dirname(filename),"..","..","..","phoenix")#"/home/sda/jruffio/osiris_data/phoenix/"
+    if IFSfilter=="Kbb": #Kbb 1965.0 0.25
+        CRVAL1 = 1965.
+        CDELT1 = 0.25
+        nl=1665
+        R=4000
+    elif IFSfilter=="Hbb": #Hbb 1651 1473.0 0.2
+        CRVAL1 = 1473.
+        CDELT1 = 0.2
+        nl=1651
+        R=5000
+    dwv = CDELT1/1000.
+
+    padding = 5
+    planet_search = True
+    debug = False
+    # real_k,real_l = 2,2
+    real_k,real_l = 32,-35.79802955665025+46.8
+    # real_k,real_l = 50,15
+    # real_k,real_l = 32+padding-10,-35.79802955665025+46.8+padding
+    # real_k,real_l = 51,17
+    # real_k,real_l = 39,16
+    # real_k,real_l = 39+5,12
+    #for astro
+    real_k,real_l = real_k+padding,real_l+padding
+    dl_grid,dk_grid = np.meshgrid(np.linspace(-0.5,0.5,4*10),np.linspace(-0.5,0.5,4*10))
+    # dl_grid,dk_grid = np.array([[0]]),np.array([[0]])
+
+    # wvshifts_array = np.concatenate([np.arange(-3*dwv,3*dwv,dwv/20),np.arange(-100*dwv,100*dwv,dwv)])
+    wvshifts_array = np.arange(-3*dwv,3*dwv,dwv/10)
+    # wvshifts_array = np.linspace(-1.1*dwv,-.7*dwv,40)#np.arange(-1.1*dwv,-.8*dwv,dwv/100)
 
     dtype = ctypes.c_float
     nan_mask_boxsize=3
@@ -499,7 +507,8 @@ if __name__ == "__main__":
     #     filename = filelist[2]
     #     print(filename)
     #     filename2 = filelist[3]
-        suffix = "HPF_cutoff{0}_new_sig_phoenix_wvshift_centroid".format(cutoff)
+    #     suffix = "HPF_cutoff{0}_new_sig_phoenix_wvshift_centroid".format(cutoff)
+        suffix = "HPF_cutoff{0}_new_sig_phoenix_wvshift".format(cutoff)
 
         # hdulist = pyfits.HDUList()
         # hdulist.append(pyfits.PrimaryHDU(data=wvshifts_array))
