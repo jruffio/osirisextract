@@ -38,7 +38,7 @@ for lcorr in np.arange(0.1,2.0,0.1):
     #script = "~/OSIRIS/20180905_defcen_parallelized_osiris.py"
     # script = "~/OSIRIS/20180909_2ndorderpoly_parallelized_osiris.py"
     # script = "~/OSIRIS/osirisextract/parallelized_osiris.py"
-    script = "~/OSIRIS/osirisextract/reduce_hr8799c_HPFonly.py"
+    script = "~/OSIRIS/osirisextract/reduce_hr8799c_HPFonly_cov.py"
     #script = "~/OSIRIS/osirisextract/classic_CCF.py"
     
     logdir = os.path.join(inputdir,"sherlock","logs")
