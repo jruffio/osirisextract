@@ -414,7 +414,7 @@ if __name__ == "__main__":
     print("CPU COUNT: {0}".format(mp.cpu_count()))
 
 
-    if 1:# HR 8799 c 20100715
+    if 0:# HR 8799 c 20100715
         # planet = "b"
         planet = "c"
         date = "100715"
