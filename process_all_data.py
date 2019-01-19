@@ -16,10 +16,13 @@ if 1:
     sep = 0.950
     #telluric = os.path.join(OSIRISDATA,"HR_8799_c/20100715/reduced_telluric/HD_210501","s100715_a005001_Kbb_020.fits")
     #template_spec = os.path.join(OSIRISDATA,"hr8799c_osiris_template.save")
-year = "*" #"20100715"
+#year = "*" 
+#year = "20100715"
+year = "20110723"
 reductionname = "reduced_jb"
 #filenamefilter = "s*_a*001_tlc_Kbb_020.fits"
-filenamefilter = "s*_020.fits"
+#filenamefilter = "s*_020.fits"
+filenamefilter = "s110723_a026001_Kbb_020.fits"
 
 filelist = glob.glob(os.path.join(OSIRISDATA,foldername,year,reductionname,filenamefilter))
 filelist.sort()
