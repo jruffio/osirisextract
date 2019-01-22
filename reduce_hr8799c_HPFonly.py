@@ -353,16 +353,16 @@ def _process_pixels_onlyHPF(real_k_indices,real_l_indices,row_indices,col_indice
                 # print(np.sqrt(tmp)*norma_sig)
                 # print(tmp.shape,HPFmodel.shape)
                 # exit()
-                minus2logL_HPF = Npixs_HPFdata*(1+np.log(HPFchi2/Npixs_HPFdata)+np.sum(sigmas**2)+np.log(2*np.pi))
+                minus2logL_HPF = Npixs_HPFdata*(1+np.log(HPFchi2/Npixs_HPFdata)+np.sum(2*np.log(sigmas))+np.log(2*np.pi))
                 # minus2logL_HPF_H1 = Npixs_HPFdata*np.log(HPFchi2_H1/Npixs_HPFdata)+1./Npixs_HPFdata
-                minus2logL_HPF_H0 = Npixs_HPFdata*(1+np.log(HPFchi2_H0/Npixs_HPFdata)+np.sum(sigmas**2)+np.log(2*np.pi))
+                minus2logL_HPF_H0 = Npixs_HPFdata*(1+np.log(HPFchi2_H0/Npixs_HPFdata)+np.sum(2*np.log(sigmas))+np.log(2*np.pi))
                 AIC_HPF = 2*(HPFmodel.shape[-1])+minus2logL_HPF
                 # AIC_HPF_H1 = 2*(HPFmodel_H1.shape[-1])+minus2logL_HPF_H1
                 AIC_HPF_H0 = 2*(HPFmodel_H0.shape[-1])+minus2logL_HPF_H0
 
                 covphi =  HPFchi2/Npixs_HPFdata*np.linalg.inv(np.dot(HPFmodel.T,HPFmodel))
                 slogdet_icovphi0 = np.linalg.slogdet(np.dot(HPFmodel.T,HPFmodel))
-                slogdet_Sigma = np.sum(np.log(sigmas**2))
+                slogdet_Sigma = np.sum(2*np.log(sigmas))
 
                 output_maps_np[0,row,col,wvshift_id] = HPFparas[0]
                 output_maps_np[1,row,col,wvshift_id] = np.sign(covphi[0,0])*np.sqrt(np.abs(covphi[0,0]))

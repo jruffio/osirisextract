@@ -277,9 +277,12 @@ def _process_pixels_onlyHPF(real_k_indices,real_l_indices,row_indices,col_indice
         ravelHPFdata = np.ravel(copy(HPFdata))
         ravelLPFdata = np.ravel(copy(LPFdata))
         HPFmodel_H0 = np.reshape(HPFmodel_H0,((2*w+1)**2*data_nz,HPFmodel_H0.shape[-1]))
+        where_bad_data = np.where(~(np.isfinite(np.ravel(HPFdata_badpix))))
+        # ravelLPFdata[where_bad_data] = 1
+        ravelHPFdata[where_bad_data] = 0
         # where_finite_data = np.where(np.isfinite(np.ravel(HPFdata_badpix))*(np.ravel(LPFdata)>0))
         # ravelLPFdata = ravelLPFdata[where_finite_data]
-        sigmas = np.sqrt(ravelLPFdata)
+        sigmas = np.sqrt(np.abs(ravelLPFdata))
         # ravelHPFdata = ravelHPFdata[where_finite_data]
         # ravelHPFdata = ravelHPFdata/sigmas
         # HPFmodel = HPFmodel[where_finite_data[0],:]
@@ -297,6 +300,7 @@ def _process_pixels_onlyHPF(real_k_indices,real_l_indices,row_indices,col_indice
 
         # dwv = wvs[1]-wvs[0]
         for wvshift_id in range(nshifts):
+            # print(wvshift_id)
             try:
             # if 1:
                 # planet_spec = planet_spec_func(wvs+(wvshift_id-nshifts//2)*dwv)
@@ -371,9 +375,9 @@ def _process_pixels_onlyHPF(real_k_indices,real_l_indices,row_indices,col_indice
                 # print(np.sqrt(tmp)*norma_sig)
                 # print(tmp.shape,HPFmodel.shape)
                 # exit()
-                minus2logL_HPF = Npixs_HPFdata*(1+np.log(HPFchi2/Npixs_HPFdata)+np.sum(sigmas**2)+np.log(2*np.pi))
+                minus2logL_HPF = Npixs_HPFdata*(1+np.log(HPFchi2/Npixs_HPFdata)+logdet_Sigma+np.log(2*np.pi))
                 # minus2logL_HPF_H1 = Npixs_HPFdata*np.log(HPFchi2_H1/Npixs_HPFdata)+1./Npixs_HPFdata
-                minus2logL_HPF_H0 = Npixs_HPFdata*(1+np.log(HPFchi2_H0/Npixs_HPFdata)+np.sum(sigmas**2)+np.log(2*np.pi))
+                minus2logL_HPF_H0 = Npixs_HPFdata*(1+np.log(HPFchi2_H0/Npixs_HPFdata)+logdet_Sigma+np.log(2*np.pi))
                 AIC_HPF = 2*(HPFmodel.shape[-1])+minus2logL_HPF
                 # AIC_HPF_H1 = 2*(HPFmodel_H1.shape[-1])+minus2logL_HPF_H1
                 AIC_HPF_H0 = 2*(HPFmodel_H0.shape[-1])+minus2logL_HPF_H0
@@ -447,8 +451,10 @@ if __name__ == "__main__":
         # planet_coords = [[11,32],[12,27],[12,33],[12,39],[10,33],[9,28],[8,38],[10,32.5],[9,32],[10,33],[10,35],[10,33], #in order: image 10 to 21
         #                  [7,34],[5,35],[8,35],[7.5,33],[9.5,34.5]]
         # file_centers = [[x-sep_planet/ 0.0203,y] for x,y in planet_coords]
-        numthreads = 25
+        numthreads = 28
         phoenix_folder = os.path.join("/home/sda/jruffio/osiris_data/phoenix")#"/home/sda/jruffio/osiris_data/phoenix/"
+
+        lcorr = 0.5
     else:
         inputDir = sys.argv[1]
         outputdir = sys.argv[2]
@@ -471,7 +477,7 @@ if __name__ == "__main__":
         # exit()
 
         phoenix_folder = os.path.join(os.path.dirname(filename),"..","..","..","phoenix")#"/home/sda/jruffio/osiris_data/phoenix/"
-        #nice -n 15 /home/anaconda/bin/python ./reduce_hr8799c_HPFonly.py /home/sda/jruffio/osiris_data/HR_8799_c/20100715/reduced_jb/ /home/sda/jruffio/osiris_data/HR_8799_c/20100715/reduced_jb/20181205_HPF_only/ /home/sda/jruffio/osiris_data/HR_8799_c/20100715/reduced_jb/s100715_a010001_Kbb_020.fits 15
+        #nice -n 15 /home/anaconda3/bin/python ./reduce_hr8799c_HPFonly_cov.py /home/sda/jruffio/osiris_data/HR_8799_c/20100715/reduced_jb/ /home/sda/jruffio/osiris_data/HR_8799_c/20100715/reduced_jb/20181205_HPF_only_covsearch/ /home/sda/jruffio/osiris_data/HR_8799_c/20100715/reduced_jb/s100715_a010001_Kbb_020.fits 28 0.5
 
     if IFSfilter=="Kbb": #Kbb 1965.0 0.25
         CRVAL1 = 1965.

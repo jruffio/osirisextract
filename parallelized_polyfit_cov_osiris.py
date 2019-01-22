@@ -361,7 +361,7 @@ if __name__ == "__main__":
         # file_centers = [[x-sep_planet/ 0.0203,y] for x,y in planet_coords]
         numthreads = 32
         centermode = "visu" #ADI #def
-        fileinfos_filename = "/home/sda/jruffio/pyOSIRIS/osirisextract/fileinfos_jb.xml"
+        # fileinfos_filename = "/home/sda/jruffio/pyOSIRIS/osirisextract/fileinfos_jb.xml"
 
         padding = 5
         planet_search = True
@@ -384,13 +384,13 @@ if __name__ == "__main__":
         star_spec  = sys.argv[6]
         numthreads = int(sys.argv[7])
         centermode = sys.argv[8]
-        fileinfos_filename = "/home/users/jruffio/OSIRIS/osirisextract/fileinfos_jb.xml"
+        # fileinfos_filename = "/home/users/jruffio/OSIRIS/osirisextract/fileinfos_jb.xml"
 
-    tree = ET.parse(fileinfos_filename)
-    root = tree.getroot()
+    # tree = ET.parse(fileinfos_filename)
+    # root = tree.getroot()
 
     filebasename = os.path.basename(filename)
-    planet_c = root.find("c")
+    # planet_c = root.find("c")
     fileelement = planet_c.find(filebasename)
     center = [float(fileelement.attrib["x"+centermode+"cen"]),float(fileelement.attrib["y"+centermode+"cen"])]
     sep_planet = float(fileelement.attrib["sep"])
