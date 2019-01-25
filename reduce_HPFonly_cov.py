@@ -599,9 +599,10 @@ if __name__ == "__main__":
             # real_k,real_l = 39,16
             # real_k,real_l = 39+5,12
 
-            wvshifts_array = np.arange(-3*dwv,3*dwv,dwv/100)
-            # dl_grid,dk_grid = np.array([[0]]),np.array([[0]])
+            # wvshifts_array = np.arange(-3*dwv,3*dwv,dwv/100)
+            dl_grid,dk_grid = np.array([[0]]),np.array([[0]])
             dl_grid,dk_grid = np.meshgrid(np.linspace(-1.5,1.5,4*20+1),np.linspace(-1.5,1.5,4*20+1))
+            # wvshifts_array = np.arange(-1*dwv,1*dwv,dwv)
 
             real_k,real_l = real_k+padding,real_l+padding
 
@@ -664,7 +665,7 @@ if __name__ == "__main__":
         else:
             x = np.arange(0,np.size(wvs),1)
             dx = (x[:,None]-x[None,:])
-            filename = "/home/sda/jruffio/osiris_data/HR_8799_c/20100715/reduced_jb/20181205_HPF_only/s100715_a010001_Kbb_020_outputHPF_cutoff80_sherlock_v0_test_autocorrres.fits"
+            filename = os.path.join(os.path.dirname(filename),"..","..","20100715/reduced_jb/20181205_HPF_only/s100715_a010001_Kbb_020_outputHPF_cutoff80_sherlock_v0_test_autocorrres.fits")
             hdulist = pyfits.open(filename)
             autocorr_cube = hdulist[0].data
             nz,ny,nx = autocorr_cube.shape

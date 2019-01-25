@@ -16,20 +16,23 @@ if 1:
     sep = 0.950
     #telluric = os.path.join(OSIRISDATA,"HR_8799_c/20100715/reduced_telluric/HD_210501","s100715_a005001_Kbb_020.fits")
     #template_spec = os.path.join(OSIRISDATA,"hr8799c_osiris_template.save")
-#year = "*" 
-year = "20100715"
+year = "*"
+# year = "20100715"
 # year = "20110723"
 reductionname = "reduced_jb"
 #filenamefilter = "s*_a*001_tlc_Kbb_020.fits"
 #filenamefilter = "s*_020.fits"
 # filenamefilter = "s110723_a026001_Kbb_020.fits"
 filenamefilter = "s100715_a010001_Kbb_020.fits"
+planet_search = 1 # pixel resolution entire FOV
+# planet_search = 0 # centroid only
 
 filelist = glob.glob(os.path.join(OSIRISDATA,foldername,year,reductionname,filenamefilter))
 filelist.sort()
-filename = filelist[0]
-# for filename in filelist:
-for lcorr in np.arange(0.1,2.0,0.1):
+# filename = filelist[0]
+# for lcorr in np.arange(0.1,2.0,0.1):
+for filename in filelist:
+    lcorr = 0
     print(filename)
     #continue
 
@@ -38,7 +41,7 @@ for lcorr in np.arange(0.1,2.0,0.1):
     #script = "~/OSIRIS/20180905_defcen_parallelized_osiris.py"
     # script = "~/OSIRIS/20180909_2ndorderpoly_parallelized_osiris.py"
     # script = "~/OSIRIS/osirisextract/parallelized_osiris.py"
-    script = "~/OSIRIS/osirisextract/reduce_hr8799c_HPFonly_cov.py"
+    script = "~/OSIRIS/osirisextract/reduce_HPFonly_cov.py"
     #script = "~/OSIRIS/osirisextract/classic_CCF.py"
     
     logdir = os.path.join(inputdir,"sherlock","logs")
@@ -49,8 +52,8 @@ for lcorr in np.arange(0.1,2.0,0.1):
 
     outputdir = os.path.join(inputdir,"sherlock","20190117_HPFonly_cov")
     numthreads = 16
-    bsub_str= 'sbatch --partition=hns,owners,iric --qos=normal --time=0-23:00:00 --mem=60G --output='+outfile+' --error='+errfile+' --nodes=1 --ntasks-per-node='+str(numthreads)+' --mail-type=END,FAIL,BEGIN --mail-user=jruffio@stanford.edu --wrap="python3 ' + script
-    params = ' {0} {1} {2} {3} {4}"'.format(inputdir,outputdir,filename,numthreads,lcorr)
+    bsub_str= 'sbatch --partition=hns,owners,iric --qos=normal --time=2-0:00:00 --mem=60G --output='+outfile+' --error='+errfile+' --nodes=1 --ntasks-per-node='+str(numthreads)+' --mail-type=END,FAIL,BEGIN --mail-user=jruffio@stanford.edu --wrap="python3 ' + script
+    params = ' {0} {1} {2} {3} {4} {5}"'.format(inputdir,outputdir,filename,numthreads,planet_search,lcorr)
     # if 1:
     #     cenmode = "visu"
     #     outputdir = os.path.join(inputdir,"sherlock","polyfit_"+cenmode+"cen")
@@ -67,6 +70,6 @@ for lcorr in np.arange(0.1,2.0,0.1):
     bsub_out = os.popen(bsub_str + params).read()
     print(bsub_out)
     #jobid_list.append(bsub_out.split(" ")[-1].strip('\n'))
-                    
+
+    exit()
     time.sleep(2)
-    #exit()
