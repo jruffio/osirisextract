@@ -6,7 +6,7 @@ import sys
 import glob
 import time
 
-#print("coucou")
+print("coucou")
 #os.system("module load python/3.6.1")
 
 
@@ -23,9 +23,9 @@ year = "*"
 reductionname = "reduced_jb"
 #filenamefilter = "s*_a*001_tlc_Kbb_020.fits"
 filenamefilter = "s*_020.fits"
-filenamefilter = "s101104_a03*001_Hbb_020.fits"
-planet_search = 1 # pixel resolution entire FOV
-# planet_search = 0 # centroid only
+#filenamefilter = "s101104_a03*001_Hbb_020.fits"
+#planet_search = 1 # pixel resolution entire FOV
+planet_search = 0 # centroid only
 
 filelist = glob.glob(os.path.join(OSIRISDATA,foldername,year,reductionname,filenamefilter))
 filelist.sort()
@@ -47,7 +47,7 @@ for filename in filelist:
     outfile = os.path.join(logdir,os.path.basename(script).replace(".py","")+"_"+os.path.basename(filename).replace(".fits",".out"))
     errfile = os.path.join(logdir,os.path.basename(script).replace(".py","")+"_"+os.path.basename(filename).replace(".fits",".err"))
 
-    outputdir = os.path.join(inputdir,"sherlock","20190117_HPFonly")
+    outputdir = os.path.join(inputdir,"sherlock","20190125_HPFonly")
     numthreads = 16
     bsub_str= 'sbatch --partition=hns,owners,iric --qos=normal --time=2-0:00:00 --mem=60G --output='+outfile+' --error='+errfile+' --nodes=1 --ntasks-per-node='+str(numthreads)+' --mail-type=END,FAIL,BEGIN --mail-user=jruffio@stanford.edu --wrap="python3 ' + script
     params = ' {0} {1} {2} {3} {4}"'.format(inputdir,outputdir,filename,numthreads,planet_search)
@@ -68,5 +68,5 @@ for filename in filelist:
     print(bsub_out)
     #jobid_list.append(bsub_out.split(" ")[-1].strip('\n'))
 
-    exit()
+    #exit()
     time.sleep(2)
