@@ -18,11 +18,12 @@ if 1:
     #template_spec = os.path.join(OSIRISDATA,"hr8799c_osiris_template.save")
 #year = "*" 
 #year = "20100715"
-year = "20110723"
+#year = "20110723"
+year = "20101104"
 reductionname = "reduced_jb"
 #filenamefilter = "s*_a*001_tlc_Kbb_020.fits"
-#filenamefilter = "s*_020.fits"
-filenamefilter = "s110723_a026001_Kbb_020.fits"
+filenamefilter = "s*_020.fits"
+filenamefilter = "s101104_a03*001_Hbb_020.fits"
 
 filelist = glob.glob(os.path.join(OSIRISDATA,foldername,year,reductionname,filenamefilter))
 filelist.sort()
