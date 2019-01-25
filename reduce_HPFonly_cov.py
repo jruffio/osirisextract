@@ -450,7 +450,7 @@ if __name__ == "__main__":
     print("CPU COUNT: {0}".format(mp.cpu_count()))
 
 
-    if 1:# HR 8799 c 20100715
+    if 0:# HR 8799 c 20100715
         # planet = "b"
         planet = "c"
         date = "100715"
@@ -599,8 +599,8 @@ if __name__ == "__main__":
             # real_k,real_l = 39,16
             # real_k,real_l = 39+5,12
 
-            # wvshifts_array = np.arange(-3*dwv,3*dwv,dwv/100)
-            dl_grid,dk_grid = np.array([[0]]),np.array([[0]])
+            wvshifts_array = np.arange(-3*dwv,3*dwv,dwv/100)
+            # dl_grid,dk_grid = np.array([[0]]),np.array([[0]])
             dl_grid,dk_grid = np.meshgrid(np.linspace(-1.5,1.5,4*20+1),np.linspace(-1.5,1.5,4*20+1))
             # wvshifts_array = np.arange(-1*dwv,1*dwv,dwv)
 
