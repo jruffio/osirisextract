@@ -16,27 +16,29 @@ if 1:
     sep = 0.950
     #telluric = os.path.join(OSIRISDATA,"HR_8799_c/20100715/reduced_telluric/HD_210501","s100715_a005001_Kbb_020.fits")
     #template_spec = os.path.join(OSIRISDATA,"hr8799c_osiris_template.save")
-#year = "*" 
+year = "*"
 #year = "20100715"
 #year = "20110723"
-year = "20101104"
+# year = "20101104"
 reductionname = "reduced_jb"
 #filenamefilter = "s*_a*001_tlc_Kbb_020.fits"
 filenamefilter = "s*_020.fits"
 filenamefilter = "s101104_a03*001_Hbb_020.fits"
+planet_search = 1 # pixel resolution entire FOV
+# planet_search = 0 # centroid only
 
 filelist = glob.glob(os.path.join(OSIRISDATA,foldername,year,reductionname,filenamefilter))
 filelist.sort()
 for filename in filelist:
     print(filename)
-    #continue
+    # continue
 
     inputdir = os.path.dirname(filename)
 
     #script = "~/OSIRIS/20180905_defcen_parallelized_osiris.py"
     # script = "~/OSIRIS/20180909_2ndorderpoly_parallelized_osiris.py"
     # script = "~/OSIRIS/osirisextract/parallelized_osiris.py"
-    script = "~/OSIRIS/osirisextract/reduce_hr8799c_HPFonly.py"
+    script = "~/OSIRIS/osirisextract/reduce_HPFonly_diagcov.py"
     #script = "~/OSIRIS/osirisextract/classic_CCF.py"
     
     logdir = os.path.join(inputdir,"sherlock","logs")
@@ -47,8 +49,8 @@ for filename in filelist:
 
     outputdir = os.path.join(inputdir,"sherlock","20190117_HPFonly")
     numthreads = 16
-    bsub_str= 'sbatch --partition=hns,owners,iric --qos=normal --time=0-10:00:00 --mem=60G --output='+outfile+' --error='+errfile+' --nodes=1 --ntasks-per-node='+str(numthreads)+' --mail-type=END,FAIL,BEGIN --mail-user=jruffio@stanford.edu --wrap="python3 ' + script
-    params = ' {0} {1} {2} {3}"'.format(inputdir,outputdir,filename,numthreads)
+    bsub_str= 'sbatch --partition=hns,owners,iric --qos=normal --time=2-0:00:00 --mem=60G --output='+outfile+' --error='+errfile+' --nodes=1 --ntasks-per-node='+str(numthreads)+' --mail-type=END,FAIL,BEGIN --mail-user=jruffio@stanford.edu --wrap="python3 ' + script
+    params = ' {0} {1} {2} {3} {4}"'.format(inputdir,outputdir,filename,numthreads,planet_search)
     # if 1:
     #     cenmode = "visu"
     #     outputdir = os.path.join(inputdir,"sherlock","polyfit_"+cenmode+"cen")
@@ -65,6 +67,6 @@ for filename in filelist:
     bsub_out = os.popen(bsub_str + params).read()
     print(bsub_out)
     #jobid_list.append(bsub_out.split(" ")[-1].strip('\n'))
-                    
+
+    exit()
     time.sleep(2)
-    #exit()

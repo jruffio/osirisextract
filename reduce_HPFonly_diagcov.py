@@ -66,14 +66,14 @@ def _arraytonumpy(shared_array, shape=None, dtype=None):
 
     return numpy_array
 
-def _tpool_init(original_imgs,badpix_imgs,originalLPF_imgs,originalHPF_imgs, original_imgs_shape, output_maps, output_maps_shape,wvs_imgs,psfs_stamps, psfs_stamps_shape):
+def _tpool_init(original_imgs,badpix_imgs,originalLPF_imgs,originalHPF_imgs, original_imgs_shape, output_maps, output_maps_shape,wvs_imgs,psfs_stamps,psfs_stamps_shape,_outres,_outres_shape,_outautocorrres,_outautocorrres_shape):
     """
     Initializer function for the thread pool that initializes various shared variables. Main things to note that all
     except the shapes are shared arrays (mp.Array).
 
     Args:
     """
-    global original,badpix,originalLPF,originalHPF, original_shape, output, output_shape, lambdas, img_center, psfs, psfs_shape, Npixproc, Npixtot
+    global original,badpix,originalLPF,originalHPF, original_shape, output, output_shape, lambdas, img_center, psfs, psfs_shape, Npixproc, Npixtot,outres,outres_shape,outautocorrres,outautocorrres_shape
     # original images from files to read and align&scale. Shape of (N,y,x)
     original = original_imgs
     badpix = badpix_imgs
@@ -83,6 +83,10 @@ def _tpool_init(original_imgs,badpix_imgs,originalLPF_imgs,originalHPF_imgs, ori
     # output images after KLIP processing (amplitude and ...) (5, y, x)
     output = output_maps
     output_shape = output_maps_shape
+    outres = _outres
+    outres_shape = _outres_shape
+    outautocorrres = _outautocorrres
+    outautocorrres_shape = _outautocorrres_shape
     # parameters for each image (PA, wavelegnth, image center, image number)
     lambdas = wvs_imgs
     psfs = psfs_stamps
@@ -92,7 +96,7 @@ def _tpool_init(original_imgs,badpix_imgs,originalLPF_imgs,originalHPF_imgs, ori
 
 
 def _remove_bad_pixels_z(col_index,nan_mask_boxsize,dtype,window_size=100,threshold=7.):
-    global original,badpix,originalLPF,originalHPF, original_shape, output, output_shape, lambdas, img_center, psfs, psfs_shape, Npixproc, Npixtot
+    global original,badpix,originalLPF,originalHPF, original_shape, output, output_shape, lambdas, img_center, psfs, psfs_shape, Npixproc, Npixtot,outres,outres_shape,outautocorrres,outautocorrres_shape
     original_np = _arraytonumpy(original, original_shape,dtype=dtype)
     tmpcube = copy(original_np[:,col_index,:])
     badpix_np = _arraytonumpy(badpix, original_shape,dtype=dtype)
@@ -118,7 +122,7 @@ def _remove_bad_pixels_z(col_index,nan_mask_boxsize,dtype,window_size=100,thresh
 
 
 def _HPF_z(col_index,cutoff,dtype):
-    global original,badpix,originalLPF,originalHPF, original_shape, output, output_shape, lambdas, img_center, psfs, psfs_shape, Npixproc, Npixtot
+    global original,badpix,originalLPF,originalHPF, original_shape, output, output_shape, lambdas, img_center, psfs, psfs_shape, Npixproc, Npixtot,outres,outres_shape,outautocorrres,outautocorrres_shape
     original_np = _arraytonumpy(original, original_shape,dtype=dtype)
     originalLPF_np = _arraytonumpy(originalLPF, original_shape,dtype=dtype)
     originalHPF_np = _arraytonumpy(originalHPF, original_shape,dtype=dtype)
@@ -147,7 +151,7 @@ def _HPF_z(col_index,cutoff,dtype):
         # # original_np[m,col_index,:] = original_np[m,col_index,:] - smooth_vec
 
 def _remove_edges(wvs_indices,nan_mask_boxsize,dtype):
-    global original,badpix,originalLPF,originalHPF, original_shape, output, output_shape, lambdas, img_center, psfs, psfs_shape, Npixproc, Npixtot
+    global original,badpix,originalLPF,originalHPF, original_shape, output, output_shape, lambdas, img_center, psfs, psfs_shape, Npixproc, Npixtot,outres,outres_shape,outautocorrres,outautocorrres_shape
     badpix_np = _arraytonumpy(badpix, original_shape,dtype=dtype)
     for k in wvs_indices:
         tmp = badpix_np[:,:,k]
@@ -159,7 +163,7 @@ def _remove_edges(wvs_indices,nan_mask_boxsize,dtype):
 
 
 def _remove_bad_pixels_xy(wvs_indices,dtype):
-    global original,badpix,originalLPF,originalHPF, original_shape, output, output_shape, lambdas, img_center, psfs, psfs_shape, Npixproc, Npixtot
+    global original,badpix,originalLPF,originalHPF, original_shape, output, output_shape, lambdas, img_center, psfs, psfs_shape, Npixproc, Npixtot,outres,outres_shape,outautocorrres,outautocorrres_shape
     original_np = _arraytonumpy(original, original_shape,dtype=dtype)
     badpix_np = _arraytonumpy(badpix, original_shape,dtype=dtype)
     for k in wvs_indices:
@@ -192,13 +196,15 @@ def LPFvsHPF(myvec,cutoff):
     HPF_myvec = myvec - LPF_myvec
     return LPF_myvec,HPF_myvec
 
-def _process_pixels_onlyHPF(real_k_indices,real_l_indices,row_indices,col_indices,normalized_psfs_func_list,tlc_spec_list,star_spec,planet_spec_func,wvs,wvshifts_array,dtype,cutoff,planet_search,centroid_guess):
-    global original,badpix,originalLPF,originalHPF, original_shape, output, output_shape, lambdas, img_center, psfs, psfs_shape, Npixproc, Npixtot
+def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indices,normalized_psfs_func_list,tlc_spec_list,star_spec,planet_spec_func,wvs,wvshifts_array,dtype,cutoff,planet_search,centroid_guess):
+    global original,badpix,originalLPF,originalHPF, original_shape, output, output_shape, lambdas, img_center, psfs, psfs_shape, Npixproc, Npixtot,outres,outres_shape,outautocorrres,outautocorrres_shape
     original_np = _arraytonumpy(original, original_shape,dtype=dtype)
     originalLPF_np = _arraytonumpy(originalLPF, original_shape,dtype=dtype)
     originalHPF_np = _arraytonumpy(originalHPF, original_shape,dtype=dtype)
     badpix_np = _arraytonumpy(badpix, original_shape,dtype=dtype)
     output_maps_np = _arraytonumpy(output_maps, output_maps_shape,dtype=dtype)
+    outres_np = _arraytonumpy(outres, outres_shape,dtype=dtype)
+    outautocorrres_np = _arraytonumpy(outautocorrres, outautocorrres_shape,dtype=dtype)
     nshifts = output_maps_shape[-1]
     psfs_tlc = _arraytonumpy(psfs, psfs_shape,dtype=dtype)
     padny,padnx,padnz = original_shape
@@ -215,12 +221,11 @@ def _process_pixels_onlyHPF(real_k_indices,real_l_indices,row_indices,col_indice
         meantlc_spec=[np.nanmean(np.concatenate(tlc_spec_list_tmp,axis=0),axis=0)]
         # HPFtlc_spec, LPFtlc_spec = LPFvsHPF(meantlc_spec,cutoff)
 
-    for real_k,real_l,row,col in zip(real_k_indices,real_l_indices,row_indices,col_indices):
+    for curr_k,curr_l,row,col in zip(curr_k_indices,curr_l_indices,row_indices,col_indices):
 
         if planet_search:
-            # real_k,real_l = 32+padding,-35.79802955665025+46.8+padding
-            k,l = int(np.round(real_k)),int(np.round(real_l))
-            # print(real_k,real_l,row,col)
+            k,l = int(np.round(curr_k)),int(np.round(curr_l))
+            # print(curr_k,curr_l,row,col)
             w = 2
         else:
             k,l = int(np.round(centroid_guess[0])),int(np.round(centroid_guess[1]))
@@ -234,7 +239,7 @@ def _process_pixels_onlyHPF(real_k_indices,real_l_indices,row_indices,col_indice
         HPFdata_badpix = badpix_np[k-w:k+w+1,l-w:l+w+1,:]
         data_ny,data_nx,data_nz = HPFdata.shape
 
-        x_vec, y_vec = np.arange(padnx * 1.)-real_l,np.arange(padny* 1.)-real_k
+        x_vec, y_vec = np.arange(padnx * 1.)-curr_l,np.arange(padny* 1.)-curr_k
         x_grid, y_grid = np.meshgrid(x_vec, y_vec)
         x_data_grid, y_data_grid = x_grid[k-w:k+w+1,l-w:l+w+1], y_grid[k-w:k+w+1,l-w:l+w+1]
 
@@ -249,18 +254,44 @@ def _process_pixels_onlyHPF(real_k_indices,real_l_indices,row_indices,col_indice
         # plt.figure(1)
         for tlc_lines in tlc_lines_list:
             # plt.plot(HPFtlc_spectrum)
-            for k in range(HPFpolydeg+1):
+            for kk in range(HPFpolydeg+1):
                 bkg_model = np.zeros((2*w+1,2*w+1,2*w+1,2*w+1,data_nz))
                 for bkg_k in range(2*w+1):
                     for bkg_l in range(2*w+1):
-                        myspec = LPFdata[bkg_k,bkg_l,:]*(tlc_lines*(wvs**k))/np.nansum(data[bkg_k,bkg_l,:])*np.nansum(meantlc_spec)
+                        myspec = LPFdata[bkg_k,bkg_l,:]*(tlc_lines*(wvs**kk))/np.nansum(data[bkg_k,bkg_l,:])*np.nansum(meantlc_spec)
                         bkg_model[bkg_k,bkg_l,bkg_k,bkg_l,:] = myspec#/np.nanstd(myspec)
                 HPFmodel_list.append(np.reshape(bkg_model,((2*w+1)**2,(2*w+1)**2*data_nz)).transpose())
+        HPFmodel_H0 = np.concatenate(HPFmodel_list,axis=1)
 
+        # HPFmodel_list2 = []
+        # funnytemplate = np.nansum(originalHPF_np[k-w-2:k+w+2+1,l-w-2:l+w+2+1,:],axis=(0,1))-np.nansum(originalHPF_np[k-w:k+w+1,l-w:l+w+1,:],axis=(0,1))
+        # funnytemplateLPF, funnytemplateHPF = LPFvsHPF(funnytemplate,cutoff)
+        # funnytemplateLines = (funnytemplateHPF/funnytemplateLPF)
+        # bkg_model2 = np.zeros((2*w+1,2*w+1,2*w+1,2*w+1,data_nz))
+        # for bkg_k in range(2*w+1):
+        #     for bkg_l in range(2*w+1):
+        #         print(bkg_k,bkg_l)
+        #         myspec2 = LPFdata[bkg_k,bkg_l,:]*(funnytemplateLines)/np.nansum(data[bkg_k,bkg_l,:])*np.nansum(funnytemplate)
+        #         bkg_model2[bkg_k,bkg_l,bkg_k,bkg_l,:] = myspec2#/np.nanstd(myspec)
+        # HPFmodel_list2.append(np.reshape(bkg_model2,((2*w+1)**2,(2*w+1)**2*data_nz)).transpose())
+        # HPFmodel2_H0 = np.concatenate(HPFmodel_list2,axis=1)
 
+        ravelHPFdata = np.ravel(copy(HPFdata))
+        ravelLPFdata = np.ravel(copy(LPFdata))
+        where_finite_data = np.where(np.isfinite(np.ravel(HPFdata_badpix))*(ravelLPFdata>0))
+        where_bad_data = np.where(~(np.isfinite(np.ravel(HPFdata_badpix))))
+        ravelLPFdata = ravelLPFdata[where_finite_data]
+        sigmas = np.sqrt(ravelLPFdata)
+        ravelHPFdata = ravelHPFdata[where_finite_data]
+        ravelHPFdata = ravelHPFdata/sigmas
+        logdet_Sigma = np.sum(2*np.log(sigmas))
+
+        HPFmodel_H0 = HPFmodel_H0[where_finite_data[0],:]/sigmas[:,None]
 
         # dwv = wvs[1]-wvs[0]
+        noshift_id = np.argmin(np.abs(wvshifts_array))
         for wvshift_id in range(nshifts):
+            # print(wvshift_id)
             try:
             # if 1:
                 # planet_spec = planet_spec_func(wvs+(wvshift_id-nshifts//2)*dwv)
@@ -272,8 +303,9 @@ def _process_pixels_onlyHPF(real_k_indices,real_l_indices,row_indices,col_indice
                 # plt.figure(2)
                 # plt.plot(HPFtlcplanet_spec)
                 HPFplanet_model = planet_model*(HPFtlcplanet_spec/np.nansum(LPFtlcplanet_spec+HPFtlcplanet_spec)*np.nansum(meantlc_spec))[None,None,:]
+                HPFplanet_model = np.ravel(HPFplanet_model)
 
-                HPFmodel = np.concatenate([np.ravel(HPFplanet_model)[:,None],]+HPFmodel_list,axis=1)
+                HPFmodel = np.concatenate([HPFplanet_model[where_finite_data[0],None]/sigmas[:,None],HPFmodel_H0],axis=1)
                 # plt.show()
 
                 # for bkg_k in range(2*w+1):
@@ -286,31 +318,16 @@ def _process_pixels_onlyHPF(real_k_indices,real_l_indices,row_indices,col_indice
                 #
                 # plt.show()
 
-                ravelHPFdata = np.ravel(copy(HPFdata))
-                ravelLPFdata = np.ravel(copy(LPFdata))
-                tmp_HPFplanet_model = np.ravel(HPFplanet_model)
-                HPFmodel = np.reshape(HPFmodel,((2*w+1)**2*data_nz,HPFmodel.shape[-1]))
-                where_finite_data = np.where(np.isfinite(np.ravel(HPFdata_badpix))*(np.ravel(LPFdata)>0))
-                # tmp_HPFplanet_model = tmp_HPFplanet_model[where_finite_data]
-                ravelLPFdata = ravelLPFdata[where_finite_data]
-                sigmas = np.sqrt(ravelLPFdata)
-                ravelHPFdata = ravelHPFdata[where_finite_data]
-                ravelHPFdata = ravelHPFdata/sigmas
-                HPFmodel = HPFmodel[where_finite_data[0],:]
+                # tmp_HPFplanet_model = np.ravel(HPFplanet_model)
+                # HPFmodel = np.reshape(HPFmodel,((2*w+1)**2*data_nz,HPFmodel.shape[-1]))
+                # if 1:
+                #
+                #     ravelHPFdata[where_bad_data] = 0
+                # # tmp_HPFplanet_model = tmp_HPFplanet_model[where_finite_data]
                 where_valid_parameters = np.where(np.sum(np.abs(HPFmodel),axis=0)!=0)
                 HPFmodel = HPFmodel[:,where_valid_parameters[0]]
-                HPFmodel = HPFmodel/sigmas[:,None]
-                HPFmodel_H0 = HPFmodel[:,1::]
-                HPFmodel_H1 = HPFmodel[:,0:1]
+                # HPFmodel_H1 = HPFmodel[:,0:1]
 
-                # plt.plot(ravelHPFdata)
-                # # print(LPFdata[np.where(LPFdata<=0)])
-                # plt.show()
-                # print(HPFmodel.shape)
-                # for k in range(HPFmodel.shape[-1]):
-                #     plt.plot(HPFmodel[:,k],label="{0}".format(k))
-                # plt.legend()
-                # plt.show()
 
                 # t1 = time.time()
                 HPFparas,HPFchi2,rank,s = np.linalg.lstsq(HPFmodel,ravelHPFdata,rcond=None)
@@ -321,10 +338,72 @@ def _process_pixels_onlyHPF(real_k_indices,real_l_indices,row_indices,col_indice
                 # data_model_H1 = np.dot(HPFmodel_H1,HPFparas_H1)
                 data_model_H0 = np.dot(HPFmodel_H0,HPFparas_H0)
                 deltachi2 = chi2ref-np.sum(ravelHPFdata**2)
-                HPFchi2 = np.nansum((data_model-ravelHPFdata)**2)
+                ravelresiduals = data_model-ravelHPFdata
+                HPFchi2 = np.nansum((ravelresiduals)**2)
                 # HPFchi2_H1 = np.nansum((data_model_H1-ravelHPFdata)**2)
                 HPFchi2_H0 = np.nansum((data_model_H0-ravelHPFdata)**2)
 
+                # import matplotlib.pyplot as plt
+                # a = np.std(ravelHPFdata*sigmas)
+                # b = np.std(ravelHPFdata)
+                # plt.plot(ravelHPFdata*sigmas,label="ori data")
+                # # plt.plot(ravelHPFdata/b*a,label="data")
+                # plt.plot(sigmas/np.max(sigmas)*np.std(ravelHPFdata*sigmas),label="LPF data")
+                # plt.plot(HPFmodel[:,0]*HPFparas[0]*sigmas,label="planet")
+                # plt.plot((data_model-HPFmodel[:,0]*HPFparas[0])*sigmas,label="star")
+                # plt.legend()
+
+
+                if wvshift_id == noshift_id:
+                    canvas_model = np.zeros((2*w+1,2*w+1,data_nz))
+                    canvas_model.shape = ((2*w+1)*(2*w+1)*data_nz,)
+                    canvas_model[where_finite_data] = (data_model-HPFparas[0]*HPFmodel[:,0])*sigmas
+                    canvas_model.shape = (2*w+1,2*w+1,data_nz)
+                    canvas_data = copy(HPFdata)
+                    canvas_data.shape = ((2*w+1)*(2*w+1)*data_nz,)
+                    canvas_data[where_bad_data] = 0
+                    canvas_data.shape = (2*w+1,2*w+1,nl)
+                    
+                    final_template = np.nansum(canvas_model,axis=(0,1))
+                    final_data = np.nansum(canvas_data,axis=(0,1))
+                    final_res = final_data-final_template
+                    outres_np[0,:,row,col] = final_data
+                    outres_np[1,:,row,col] = final_template
+                    outres_np[2,:,row,col] = final_res
+                    
+                    res_ccf = np.correlate(ravelresiduals,ravelresiduals,mode="same")
+                    res_ccf_argmax = np.argmax(res_ccf)
+                    outautocorrres_np[:,row,col] = res_ccf[(res_ccf_argmax-500):(res_ccf_argmax+500)]
+
+                # plt.plot(outautocorrres_np[:,row,col])
+                # plt.show()
+
+                # plt.figure(2)
+                # # plt.plot(np.correlate(ravelHPFdata*sigmas,(ravelHPFdata*sigmas)[0:nl],mode="same"),label="data-data")
+                # # plt.plot(np.correlate(ravelHPFdata*sigmas,HPFmodel[0:nl,1]*sigmas[0:nl],mode="same"),label="data-model")
+                # stellardwv_list = np.linspace(-10*dwv,10*dwv,201)
+                # stellardwvpix_list = np.linspace(-10,10,201)
+                # for kk in range(HPFmodel.shape[-1]-1):
+                #     print("coucou",kk)
+                #     # datadataCCF = np.correlate(ravelHPFdata*sigmas,(ravelHPFdata*sigmas)[0:nl],mode="same")
+                #     # datamodelCCF = np.correlate(ravelHPFdata*sigmas,HPFmodel[0:nl,1]*sigmas[0:nl],mode="same")
+                #     print(wvs.shape,(ravelHPFdata*sigmas)[kk*nl:(kk+1)*nl].shape)
+                #     f = interp1d(wvs,(ravelHPFdata*sigmas)[kk*nl:(kk+1)*nl],bounds_error=False)
+                #     datadataCCF = np.array([np.nansum((ravelHPFdata*sigmas)[kk*nl:(kk+1)*nl]*f(wvs-stellardwv)) for stellardwv in stellardwv_list])
+                #     datamodelCCF = np.array([np.nansum((ravelHPFdata*sigmas)[kk*nl:(kk+1)*nl]*stellar_temp_f[kk](wvs-stellardwv)) for stellardwv in stellardwv_list])
+                #     modelmodelCCF = np.array([np.nansum((stellar_temp_f[kk](wvs))*(stellar_temp_f[kk](wvs-stellardwv))) for stellardwv in stellardwv_list])
+                #     plt.subplot(2*w+1,2*w+1,kk+1)
+                #     plt.plot(stellardwvpix_list,datadataCCF/np.max(datadataCCF),label="data-data",alpha=0.5)
+                #     plt.plot(stellardwvpix_list,datamodelCCF/np.max(datamodelCCF),label="data-model",alpha=0.5)
+                #     plt.plot(stellardwvpix_list,modelmodelCCF/np.max(modelmodelCCF),label="model-model",alpha=0.5)
+                # plt.legend()
+                # plt.show()
+
+                # print(HPFmodel.shape)
+                # for k in range(HPFmodel.shape[-1]):
+                #     plt.plot(HPFmodel[:,k],label="{0}".format(k))
+                # plt.legend()
+                # plt.show()
 
                 # plt.figure(1)
                 # plt.plot(HPFdata,label="HPFdata")
@@ -353,16 +432,15 @@ def _process_pixels_onlyHPF(real_k_indices,real_l_indices,row_indices,col_indice
                 # print(np.sqrt(tmp)*norma_sig)
                 # print(tmp.shape,HPFmodel.shape)
                 # exit()
-                minus2logL_HPF = Npixs_HPFdata*(1+np.log(HPFchi2/Npixs_HPFdata)+np.sum(2*np.log(sigmas))+np.log(2*np.pi))
+                minus2logL_HPF = Npixs_HPFdata*(1+np.log(HPFchi2/Npixs_HPFdata)+logdet_Sigma+np.log(2*np.pi))
                 # minus2logL_HPF_H1 = Npixs_HPFdata*np.log(HPFchi2_H1/Npixs_HPFdata)+1./Npixs_HPFdata
-                minus2logL_HPF_H0 = Npixs_HPFdata*(1+np.log(HPFchi2_H0/Npixs_HPFdata)+np.sum(2*np.log(sigmas))+np.log(2*np.pi))
+                minus2logL_HPF_H0 = Npixs_HPFdata*(1+np.log(HPFchi2_H0/Npixs_HPFdata)+logdet_Sigma+np.log(2*np.pi))
                 AIC_HPF = 2*(HPFmodel.shape[-1])+minus2logL_HPF
                 # AIC_HPF_H1 = 2*(HPFmodel_H1.shape[-1])+minus2logL_HPF_H1
                 AIC_HPF_H0 = 2*(HPFmodel_H0.shape[-1])+minus2logL_HPF_H0
 
                 covphi =  HPFchi2/Npixs_HPFdata*np.linalg.inv(np.dot(HPFmodel.T,HPFmodel))
                 slogdet_icovphi0 = np.linalg.slogdet(np.dot(HPFmodel.T,HPFmodel))
-                slogdet_Sigma = np.sum(2*np.log(sigmas))
 
                 output_maps_np[0,row,col,wvshift_id] = HPFparas[0]
                 output_maps_np[1,row,col,wvshift_id] = np.sign(covphi[0,0])*np.sqrt(np.abs(covphi[0,0]))
@@ -373,9 +451,9 @@ def _process_pixels_onlyHPF(real_k_indices,real_l_indices,row_indices,col_indice
                 output_maps_np[6,row,col,wvshift_id] = deltachi2
                 output_maps_np[7,row,col,wvshift_id] = HPFchi2+deltachi2
                 output_maps_np[8,row,col,wvshift_id] = HPFchi2/Npixs_HPFdata
-                output_maps_np[9,row,col,wvshift_id] = slogdet_Sigma
+                output_maps_np[9,row,col,wvshift_id] = logdet_Sigma
                 output_maps_np[10,row,col,wvshift_id] = slogdet_icovphi0[1]
-                output_maps_np[11,row,col,wvshift_id] = -0.5*slogdet_Sigma-0.5*slogdet_icovphi0[1]- (Npixs_HPFdata-HPFmodel.shape[-1]+2-1)/(2)*np.log(HPFchi2+deltachi2)
+                output_maps_np[11,row,col,wvshift_id] = -0.5*logdet_Sigma-0.5*slogdet_icovphi0[1]- (Npixs_HPFdata-HPFmodel.shape[-1]+2-1)/(2)*np.log(HPFchi2+deltachi2)
                 # print(output_maps_np[:,row,col,wvshift_id])
             except:
                 pass
@@ -409,11 +487,11 @@ if __name__ == "__main__":
         IFSfilter = "Kbb"
         # IFSfilter = "Hbb" # "Kbb" or "Hbb"
         inputDir = "/home/sda/jruffio/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/"
-        outputdir = "/home/sda/jruffio/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/20181120_out/"
+        #outputdir = "/home/sda/jruffio/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/20181120_out/"
         outputdir = "/home/sda/jruffio/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/20181205_HPF_only/"
         filelist = glob.glob(os.path.join(inputDir,"s"+date+"*"+IFSfilter+"_020.fits"))
         filelist.sort()
-        # filename = filelist[12]
+        filelist = filelist[0:1]
         # psfs_tlc_filename = "/home/sda/jruffio/osiris_data/HR_8799_c/20"+date+"/reduced_telluric_JB/HD_210501/s"+date+"_a005002_Kbb_020_psfs.fits"
         psfs_tlc_filelist = glob.glob("/home/sda/jruffio/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_telluric_jb/*/s*"+IFSfilter+"_020_psfs.fits")
         # psfs_tlc_filelist = [psfs_tlc_filelist[0]]
@@ -429,11 +507,13 @@ if __name__ == "__main__":
         # file_centers = [[x-sep_planet/ 0.0203,y] for x,y in planet_coords]
         numthreads = 25
         phoenix_folder = os.path.join("/home/sda/jruffio/osiris_data/phoenix")#"/home/sda/jruffio/osiris_data/phoenix/"
+        planet_search = False
     else:
         inputDir = sys.argv[1]
         outputdir = sys.argv[2]
         filename = sys.argv[3]
         numthreads = int(sys.argv[4])
+        planet_search = bool(int(sys.argv[5]))
         # star_spec_filename  = sys.argv[6]
         # centermode = sys.argv[8]
 
@@ -450,7 +530,7 @@ if __name__ == "__main__":
         # exit()
 
         phoenix_folder = os.path.join(os.path.dirname(filename),"..","..","..","phoenix")#"/home/sda/jruffio/osiris_data/phoenix/"
-        #nice -n 15 /home/anaconda/bin/python ./reduce_hr8799c_HPFonly.py /home/sda/jruffio/osiris_data/HR_8799_c/20100715/reduced_jb/ /home/sda/jruffio/osiris_data/HR_8799_c/20100715/reduced_jb/20181205_HPF_only/ /home/sda/jruffio/osiris_data/HR_8799_c/20100715/reduced_jb/s100715_a010001_Kbb_020.fits 15
+        #nice -n 15 /home/anaconda3/bin/python ./reduce_HPFonly_diagcov.py /home/sda/jruffio/osiris_data/HR_8799_c/20100715/reduced_jb/ /home/sda/jruffio/osiris_data/HR_8799_c/20100715/reduced_jb/20181205_HPF_only_sherlock_test/ /home/sda/jruffio/osiris_data/HR_8799_c/20100715/reduced_jb/s100715_a010001_Kbb_020.fits 20 1
 
     if IFSfilter=="Kbb": #Kbb 1965.0 0.25
         CRVAL1 = 1965.
@@ -465,27 +545,12 @@ if __name__ == "__main__":
     dwv = CDELT1/1000.
 
     padding = 5
-    planet_search = True
-    debug = False
-    # real_k,real_l = 2,2
-    real_k,real_l = 32,-35.79802955665025+46.8
-    # real_k,real_l = 50,15
-    # real_k,real_l = 32+padding-10,-35.79802955665025+46.8+padding
-    # real_k,real_l = 51,17
-    # real_k,real_l = 39,16
-    # real_k,real_l = 39+5,12
-    #for astro
-    real_k,real_l = real_k+padding,real_l+padding
-    # dl_grid,dk_grid = np.meshgrid(np.linspace(-0.5,0.5,4*10),np.linspace(-0.5,0.5,4*10))
-    dl_grid,dk_grid = np.array([[0]]),np.array([[0]])
 
-    wvshifts_array = np.concatenate([np.arange(-2*dwv,2*dwv,dwv/100),np.arange(-100*dwv,100*dwv,dwv)])
-    # wvshifts_array = np.arange(-2*dwv,2*dwv,dwv/50)
-    # wvshifts_array = np.linspace(-1.1*dwv,-.7*dwv,40)#np.arange(-1.1*dwv,-.8*dwv,dwv/100)
 
     dtype = ctypes.c_float
     nan_mask_boxsize=3
     cutoff = 80#80
+    debug = False
 
     # prihdr_list = []
     # for filename in filelist[0:10]:
@@ -512,16 +577,53 @@ if __name__ == "__main__":
     #     filename2 = filelist[3]
     #     suffix = "HPF_cutoff{0}_new_sig_phoenix_wvshift_centroid".format(cutoff)
     #     suffix = "HPF_cutoff{0}_new_sig_phoenix_wvshift_normalcruncher".format(cutoff)
-        suffix = "HPF_cutoff{0}_sherlock_v0".format(cutoff)
 
-        # hdulist = pyfits.HDUList()
-        # hdulist.append(pyfits.PrimaryHDU(data=wvshifts_array))
-        # try:
-        #     hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_output"+suffix+"_wvshifts.fits")), overwrite=True)
-        # except TypeError:
-        #     hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_output"+suffix+"_wvshifts.fits")), clobber=True)
-        # hdulist.close()
-        # exit()
+
+        if planet_search:
+            suffix = "HPF_cutoff{0}_sherlock_v1_search".format(cutoff)
+            wvshifts_array = np.concatenate([np.arange(-2*dwv,2*dwv,dwv/100),np.arange(-100*dwv,100*dwv,dwv)])
+            # wvshifts_array = np.arange(-1*dwv,1*dwv,dwv)
+            # wvshifts_array = np.linspace(-1.1*dwv,-.7*dwv,40)#np.arange(-1.1*dwv,-.8*dwv,dwv/100)
+            real_k,real_l = np.nan,np.nan
+        else:
+            suffix = "HPF_cutoff{0}_sherlock_v1_centroid".format(cutoff)
+            fileinfos_filename = os.path.join(inputDir,"..","..","fileinfos_"+IFSfilter+"_jb.csv")
+
+            #read file
+            with open(fileinfos_filename, 'r') as csvfile:
+                csv_reader = csv.reader(csvfile, delimiter=';')
+                list_table = list(csv_reader)
+                colnames = list_table[0]
+                N_col = len(colnames)
+                list_data = list_table[1::]
+                N_lines =  len(list_data)
+
+            filename_id = colnames.index("filename")
+            cen_filename_id = colnames.index("cen filename")
+            kcen_id = colnames.index("kcen")
+            lcen_id = colnames.index("lcen")
+            rvcen_id = colnames.index("RVcen")
+
+            filelist = [item[filename_id] for item in list_data]
+
+            fileid = filelist.index(filename)
+            fileitem = list_data[fileid]
+
+            real_k,real_l = float(fileitem[kcen_id]),float(fileitem[lcen_id])
+            # real_k,real_l = 32-10,-35.79802955665025+46.8
+            # real_k,real_l = 50,15
+            # real_k,real_l = 32+padding-10,-35.79802955665025+46.8+padding
+            # real_k,real_l = 51,17
+            # real_k,real_l = 39,16
+            # real_k,real_l = 39+5,12
+
+            wvshifts_array = np.arange(-3*dwv,3*dwv,dwv/100)
+            # wvshifts_array = np.arange(-1*dwv,1*dwv,dwv)
+            dl_grid,dk_grid = np.meshgrid(np.linspace(-1.5,1.5,4*20+1),np.linspace(-1.5,1.5,4*20+1))
+            # dl_grid,dk_grid = np.array([[0]]),np.array([[0]])
+
+            real_k,real_l = real_k+padding,real_l+padding
+
         if not os.path.exists(os.path.join(outputdir)):
             os.makedirs(os.path.join(outputdir))
 
@@ -724,10 +826,26 @@ if __name__ == "__main__":
             output_maps = mp.Array(dtype, nout*padny*padnx*nshifts)
             output_maps_shape = (nout,padny,padnx,nshifts)
         else:
-            output_maps_shape = (nout,dl_grid.shape[0],dl_grid.shape[1],nshifts)
             output_maps = mp.Array(dtype, nout*dl_grid.shape[0]*dl_grid.shape[1]*nshifts)
+            output_maps_shape = (nout,dl_grid.shape[0],dl_grid.shape[1],nshifts)
         output_maps_np = _arraytonumpy(output_maps,output_maps_shape,dtype=dtype)
         output_maps_np[:] = np.nan
+        if planet_search:
+            outres = mp.Array(dtype, 3*padny*padnx*padimgs.shape[-1])
+            outres_shape = (3,padimgs.shape[-1],padny,padnx)
+        else:
+            outres = mp.Array(dtype, 3*dl_grid.shape[0]*dl_grid.shape[1]*padimgs.shape[-1])
+            outres_shape = (3,padimgs.shape[-1],dl_grid.shape[0],dl_grid.shape[1])
+        outres_np = _arraytonumpy(outres,outres_shape,dtype=dtype)
+        outres_np[:] = np.nan
+        if planet_search:
+            outautocorrres = mp.Array(dtype, padny*padnx*1000)
+            outautocorrres_shape = (1000,padny,padnx)
+        else:
+            outautocorrres = mp.Array(dtype, dl_grid.shape[0]*dl_grid.shape[1]*1000)
+            outautocorrres_shape = (1000,dl_grid.shape[0],dl_grid.shape[1])
+        outautocorrres_np = _arraytonumpy(outautocorrres,outautocorrres_shape,dtype=dtype)
+        outautocorrres_np[:] = np.nan
         wvs_imgs = wvs
         psfs_stamps = mp.Array(dtype, np.size(psfs_tlc))
         psfs_stamps_shape = psfs_tlc.shape
@@ -739,7 +857,7 @@ if __name__ == "__main__":
         # INIT threads and shared memory
         tpool = mp.Pool(processes=numthreads, initializer=_tpool_init,
                         initargs=(original_imgs,badpix_imgs,originalLPF_imgs,originalHPF_imgs, original_imgs_shape, output_maps,
-                                  output_maps_shape,wvs_imgs,psfs_stamps, psfs_stamps_shape),
+                                  output_maps_shape,wvs_imgs,psfs_stamps, psfs_stamps_shape,outres,outres_shape,outautocorrres,outautocorrres_shape),
                         maxtasksperchild=50)
 
 
@@ -872,7 +990,7 @@ if __name__ == "__main__":
 
         if debug:
             _tpool_init(original_imgs,badpix_imgs,originalLPF_imgs,originalHPF_imgs, original_imgs_shape, output_maps,
-                                      output_maps_shape,wvs_imgs,psfs_stamps, psfs_stamps_shape)
+                                      output_maps_shape,wvs_imgs,psfs_stamps, psfs_stamps_shape,outres,outres_shape,outautocorrres,outautocorrres_shape)
             _process_pixels_onlyHPF(real_k_valid_pix[::-1],real_l_valid_pix[::-1],row_valid_pix[::-1],col_valid_pix[::-1],
                                     normalized_psfs_func_list,tlc_spec_list,star_spec,planet_spec_func,wvs_imgs,wvshifts_array,
                                     dtype,cutoff,planet_search,(real_k,real_l))
@@ -920,6 +1038,22 @@ if __name__ == "__main__":
             hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_output"+suffix+"_wvshifts.fits")), overwrite=True)
         except TypeError:
             hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_output"+suffix+"_wvshifts.fits")), clobber=True)
+        hdulist.close()
+    
+        hdulist = pyfits.HDUList()
+        hdulist.append(pyfits.PrimaryHDU(data=outres_np))
+        try:
+            hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_output"+suffix+"_res.fits")), overwrite=True)
+        except TypeError:
+            hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_output"+suffix+"_res.fits")), clobber=True)
+        hdulist.close()
+    
+        hdulist = pyfits.HDUList()
+        hdulist.append(pyfits.PrimaryHDU(data=outautocorrres_np))
+        try:
+            hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_output"+suffix+"_autocorrres.fits")), overwrite=True)
+        except TypeError:
+            hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_output"+suffix+"_autocorrres.fits")), clobber=True)
         hdulist.close()
 
         if not planet_search:
