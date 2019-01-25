@@ -5,6 +5,7 @@ import os
 import sys
 import glob
 import time
+import datetime
 
 print("coucou")
 #os.system("module load python/3.6.1")
@@ -44,8 +45,9 @@ for filename in filelist:
     logdir = os.path.join(inputdir,"sherlock","logs")
     if not os.path.exists(logdir):
         os.makedirs(logdir)
-    outfile = os.path.join(logdir,os.path.basename(script).replace(".py","")+"_"+os.path.basename(filename).replace(".fits",".out"))
-    errfile = os.path.join(logdir,os.path.basename(script).replace(".py","")+"_"+os.path.basename(filename).replace(".fits",".err"))
+    now = "{date:%Y%m%d_%H%M%S}_".format(date=datetime.datetime.now())
+    outfile = os.path.join(logdir,now+os.path.basename(script).replace(".py","")+"_"+os.path.basename(filename).replace(".fits","{0}.out".format(planet_search)))
+    errfile = os.path.join(logdir,now+os.path.basename(script).replace(".py","")+"_"+os.path.basename(filename).replace(".fits","{0}.err".format(planet_search)))
 
     outputdir = os.path.join(inputdir,"sherlock","20190125_HPFonly")
     numthreads = 16
