@@ -511,7 +511,7 @@ if __name__ == "__main__":
         # exit()
 
         phoenix_folder = os.path.join(os.path.dirname(filename),"..","..","..","phoenix")#"/home/sda/jruffio/osiris_data/phoenix/"
-        #nice -n 15 /home/anaconda3/bin/python ./reduce_HPFonly_cov.py /home/sda/jruffio/osiris_data/HR_8799_c/20100715/reduced_jb/ /home/sda/jruffio/osiris_data/HR_8799_c/20100715/reduced_jb/20181205_HPF_only_sherlock_test/ /home/sda/jruffio/osiris_data/HR_8799_c/20100715/reduced_jb/s100715_a010001_Kbb_020.fits 20 0
+        #nice -n 15 /home/anaconda3/bin/python ./reduce_HPFonly_cov.py /home/sda/jruffio/osiris_data/HR_8799_c/20100715/reduced_jb/ /home/sda/jruffio/osiris_data/HR_8799_c/20100715/reduced_jb/20181205_HPF_only_sherlock_test/ /home/sda/jruffio/osiris_data/HR_8799_c/20100715/reduced_jb/s100715_a010001_Kbb_020.fits 20 0 0
 
     if IFSfilter=="Kbb": #Kbb 1965.0 0.25
         CRVAL1 = 1965.
@@ -586,10 +586,11 @@ if __name__ == "__main__":
             lcen_id = colnames.index("lcen")
             rvcen_id = colnames.index("RVcen")
 
-            filelist = [item[filename_id] for item in list_data]
+            filelist = [os.path.basename(item[filename_id]) for item in list_data]
 
-            fileid = filelist.index(filename)
+            fileid = filelist.index(os.path.basename(filename))
             fileitem = list_data[fileid]
+            print(os.path.basename(filename), fileitem)
 
             real_k,real_l = float(fileitem[kcen_id]),float(fileitem[lcen_id])
             # real_k,real_l = 32-10,-35.79802955665025+46.8
