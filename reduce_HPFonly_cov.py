@@ -670,7 +670,7 @@ if __name__ == "__main__":
             # autocorrresfilename = os.path.join(os.path.dirname(filename),"..","..","20100715/reduced_jb/20181205_HPF_only/s100715_a010001_Kbb_020_outputHPF_cutoff80_sherlock_v0_test_autocorrres.fits")
             # print(autocorrresfilename)
             autocorrresfilename = glob.glob(os.path.join(os.path.dirname(filename),"sherlock/20190125_HPFonly",
-                               os.path.basename(filename).replace(".fits","_outputHPF_cutoff{0}".format(cutoff)+"*_autocorrres.fits")))[0]
+                               os.path.basename(filename).replace(".fits","_outputHPF_cutoff{0}".format(cutoff)+"*search_autocorrres.fits")))[0]
             # print(autocorrresfilename)
             # print(glob.glob(autocorrresfilename))
             # exit()
