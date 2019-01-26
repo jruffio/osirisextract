@@ -363,7 +363,22 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
                     canvas_data.shape = ((2*w+1)*(2*w+1)*data_nz,)
                     canvas_data[where_bad_data] = 0
                     canvas_data.shape = (2*w+1,2*w+1,nl)
-                    
+                    canvas_res = canvas_data-canvas_model
+
+                    # if 1: # spatial residuals
+                    #     xx, yy = np.meshgrid(np.arange(0,w+1,1), np.arange(0,w+1,1))
+                    #     rr = np.sqrt(xx**2+yy**2)
+                    #     spatial_autocorr = np.zeros((w+1,w+1))
+                    #     for m in np.arange(0,w,1):
+                    #         for n in np.arange(0,w,1):
+                    #             # if m==0 and n==0:
+                    #             #     spatial_autocorr[m,n] = np.nansum(canvas_res**2)/np.size(canvas_res)
+                    #             # else:
+                    #             spatial_autocorr[m,n] = np.nansum(canvas_res[m::,n::,:]*canvas_res[0:(2*w+1-m),0:(2*w+1-n),:])/np.size(canvas_res[m::,n::,:])
+                    #     import matplotlib.pyplot as plt
+                    #     plt.plot(np.ravel(rr),np.ravel(spatial_autocorr)/np.max(np.ravel(spatial_autocorr)),"x")
+                    #     plt.show()
+                    #     exit()
                     final_template = np.nansum(canvas_model,axis=(0,1))
                     final_data = np.nansum(canvas_data,axis=(0,1))
                     final_res = final_data-final_template

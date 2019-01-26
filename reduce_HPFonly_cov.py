@@ -453,9 +453,9 @@ if __name__ == "__main__":
     if 0:# HR 8799 c 20100715
         # planet = "b"
         planet = "c"
-        date = "100715"
+        # date = "100715"
         # date = "101104"
-        # date = "110723"
+        date = "110723"
         # date = "*"
         # planet = "d"
         # date = "150720"
@@ -485,7 +485,7 @@ if __name__ == "__main__":
         # file_centers = [[x-sep_planet/ 0.0203,y] for x,y in planet_coords]
         numthreads = 25
         phoenix_folder = os.path.join("/home/sda/jruffio/osiris_data/phoenix")#"/home/sda/jruffio/osiris_data/phoenix/"
-        planet_search = False
+        planet_search = True
 
         lcorr = 0.5
     else:
@@ -511,7 +511,8 @@ if __name__ == "__main__":
         # exit()
 
         phoenix_folder = os.path.join(os.path.dirname(filename),"..","..","..","phoenix")#"/home/sda/jruffio/osiris_data/phoenix/"
-        #nice -n 15 /home/anaconda3/bin/python ./reduce_HPFonly_cov.py /home/sda/jruffio/osiris_data/HR_8799_c/20100715/reduced_jb/ /home/sda/jruffio/osiris_data/HR_8799_c/20100715/reduced_jb/20181205_HPF_only_sherlock_test/ /home/sda/jruffio/osiris_data/HR_8799_c/20100715/reduced_jb/s100715_a010001_Kbb_020.fits 20 0 0
+        #nice -n 15 /home/anaconda3/bin/python ./reduce_HPFonly_cov.py /home/sda/jruffio/osiris_data/HR_8799_c/20100715/reduced_jb/ /home/sda/jruffio/osiris_data/HR_8799_c/20100715/reduced_jb/20181205_HPF_only_sherlock_test/ /home/sda/jruffio/osiris_data/HR_8799_c/20100715/reduced_jb/s100715_a010001_Kbb_020.fits 20 1 0
+        #nice -n 15 /home/anaconda3/bin/python ./reduce_HPFonly_cov.py /home/sda/jruffio/osiris_data/HR_8799_c/20110723/reduced_jb/ /home/sda/jruffio/osiris_data/HR_8799_c/20110723/reduced_jb/20181205_HPF_only_sherlock_test/ /home/sda/jruffio/osiris_data/HR_8799_c/20110723/reduced_jb/s110723_a033001_Kbb_020.fits 20 1 0
 
     if IFSfilter=="Kbb": #Kbb 1965.0 0.25
         CRVAL1 = 1965.
@@ -666,8 +667,14 @@ if __name__ == "__main__":
         else:
             x = np.arange(0,np.size(wvs),1)
             dx = (x[:,None]-x[None,:])
-            filename = os.path.join(os.path.dirname(filename),"..","..","20100715/reduced_jb/20181205_HPF_only/s100715_a010001_Kbb_020_outputHPF_cutoff80_sherlock_v0_test_autocorrres.fits")
-            hdulist = pyfits.open(filename)
+            # autocorrresfilename = os.path.join(os.path.dirname(filename),"..","..","20100715/reduced_jb/20181205_HPF_only/s100715_a010001_Kbb_020_outputHPF_cutoff80_sherlock_v0_test_autocorrres.fits")
+            # print(autocorrresfilename)
+            autocorrresfilename = glob.glob(os.path.join(os.path.dirname(filename),"sherlock/20190125_HPFonly",
+                               os.path.basename(filename).replace(".fits","_outputHPF_cutoff{0}".format(cutoff)+"*_autocorrres.fits")))[0]
+            # print(autocorrresfilename)
+            # print(glob.glob(autocorrresfilename))
+            # exit()
+            hdulist = pyfits.open(autocorrresfilename)
             autocorr_cube = hdulist[0].data
             nz,ny,nx = autocorr_cube.shape
             avg_autocorr = np.nanmean(autocorr_cube,axis=(1,2))
@@ -678,20 +685,25 @@ if __name__ == "__main__":
             import matplotlib.pyplot as plt
             mus,vs= np.linalg.eig(cov)
             print(mus.shape,vs.shape)
+            where_negmus = np.where(mus<=0.01)
+            mus[where_negmus] = 0.01
             mus_argsort = np.argsort(mus)
             mus = mus[mus_argsort[::-1]]
             vs = vs[:,mus_argsort[::-1]]
-            mus[1600::] = 0.01
+            # mus[1600::] = 0.01
             recons_cov = np.dot(vs,np.dot(np.diag(mus),vs.T))
             # plt.figure(1)
             # plt.plot(mus)
             # plt.figure(2)
             # plt.subplot(1,3,1)
             # plt.imshow(cov,interpolation="nearest")
+            # plt.colorbar()
             # plt.subplot(1,3,2)
             # plt.imshow(recons_cov,interpolation="nearest")
+            # plt.colorbar()
             # plt.subplot(1,3,3)
-            # plt.imshow(cov-recons_cov,interpolation="nearest")
+            # plt.imshow((cov-recons_cov),interpolation="nearest")
+            # plt.colorbar()
             # plt.show()
 
             cov = recons_cov
@@ -699,6 +711,7 @@ if __name__ == "__main__":
         import scipy.linalg as sclin
         U = sclin.cholesky(cov)
         iU = np.linalg.inv(U)
+        # exit()
 
         with open(template_spec_filename, 'r') as csvfile:
             csv_reader = csv.reader(csvfile, delimiter=' ')
