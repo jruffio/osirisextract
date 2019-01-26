@@ -15,11 +15,11 @@ out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
 tree = ET.parse(fileinfos_filename)
 root = tree.getroot()
 
-# planet = "c"
-planet = "d"
+planet = "c"
+# planet = "d"
 
-IFSfilter = "Kbb"
-# IFSfilter = "Hbb"
+# IFSfilter = "Kbb"
+IFSfilter = "Hbb"
 
 fileinfos_filename = "/home/sda/jruffio/osiris_data/HR_8799_"+planet+"/fileinfos_"+IFSfilter+"_jb.csv"
 
@@ -50,7 +50,7 @@ for filename in filelist_sorted:
     new_list_data.append(list_data[filelist.index(filename)])
 list_data=new_list_data
 
-# plot detection
+# plot 2D images
 if 0:
     if IFSfilter=="Kbb": #Kbb 1965.0 0.25
         CRVAL1 = 1965.
@@ -112,7 +112,7 @@ if 0:
     exit()
 
 # plot CCF
-if 0:
+if 1:
     if IFSfilter=="Kbb": #Kbb 1965.0 0.25
         CRVAL1 = 1965.
         CDELT1 = 0.25
@@ -157,12 +157,30 @@ if 0:
         zcenhd = np.argmin(np.abs(rvshifts_hd-rvcen))
         zcen = np.argmin(np.abs(rvshifts-rvcen))
 
+        SNR_data = hdulist[0].data[0,Nwvshifts_hd::,:,:]/hdulist[0].data[1,Nwvshifts_hd::,:,:]
+        SNR_data_cp = copy(SNR_data)
+        SNR_data_cp[np.where(np.abs(SNR_data)>100)] = np.nan
+        SNR_data_cp[98:103,:,:] = np.nan
+        stdSNR = np.nanstd(SNR_data_cp)
+        SNR_data_calib = SNR_data/stdSNR
+
+        # if np.isnan(np.nanstd(SNR_data_cp)):
+        #     plt.figure(1)
+        #     plt.subplot(1,3,1)
+        #     plt.imshow(SNR_data[100,:,:],interpolation="nearest")
+        #     plt.subplot(1,3,2)
+        #     plt.imshow(np.nanstd(SNR_data_cp,axis=0),interpolation="nearest")
+        #     plt.subplot(1,3,3)
+        #     plt.imshow(SNR_data_calib[100,:,:],interpolation="nearest")
+        #     plt.show()
+        # SNR_data_calib = SNR_data
+
         summed_wideRV[(300-zcen):(300+Nwvshifts-zcen),
         ((64*3)//2-kcen):((64*3)//2+ny-kcen),
-        ((19*3)//2-lcen):((19*3)//2+nx-lcen)] += copy(hdulist[0].data[0,Nwvshifts_hd::,:,:]/hdulist[0].data[1,Nwvshifts_hd::,:,:])
+        ((19*3)//2-lcen):((19*3)//2+nx-lcen)] += copy(SNR_data_calib)
         summed_hdRV[((400*3)//2-zcenhd):((400*3)//2+Nwvshifts_hd-zcenhd),
         ((64*3)//2-kcen):((64*3)//2+ny-kcen),
-        ((19*3)//2-lcen):((19*3)//2+nx-lcen)] += copy(hdulist[0].data[0,0:Nwvshifts_hd,:,:]/hdulist[0].data[1,0:Nwvshifts_hd,:,:])
+        ((19*3)//2-lcen):((19*3)//2+nx-lcen)] += copy(hdulist[0].data[0,0:Nwvshifts_hd,:,:]/hdulist[0].data[1,0:Nwvshifts_hd,:,:]/stdSNR)
 
 
     # noise1 = summed_wideRV[200:400,((64*3)//2+5):((64*3)//2+15),((19*3)//2-3):((19*3)//2+3)]
@@ -185,6 +203,7 @@ if 0:
     plt.ylabel("SNR")
     plt.xlabel(r"$\Delta V$ (km/s)")
 
+    plt.show()
     print("Saving "+os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_CCF.pdf"))
     plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_CCF.pdf"),bbox_inches='tight')
     plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_CCF.png"),bbox_inches='tight')

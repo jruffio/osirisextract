@@ -680,7 +680,7 @@ if __name__ == "__main__":
             avg_autocorr = np.nanmean(autocorr_cube,axis=(1,2))
             avg_autocorr = avg_autocorr/np.max(avg_autocorr)
             max_id = np.argmax(avg_autocorr)
-            autocorr_func = interp1d(np.arange(40),avg_autocorr[max_id:(max_id+40)],bounds_error=False,fill_value=0)
+            autocorr_func = interp1d(np.arange(50),avg_autocorr[max_id:(max_id+50)],bounds_error=False,fill_value=0)
             cov = autocorr_func(np.abs(dx))
             import matplotlib.pyplot as plt
             mus,vs= np.linalg.eig(cov)
