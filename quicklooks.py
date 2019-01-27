@@ -18,8 +18,8 @@ root = tree.getroot()
 planet = "c"
 # planet = "d"
 
-# IFSfilter = "Kbb"
-IFSfilter = "Hbb"
+IFSfilter = "Kbb"
+# IFSfilter = "Hbb"
 
 fileinfos_filename = "/home/sda/jruffio/osiris_data/HR_8799_"+planet+"/fileinfos_"+IFSfilter+"_jb.csv"
 
@@ -72,7 +72,10 @@ if 0:
         if item[rvcen_id] == "nan":
             continue
         ax = ax_list[k]
-        reducfilename = item[cen_filename_id]
+        # reducfilename = item[cen_filename_id].replace("20190117_HPFonly","20190125_HPFonly").replace("sherlock_v0","sherlock_v1_search")
+        reducfilename = item[cen_filename_id].replace("20190117_HPFonly","20190125_HPFonly_cov").replace("sherlock_v0","sherlock_v1_search_empcov")
+        # print(reducfilename)
+        # exit()
 
         hdulist = pyfits.open(reducfilename.replace(".fits","_wvshifts.fits"))
         wvshifts = hdulist[0].data
@@ -99,16 +102,20 @@ if 0:
         plt.sca(ax)
         ny,nx = image.shape
         plt.imshow(image,interpolation="nearest")
-        plt.clim([np.nanmedian(image),cube_hd[zcen,kcen,lcen]/2.0])
+        # plt.clim([np.nanmedian(image),cube_hd[zcen,kcen,lcen]/2.0])
+        plt.clim([0,50])
 
         circle = plt.Circle((lcen,kcen),5,color="red", fill=False)
         ax.add_artist(circle)
+        plt.title(os.path.basename(item[filename_id]).split(IFSfilter)[0])
 
+
+    plt.show()
 
     f.subplots_adjust(wspace=0,hspace=0)
-    print("Saving "+os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_images.pdf"))
-    plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_images.pdf"),bbox_inches='tight')
-    plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_images.png"),bbox_inches='tight')
+    # print("Saving "+os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_images.pdf"))
+    # plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_images.pdf"),bbox_inches='tight')
+    # plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_images.png"),bbox_inches='tight')
     exit()
 
 # plot CCF
@@ -132,6 +139,8 @@ if 1:
         if item[rvcen_id] == "nan":
             continue
         reducfilename = item[cen_filename_id]
+        reducfilename = item[cen_filename_id].replace("20190117_HPFonly","20190125_HPFonly").replace("sherlock_v0","sherlock_v1_search")
+        # reducfilename = item[cen_filename_id].replace("20190117_HPFonly","20190125_HPFonly_cov").replace("sherlock_v0","sherlock_v1_search_empcov")
 
         hdulist = pyfits.open(reducfilename.replace(".fits","_wvshifts.fits"))
         wvshifts = hdulist[0].data

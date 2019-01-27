@@ -344,6 +344,7 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
                 HPFchi2_H0 = np.nansum((data_model_H0-ravelHPFdata)**2)
 
                 # import matplotlib.pyplot as plt
+                # plt.figure(1)
                 # a = np.std(ravelHPFdata*sigmas)
                 # b = np.std(ravelHPFdata)
                 # plt.plot(ravelHPFdata*sigmas,label="ori data")
@@ -359,13 +360,16 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
                     canvas_model.shape = ((2*w+1)*(2*w+1)*data_nz,)
                     canvas_model[where_finite_data] = (data_model-HPFparas[0]*HPFmodel[:,0])*sigmas
                     canvas_model.shape = (2*w+1,2*w+1,data_nz)
+                    canvas_planet = np.zeros((2*w+1,2*w+1,data_nz))
+                    canvas_planet.shape = ((2*w+1)*(2*w+1)*data_nz,)
+                    canvas_planet[where_finite_data] = HPFparas[0]*HPFmodel[:,0]*sigmas
+                    canvas_planet.shape = (2*w+1,2*w+1,data_nz)
                     canvas_data = copy(HPFdata)
                     canvas_data.shape = ((2*w+1)*(2*w+1)*data_nz,)
                     canvas_data[where_bad_data] = 0
                     canvas_data.shape = (2*w+1,2*w+1,nl)
-                    canvas_res = canvas_data-canvas_model
-
                     # if 1: # spatial residuals
+                    #     canvas_res = canvas_data-canvas_model
                     #     xx, yy = np.meshgrid(np.arange(0,w+1,1), np.arange(0,w+1,1))
                     #     rr = np.sqrt(xx**2+yy**2)
                     #     spatial_autocorr = np.zeros((w+1,w+1))
@@ -381,14 +385,31 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
                     #     exit()
                     final_template = np.nansum(canvas_model,axis=(0,1))
                     final_data = np.nansum(canvas_data,axis=(0,1))
+                    final_planet = np.nansum(canvas_planet,axis=(0,1))
                     final_res = final_data-final_template
                     outres_np[0,:,row,col] = final_data
                     outres_np[1,:,row,col] = final_template
                     outres_np[2,:,row,col] = final_res
+                    outres_np[3,:,row,col] = final_planet
                     
                     res_ccf = np.correlate(ravelresiduals,ravelresiduals,mode="same")
                     res_ccf_argmax = np.argmax(res_ccf)
                     outautocorrres_np[:,row,col] = res_ccf[(res_ccf_argmax-500):(res_ccf_argmax+500)]
+
+                # plt.figure(2)
+                # for k in range(4):
+                #     plt.subplot(4,1,k+1)
+                #     plt.plot(final_data[k*400:(k+1)*400],label="data")
+                #     plt.plot(final_template[k*400:(k+1)*400],label="model")
+                #     plt.plot(final_res[k*400:(k+1)*400],label="res")
+                #     plt.plot(final_planet[k*400:(k+1)*400],label="planet")
+                #     plt.ylim([-0.25,0.25])
+                #     plt.legend()
+                # # plt.plot(final_data,label="data")
+                # # plt.plot(final_template,label="template")
+                # # plt.plot(final_res,label="res")
+                # # plt.legend()
+                # plt.show()
 
                 # plt.plot(outautocorrres_np[:,row,col])
                 # plt.show()
@@ -491,9 +512,8 @@ if __name__ == "__main__":
         # planet = "b"
         planet = "c"
         date = "100715"
-        # date = "101104"
+        date = "101104"
         # date = "110723"
-        # date = "*"
         # planet = "d"
         # date = "150720"
         # date = "150722"
@@ -507,6 +527,7 @@ if __name__ == "__main__":
         filelist = glob.glob(os.path.join(inputDir,"s"+date+"*"+IFSfilter+"_020.fits"))
         filelist.sort()
         filelist = filelist[0:1]
+        filelist = [os.path.join(inputDir,"s"+date+"_a035001_"+IFSfilter+"_020.fits")]
         # psfs_tlc_filename = "/home/sda/jruffio/osiris_data/HR_8799_c/20"+date+"/reduced_telluric_JB/HD_210501/s"+date+"_a005002_Kbb_020_psfs.fits"
         psfs_tlc_filelist = glob.glob("/home/sda/jruffio/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_telluric_jb/*/s*"+IFSfilter+"_020_psfs.fits")
         # psfs_tlc_filelist = [psfs_tlc_filelist[0]]
@@ -626,6 +647,7 @@ if __name__ == "__main__":
             print(os.path.basename(filename), fileitem)
 
             real_k,real_l = float(fileitem[kcen_id]),float(fileitem[lcen_id])
+            # real_k,real_l = 55,6
             # real_k,real_l = 32-10,-35.79802955665025+46.8
             # real_k,real_l = 50,15
             # real_k,real_l = 32+padding-10,-35.79802955665025+46.8+padding
@@ -635,7 +657,7 @@ if __name__ == "__main__":
 
             wvshifts_array = np.arange(-3*dwv,3*dwv,dwv/100)
             # wvshifts_array = np.arange(-1*dwv,1*dwv,dwv)
-            dl_grid,dk_grid = np.meshgrid(np.linspace(-1.5,1.5,4*20+1),np.linspace(-1.5,1.5,4*20+1))
+            dl_grid,dk_grid = np.meshgrid(np.linspace(-1.,1.,2*20+1),np.linspace(-1.,1.,2*20+1))
             # dl_grid,dk_grid = np.array([[0]]),np.array([[0]])
 
             real_k,real_l = real_k+padding,real_l+padding
@@ -815,6 +837,40 @@ if __name__ == "__main__":
         psfs_tlc = [cube[None,:,:,:] for cube in psfs_tlc]
         psfs_tlc = np.concatenate(psfs_tlc,axis=0)
 
+        # if 0:
+        #     tlc_lines_list = []
+        #     for tlc_spectrum in tlc_spec_list:
+        #         mytlclpfspec, mytlchpfspec = LPFvsHPF(tlc_spectrum,cutoff)
+        #         tlc_lines_list.append((mytlchpfspec/mytlclpfspec))
+        #
+        #     import matplotlib.pyplot as plt
+        #     plt.figure(3)
+        #     for m,vec in enumerate(tlc_lines_list):
+        #         for k in range(4):
+        #             plt.subplot(4,1,k+1)
+        #             plt.plot(vec[k*400:(k+1)*400],label="{0}".format(m))
+        #             plt.ylim([-0.25,0.25])
+        #             plt.legend()
+        #
+        #     if 1: # temporary until I am smarter
+        #         tlc_lines_list = [vec[None,:] for vec in tlc_lines_list]
+        #         tlc_lines_list=[np.nanmean(np.concatenate(tlc_lines_list,axis=0),axis=0)]
+        #         tlc_spec_list_tmp = [vec[None,:] for vec in tlc_spec_list]
+        #         meantlc_spec=[np.nanmean(np.concatenate(tlc_spec_list_tmp,axis=0),axis=0)]
+        #         # HPFtlc_spec, LPFtlc_spec = LPFvsHPF(meantlc_spec,cutoff)
+        #
+        #         psfs_tlc = [cube[None,:,:,:] for cube in psfs_tlc]
+        #         psfs_tlc = np.concatenate(psfs_tlc,axis=0)
+        #
+        #     for m,vec in enumerate(tlc_lines_list):
+        #         for k in range(4):
+        #             plt.subplot(4,1,k+1)
+        #             plt.plot(vec[k*400:(k+1)*400],label="{0}".format(m),linestyle="--")
+        #             plt.ylim([-0.25,0.25])
+        #             plt.legend()
+        #     plt.show()
+        #     exit()
+
 
         padimgs = np.pad(imgs,((padding,padding),(padding,padding),(0,0)),mode="constant",constant_values=0)
         padny,padnx,padnz = padimgs.shape
@@ -847,11 +903,11 @@ if __name__ == "__main__":
         output_maps_np = _arraytonumpy(output_maps,output_maps_shape,dtype=dtype)
         output_maps_np[:] = np.nan
         if planet_search:
-            outres = mp.Array(dtype, 3*padny*padnx*padimgs.shape[-1])
-            outres_shape = (3,padimgs.shape[-1],padny,padnx)
+            outres = mp.Array(dtype, 4*padny*padnx*padimgs.shape[-1])
+            outres_shape = (4,padimgs.shape[-1],padny,padnx)
         else:
-            outres = mp.Array(dtype, 3*dl_grid.shape[0]*dl_grid.shape[1]*padimgs.shape[-1])
-            outres_shape = (3,padimgs.shape[-1],dl_grid.shape[0],dl_grid.shape[1])
+            outres = mp.Array(dtype, 4*dl_grid.shape[0]*dl_grid.shape[1]*padimgs.shape[-1])
+            outres_shape = (4,padimgs.shape[-1],dl_grid.shape[0],dl_grid.shape[1])
         outres_np = _arraytonumpy(outres,outres_shape,dtype=dtype)
         outres_np[:] = np.nan
         if planet_search:
