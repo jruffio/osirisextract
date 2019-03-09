@@ -706,11 +706,11 @@ if __name__ == "__main__":
     ##############################
     ## Variable parameters
     ##############################
-    if 1:# HR 8799 c 20100715
+    if 0:# HR 8799 c 20100715
         # planet = "b"
         planet = "c"
-        date = "100715"
-        # date = "101104"
+        # date = "100715"
+        date = "101104"
         # date = "110723"
         # planet = "d"
         # date = "150720"
@@ -731,34 +731,38 @@ if __name__ == "__main__":
         filelist = glob.glob(os.path.join(inputDir,"s"+date+"*"+IFSfilter+"_020.fits"))
         filelist.sort()
         # print(os.path.join(inputDir,"s"+date+"*"+IFSfilter+"_020.fits"))
-        filelist = filelist[0:1]
+        filelist = filelist[1:]
         # filelist = filelist[len(filelist)-3:len(filelist)-2]
 
         numthreads = 28
         planet_search = True
+        debug_paras = True
         planet_model_string = "model"
         # planet_model_string = "CO"#"CO2 CO H2O CH4"
 
-        planet = "c" # for selection of the templates
-        pairsub = "pairsub" in inputDir
-        # print(pairsub)
-        # exit()
-
         osiris_data_dir = "/data/osiris_data"
+        if "d" in planet:
+            planet = "c" # for selection of the templates
     else:
-        inputDir = sys.argv[1]
-        outputdir = sys.argv[2]
-        filename = sys.argv[3]
-        numthreads = int(sys.argv[4])
-        planet_search = bool(int(sys.argv[5]))
+        osiris_data_dir = sys.argv[1]
+        inputDir = sys.argv[2]
+        outputdir = sys.argv[3]
+        filename = sys.argv[4]
+        numthreads = int(sys.argv[5])
+        planet_search = bool(int(sys.argv[6]))
+        planet_model_string = sys.argv[7]
+        debug_paras = bool(int(sys.argv[8]))
 
         filelist = [filename]
         IFSfilter = filename.split("_")[-2]
-        template_spec_filename=os.path.join(os.path.dirname(filename),"..","..",
-                                            "HR8799c_"+IFSfilter[0:1]+"_3Oct2018_conv"+IFSfilter+".csv")
+        if "HR_8799_b" in filename:
+            planet = "b"
+        if "HR_8799_c" in filename:
+            planet = "c"
+        if "HR_8799_d" in filename:
+            planet = "c"
 
-        osiris_data_dir = None
-        #nice -n 15 /home/anaconda3/bin/python ./reduce_HPFonly_diagcov.py /data/osiris_data/HR_8799_c/20100715/reduced_jb/ /data/osiris_data/HR_8799_c/20100715/reduced_jb/20181205_HPF_only_sherlock_test/ /data/osiris_data/HR_8799_c/20100715/reduced_jb/s100715_a010001_Kbb_020.fits 20 1
+        #nice -n 15 /home/anaconda3/bin/python ./reduce_HPFonly_diagcov.py /data/osiris_data /data/osiris_data/HR_8799_c/20100715/reduced_jb/ /data/osiris_data/HR_8799_c/20100715/reduced_jb/20190308_HPF_only_sherlock_test/ /data/osiris_data/HR_8799_c/20100715/reduced_jb/s100715_a011001_Kbb_020.fits 20 1 'CO test'
 
 
     for filename in filelist:
@@ -798,7 +802,6 @@ if __name__ == "__main__":
         debug = False
         if debug:
             planet_search = False
-        debug_paras = True
         model_based_sky_trans = False
         use_wvsol_offsets = False
         use_R_calib = False
@@ -811,7 +814,6 @@ if __name__ == "__main__":
         if not model_based_sky_trans and use_R_calib:
             print("incompatible modes")
             exit()
-
         if "model" in planet_model_string:
             use_molecular_template = False
         else:
@@ -824,6 +826,7 @@ if __name__ == "__main__":
                     planet_model_string.replace(molecule,"")
             # print(molecules_list)
             # exit(0)
+        pairsub = "pairsub" in inputDir
 
         padding = 5
         nan_mask_boxsize=3
@@ -913,6 +916,9 @@ if __name__ == "__main__":
             suffix = suffix+"_search"
             if debug_paras:
                 planetRV_array = np.array([hr8799_bary_rv-10])
+                # planetRV_array = np.array([0,19,38,47])
+                # print(hr8799_bary_rv-10)
+                # exit()
                 # planetRV_array = np.concatenate([np.arange(-2*dprv,2*dprv,dprv/10)])
             else:
                 planetRV_array = np.concatenate([np.arange(-2*dprv,2*dprv,dprv/100),np.arange(-100*dprv,100*dprv,dprv)])
@@ -1132,6 +1138,7 @@ if __name__ == "__main__":
         ##############################
         # refstar_name_filter = "HIP_1123"
         refstar_name_filter = "*"
+        # refstar_name_filter = "HD_210501"
         spdc_refstar_filelist = glob.glob(os.path.join(ref_star_folder,refstar_name_filter,"s*"+IFSfilter+"_020.fits"))
         spdc_refstar_filelist.sort()
         psfs_refstar_filelist = glob.glob(os.path.join(ref_star_folder,refstar_name_filter,"s*"+IFSfilter+"_020_psfs_badpix2.fits"))
@@ -1167,21 +1174,21 @@ if __name__ == "__main__":
                         # plt.imshow(spdc_refstar_cube[:,:,100],interpolation="nearest")
                         # plt.show()
 
-                    if 0:
-                        print(coucou["MJD-OBS"])
-                        # tmpdata = np.zeros(hdulist[0].data.shape)
-                        # maxx,maxy = np.unravel_index(np.nanargmax(np.nansum(hdulist[0].data,axis=2)),(nx,ny))
-                        # newmaxy,newmaxx = 33,9
-                        # tmpdata[newmaxx-5:newmaxx+5,newmaxy-5:newmaxy+5,:] = hdulist[0].data[maxx-5:maxx+5,maxy-5:maxy+5,:]
-
-                        hdulist2 = pyfits.HDUList()
-                        hdulist2.append(pyfits.PrimaryHDU(data=hdulist[0].data,header=coucou))
-                        try:
-                            hdulist2.writeto(os.path.join(os.path.dirname(spdc_refstar_filename),"hacked_persistence_s100715_a005001_"+IFSfilter+"_020.fits"), overwrite=True)
-                        except TypeError:
-                            hdulist2.writeto(os.path.join(os.path.dirname(spdc_refstar_filename),"hacked_persistence_s100715_a005001_"+IFSfilter+"_020.fits"), clobber=True)
-                        hdulist2.close()
-                        exit()
+                    # if 0:
+                    #     print(coucou["MJD-OBS"])
+                    #     # tmpdata = np.zeros(hdulist[0].data.shape)
+                    #     # maxx,maxy = np.unravel_index(np.nanargmax(np.nansum(hdulist[0].data,axis=2)),(nx,ny))
+                    #     # newmaxy,newmaxx = 33,9
+                    #     # tmpdata[newmaxx-5:newmaxx+5,newmaxy-5:newmaxy+5,:] = hdulist[0].data[maxx-5:maxx+5,maxy-5:maxy+5,:]
+                    #
+                    #     hdulist2 = pyfits.HDUList()
+                    #     hdulist2.append(pyfits.PrimaryHDU(data=hdulist[0].data,header=coucou))
+                    #     try:
+                    #         hdulist2.writeto(os.path.join(os.path.dirname(spdc_refstar_filename),"hacked_persistence_s100715_a005001_"+IFSfilter+"_020.fits"), overwrite=True)
+                    #     except TypeError:
+                    #         hdulist2.writeto(os.path.join(os.path.dirname(spdc_refstar_filename),"hacked_persistence_s100715_a005001_"+IFSfilter+"_020.fits"), clobber=True)
+                    #     hdulist2.close()
+                    #     exit()
 
             # import matplotlib.pyplot as plt
             # # spdc_refstar_im[persis_where2mask]=np.nan
@@ -1225,12 +1232,17 @@ if __name__ == "__main__":
         transmission4planet_list = []
         HR8799pho_spec_func_list = []
         hr8799_flux_list = []
+        # print(spdc_refstar_filelist)
+        # print(psfs_refstar_filelist)
+        # print(spec_refstar_filelist)
+        # exit()
         for Rid,R in enumerate(R_list):
             transmission_list = []
             for ori_refstar_filename,psfs_refstar_filename,spec_refstar_filename in \
                     zip(spdc_refstar_filelist,psfs_refstar_filelist,spec_refstar_filelist):
                 refstar_name = ori_refstar_filename.split(os.path.sep)[-2]
 
+                Reff = R
                 if refstar_name == "HD_210501":
                     refstar_RV = -20.20 #+-2.5
                     ref_star_type = "A0"
@@ -1246,6 +1258,8 @@ if __name__ == "__main__":
                     elif IFSfilter == "Kbb":
                         refstar_mag = 6.189
                 elif refstar_name == "HIP_116886":
+                    print("I don't knwo the RV of that star")
+                    exit()
                     refstar_RV = 0 #unknown
                     ref_star_type = "A5"
                     if IFSfilter == "Hbb":
@@ -1263,13 +1277,13 @@ if __name__ == "__main__":
                 ## Reference star phoenix model
                 ##############################
                 phoenix_model_refstar_filename = glob.glob(os.path.join(phoenix_folder,refstar_name+"*.fits"))[0]
-                phoenix_refstar_filename=phoenix_model_refstar_filename.replace(".fits","_gaussconv_R{0}_{1}.csv".format(R,IFSfilter))
+                phoenix_refstar_filename=phoenix_model_refstar_filename.replace(".fits","_gaussconv_R{0}_{1}.csv".format(Reff,IFSfilter))
 
                 if len(glob.glob(phoenix_refstar_filename)) == 0:
                     with pyfits.open(phoenix_model_refstar_filename) as hdulist:
                         phoenix_refstar = hdulist[0].data[crop_phoenix]
                     print("convolving: "+phoenix_model_refstar_filename)
-                    phoenix_refstar_conv = convolve_spectrum(phoenix_wvs,phoenix_refstar,R,specpool)
+                    phoenix_refstar_conv = convolve_spectrum(phoenix_wvs,phoenix_refstar,Reff,specpool)
 
                     with open(phoenix_refstar_filename, 'w+') as csvfile:
                         csvwriter = csv.writer(csvfile, delimiter=' ')
@@ -1315,8 +1329,8 @@ if __name__ == "__main__":
                     # print(R)
                     # tmp = spec_refstar
                     # tmp = tmp/np.nanmean(tmp)
-                    # plt.plot(tmp,label="spec_refstar")
-                    # plt.plot(refstarpho_spec_func(wvs*(1-(refstarsinfo_bary_rv)/c_kms)),label="refstarpho bary")
+                    # plt.plot(wvs,tmp,label="spec_refstar")
+                    # plt.plot(wvs,refstarpho_spec_func(wvs*(1-(refstarsinfo_bary_rv)/c_kms)),label="refstarpho bary")
                     # tmp = refstarpho_spec_func(wvs*(1-(refstar_RV+refstarsinfo_bary_rv)/c_kms))
                     # tmp = tmp/np.nanmean(tmp)
                     # plt.plot(tmp,label="refstarpho bary + RV")
@@ -1333,15 +1347,14 @@ if __name__ == "__main__":
                     # print(refstar_name)
                     # if refstar_name == "HD_210501":
                     #     transmission[795:810] = np.nan
-
                     transmission_list.append(transmission)
 
             # # #remove
             # import matplotlib.pyplot as plt
             # print(R)
-            # plt.figure(1)
+            # # plt.figure(1)
             # for transid,trans in enumerate(transmission_list):
-            #     plt.plot(trans,label="{0}".format(transid))
+            #     plt.plot(wvs,trans,label="{0}".format(transid))
             # plt.legend()
             # plt.show()
 
@@ -1352,7 +1365,7 @@ if __name__ == "__main__":
 
             # extract phoenix model for HR8799
             phoenix_model_HR8799_filename = glob.glob(os.path.join(phoenix_folder,"HR_8799"+"*.fits"))[0]
-            phoenix_HR8799_filename=phoenix_model_HR8799_filename.replace(".fits","_gaussconv_R{0}_{1}.csv".format(R,IFSfilter))
+            phoenix_HR8799_filename=phoenix_model_HR8799_filename.replace(".fits","_gaussconv_R{0}_{1}.csv".format(Reff,IFSfilter))
 
             ##############################
             ## HR 8799 phoenix model
@@ -1368,7 +1381,7 @@ if __name__ == "__main__":
                     with pyfits.open(phoenix_model_HR8799_filename) as hdulist:
                         phoenix_HR8799 = hdulist[0].data[crop_phoenix]
                     print("convolving: "+phoenix_model_HR8799_filename)
-                    phoenix_HR8799_conv = convolve_spectrum(phoenix_wvs,phoenix_HR8799,R,specpool)
+                    phoenix_HR8799_conv = convolve_spectrum(phoenix_wvs,phoenix_HR8799,Reff,specpool)
 
                     with open(phoenix_HR8799_filename, 'w+') as csvfile:
                         csvwriter = csv.writer(csvfile, delimiter=' ')

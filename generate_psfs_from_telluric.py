@@ -32,12 +32,13 @@ def align_and_scale_star(params):
 
 
 # OSIRISDATA = "/scratch/groups/bmacint/osiris_data/"
-OSIRISDATA = "/home/sda/jruffio/osiris_data/"
+OSIRISDATA = "/data/osiris_data/"
 if 1:
-    IFSfilter = "Kbb"
+    IFSfilter = "Hbb"#"Kbb"
     foldername = "HR_8799_c"
     # date = "*"
-    date_list = ["20100715","20101104","20110723"]
+    # date_list = ["20100715","20101104","20110723"]
+    date_list = ["20101104"]
     # date = "20100715"
     # date = "20101104"
     # date = "20110723"
@@ -60,8 +61,8 @@ if 1:
 filename_filter = "*/*"+IFSfilter+"*020.fits"
 # filename_filter = "*/*042001*Kbb*020.fits"
 # generate psfs
-if 1:
-    for date in date_list[1:2]:
+if 0:
+    for date in date_list:
         badpix = True
         refstar_filelist = glob.glob(os.path.join(OSIRISDATA,foldername,date,"reduced_telluric_jb",filename_filter))
         for refstar_filename in refstar_filelist:
@@ -289,8 +290,11 @@ if 1:
     for date in date_list:#["20150720"]:#date_list:
         psfs_tlc = []
         tlc_spec_list = []
-        psfs_tlc_filelist = glob.glob("/home/sda/jruffio/osiris_data/"+foldername+"/"+date+"/reduced_telluric_jb/*/s*"+IFSfilter+"_020_psfs_badpix2.fits")
-        psfs_centers_filelist = glob.glob("/home/sda/jruffio/osiris_data/"+foldername+"/"+date+"/reduced_telluric_jb/*/s*"+IFSfilter+"_020_psfs_centers_badpix2.fits")
+        psfs_tlc_filelist = glob.glob("/data/osiris_data/"+foldername+"/"+date+"/reduced_telluric_jb/*/s*"+IFSfilter+"_020_psfs_badpix2.fits")
+        psfs_centers_filelist = glob.glob("/data/osiris_data/"+foldername+"/"+date+"/reduced_telluric_jb/*/s*"+IFSfilter+"_020_psfs_centers_badpix2.fits")
+        # print(psfs_tlc_filelist)
+        # print(psfs_centers_filelist)
+        # exit()
         for k,psfs_tlc_filename in enumerate(psfs_tlc_filelist):
             print(psfs_tlc_filename)
 
