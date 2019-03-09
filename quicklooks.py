@@ -51,7 +51,7 @@ for filename in filelist_sorted:
 list_data=new_list_data
 
 # plot 2D images
-if 0:
+if 1:
     if IFSfilter=="Kbb": #Kbb 1965.0 0.25
         CRVAL1 = 1965.
         CDELT1 = 0.25
@@ -72,8 +72,8 @@ if 0:
         if item[rvcen_id] == "nan":
             continue
         ax = ax_list[k]
-        # reducfilename = item[cen_filename_id].replace("20190117_HPFonly","20190125_HPFonly").replace("sherlock_v0","sherlock_v1_search")
-        reducfilename = item[cen_filename_id].replace("20190117_HPFonly","20190125_HPFonly_cov").replace("sherlock_v0","sherlock_v1_search_empcov")
+        reducfilename = item[cen_filename_id].replace("20190117_HPFonly","20190125_HPFonly").replace("sherlock_v0","sherlock_v1_search")
+        # reducfilename = item[cen_filename_id].replace("20190117_HPFonly","20190125_HPFonly_cov").replace("sherlock_v0","sherlock_v1_search_empcov")
         # print(reducfilename)
         # exit()
 

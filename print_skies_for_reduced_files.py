@@ -26,9 +26,11 @@ if 0:
 
 if 1:
     year = "*"
-    reductionname = "reduced_quinn"
-    filenamefilter = "s*_a*001_tlc_Kbb_020.fits"
+    # reductionname = "reduced_quinn"
+    # filenamefilter = "s*_a*001_tlc_Kbb_020.fits"
     # filenamefilter = "s*_a*001_tlc_Hbb_020.fits"
+    reductionname = "reduced_jb"
+    filenamefilter = "s*_a*001_Kbb_020.fits"
 
     filelist = glob.glob(os.path.join(OSIRISDATA,foldername,year,reductionname,filenamefilter))
     filelist.sort()

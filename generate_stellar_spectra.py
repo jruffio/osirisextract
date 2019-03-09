@@ -5,7 +5,7 @@ import scipy.io as scio
 import matplotlib.pyplot as plt
 
 
-if 1: # Phoenix
+if 1: # PLanet model
     phoenix_folder = "/home/sda/jruffio/phoenix/"
     for planet in ["b"]:#["c","b"]
         for IFSfilter in ["Kbb","Hbb"]:
