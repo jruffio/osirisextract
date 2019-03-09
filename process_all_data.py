@@ -20,13 +20,13 @@ if 1:
 year = "*"
 #year = "20100715"
 #year = "20110723"
-# year = "20101104"
+#year = "20101104"
 reductionname = "reduced_jb"
 #filenamefilter = "s*_a*001_tlc_Kbb_020.fits"
 filenamefilter = "s*_020.fits"
 #filenamefilter = "s101104_a03*001_Hbb_020.fits"
-#planet_search = 1 # pixel resolution entire FOV
-planet_search = 0 # centroid only
+planet_search = 1 # pixel resolution entire FOV
+#planet_search = 0 # centroid only
 
 filelist = glob.glob(os.path.join(OSIRISDATA,foldername,year,reductionname,filenamefilter))
 filelist.sort()
@@ -66,9 +66,10 @@ for filename in filelist:
     #     params = ' {0} {1} {2} {3} {4} {5} {6}"'.format(inputdir,outputdir,filename,telluric,template_spec,sep,numthreads)
 
     print(bsub_str+params)
+    #exit()
     bsub_out = os.popen(bsub_str + params).read()
     print(bsub_out)
     #jobid_list.append(bsub_out.split(" ")[-1].strip('\n'))
 
-    #exit()
+    exit()
     time.sleep(2)
