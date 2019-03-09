@@ -25,8 +25,9 @@ reductionname = "reduced_jb"
 #filenamefilter = "s*_a*001_tlc_Kbb_020.fits"
 filenamefilter = "s*_020.fits"
 #filenamefilter = "s101104_a03*001_Hbb_020.fits"
-planet_search = 1 # pixel resolution entire FOV
-#planet_search = 0 # centroid only
+planet_search = 1 # If True, pixel resolution entire FOV, otherwise centroid
+debug_paras = 1 # If True, fast reduction
+planet_model_string = "'model'"
 
 filelist = glob.glob(os.path.join(OSIRISDATA,foldername,year,reductionname,filenamefilter))
 filelist.sort()
@@ -52,18 +53,7 @@ for filename in filelist:
     outputdir = os.path.join(inputdir,"sherlock","20190125_HPFonly")
     numthreads = 16
     bsub_str= 'sbatch --partition=hns,owners,iric --qos=normal --time=2-0:00:00 --mem=60G --output='+outfile+' --error='+errfile+' --nodes=1 --ntasks-per-node='+str(numthreads)+' --mail-type=END,FAIL,BEGIN --mail-user=jruffio@stanford.edu --wrap="python3 ' + script
-    params = ' {0} {1} {2} {3} {4}"'.format(inputdir,outputdir,filename,numthreads,planet_search)
-    # if 1:
-    #     cenmode = "visu"
-    #     outputdir = os.path.join(inputdir,"sherlock","polyfit_"+cenmode+"cen")
-    #     numthreads = 20
-    #     bsub_str= 'sbatch --partition=hns,owners,iric --qos=normal --time=0-12:00:00 --mem=120G --output='+outfile+' --error='+errfile+' --nodes=1 --ntasks-per-node='+str(numthreads)+' --mail-type=END,FAIL,BEGIN --mail-user=jruffio@stanford.edu --wrap="python ' + script
-    #     params = ' {0} {1} {2} {3} {4} {5} {6} {7}"'.format(inputdir,outputdir,filename,telluric,template_spec,sep,numthreads,cenmode)
-    # else:
-    #     outputdir = os.path.join(inputdir,"sherlock","medfilt_ccmap")
-    #     numthreads = 1
-    #     bsub_str= 'sbatch --partition=hns,owners,iric --qos=normal --time=0-01:00:00 --mem=10G --output='+outfile+' --error='+errfile+' --nodes=1 --ntasks-per-node='+str(numthreads)+' --mail-type=END,FAIL,BEGIN --mail-user=jruffio@stanford.edu --wrap="python ' + script
-    #     params = ' {0} {1} {2} {3} {4} {5} {6}"'.format(inputdir,outputdir,filename,telluric,template_spec,sep,numthreads)
+    params = ' {0} {1} {2} {3} {4} {5} {6} {7}"'.format(OSIRISDATA,inputdir,outputdir,filename,numthreads,planet_search,planet_model_string,debug_paras)
 
     print(bsub_str+params)
     #exit()
