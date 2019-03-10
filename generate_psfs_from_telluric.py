@@ -34,20 +34,20 @@ def align_and_scale_star(params):
 # OSIRISDATA = "/scratch/groups/bmacint/osiris_data/"
 OSIRISDATA = "/data/osiris_data/"
 if 1:
-    IFSfilter = "Hbb"#"Kbb"
+    IFSfilter = "Kbb"#"Hbb"#"Kbb"
     foldername = "HR_8799_c"
     # date = "*"
     # date_list = ["20100715","20101104","20110723"]
-    date_list = ["20101104"]
+    # date_list = ["20101104"]
     # date = "20100715"
     # date = "20101104"
     # date = "20110723"
     # sep = 0.950
-    # foldername = "HR_8799_d"
+    foldername = "HR_8799_d"
     # date_list = ["20150720","20150722","20150723","20150828"]
     # date = "*"
     # date = "20150720"
-    # date = "20150722"
+    date_list = ["20150722"]
     # date = "20150723"
     # date = "20150828"
     # # telluric = os.path.join(OSIRISDATA,"HR_8799_c/20100715/reduced_telluric/HD_210501","s100715_a005001_Kbb_020.fits")
@@ -61,7 +61,7 @@ if 1:
 filename_filter = "*/*"+IFSfilter+"*020.fits"
 # filename_filter = "*/*042001*Kbb*020.fits"
 # generate psfs
-if 0:
+if 1:
     for date in date_list:
         badpix = True
         refstar_filelist = glob.glob(os.path.join(OSIRISDATA,foldername,date,"reduced_telluric_jb",filename_filter))

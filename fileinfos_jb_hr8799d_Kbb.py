@@ -403,7 +403,7 @@ if 1:
     #         ax.add_artist(circle)
     # plt.show()
     suffix = "_outputHPF_cutoff40_sherlock_v1_search"
-    myfolder = "20190306_HPF_only"
+    myfolder = "20190310_HPF_only"
     for k,item in enumerate(old_list_data):
         filename = item[filename_id]
         try:

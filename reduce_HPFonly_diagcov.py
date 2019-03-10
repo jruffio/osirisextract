@@ -709,8 +709,8 @@ if __name__ == "__main__":
     if 0:# HR 8799 c 20100715
         # planet = "b"
         planet = "c"
-        # date = "100715"
-        date = "101104"
+        date = "100715"
+        # date = "101104"
         # date = "110723"
         # planet = "d"
         # date = "150720"
@@ -721,7 +721,7 @@ if __name__ == "__main__":
         # IFSfilter = "Hbb" # "Kbb" or "Hbb"
 
         inputDir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/"
-        outputdir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/20190308_HPF_only/"
+        outputdir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/20190310_HPF_only/"
         # outputdir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/20190305_HPF_only_noperscor/"
         # outputdir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/20190228_mol_temp/"
 
@@ -731,7 +731,7 @@ if __name__ == "__main__":
         filelist = glob.glob(os.path.join(inputDir,"s"+date+"*"+IFSfilter+"_020.fits"))
         filelist.sort()
         # print(os.path.join(inputDir,"s"+date+"*"+IFSfilter+"_020.fits"))
-        filelist = filelist[1:]
+        # filelist = filelist[1:]
         # filelist = filelist[len(filelist)-3:len(filelist)-2]
 
         numthreads = 28
@@ -762,7 +762,7 @@ if __name__ == "__main__":
         if "HR_8799_d" in filename:
             planet = "c"
 
-        #nice -n 15 /home/anaconda3/bin/python ./reduce_HPFonly_diagcov.py /data/osiris_data /data/osiris_data/HR_8799_c/20100715/reduced_jb/ /data/osiris_data/HR_8799_c/20100715/reduced_jb/20190308_HPF_only_sherlock_test/ /data/osiris_data/HR_8799_c/20100715/reduced_jb/s100715_a011001_Kbb_020.fits 20 1 'CO test'
+        #nice -n 15 /home/anaconda3/bin/python ./reduce_HPFonly_diagcov.py /data/osiris_data /data/osiris_data/HR_8799_c/20100715/reduced_jb/ /data/osiris_data/HR_8799_c/20100715/reduced_jb/20190308_HPF_only_sherlock_test/ /data/osiris_data/HR_8799_c/20100715/reduced_jb/s100715_a011001_Kbb_020.fits 20 1 'CO test' 1
 
 
     for filename in filelist:
@@ -803,7 +803,10 @@ if __name__ == "__main__":
         if debug:
             planet_search = False
         model_based_sky_trans = False
-        use_wvsol_offsets = False
+        if "HR_8799_d" in filename:
+            use_wvsol_offsets = True
+        else:
+            use_wvsol_offsets = False
         use_R_calib = False
         mask_starline = False
         model_persistence = True

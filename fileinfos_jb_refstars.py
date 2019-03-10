@@ -10,7 +10,7 @@ import numpy as np
 import csv
 from copy import copy
 
-fileinfos_filename = "/home/sda/jruffio/osiris_data/fileinfos_refstars_jb.csv"
+fileinfos_filename = "/data/osiris_data/fileinfos_refstars_jb.csv"
 
 # create file if none exists
 if len(glob.glob(fileinfos_filename)) == 0:
@@ -53,7 +53,7 @@ if 0: # add filename
 
     reductionname = "reduced_telluric_jb"
     filenamefilter = "s*_a*_*_020.fits"
-    filelist = glob.glob(os.path.join("/home/sda/jruffio/osiris_data/HR_8799_*","*",reductionname,"*",filenamefilter))
+    filelist = glob.glob(os.path.join("/data/osiris_data/HR_8799_*","*",reductionname,"*",filenamefilter))
     for filename in filelist:
         if filename not in old_filelist:
             new_list_data.append([filename,]+[np.nan,]*(N_col-1))
@@ -68,7 +68,7 @@ if 0: # add MJD-OBS
         prihdr0 = hdulist[0].header
         new_list_data[k][MJDOBS_id] = prihdr0["MJD-OBS"]
 
-if 0: # add barycenter RV
+if 1: # add barycenter RV
     from barycorrpy import get_BC_vel
     filename_id = old_colnames.index("filename")
     MJDOBS_id = old_colnames.index("MJD-OBS")
