@@ -15,7 +15,7 @@ planet = "c"
 # planet = "d"
 IFSfilter = "Hbb"
 
-fileinfos_filename = "/home/sda/jruffio/osiris_data/HR_8799_"+planet+"/fileinfos_"+IFSfilter+"_jb.csv"
+fileinfos_filename = "/data/osiris_data/HR_8799_"+planet+"/fileinfos_"+IFSfilter+"_jb.csv"
 
 # create file if none exists
 if len(glob.glob(fileinfos_filename)) == 0:
@@ -58,11 +58,25 @@ if 0: # add filename
 
     reductionname = "reduced_jb"
     filenamefilter = "s*_a*001_"+IFSfilter+"_020.fits"
-    filelist = glob.glob(os.path.join("/home/sda/jruffio/osiris_data/HR_8799_"+planet,"*",reductionname,filenamefilter))
+    filelist = glob.glob(os.path.join("/data/osiris_data/HR_8799_"+planet,"*",reductionname,filenamefilter))
     for filename in filelist:
         if filename not in old_filelist:
             new_list_data.append([filename,]+[np.nan,]*(N_col-1))
     print(new_list_data)
+
+#sort files
+if 0:
+    filename_id = old_colnames.index("filename")
+    filelist = [item[filename_id] for item in old_list_data]
+    filelist_sorted = copy(filelist)
+    filelist_sorted.sort()
+    print(len(filelist_sorted)) #37
+    # exit()
+    new_list_data = []
+    for filename in filelist_sorted:
+        new_list_data.append(old_list_data[filelist.index(filename)])
+
+    new_colnames = old_colnames
 
 if 0: # add MJD-OBS
     filename_id = old_colnames.index("filename")
@@ -98,18 +112,18 @@ if 0: # add filename
             print("[\"{0}\",0,0],".format(filename) )
         exit()
     else:
-        sequence_list =[["/home/sda/jruffio/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a015001_Hbb_020.fits",1,0],
-                        ["/home/sda/jruffio/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a017001_Hbb_020.fits",2,0],
-                        ["/home/sda/jruffio/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a018001_Hbb_020.fits",2,1],
-                        ["/home/sda/jruffio/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a019001_Hbb_020.fits",2,2],
-                        ["/home/sda/jruffio/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a020001_Hbb_020.fits",2,3],
-                        ["/home/sda/jruffio/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a027001_Hbb_020.fits",3,0],
-                        ["/home/sda/jruffio/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a028001_Hbb_020.fits",3,1],
-                        ["/home/sda/jruffio/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a029001_Hbb_020.fits",3,2],
-                        ["/home/sda/jruffio/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a030001_Hbb_020.fits",3,3],
-                        ["/home/sda/jruffio/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a031001_Hbb_020.fits",3,4],
-                        ["/home/sda/jruffio/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a032001_Hbb_020.fits",3,5],
-                        ["/home/sda/jruffio/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a033001_Hbb_020.fits",3,6]]
+        sequence_list =[["/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a015001_Hbb_020.fits",1,0],
+                        ["/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a017001_Hbb_020.fits",2,0],
+                        ["/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a018001_Hbb_020.fits",2,1],
+                        ["/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a019001_Hbb_020.fits",2,2],
+                        ["/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a020001_Hbb_020.fits",2,3],
+                        ["/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a027001_Hbb_020.fits",3,0],
+                        ["/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a028001_Hbb_020.fits",3,1],
+                        ["/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a029001_Hbb_020.fits",3,2],
+                        ["/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a030001_Hbb_020.fits",3,3],
+                        ["/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a031001_Hbb_020.fits",3,4],
+                        ["/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a032001_Hbb_020.fits",3,5],
+                        ["/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a033001_Hbb_020.fits",3,6]]
 
     try:
         sequence_id = old_colnames.index("sequence")
@@ -214,7 +228,7 @@ if 0:
             new_list_data[seq_ind][xoffset_id] = dx
             new_list_data[seq_ind][yoffset_id] = dy
 
-if 1:
+if 0:
     from scipy.signal import correlate2d
     try:
         cen_filename_id = old_colnames.index("cen filename")
@@ -261,11 +275,11 @@ if 1:
     myfolder = "sherlock/20190117_HPFonly"
     for k,item in enumerate(old_list_data):
         filename = item[filename_id]
-        if filename in ['/home/sda/jruffio/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a015001_Hbb_020.fits']:
-                        # '/home/sda/jruffio/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a030001_Hbb_020.fits',
-                        # '/home/sda/jruffio/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a031001_Hbb_020.fits',
-                        # '/home/sda/jruffio/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a032001_Hbb_020.fits',
-                        # '/home/sda/jruffio/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a033001_Hbb_020.fits']:
+        if filename in ['/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a015001_Hbb_020.fits']:
+                        # '/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a030001_Hbb_020.fits',
+                        # '/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a031001_Hbb_020.fits',
+                        # '/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a032001_Hbb_020.fits',
+                        # '/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a033001_Hbb_020.fits']:
             continue
         print(filename)
         hdulist = pyfits.open(os.path.join(os.path.dirname(filename),myfolder,
@@ -327,7 +341,7 @@ for item in new_list_data:
     print(item)
 print(new_colnames)
 
-exit()
+# exit()
 
 
 #Save NEW file
@@ -365,7 +379,7 @@ with open(fileinfos_filename, 'w+') as csvfile:
 #
 # # planet separation
 # if 1:
-#     OSIRISDATA = "/home/sda/jruffio/osiris_data/"
+#     OSIRISDATA = "/data/osiris_data/"
 #     if 1:
 #         foldername = "HR_8799_c"
 #         sep = 0.950

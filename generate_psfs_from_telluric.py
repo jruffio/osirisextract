@@ -35,30 +35,22 @@ def align_and_scale_star(params):
 OSIRISDATA = "/data/osiris_data/"
 if 1:
     IFSfilter = "Kbb"#"Hbb"#"Kbb"
-    foldername = "HR_8799_c"
-    # date = "*"
-    # date_list = ["20100715","20101104","20110723"]
-    # date_list = ["20101104"]
-    # date = "20100715"
-    # date = "20101104"
-    # date = "20110723"
-    # sep = 0.950
-    foldername = "HR_8799_d"
-    # date_list = ["20150720","20150722","20150723","20150828"]
-    # date = "*"
-    # date = "20150720"
-    date_list = ["20150722"]
-    # date = "20150723"
-    # date = "20150828"
-    # # telluric = os.path.join(OSIRISDATA,"HR_8799_c/20100715/reduced_telluric/HD_210501","s100715_a005001_Kbb_020.fits")
-    # telluric1 = os.path.join(OSIRISDATA,"HR_8799_c/20100715/reduced_telluric_JB/HD_210501","s100715_a005001_Kbb_020.fits")
-    # telluric2 = os.path.join(OSIRISDATA,"HR_8799_c/20100715/reduced_telluric_JB/HD_210501","s100715_a005002_Kbb_020.fits")
-    # outputdir = os.path.join(OSIRISDATA,"HR_8799_c/20100715/reduced_telluric_JB/")
-
+    planet = "b"
+    # planet = "c"
+    # planet = "d"
+    if "b" in planet:
+        date_list = ["20090722","20100711","20100712","20130725","20130726","20130727"] # Kbb
+        date_list = [date_list[5],]
+    elif "c" in planet:
+        date_list = ["20100715","20101104","20110723"] #Kbb
+        # date_list = ["20101104"] #Hbb
+    elif "d" in planet:
+        date_list = ["20150720","20150722","20150723","20150828"] #Kbb
+    foldername = "HR_8799_"+planet
 
 
 # filename_filer = "HD_210501/s100715_a00500*_Kbb_020.fits"
-filename_filter = "*/*"+IFSfilter+"*020.fits"
+filename_filter = "*/s*"+IFSfilter+"*020.fits"
 # filename_filter = "*/*042001*Kbb*020.fits"
 # generate psfs
 if 1:
@@ -97,92 +89,6 @@ if 1:
                 # Move dimensions of input array to match pyklip conventions
                 oripsfs = np.rollaxis(np.rollaxis(oripsfs,2),2,1)
 
-                # if 0 and badpix:
-                #     numthreads = 32
-                #     prihdr = hdulist[0].header
-                #     oripsfs = np.moveaxis(oripsfs,0,2)
-                #     ny,nx,nz = oripsfs.shape
-                #     init_wv = prihdr["CRVAL1"]/1000. # wv for first slice in mum
-                #     dwv = prihdr["CDELT1"]/1000. # wv interval between 2 slices in mum
-                #     wvs=np.arange(init_wv,init_wv+dwv*nz,dwv)
-                #     import ctypes
-                #     dtype = ctypes.c_float
-                #     nan_mask_boxsize=3
-                #     from parallelized_polyfit_cov_HPF_osiris import _tpool_init
-                #     from parallelized_polyfit_cov_HPF_osiris import _remove_bad_pixels_xy
-                #     from parallelized_polyfit_cov_HPF_osiris import _remove_bad_pixels_z
-                #     from parallelized_polyfit_cov_HPF_osiris import _remove_edges
-                #     from parallelized_polyfit_cov_HPF_osiris import _arraytonumpy
-                #     original_imgs = mp.Array(dtype, np.size(oripsfs))
-                #     original_imgs_shape = oripsfs.shape
-                #     original_imgs_np = _arraytonumpy(original_imgs, original_imgs_shape,dtype=dtype)
-                #     original_imgs_np[:] = oripsfs
-                #     badpix_imgs = mp.Array(dtype, np.size(oripsfs))
-                #     badpix_imgs_shape = oripsfs.shape
-                #     badpix_imgs_np = _arraytonumpy(badpix_imgs, badpix_imgs_shape,dtype=dtype)
-                #     badpix_imgs_np[:] = 0
-                #     badpix_imgs_np[np.where(original_imgs_np==0)] = np.nan
-                #     originalHPF_imgs = mp.Array(dtype, 1)
-                #     originalHPF_imgs_shape = (1,)
-                #     originalLPF_imgs = mp.Array(dtype, 1)
-                #     originalLPF_imgs_shape = (1,)
-                #     output_maps_shape = (1,)
-                #     output_maps = mp.Array(dtype, 1)
-                #     wvs_imgs = wvs
-                #     psfs_stamps = mp.Array(dtype, 1)
-                #     psfs_stamps_shape = (1,)
-                #
-                #
-                #     ######################
-                #     # INIT threads and shared memory
-                #     tpool = mp.Pool(processes=numthreads, initializer=_tpool_init,
-                #                     initargs=(original_imgs,badpix_imgs,originalLPF_imgs,originalHPF_imgs, original_imgs_shape, output_maps,
-                #                               output_maps_shape,wvs_imgs,psfs_stamps, psfs_stamps_shape),
-                #                     maxtasksperchild=50)
-                #
-                #
-                #     # plt.plot(np.ravel(original_imgs_np[30,:,:]),label="original")
-                #
-                #     ######################
-                #     # CLEAN IMAGE
-                #
-                #
-                #     chunk_size = nz//(3*numthreads)
-                #     N_chunks = nz//chunk_size
-                #     wvs_indices_list = []
-                #     for k in range(N_chunks-1):
-                #         wvs_indices_list.append(np.arange((k*chunk_size),((k+1)*chunk_size)))
-                #     wvs_indices_list.append(np.arange(((N_chunks-1)*chunk_size),nz))
-                #
-                #
-                #     # tasks = [tpool.apply_async(_remove_bad_pixels_xy, args=(wvs_indices,dtype))
-                #     #          for wvs_indices in wvs_indices_list]
-                #     # #save it to shared memory
-                #     # for chunk_index, rmedge_task in enumerate(tasks):
-                #     #     print("Finished rm bad pixel xy chunk {0}".format(chunk_index))
-                #     #     rmedge_task.wait()
-                #     ######################
-                #
-                #     # plt.plot(np.ravel(original_imgs_np[30,:,:]),linestyle=":",label="bad pix xy")
-                #
-                #     tasks = [tpool.apply_async(_remove_bad_pixels_z, args=(col_index,nan_mask_boxsize, dtype,100,15.0))
-                #              for col_index in range(nx)]
-                #     #save it to shared memory
-                #     for col_index, bad_pix_task in enumerate(tasks):
-                #         print("Finished rm bad pixel z col {0}".format(col_index))
-                #         bad_pix_task.wait()
-                #
-                #     # plt.plot(np.ravel(original_imgs_np[30,:,:]),linestyle=":",label="bad pix z")
-                #
-                #     # tasks = [tpool.apply_async(_remove_edges, args=(wvs_indices,nan_mask_boxsize,dtype))
-                #     #          for wvs_indices in wvs_indices_list]
-                #     # #save it to shared memory
-                #     # for chunk_index, rmedge_task in enumerate(tasks):
-                #     #     print("Finished rm edge chunk {0}".format(chunk_index))
-                #     #     rmedge_task.wait()
-                #
-                #     oripsfs = np.moveaxis(original_imgs_np,2,0)
-
                 nwvs,ny,nx = oripsfs.shape
                 init_wv = hdulist[0].header["CRVAL1"]/1000. # wv for first slice in mum
                 dwv = hdulist[0].header["CDELT1"]/1000. # wv interval between 2 slices in mum
@@ -205,7 +111,7 @@ if 1:
                 star_peaks = []
                 psf_stamps = np.zeros((nwvs,psf_cube_size,psf_cube_size))
                 for k,im in enumerate(oripsfs):
-                    print("center",k)
+                    # print("center",k)
                     corrflux, fwhm, spotx, spoty = gaussfit2d(im, center0[0], center0[1], searchrad=5, guessfwhm=3, guesspeak=np.nanmax(im), refinefit=True)
                     #spotx, spoty = center0
                     psfs_xcenters.append(spotx)
@@ -473,13 +379,15 @@ if 0:
 # PLOT telluric spectra
 if 1:
     date = date_list[0]#"20150720"
-    # suffix = "_badpix"
     suffix = ""
+    # suffix = "_badpix"
     # suffix = "_repaired"
     # filename_filter = "*/*042001*Kbb_020_psfs"+suffix+".fits"
-    filename_filter = "*/*Kbb_020_psfs"+suffix+".fits"
+    # filename_filter = "*/*Kbb_020_psfs"+suffix+".fits"
+    filename_filter = filename_filter.replace(".fits","_psfs_badpix2.fits")
 
     plt.figure(1)
+    print(os.path.join(OSIRISDATA,foldername,date,"reduced_telluric_jb",filename_filter))
     refstar_filelist = glob.glob(os.path.join(OSIRISDATA,foldername,date,"reduced_telluric_jb",filename_filter))
     for refstar_filename in refstar_filelist:
         print(refstar_filename)
@@ -491,10 +399,10 @@ if 1:
         try:
         # if 1:
         #     with pyfits.open(refstar_filename.replace(".fits","_badpix2"+".fits")) as hdulist:
-            with pyfits.open(refstar_filename.replace(".fits","_repaired"+".fits")) as hdulist:
+            with pyfits.open(refstar_filename.replace("_psfs_badpix2.fits","_psfs_repaired"+".fits")) as hdulist:
                 oripsfs_bp = hdulist[0].data # Nwvs, Ny, Nx
             tlc_spec_bp = np.sum(oripsfs_bp,axis=(1,2))
-            plt.plot(tlc_spec_bp/np.nanmedian(tlc_spec_bp),linestyle="--",label=os.path.basename(refstar_filename)+" bad pix")
+            plt.plot(tlc_spec_bp/np.nanmedian(tlc_spec_bp),linestyle="--",label=os.path.basename(refstar_filename)+" repaired")
             plt.plot((tlc_spec-tlc_spec_bp)/np.nanmedian(tlc_spec_bp),linestyle=":")
         except:
             pass

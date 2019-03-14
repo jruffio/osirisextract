@@ -10,9 +10,10 @@ import numpy as np
 import csv
 from copy import copy
 
-planet = "c"
-IFSfilter = "Kbb"
+planet = "b"
+# planet = "c"
 # planet = "d"
+IFSfilter = "Kbb"
 # IFSfilter = "Hbb"
 
 fileinfos_filename = "/data/osiris_data/HR_8799_"+planet+"/fileinfos_"+IFSfilter+"_jb.csv"
@@ -70,13 +71,16 @@ if 0:
     filelist = [item[filename_id] for item in old_list_data]
     filelist_sorted = copy(filelist)
     filelist_sorted.sort()
+    if 0:
+        for filename in filelist_sorted:
+            print('["'+os.path.join("/data/osiris_data/HR_8799_b/20090722/reduced_jb",filename)+'",,],')
+        exit()
     print(len(filelist_sorted)) #37
     # exit()
     new_list_data = []
     for filename in filelist_sorted:
         new_list_data.append(old_list_data[filelist.index(filename)])
 
-    new_colnames = old_colnames
 
 if 0: # add MJD-OBS
     filename_id = old_colnames.index("filename")
@@ -112,43 +116,70 @@ if 0: # add filename
             print("[\"{0}\",0,0],".format(filename) )
         exit()
     else:
-        sequence_list = [["/data/osiris_data/HR_8799_c/20100715/reduced_jb/s100715_a010001_Kbb_020.fits",1,0],
-                        ["/data/osiris_data/HR_8799_c/20100715/reduced_jb/s100715_a011001_Kbb_020.fits",1,1],
-                        ["/data/osiris_data/HR_8799_c/20100715/reduced_jb/s100715_a012001_Kbb_020.fits",1,2],
-                        ["/data/osiris_data/HR_8799_c/20100715/reduced_jb/s100715_a013001_Kbb_020.fits",1,3],
-                        ["/data/osiris_data/HR_8799_c/20100715/reduced_jb/s100715_a014001_Kbb_020.fits",1,4],
-                        ["/data/osiris_data/HR_8799_c/20100715/reduced_jb/s100715_a015001_Kbb_020.fits",1,5],
-                        ["/data/osiris_data/HR_8799_c/20100715/reduced_jb/s100715_a016001_Kbb_020.fits",1,6],
-                        ["/data/osiris_data/HR_8799_c/20100715/reduced_jb/s100715_a017001_Kbb_020.fits",1,7],
-                        ["/data/osiris_data/HR_8799_c/20100715/reduced_jb/s100715_a018001_Kbb_020.fits",1,8],
-                        ["/data/osiris_data/HR_8799_c/20100715/reduced_jb/s100715_a019001_Kbb_020.fits",1,9],
-                        ["/data/osiris_data/HR_8799_c/20100715/reduced_jb/s100715_a020001_Kbb_020.fits",1,10],
-                        ["/data/osiris_data/HR_8799_c/20100715/reduced_jb/s100715_a021001_Kbb_020.fits",1,11],
-                        ["/data/osiris_data/HR_8799_c/20100715/reduced_jb/s100715_a025001_Kbb_020.fits",2,0],
-                        ["/data/osiris_data/HR_8799_c/20100715/reduced_jb/s100715_a026001_Kbb_020.fits",2,1],
-                        ["/data/osiris_data/HR_8799_c/20100715/reduced_jb/s100715_a027001_Kbb_020.fits",2,2],
-                        ["/data/osiris_data/HR_8799_c/20100715/reduced_jb/s100715_a028001_Kbb_020.fits",2,6],
-                        ["/data/osiris_data/HR_8799_c/20100715/reduced_jb/s100715_a029001_Kbb_020.fits",2,7],
-                        ["/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a014001_Kbb_020.fits",3,0],
-                        ["/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a016001_Kbb_020.fits",4,0],
-                        ["/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a026001_Kbb_020.fits",5,0],
-                        ["/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a034001_Kbb_020.fits",6,0],
-                        ["/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a035001_Kbb_020.fits",6,1],
-                        ["/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a036001_Kbb_020.fits",6,2],
-                        ["/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a037001_Kbb_020.fits",6,3],
-                        ["/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a038001_Kbb_020.fits",6,4],
-                        ["/data/osiris_data/HR_8799_c/20110723/reduced_jb/s110723_a017001_Kbb_020.fits",7,0],
-                        ["/data/osiris_data/HR_8799_c/20110723/reduced_jb/s110723_a018001_Kbb_020.fits",7,1],
-                        ["/data/osiris_data/HR_8799_c/20110723/reduced_jb/s110723_a024001_Kbb_020.fits",8,0],
-                        ["/data/osiris_data/HR_8799_c/20110723/reduced_jb/s110723_a025001_Kbb_020.fits",8,1],
-                        ["/data/osiris_data/HR_8799_c/20110723/reduced_jb/s110723_a026001_Kbb_020.fits",8,2],
-                        ["/data/osiris_data/HR_8799_c/20110723/reduced_jb/s110723_a027001_Kbb_020.fits",8,3],
-                        ["/data/osiris_data/HR_8799_c/20110723/reduced_jb/s110723_a027002_Kbb_020.fits",8,4],
-                        ["/data/osiris_data/HR_8799_c/20110723/reduced_jb/s110723_a027003_Kbb_020.fits",8,5],
-                        ["/data/osiris_data/HR_8799_c/20110723/reduced_jb/s110723_a027004_Kbb_020.fits",8,6],
-                        ["/data/osiris_data/HR_8799_c/20110723/reduced_jb/s110723_a032001_Kbb_020.fits",9,0],
-                        ["/data/osiris_data/HR_8799_c/20110723/reduced_jb/s110723_a033001_Kbb_020.fits",9,1],
-                        ["/data/osiris_data/HR_8799_c/20110723/reduced_jb/s110723_a034001_Kbb_020.fits",9,2]]
+        sequence_list =[["/data/osiris_data/HR_8799_b/20090722/reduced_jb/s090722_a023001_Kbb_020.fits",0,0],
+                        ["/data/osiris_data/HR_8799_b/20090722/reduced_jb/s090722_a023002_Kbb_020.fits",0,1],
+                        ["/data/osiris_data/HR_8799_b/20090722/reduced_jb/s090722_a023003_Kbb_020.fits",0,2],
+                        ["/data/osiris_data/HR_8799_b/20090722/reduced_jb/s090722_a024001_Kbb_020.fits",0,3],
+                        ["/data/osiris_data/HR_8799_b/20090722/reduced_jb/s090722_a024002_Kbb_020.fits",0,4],
+                        ["/data/osiris_data/HR_8799_b/20090722/reduced_jb/s090722_a024003_Kbb_020.fits",0,5],
+                        ["/data/osiris_data/HR_8799_b/20090722/reduced_jb/s090722_a025001_Kbb_020.fits",0,6],
+                        ["/data/osiris_data/HR_8799_b/20090722/reduced_jb/s090722_a036001_Kbb_020.fits",1,0],
+                        ["/data/osiris_data/HR_8799_b/20090722/reduced_jb/s090722_a037001_Kbb_020.fits",1,1],
+                        ["/data/osiris_data/HR_8799_b/20090722/reduced_jb/s090722_a037002_Kbb_020.fits",1,2],
+                        ["/data/osiris_data/HR_8799_b/20090722/reduced_jb/s090722_a037003_Kbb_020.fits",1,3],
+                        ["/data/osiris_data/HR_8799_b/20090722/reduced_jb/s090722_a038001_Kbb_020.fits",1,4],
+                        ["/data/osiris_data/HR_8799_b/20100711/reduced_jb/s100711_a016001_Kbb_020.fits",2,0],
+                        ["/data/osiris_data/HR_8799_b/20100711/reduced_jb/s100711_a016002_Kbb_020.fits",2,1],
+                        ["/data/osiris_data/HR_8799_b/20100711/reduced_jb/s100711_a017001_Kbb_020.fits",2,2],
+                        ["/data/osiris_data/HR_8799_b/20100711/reduced_jb/s100711_a018001_Kbb_020.fits",2,3],
+                        ["/data/osiris_data/HR_8799_b/20100711/reduced_jb/s100711_a024001_Kbb_020.fits",3,0],
+                        ["/data/osiris_data/HR_8799_b/20100711/reduced_jb/s100711_a025001_Kbb_020.fits",3,1],
+                        ["/data/osiris_data/HR_8799_b/20100711/reduced_jb/s100711_a026001_Kbb_020.fits",3,2],
+                        ["/data/osiris_data/HR_8799_b/20100711/reduced_jb/s100711_a028001_Kbb_020.fits",4,0],
+                        ["/data/osiris_data/HR_8799_b/20100711/reduced_jb/s100711_a033001_Kbb_020.fits",5,0],
+                        ["/data/osiris_data/HR_8799_b/20100712/reduced_jb/s100712_a011001_Kbb_020.fits",6,0],
+                        ["/data/osiris_data/HR_8799_b/20100712/reduced_jb/s100712_a012001_Kbb_020.fits",6,1],
+                        ["/data/osiris_data/HR_8799_b/20100712/reduced_jb/s100712_a017001_Kbb_020.fits",6,2],
+                        ["/data/osiris_data/HR_8799_b/20100712/reduced_jb/s100712_a018001_Kbb_020.fits",6,3],
+                        ["/data/osiris_data/HR_8799_b/20100712/reduced_jb/s100712_a019001_Kbb_020.fits",6,4],
+                        ["/data/osiris_data/HR_8799_b/20100712/reduced_jb/s100712_a020001_Kbb_020.fits",6,5],
+                        ["/data/osiris_data/HR_8799_b/20100712/reduced_jb/s100712_a021001_Kbb_020.fits",6,6],
+                        ["/data/osiris_data/HR_8799_b/20100712/reduced_jb/s100712_a028001_Kbb_020.fits",7,0],
+                        ["/data/osiris_data/HR_8799_b/20100712/reduced_jb/s100712_a029001_Kbb_020.fits",7,1],
+                        ["/data/osiris_data/HR_8799_b/20130725/reduced_jb/s130725_a035001_Kbb_020.fits",8,0],
+                        ["/data/osiris_data/HR_8799_b/20130725/reduced_jb/s130725_a039001_Kbb_020.fits",9,0],
+                        ["/data/osiris_data/HR_8799_b/20130725/reduced_jb/s130725_a040001_Kbb_020.fits",10,0],
+                        ["/data/osiris_data/HR_8799_b/20130725/reduced_jb/s130725_a041001_Kbb_020.fits",10,1],
+                        ["/data/osiris_data/HR_8799_b/20130725/reduced_jb/s130725_a042001_Kbb_020.fits",10,2],
+                        ["/data/osiris_data/HR_8799_b/20130725/reduced_jb/s130725_a043001_Kbb_020.fits",10,3],
+                        ["/data/osiris_data/HR_8799_b/20130725/reduced_jb/s130725_a044001_Kbb_020.fits",10,4],
+                        ["/data/osiris_data/HR_8799_b/20130725/reduced_jb/s130725_a045001_Kbb_020.fits",10,5],
+                        ["/data/osiris_data/HR_8799_b/20130725/reduced_jb/s130725_a053001_Kbb_020.fits",11,0],
+                        ["/data/osiris_data/HR_8799_b/20130725/reduced_jb/s130725_a054001_Kbb_020.fits",11,1],
+                        ["/data/osiris_data/HR_8799_b/20130725/reduced_jb/s130725_a055001_Kbb_020.fits",11,2],
+                        ["/data/osiris_data/HR_8799_b/20130725/reduced_jb/s130725_a056001_Kbb_020.fits",11,3],
+                        ["/data/osiris_data/HR_8799_b/20130725/reduced_jb/s130725_a057001_Kbb_020.fits",11,4],
+                        ["/data/osiris_data/HR_8799_b/20130725/reduced_jb/s130725_a058001_Kbb_020.fits",11,5],
+                        ["/data/osiris_data/HR_8799_b/20130725/reduced_jb/s130725_a059001_Kbb_020.fits",11,6],
+                        ["/data/osiris_data/HR_8799_b/20130725/reduced_jb/s130725_a060001_Kbb_020.fits",11,7],
+                        ["/data/osiris_data/HR_8799_b/20130726/reduced_jb/s130726_a034001_Kbb_020.fits",12,0],
+                        ["/data/osiris_data/HR_8799_b/20130726/reduced_jb/s130726_a035001_Kbb_020.fits",12,1],
+                        ["/data/osiris_data/HR_8799_b/20130726/reduced_jb/s130726_a036001_Kbb_020.fits",12,2],
+                        ["/data/osiris_data/HR_8799_b/20130726/reduced_jb/s130726_a037001_Kbb_020.fits",12,3],
+                        ["/data/osiris_data/HR_8799_b/20130726/reduced_jb/s130726_a038001_Kbb_020.fits",12,4],
+                        ["/data/osiris_data/HR_8799_b/20130726/reduced_jb/s130726_a039001_Kbb_020.fits",12,5],
+                        ["/data/osiris_data/HR_8799_b/20130726/reduced_jb/s130726_a040001_Kbb_020.fits",12,6],
+                        ["/data/osiris_data/HR_8799_b/20130726/reduced_jb/s130726_a041001_Kbb_020.fits",12,7],
+                        ["/data/osiris_data/HR_8799_b/20130726/reduced_jb/s130726_a042001_Kbb_020.fits",12,8],
+                        ["/data/osiris_data/HR_8799_b/20130726/reduced_jb/s130726_a057001_Kbb_020.fits",13,0],
+                        ["/data/osiris_data/HR_8799_b/20130727/reduced_jb/s130727_a036001_Kbb_020.fits",14,0],
+                        ["/data/osiris_data/HR_8799_b/20130727/reduced_jb/s130727_a037001_Kbb_020.fits",14,1],
+                        ["/data/osiris_data/HR_8799_b/20130727/reduced_jb/s130727_a038001_Kbb_020.fits",14,2],
+                        ["/data/osiris_data/HR_8799_b/20130727/reduced_jb/s130727_a039001_Kbb_020.fits",14,3],
+                        ["/data/osiris_data/HR_8799_b/20130727/reduced_jb/s130727_a040001_Kbb_020.fits",14,4],
+                        ["/data/osiris_data/HR_8799_b/20130727/reduced_jb/s130727_a041001_Kbb_020.fits",14,5],
+                        ["/data/osiris_data/HR_8799_b/20130727/reduced_jb/s130727_a051001_Kbb_020.fits",15,0],
+                        ["/data/osiris_data/HR_8799_b/20130727/reduced_jb/s130727_a057001_Kbb_020.fits",16,0]]
 
     try:
         sequence_id = old_colnames.index("sequence")

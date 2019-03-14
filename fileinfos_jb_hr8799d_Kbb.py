@@ -57,12 +57,26 @@ if 0: # add filename
     old_filelist = [item[filename_id] for item in old_list_data]
 
     reductionname = "reduced_jb"
-    filenamefilter = "s*_a*001_"+IFSfilter+"_020.fits"
+    filenamefilter = "s*_a*"+IFSfilter+"_020.fits"
     filelist = glob.glob(os.path.join("/data/osiris_data/HR_8799_"+planet,"*",reductionname,filenamefilter))
     for filename in filelist:
         if filename not in old_filelist:
             new_list_data.append([filename,]+[np.nan,]*(N_col-1))
     print(new_list_data)
+
+#sort files
+if 0:
+    filename_id = old_colnames.index("filename")
+    filelist = [item[filename_id] for item in old_list_data]
+    filelist_sorted = copy(filelist)
+    filelist_sorted.sort()
+    print(len(filelist_sorted)) #37
+    # exit()
+    new_list_data = []
+    for filename in filelist_sorted:
+        new_list_data.append(old_list_data[filelist.index(filename)])
+
+    new_colnames = old_colnames
 
 if 0: # add MJD-OBS
     filename_id = old_colnames.index("filename")
@@ -265,7 +279,7 @@ if 0:
             new_list_data[seq_ind][xoffset_id] = dx
             new_list_data[seq_ind][yoffset_id] = dy
 
-if 1:
+if 0:
     from scipy.signal import correlate2d
     try:
         cen_filename_id = old_colnames.index("cen filename")
@@ -295,17 +309,17 @@ if 1:
     filename_id = old_colnames.index("filename")
     bary_rv_id = new_colnames.index("barycenter rv")
 
-    xoffset_id = new_colnames.index("header offset x")
-    yoffset_id = new_colnames.index("header offset y")
-
-
-    filelist = [item[filename_id] for item in old_list_data]
-    filelist_sorted = copy(filelist)
-    filelist_sorted.sort()
-    tmp_list_data = []
-    for filename in filelist_sorted:
-        tmp_list_data.append(old_list_data[filelist.index(filename)])
-    old_list_data=tmp_list_data
+    # xoffset_id = new_colnames.index("header offset x")
+    # yoffset_id = new_colnames.index("header offset y")
+    #
+    #
+    # filelist = [item[filename_id] for item in old_list_data]
+    # filelist_sorted = copy(filelist)
+    # filelist_sorted.sort()
+    # tmp_list_data = []
+    # for filename in filelist_sorted:
+    #     tmp_list_data.append(old_list_data[filelist.index(filename)])
+    # old_list_data=tmp_list_data
 
     if IFSfilter=="Kbb": #Kbb 1965.0 0.25
         CRVAL1 = 1965.
@@ -320,8 +334,8 @@ if 1:
     dwv = CDELT1/1000.
     init_wv = CRVAL1/1000. # wv for first slice in mum
 
-    f,ax_list = plt.subplots(5,len(old_list_data)//5+1,sharey="row",sharex="col",figsize=(18,0.59*18))
-    ax_list = [myax for rowax in ax_list for myax in rowax ]
+    # f,ax_list = plt.subplots(5,len(old_list_data)//5+1,sharey="row",sharex="col",figsize=(18,0.59*18))
+    # ax_list = [myax for rowax in ax_list for myax in rowax ]
 
     # suffix = "_outputHPF_cutoff80_sherlock_v0"
     # myfolder = "sherlock/20190117_HPFonly"
@@ -402,52 +416,125 @@ if 1:
     #         circle = plt.Circle((10,32),5,color="red", fill=False)
     #         ax.add_artist(circle)
     # plt.show()
+
+    # suffix = "_outputHPF_cutoff40_sherlock_v1_search"
+    # myfolder = "20190310_HPF_only"
+    # for k,item in enumerate(old_list_data):
+    #     filename = item[filename_id]
+    #     # new_list_data[k][cen_filename_id] = os.path.join(os.path.dirname(filename),myfolder,
+    #     #                                        os.path.basename(filename).replace(".fits",suffix+".fits"))
+    #     # new_list_data[k][kcen_id] = np.nan
+    #     # new_list_data[k][lcen_id] = np.nan
+    #     # new_list_data[k][rvcen_id] = np.nan
+    #     # continue
+    #     try:
+    #     # if 1:
+    #         dirname = os.path.dirname(filename)#.replace("/home/sda/jruffio/osiris_data","/data/osiris_data")
+    #         new_list_data[k][cen_filename_id] = os.path.join(dirname,myfolder,
+    #                                            os.path.basename(filename).replace(".fits",suffix+".fits"))
+    #         hdulist = pyfits.open(os.path.join(dirname,myfolder,
+    #                                            os.path.basename(filename).replace(".fits",suffix+".fits")))
+    #         image = hdulist[0].data[0,0,0,0,:,:]
+    #     except:
+    #         continue
+    #     # print(hdulist[0].data.shape)
+    #     # exit()
+    #
+    #     guesspos = np.unravel_index(np.nanargmax(image),image.shape)
+    #     guess_y,guess_x = guesspos
+    #
+    #     zmax,ymax,xmax = np.unravel_index(np.nanargmax(cube_hd_cp),cube_hd.shape)
+    #
+    #     new_list_data[k][kcen_id] = ymax
+    #     new_list_data[k][lcen_id] = xmax
+    #     new_list_data[k][rvcen_id] = rvshifts_hd[zmax]
+    #
+    #     ax = ax_list[k]
+    #     plt.sca(ax)
+    #     ny,nx = image.shape
+    #     plt.imshow(image,interpolation="nearest",origin="lower")
+    #     plt.clim([0,30])
+    #
+    #     xoffset = float(item[xoffset_id])
+    #     yoffset = float(item[yoffset_id])
+    #     print(xoffset,yoffset)
+    #     # plt.title("{0}".format(k))
+    #     plt.title(os.path.basename(item[filename_id]).split("_Kbb")[0],fontsize=8)
+    #     print(k,filename)
+    #     if xoffset != 0 or yoffset != 0:
+    #         arrow = plt.arrow(20,50,xoffset,yoffset,color="red")
+    #         ax.add_artist(arrow)
+    #     else:
+    #         circle = plt.Circle((20,50),3,color="red", fill=False)
+    #         ax.add_artist(circle)
+    #     circle = plt.Circle((20,50),1,color="red", fill=False)
+    #     ax.add_artist(circle)
+    # # # f.subplots_adjust(wspace=0,hspace=0)
+    # # out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
+    # # print("Saving "+os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_images.pdf"))
+    # # plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_images.pdf"),bbox_inches='tight')
+    # # plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_images.png"),bbox_inches='tight')
+    # plt.show()
     suffix = "_outputHPF_cutoff40_sherlock_v1_search"
-    myfolder = "20190310_HPF_only"
+    myfolder = "sherlock/20190309_HPF_only"
     for k,item in enumerate(old_list_data):
         filename = item[filename_id]
-        try:
-        # if 1:
-            dirname = os.path.dirname(filename)#.replace("/home/sda/jruffio/osiris_data","/data/osiris_data")
-            new_list_data[k][cen_filename_id] = os.path.join(dirname,myfolder,
-                                               os.path.basename(filename).replace(".fits",suffix+".fits"))
-            hdulist = pyfits.open(os.path.join(dirname,myfolder,
-                                               os.path.basename(filename).replace(".fits",suffix+".fits")))
-            image = hdulist[0].data[0,0,0,0,:,:]
-        except:
-            continue
-        # print(hdulist[0].data.shape)
-        # exit()
+        print(filename)
+        # if filename == '/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a034001_Kbb_020.fits':
+        #     continue
+        hdulist = pyfits.open(os.path.join(os.path.dirname(filename),myfolder,
+                                           os.path.basename(filename).replace(".fits",suffix+"_planetRV.fits")))
+        planetRV = hdulist[0].data
+        NplanetRV_hd = np.where((planetRV[1::]-planetRV[0:(np.size(planetRV)-1)]) < 0)[0][0]+1
+        planetRV_hd = hdulist[0].data[0:NplanetRV_hd]
+        planetRV = hdulist[0].data[NplanetRV_hd::]
+        rv_per_pix = 3e5*dwv/(init_wv+dwv*nl//2) # 38.167938931297705
 
-        guesspos = np.unravel_index(np.nanargmax(image),image.shape)
+        new_list_data[k][cen_filename_id] = os.path.join(os.path.dirname(filename),myfolder,
+                                           os.path.basename(filename).replace(".fits",suffix+".fits"))
+        print(new_list_data[k][cen_filename_id])
+        # continue
+        hdulist = pyfits.open(os.path.join(os.path.dirname(filename),myfolder,
+                                           os.path.basename(filename).replace(".fits",suffix+".fits")))
+        cube_hd = hdulist[0].data[0,0,0,0:NplanetRV_hd,:,:]
+        cube = hdulist[0].data[0,0,0,NplanetRV_hd::,:,:]
+
+        bary_rv = -float(item[bary_rv_id])/1000. # RV in km/s
+        rv_star = -12.6#-12.6+-1.4km/s HR 8799 Rob and Simbad
+
+        # print(bary_rv+rv_star)
+        guess_rv_id = np.argmin(np.abs(planetRV_hd-(bary_rv+rv_star)))
+        guess_rv_im = copy(cube_hd[guess_rv_id,:,:])
+        ny,nx = guess_rv_im.shape
+        nan_mask_boxsize = 5
+        guess_rv_im[np.where(np.isnan(correlate2d(guess_rv_im,np.ones((nan_mask_boxsize,nan_mask_boxsize)),mode="same")))] = np.nan
+        guess_rv_im[0:nan_mask_boxsize//2,:] = np.nan
+        guess_rv_im[-nan_mask_boxsize//2+1::,:] = np.nan
+        guess_rv_im[:,0:nan_mask_boxsize//2] = np.nan
+        guess_rv_im[:,-nan_mask_boxsize//2+1::] = np.nan
+
+        # plt.imshow(guess_rv_im)
+        # plt.show()
+        guesspos = np.unravel_index(np.nanargmax(guess_rv_im),guess_rv_im.shape)
         guess_y,guess_x = guesspos
 
-        ax = ax_list[k]
-        plt.sca(ax)
-        ny,nx = image.shape
-        plt.imshow(image,interpolation="nearest",origin="lower")
-        plt.clim([0,50])
+        cube_hd_cp = copy(cube_hd)
+        # cube_hd_cp[0:guess_rv_id-1,:,:] = np.nan
+        # cube_hd_cp[guess_rv_id+1::,:,:] = np.nan
+        cube_hd_cp[:,0:np.max([0,(guess_y-5)]),:] = np.nan
+        cube_hd_cp[:,np.min([ny,(guess_y+5)])::,:] = np.nan
+        cube_hd_cp[:,:,0:np.max([0,(guess_x-5)])] = np.nan
+        cube_hd_cp[:,:,np.min([nx,(guess_x+5)])::] = np.nan
 
-        xoffset = float(item[xoffset_id])
-        yoffset = float(item[yoffset_id])
-        print(xoffset,yoffset)
-        # plt.title("{0}".format(k))
-        plt.title(os.path.basename(item[filename_id]).split("_Kbb")[0],fontsize=8)
-        print(k,filename)
-        if xoffset != 0 or yoffset != 0:
-            arrow = plt.arrow(20,50,xoffset,yoffset,color="red")
-            ax.add_artist(arrow)
-        else:
-            circle = plt.Circle((20,50),3,color="red", fill=False)
-            ax.add_artist(circle)
-        circle = plt.Circle((20,50),1,color="red", fill=False)
-        ax.add_artist(circle)
-    # f.subplots_adjust(wspace=0,hspace=0)
-    out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
-    print("Saving "+os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_images.pdf"))
-    plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_images.pdf"),bbox_inches='tight')
-    plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_images.png"),bbox_inches='tight')
-    plt.show()
+        # plt.imshow(cube_hd_cp[100,:,:])
+        # plt.show()
+
+        zmax,ymax,xmax = np.unravel_index(np.nanargmax(cube_hd_cp),cube_hd.shape)
+
+        new_list_data[k][kcen_id] = ymax
+        new_list_data[k][lcen_id] = xmax
+        new_list_data[k][rvcen_id] = planetRV_hd[zmax]
+        print(planetRV_hd[zmax]-(bary_rv+rv_star))
 
 
 print("NEW")

@@ -706,10 +706,16 @@ if __name__ == "__main__":
     ##############################
     ## Variable parameters
     ##############################
-    if 0:# HR 8799 c 20100715
-        # planet = "b"
-        planet = "c"
-        date = "100715"
+    if 0:
+        planet = "b"
+        # date = "090722"
+        # date = "100711"
+        date = "100712"
+        # date = "130725"
+        # date = "130726"
+        # date = "130727"
+        # planet = "c"
+        # date = "100715"
         # date = "101104"
         # date = "110723"
         # planet = "d"
@@ -728,8 +734,11 @@ if __name__ == "__main__":
         # inputDir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb_pairsub/"
         # outputdir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb_pairsub/20190228_HPF_only/"
 
+        print(os.path.join(inputDir,"s"+date+"*"+IFSfilter+"_020.fits"))
         filelist = glob.glob(os.path.join(inputDir,"s"+date+"*"+IFSfilter+"_020.fits"))
         filelist.sort()
+        print(filelist)
+        # exit()
         # print(os.path.join(inputDir,"s"+date+"*"+IFSfilter+"_020.fits"))
         # filelist = filelist[1:]
         # filelist = filelist[len(filelist)-3:len(filelist)-2]
@@ -737,6 +746,7 @@ if __name__ == "__main__":
         numthreads = 28
         planet_search = True
         debug_paras = True
+        plot_transmissions = False
         planet_model_string = "model"
         # planet_model_string = "CO"#"CO2 CO H2O CH4"
 
@@ -762,6 +772,7 @@ if __name__ == "__main__":
         if "HR_8799_d" in filename:
             planet = "c"
 
+        plot_transmissions = False
         #nice -n 15 /home/anaconda3/bin/python ./reduce_HPFonly_diagcov.py /data/osiris_data /data/osiris_data/HR_8799_c/20100715/reduced_jb/ /data/osiris_data/HR_8799_c/20100715/reduced_jb/20190308_HPF_only_sherlock_test/ /data/osiris_data/HR_8799_c/20100715/reduced_jb/s100715_a011001_Kbb_020.fits 20 1 'CO test' 1
 
 
@@ -803,7 +814,7 @@ if __name__ == "__main__":
         if debug:
             planet_search = False
         model_based_sky_trans = False
-        if "HR_8799_d" in filename:
+        if "HR_8799_d" in filename and ("20130727" in filename or "20150720" in filename or "20150722" in filename or "20150723" in filename):
             use_wvsol_offsets = True
         else:
             use_wvsol_offsets = False
@@ -841,8 +852,10 @@ if __name__ == "__main__":
         else:
             suffix = "HPF_cutoff{0}_sherlock_v1".format(cutoff)
 
-        if IFSfilter == "Hbb":
-            hr8799_mag = 5.240
+        if IFSfilter == "Jbb":
+            hr8799_mag = 5.383
+        elif IFSfilter == "Hbb":
+            hr8799_mag = 5.280
         elif IFSfilter == "Kbb":
             hr8799_mag = 5.240
         else:
@@ -1148,13 +1161,18 @@ if __name__ == "__main__":
         psfs_refstar_filelist.sort()
         spec_refstar_filelist = glob.glob(os.path.join(ref_star_folder,refstar_name_filter,"s*"+IFSfilter+"_020_psfs_repaired.fits"))
         spec_refstar_filelist.sort()
-        centers_refstar_filelist = glob.glob(os.path.join(ref_star_folder,refstar_name_filter,"s*"+IFSfilter+"_020_psfs_centers.fits"))
+        centers_refstar_filelist = glob.glob(os.path.join(ref_star_folder,refstar_name_filter,"s*"+IFSfilter+"_020_psfs_centers_badpix2.fits"))
         centers_refstar_filelist.sort()
+
+        print(spdc_refstar_filelist)
+        print(psfs_refstar_filelist)
+        print(spec_refstar_filelist)
+        print(centers_refstar_filelist)
 
         if model_persistence:
             persistence_arr = np.zeros((ny,nx,nz))
             persistence_filelist = glob.glob(os.path.join(ref_star_folder,"*","s*"+IFSfilter+"_020.fits"))
-            persistence_filelist.extend(glob.glob(os.path.join(ref_star_folder,"*","hacked_persistence_*"+IFSfilter+"_020.fits")))
+            persistence_filelist.extend(glob.glob(os.path.join(ref_star_folder,"*","*persistence*"+IFSfilter+"_020.fits")))
             # for spdc_refstar_filename in persistence_filelist[0:1]:
             #     print(spdc_refstar_filename)
             #     with pyfits.open(spdc_refstar_filename) as hdulist:
@@ -1249,14 +1267,18 @@ if __name__ == "__main__":
                 if refstar_name == "HD_210501":
                     refstar_RV = -20.20 #+-2.5
                     ref_star_type = "A0"
-                    if IFSfilter == "Hbb":
+                    if IFSfilter == "Jbb":
+                        refstar_mag = 7.615
+                    elif IFSfilter == "Hbb":
                         refstar_mag = 7.606
                     elif IFSfilter == "Kbb":
                         refstar_mag = 7.597
                 elif refstar_name == "HIP_1123":
                     refstar_RV = -0.9 #+-2
                     ref_star_type = "A1"
-                    if IFSfilter == "Hbb":
+                    if IFSfilter == "Jbb":
+                        refstar_mag = 6.186
+                    elif IFSfilter == "Hbb":
                         refstar_mag = 6.219
                     elif IFSfilter == "Kbb":
                         refstar_mag = 6.189
@@ -1265,10 +1287,39 @@ if __name__ == "__main__":
                     exit()
                     refstar_RV = 0 #unknown
                     ref_star_type = "A5"
-                    if IFSfilter == "Hbb":
+                    if IFSfilter == "Jbb":
+                        refstar_mag = 9.375
+                    elif IFSfilter == "Hbb":
                         refstar_mag = 9.212
                     elif IFSfilter == "Kbb":
                         refstar_mag = 9.189
+                elif refstar_name == "HR_8799":
+                    refstar_RV = -12.6 #
+                    ref_star_type = "F0"
+                    if IFSfilter == "Jbb":
+                        refstar_mag = 5.383
+                    elif IFSfilter == "Hbb":
+                        refstar_mag = 5.280
+                    elif IFSfilter == "Kbb":
+                        refstar_mag = 5.240
+                elif refstar_name == "BD+14_4774":
+                    refstar_RV =  -16
+                    ref_star_type = "A0"
+                    if IFSfilter == "Jbb":
+                        refstar_mag = 9.291
+                    elif IFSfilter == "Hbb":
+                        refstar_mag = 9.655
+                    elif IFSfilter == "Kbb":
+                        refstar_mag = 9.613
+                elif refstar_name == "HD_7215":
+                    refstar_RV =  -2.1
+                    ref_star_type = "A0"
+                    if IFSfilter == "Jbb":
+                        refstar_mag = 6.906
+                    elif IFSfilter == "Hbb":
+                        refstar_mag = 6.910
+                    elif IFSfilter == "Kbb":
+                        refstar_mag = 6.945
                 else:
                     raise(Exception("Ref star name unknown"))
                 refstarsinfo_fileid = refstars_filelist.index(os.path.basename(ori_refstar_filename))
@@ -1279,7 +1330,10 @@ if __name__ == "__main__":
                 ##############################
                 ## Reference star phoenix model
                 ##############################
-                phoenix_model_refstar_filename = glob.glob(os.path.join(phoenix_folder,refstar_name+"*.fits"))[0]
+                try:
+                    phoenix_model_refstar_filename = glob.glob(os.path.join(phoenix_folder,refstar_name+"*.fits"))[0]
+                except:
+                    phoenix_model_refstar_filename = glob.glob(os.path.join(phoenix_folder,ref_star_type+"*.fits"))[0]
                 phoenix_refstar_filename=phoenix_model_refstar_filename.replace(".fits","_gaussconv_R{0}_{1}.csv".format(Reff,IFSfilter))
 
                 if len(glob.glob(phoenix_refstar_filename)) == 0:
@@ -1325,7 +1379,7 @@ if __name__ == "__main__":
                 if Rid == 0:
                     psfs_refstar_list.append(psfs/spec_refstar[None,None,:])
                 where_bad_slices = np.where(np.abs(psfs_spec-spec_refstar)/spec_refstar>0.01)
-                if len(where_bad_slices[0])<0.1*nz:
+                if len(where_bad_slices[0])<0.5*nz:
                     spec_refstar[where_bad_slices] = np.nan
 
                     # import matplotlib.pyplot as plt
@@ -1352,14 +1406,15 @@ if __name__ == "__main__":
                     #     transmission[795:810] = np.nan
                     transmission_list.append(transmission)
 
-            # # #remove
-            # import matplotlib.pyplot as plt
-            # print(R)
-            # # plt.figure(1)
-            # for transid,trans in enumerate(transmission_list):
-            #     plt.plot(wvs,trans,label="{0}".format(transid))
-            # plt.legend()
-            # plt.show()
+            if plot_transmissions:
+                import matplotlib.pyplot as plt
+                print(R)
+                print(transmission_list)
+                # plt.figure(1)
+                for transid,trans in enumerate(transmission_list):
+                    plt.plot(wvs,trans,label="{0}".format(transid))
+                plt.legend()
+                plt.show()
 
             mean_transmission_func = interp1d(wvs,np.nanmean(np.array(transmission_list),axis=0),bounds_error=False,fill_value=np.nan)
             transmission_func_list = [mean_transmission_func]

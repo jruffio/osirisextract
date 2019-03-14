@@ -15,13 +15,13 @@ out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
 tree = ET.parse(fileinfos_filename)
 root = tree.getroot()
 
-planet = "c"
-# planet = "d"
+# planet = "c"
+planet = "d"
 
 IFSfilter = "Kbb"
 # IFSfilter = "Hbb"
 
-fileinfos_filename = "/home/sda/jruffio/osiris_data/HR_8799_"+planet+"/fileinfos_"+IFSfilter+"_jb.csv"
+fileinfos_filename = "/data/osiris_data/HR_8799_"+planet+"/fileinfos_"+IFSfilter+"_jb.csv"
 
 #read file
 with open(fileinfos_filename, 'r') as csvfile:
@@ -45,13 +45,41 @@ with open(fileinfos_filename, 'r') as csvfile:
 filelist = [item[filename_id] for item in list_data]
 filelist_sorted = copy(filelist)
 filelist_sorted.sort()
+print(len(filelist_sorted)) #37
+# exit()
 new_list_data = []
 for filename in filelist_sorted:
     new_list_data.append(list_data[filelist.index(filename)])
 list_data=new_list_data
+# print(new_list_data)
+# exit()
+valid_d_files = ["s150720_a091001_Kbb_020.fits",
+                 "s150720_a092001_Kbb_020.fits",
+                 "s150720_a093001_Kbb_020.fits",
+                 "s150720_a095001_Kbb_020.fits",
+                 "s150720_a096001_Kbb_020.fits",
+                 "s150720_a097001_Kbb_020.fits",
+                 "s150720_a098001_Kbb_020.fits",
+                 "s150720_a099001_Kbb_020.fits",
+                 "s150720_a100001_Kbb_020.fits",
+                 "s150722_a052001_Kbb_020.fits",
+                 "s150722_a054001_Kbb_020.fits",
+                 "s150723_a036001_Kbb_020.fits",
+                 "s150723_a037001_Kbb_020.fits",
+                 "s150723_a038001_Kbb_020.fits",
+                 ]
+if "d" in planet:
+    new_list_data = []
+    for k,item in enumerate(list_data):
+        for dfile in valid_d_files:
+            if dfile in item[filename_id]:
+                new_list_data.append(item)
+    list_data = new_list_data
+
+    N_lines =  len(valid_d_files)
 
 # plot 2D images
-if 1:
+if 0:
     if IFSfilter=="Kbb": #Kbb 1965.0 0.25
         CRVAL1 = 1965.
         CDELT1 = 0.25
@@ -65,61 +93,89 @@ if 1:
     dwv = CDELT1/1000.
     init_wv = CRVAL1/1000. # wv for first slice in mum
 
-    f,ax_list = plt.subplots(4,N_lines//4+1,sharey="row",sharex="col",figsize=(18,0.59*18))
-    ax_list = [myax for rowax in ax_list for myax in rowax ]
+    f,ax_list = plt.subplots(N_lines//15+1,15,sharey="row",sharex="col",figsize=(15*0.6,2.25*(N_lines//15+1)))
+    try:
+        ax_list = [myax for rowax in ax_list for myax in rowax ]
+    except:
+        pass
 
     for k,item in enumerate(list_data):
-        if item[rvcen_id] == "nan":
-            continue
+        # if item[rvcen_id] == "nan":
+        #     continue
         ax = ax_list[k]
-        reducfilename = item[cen_filename_id].replace("20190117_HPFonly","20190125_HPFonly").replace("sherlock_v0","sherlock_v1_search")
+
+        # reducfilename = os.path.join(os.path.dirname(item[filename_id]),"sherlock","20190309_HPF_only",os.path.basename(item[filename_id]).replace(".fits","_outputHPF_cutoff40_sherlock_v1_search.fits"))
+        reducfilename = item[cen_filename_id]#.replace("search","search_CO")
+        print(k,item)
+        # print(reducfilename)
+        # reducfilename = item[cen_filename_id].replace("20190117_HPFonly","20190125_HPFonly").replace("sherlock_v0","sherlock_v1_search")
         # reducfilename = item[cen_filename_id].replace("20190117_HPFonly","20190125_HPFonly_cov").replace("sherlock_v0","sherlock_v1_search_empcov")
         # print(reducfilename)
         # exit()
 
-        hdulist = pyfits.open(reducfilename.replace(".fits","_wvshifts.fits"))
-        wvshifts = hdulist[0].data
-        Nwvshifts_hd = np.where((wvshifts[1::]-wvshifts[0:(np.size(wvshifts)-1)]) < 0)[0][0]+1
-        wvshifts_hd = hdulist[0].data[0:Nwvshifts_hd]
-        wvshifts = hdulist[0].data[Nwvshifts_hd::]
+        hdulist = pyfits.open(reducfilename.replace(".fits","_planetRV.fits"))
+        planetRV = hdulist[0].data
+        NplanetRV_hd = np.where((planetRV[1::]-planetRV[0:(np.size(planetRV)-1)]) < 0)[0][0]+1
+        planetRV_hd = hdulist[0].data[0:NplanetRV_hd]
+        planetRV = hdulist[0].data[NplanetRV_hd::]
         rv_per_pix = 3e5*dwv/(init_wv+dwv*nl//2) # 38.167938931297705
-        rvshifts_hd = wvshifts_hd/dwv*rv_per_pix
-        rvshifts = hdulist[0].data[Nwvshifts_hd::]
 
         hdulist = pyfits.open(reducfilename)
-        cube_hd = hdulist[0].data[2,0:Nwvshifts_hd,:,:]
-        cube = hdulist[0].data[2,Nwvshifts_hd::,:,:]
+        cube_hd = hdulist[0].data[0,0,0,0:NplanetRV_hd,:,:]
+        cube = hdulist[0].data[0,0,0,NplanetRV_hd::,:,:]
 
         bary_rv = -float(item[bary_rv_id])/1000. # RV in km/s
         rv_star = -12.6#-12.6+-1.4km/s HR 8799 Rob and Simbad
 
-        kcen = int(item[kcen_id])
-        lcen = int(item[lcen_id])
-        rvcen = float(item[rvcen_id])
-        zcen = np.argmin(np.abs(rvshifts_hd-rvcen))
+        try:
+            kcen = int(item[kcen_id])
+            lcen = int(item[lcen_id])
+            rvcen = float(item[rvcen_id])
+        except:
+            rvcen = bary_rv + rv_star
+        zcen = np.argmin(np.abs(planetRV_hd-rvcen))
         image = copy(cube_hd[zcen,:,:])
 
         plt.sca(ax)
         ny,nx = image.shape
-        plt.imshow(image,interpolation="nearest")
-        # plt.clim([np.nanmedian(image),cube_hd[zcen,kcen,lcen]/2.0])
-        plt.clim([0,50])
+        plt.imshow(image,interpolation="nearest",origin="lower")
+        # plt.clim([0,cube_hd[zcen,kcen,lcen]/2.0])
+        plt.clim([0,np.nanstd(cube_hd)*10])
+        # plt.clim([0,50])
+        plt.xticks([0,10])
 
-        circle = plt.Circle((lcen,kcen),5,color="red", fill=False)
-        ax.add_artist(circle)
-        plt.title(os.path.basename(item[filename_id]).split(IFSfilter)[0])
+        try:
+            circle = plt.Circle((lcen,kcen),5,color="red", fill=False)
+            ax.add_artist(circle)
+            # print(hdulist[0].data[0,0,11,zcen,kcen,lcen])
+        except:
+            pass
+        # plt.title(os.path.basename(item[filename_id]).split(IFSfilter)[0])
 
 
-    plt.show()
 
     f.subplots_adjust(wspace=0,hspace=0)
-    # print("Saving "+os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_images.pdf"))
-    # plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_images.pdf"),bbox_inches='tight')
-    # plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_images.png"),bbox_inches='tight')
+    plt.show()
+    print("Saving "+os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_images.pdf"))
+    plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_images.pdf"),bbox_inches='tight')
+    plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_images.png"),bbox_inches='tight')
+    # print("Saving "+os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_images_tentativedetec.pdf"))
+    # plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_images_tentativedetec.pdf"),bbox_inches='tight')
+    # plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_images_tentativedetec.png"),bbox_inches='tight')
     exit()
 
 # plot CCF
-if 1:
+if 0:
+    molecule = ""
+    molecule_str="Atmospheric model"
+    # molecule = "_CH4"
+    # molecule_str = "CH4"
+    molecule = "_CO"
+    molecule_str = "CO"
+    # molecule = "_CO2"
+    # molecule_str = "CO2"
+    # molecule = "_H2O"
+    # molecule_str = "H20"
     if IFSfilter=="Kbb": #Kbb 1965.0 0.25
         CRVAL1 = 1965.
         CDELT1 = 0.25
@@ -134,27 +190,29 @@ if 1:
     init_wv = CRVAL1/1000. # wv for first slice in mum
 
     summed_wideRV = np.zeros((200*3,64*3,19*3))
+    Nvalid_wideRV = np.zeros((200*3,64*3,19*3))
     summed_hdRV = np.zeros((400*3,64*3,19*3))
+    Nvalid_hdRV = np.zeros((400*3,64*3,19*3))
     for k,item in enumerate(list_data):
         if item[rvcen_id] == "nan":
             continue
-        reducfilename = item[cen_filename_id]
-        reducfilename = item[cen_filename_id].replace("20190117_HPFonly","20190125_HPFonly").replace("sherlock_v0","sherlock_v1_search")
+        reducfilename = item[cen_filename_id].replace("search","search"+molecule)
+        # reducfilename = item[cen_filename_id].replace("20190117_HPFonly","20190125_HPFonly").replace("sherlock_v0","sherlock_v1_search")
         # reducfilename = item[cen_filename_id].replace("20190117_HPFonly","20190125_HPFonly_cov").replace("sherlock_v0","sherlock_v1_search_empcov")
 
-        hdulist = pyfits.open(reducfilename.replace(".fits","_wvshifts.fits"))
-        wvshifts = hdulist[0].data
-        Nwvshifts_hd = np.where((wvshifts[1::]-wvshifts[0:(np.size(wvshifts)-1)]) < 0)[0][0]+1
-        wvshifts_hd = hdulist[0].data[0:Nwvshifts_hd]
-        wvshifts = hdulist[0].data[Nwvshifts_hd::]
-        Nwvshifts = np.size(wvshifts)
+        if len(glob.glob(reducfilename.replace(".fits","_planetRV.fits"))) == 0:
+            continue
+        hdulist = pyfits.open(reducfilename.replace(".fits","_planetRV.fits"))
+        planetRV = hdulist[0].data
+        NplanetRV_hd = np.where((planetRV[1::]-planetRV[0:(np.size(planetRV)-1)]) < 0)[0][0]+1
+        planetRV_hd = hdulist[0].data[0:NplanetRV_hd]
+        planetRV = hdulist[0].data[NplanetRV_hd::]
+        NplanetRV = np.size(planetRV)
         rv_per_pix = 3e5*dwv/(init_wv+dwv*nl//2) # 38.167938931297705
-        rvshifts_hd = wvshifts_hd/dwv*rv_per_pix
-        rvshifts = wvshifts/dwv*rv_per_pix
 
         hdulist = pyfits.open(reducfilename)
-        cube_hd = hdulist[0].data[2,0:Nwvshifts_hd,:,:]
-        cube = hdulist[0].data[2,Nwvshifts_hd::,:,:]
+        cube_hd = hdulist[0].data[0,0,0,0:NplanetRV_hd,:,:]
+        cube = hdulist[0].data[0,0,0,NplanetRV_hd::,:,:]
         _,ny,nx = cube.shape
 
         bary_rv = -float(item[bary_rv_id])/1000. # RV in km/s
@@ -163,15 +221,30 @@ if 1:
         kcen = int(item[kcen_id])
         lcen = int(item[lcen_id])
         rvcen = float(item[rvcen_id])
-        zcenhd = np.argmin(np.abs(rvshifts_hd-rvcen))
-        zcen = np.argmin(np.abs(rvshifts-rvcen))
+        zcenhd = np.argmin(np.abs(planetRV_hd-rvcen))
+        zcen = np.argmin(np.abs(planetRV-rvcen))
 
-        SNR_data = hdulist[0].data[0,Nwvshifts_hd::,:,:]/hdulist[0].data[1,Nwvshifts_hd::,:,:]
+        SNR_data = hdulist[0].data[0,0,10,NplanetRV_hd::,:,:]
         SNR_data_cp = copy(SNR_data)
         SNR_data_cp[np.where(np.abs(SNR_data)>100)] = np.nan
         SNR_data_cp[98:103,:,:] = np.nan
         stdSNR = np.nanstd(SNR_data_cp)
-        SNR_data_calib = SNR_data/stdSNR
+        meanSNR = np.nanmean(SNR_data_cp,axis=0)[None,:,:]
+        SNR_data_calib = (SNR_data-meanSNR)/stdSNR
+        canvas = np.zeros(SNR_data_calib.shape)
+        canvas[np.where(np.isfinite(SNR_data_calib))] = 1
+        Nvalid_wideRV[(300-zcen):(300+NplanetRV-zcen),
+        ((64*3)//2-kcen):((64*3)//2+ny-kcen),
+        ((19*3)//2-lcen):((19*3)//2+nx-lcen)] += canvas
+        SNR_data_calib[np.where(np.isnan(SNR_data_calib))] = 0
+
+        SNR_data_calib_hd = hdulist[0].data[0,0,10,0:NplanetRV_hd,:,:]
+        canvas = np.zeros(hdulist[0].data[0,0,10,0:NplanetRV_hd,:,:].shape)
+        canvas[np.where(np.isfinite(hdulist[0].data[0,0,10,0:NplanetRV_hd,:,:]))] = 1
+        Nvalid_hdRV[((400*3)//2-zcenhd):((400*3)//2+NplanetRV_hd-zcenhd),
+        ((64*3)//2-kcen):((64*3)//2+ny-kcen),
+        ((19*3)//2-lcen):((19*3)//2+nx-lcen)] += canvas
+        SNR_data_calib_hd[np.where(np.isnan(SNR_data_calib_hd))] = 0
 
         # if np.isnan(np.nanstd(SNR_data_cp)):
         #     plt.figure(1)
@@ -184,52 +257,84 @@ if 1:
         #     plt.show()
         # SNR_data_calib = SNR_data
 
-        summed_wideRV[(300-zcen):(300+Nwvshifts-zcen),
+        summed_wideRV[(300-zcen):(300+NplanetRV-zcen),
         ((64*3)//2-kcen):((64*3)//2+ny-kcen),
         ((19*3)//2-lcen):((19*3)//2+nx-lcen)] += copy(SNR_data_calib)
-        summed_hdRV[((400*3)//2-zcenhd):((400*3)//2+Nwvshifts_hd-zcenhd),
+        summed_hdRV[((400*3)//2-zcenhd):((400*3)//2+NplanetRV_hd-zcenhd),
         ((64*3)//2-kcen):((64*3)//2+ny-kcen),
-        ((19*3)//2-lcen):((19*3)//2+nx-lcen)] += copy(hdulist[0].data[0,0:Nwvshifts_hd,:,:]/hdulist[0].data[1,0:Nwvshifts_hd,:,:]/stdSNR)
+        ((19*3)//2-lcen):((19*3)//2+nx-lcen)] += copy((SNR_data_calib_hd-meanSNR)/stdSNR)
 
 
-    # noise1 = summed_wideRV[200:400,((64*3)//2+5):((64*3)//2+15),((19*3)//2-3):((19*3)//2+3)]
-    # offset = np.nanmean(noise1)
-    # summed_dAIC = summed_dAIC-offset
-    # summed_dAIC2 = summed_dAIC2-offset
-    # # summed_dAIC = np.sign(summed_dAIC)*np.sqrt(np.abs(summed_dAIC))
-    noise1 = summed_wideRV[200:400,((64*3)//2+5):((64*3)//2+15),((19*3)//2-3):((19*3)//2+3)]
+    # noise1 = copy(summed_wideRV[200:400,((64*3)//2+5):((64*3)//2+15),((19*3)//2-3):((19*3)//2+3)])
+    summed_wideRV = summed_wideRV/Nvalid_wideRV
+    summed_hdRV = summed_hdRV/Nvalid_hdRV
+    Nvalid_wideRV = np.sum(Nvalid_wideRV,axis=0)
+    where_valid = np.where(Nvalid_wideRV>30)
+    where_notvalid = np.where(Nvalid_wideRV<=30)
+    noise1 = copy(summed_wideRV[200:400,:,:])
+    noise1[:,((64*3)//2-5):((64*3)//2+5),((19*3)//2-5):((19*3)//2+5)] = np.nan
+    noise1[:,where_notvalid[0],where_notvalid[1]] = np.nan
     sigma = np.nanstd(noise1)
     summed_wideRV = summed_wideRV/sigma
     summed_hdRV = summed_hdRV/sigma
-    noise1 = summed_wideRV[200:400,((64*3)//2+5):((64*3)//2+15),((19*3)//2-3):((19*3)//2+3)]
-    noise2 = summed_wideRV[200:400,((64*3)//2-15):((64*3)//2-5),((19*3)//2-3):((19*3)//2+3)]
-    plt.plot((np.arange(200)-100)*38.167938931297705,summed_wideRV[200:400,(64*3)//2,(19*3)//2],linestyle="-",linewidth=3,color="red")
-    plt.plot((np.arange(-2,2,0.01))*38.167938931297705,summed_hdRV[400:800,(64*3)//2,(19*3)//2],linestyle="--",linewidth=3,color="pink")
-    for k in range(noise1.shape[1]):
-        for l in range(noise1.shape[2]):
-            plt.plot((np.arange(200)-100)*38.167938931297705,noise1[:,k,l],alpha=0.5,linestyle="--",linewidth=1,color="blue")
-            plt.plot((np.arange(200)-100)*38.167938931297705,noise2[:,k,l],alpha=0.5,linestyle="--",linewidth=1,color="cyan")
-    plt.ylabel("SNR")
-    plt.xlabel(r"$\Delta V$ (km/s)")
-
+    noise1 = noise1/sigma
+    # noise1 = summed_wideRV[200:400,((64*3)//2+5):((64*3)//2+15),((19*3)//2-3):((19*3)//2+3)]
+    # noise2 = summed_wideRV[200:400,((64*3)//2-15):((64*3)//2-5),((19*3)//2-3):((19*3)//2+3)]
+    # plt.subplot(1,2,1)
+    # plt.imshow(np.nansum(summed_wideRV,axis=0),interpolation="nearest")
+    # plt.subplot(1,2,2)
+    # plt.imshow(noise1[100,:,:],interpolation="nearest")
+    # plt.show() # 28,96
+    # for k in range(3):
+    #     for l in range(3):
+    #         plt.plot(planetRV,summed_wideRV[200:400,(64*3)//2-1+k,(19*3)//2-1+l],linestyle="-",linewidth=3,color="red")
+    #         plt.plot(planetRV_hd,summed_hdRV[400:800,(64*3)//2-1+k,(19*3)//2-1+l],linestyle="--",linewidth=3,color="pink")
+    plt.plot(planetRV,summed_wideRV[200:400,(64*3)//2,(19*3)//2],linestyle="-",linewidth=2,color="red")
+    plt.plot(planetRV_hd,summed_hdRV[400:800,(64*3)//2,(19*3)//2],linestyle="--",linewidth=2,color="pink") #"black","#ff9900","#006699","grey"
+    for k,l in zip(where_valid[0],where_valid[1]):
+        plt.plot(planetRV,noise1[:,k,l],alpha=0.1,linestyle="--",linewidth=0.2,color="#006699") #006699
+        # plt.plot(planetRV,noise2[:,k,l],alpha=0.5,linestyle="--",linewidth=1,color="cyan")
+    plt.ylabel("SNR",fontsize=15)
+    plt.xlabel(r"$\Delta V$ (km/s)",fontsize=15)
+    plt.gca().tick_params(axis='x', labelsize=15)
+    plt.gca().tick_params(axis='y', labelsize=15)
+    plt.gca().annotate(molecule_str,xy=(-4000,24.5),va="top",ha="left",fontsize=15,color="black")
+    plt.ylim([-5,25])
     plt.show()
-    print("Saving "+os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_CCF.pdf"))
-    plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_CCF.pdf"),bbox_inches='tight')
-    plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_CCF.png"),bbox_inches='tight')
-
-    plt.xlim([-1500,1500])
-    print("Saving "+os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_CCF_zoomed.pdf"))
-    plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_CCF_zoomed.pdf"),bbox_inches='tight')
-    plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_CCF_zoomed.png"),bbox_inches='tight')
+    # print("Saving "+os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_CCF"+molecule+".pdf"))
+    # plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_CCF"+molecule+".pdf"),bbox_inches='tight')
+    # plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_CCF"+molecule+".png"),bbox_inches='tight')
+    #
+    # plt.gca().annotate(molecule_str,xy=(-1450,24.5),va="top",ha="left",fontsize=15,color="black")
+    # plt.xlim([-1500,1500])
+    # print("Saving "+os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_CCF"+molecule+"_zoomed.pdf"))
+    # plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_CCF"+molecule+"_zoomed.pdf"),bbox_inches='tight')
+    # plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_CCF"+molecule+"_zoomed.png"),bbox_inches='tight')
     exit()
 
 # plot CCF
 if 1:
-    plt.figure(1)
+    plt.figure(1,figsize=(9,0.75*9))
+    plt.subplot(2,1,1)
     rv_star = -12.6#-12.6+-1.4km/s HR 8799 Rob and Simbad
-    rv_list = np.array([-float(item[bary_rv_id])+rv_star for item in list_data])
-    plt.plot(rv_list/1000.)
-
+    bary_star_list = np.array([-float(item[bary_rv_id])/1000+rv_star for item in list_data])
+    baryrv_list = np.array([-float(item[bary_rv_id])/1000 for item in list_data])
+    rv_list = np.array([float(item[rvcen_id]) for item in list_data])
+    plt.plot(rv_list,"x",color="red",label="Measured raw RV")
+    plt.plot(baryrv_list,color="#006699",label="Barycentric RV")
+    plt.plot(bary_star_list,color="#ff9900",label="Barycentric + HR8799 RV")
+    plt.xlabel("Exposure Index",fontsize=15)
+    plt.ylabel("RV (km/s)",fontsize=15)
+    plt.legend(fontsize=10)
+    plt.legend(fontsize=10,loc="upper left")
+    plt.subplot(2,1,2)
+    plt.plot(rv_list-bary_star_list,"x",color="red",label="Estimated Planet RV")
+    plt.plot(np.zeros(rv_list.shape)+np.mean(rv_list-bary_star_list),linestyle=":",color="pink",label="Mean Planet RV")
+    plt.xlabel("Exposure Index",fontsize=15)
+    plt.ylabel("RV (km/s)",fontsize=15)
+    plt.ylim([-20,20])
+    plt.legend(fontsize=10,loc="upper left")
+    # plt.show()
     print("Saving "+os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_RV.pdf"))
     plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_RV.pdf"),bbox_inches='tight')
     plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_RV.png"),bbox_inches='tight')
@@ -241,7 +346,7 @@ exit()
 
 
 
-OSIRISDATA = "/home/sda/jruffio/osiris_data/"
+OSIRISDATA = "/data/osiris_data/"
 if 1:
     foldername = "HR_8799_c"
     sep = 0.950
@@ -264,7 +369,7 @@ if 0:
     IFSfilter = "Kbb"
     # IFSfilter = "Hbb"
     fileinfos_filename = "/home/sda/jruffio/pyOSIRIS/osirisextract/fileinfos_jb.xml"
-    out_pngs = os.path.join("/home/sda/jruffio/osiris_data/HR_8799_"+planet+"/")#"/home/sda/jruffio/pyOSIRIS/figures/"
+    out_pngs = os.path.join("/data/osiris_data/HR_8799_"+planet+"/")#"/home/sda/jruffio/pyOSIRIS/figures/"
     # tree = ET.parse(fileinfos_filename)
     # root = tree.getroot()
     reductionname = "reduced_jb"
