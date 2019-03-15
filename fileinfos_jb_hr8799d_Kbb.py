@@ -76,7 +76,6 @@ if 0:
     for filename in filelist_sorted:
         new_list_data.append(old_list_data[filelist.index(filename)])
 
-    new_colnames = old_colnames
 
 if 0: # add MJD-OBS
     filename_id = old_colnames.index("filename")
@@ -112,7 +111,8 @@ if 0: # add filename
             print("[\"{0}\",0,0],".format(filename) )
         exit()
     else:
-        sequence_list =[["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a091001_Kbb_020.fits",1,0],
+        sequence_list =[["/data/osiris_data/HR_8799_d/20130727/reduced_jb/s130727_a057001_Kbb_020.fits",0,0],
+                        ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a091001_Kbb_020.fits",1,0],
                         ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a092001_Kbb_020.fits",1,1],
                         ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a093001_Kbb_020.fits",1,2],
                         ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a094001_Kbb_020.fits",1,3],

@@ -35,17 +35,19 @@ def align_and_scale_star(params):
 OSIRISDATA = "/data/osiris_data/"
 if 1:
     IFSfilter = "Kbb"#"Hbb"#"Kbb"
-    planet = "b"
+    # planet = "b"
     # planet = "c"
-    # planet = "d"
+    planet = "d"
     if "b" in planet:
         date_list = ["20090722","20100711","20100712","20130725","20130726","20130727"] # Kbb
         date_list = [date_list[5],]
     elif "c" in planet:
-        date_list = ["20100715","20101104","20110723"] #Kbb
+        date_list = ["20100715","20101104","20110723","20110724","20110725"] #Kbb
+        date_list = [date_list[4],]
         # date_list = ["20101104"] #Hbb
     elif "d" in planet:
-        date_list = ["20150720","20150722","20150723","20150828"] #Kbb
+        date_list = ["20130727","20150720","20150722","20150723","20150828"] #Kbb
+        date_list = [date_list[0],]
     foldername = "HR_8799_"+planet
 
 

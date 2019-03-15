@@ -148,7 +148,12 @@ if 0: # add filename
                         ["/data/osiris_data/HR_8799_c/20110723/reduced_jb/s110723_a027004_Kbb_020.fits",8,6],
                         ["/data/osiris_data/HR_8799_c/20110723/reduced_jb/s110723_a032001_Kbb_020.fits",9,0],
                         ["/data/osiris_data/HR_8799_c/20110723/reduced_jb/s110723_a033001_Kbb_020.fits",9,1],
-                        ["/data/osiris_data/HR_8799_c/20110723/reduced_jb/s110723_a034001_Kbb_020.fits",9,2]]
+                        ["/data/osiris_data/HR_8799_c/20110723/reduced_jb/s110723_a034001_Kbb_020.fits",9,2],
+                        ["/data/osiris_data/HR_8799_c/20110724/reduced_jb/s110724_a030001_Kbb_020.fits",10,0],
+                        ["/data/osiris_data/HR_8799_c/20110724/reduced_jb/s110724_a032001_Kbb_020.fits",11,0],
+                        ["/data/osiris_data/HR_8799_c/20110724/reduced_jb/s110724_a038001_Kbb_020.fits",12,0],
+                        ["/data/osiris_data/HR_8799_c/20110725/reduced_jb/s110725_a035001_Kbb_020.fits",13,0],
+                        ["/data/osiris_data/HR_8799_c/20110725/reduced_jb/s110725_a050001_Kbb_020.fits",14,0],]
 
     try:
         sequence_id = old_colnames.index("sequence")

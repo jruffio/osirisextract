@@ -667,8 +667,8 @@ def _spline_psf_model(paras):
     normalized_psfs_func_list = []
     for wv_index in range(psfs.shape[-1]):
         # if 1:#np.isnan(psf_func(0,0)[0,0]):
-        #     if wv_index <1660:
-        #         continue
+        #     # if wv_index <1660:
+        #     #     continue
         #     model_psf = psfs[:,:, :, wv_index]
         #     import matplotlib.pyplot as plt
         #     from mpl_toolkits.mplot3d import Axes3D
@@ -676,11 +676,11 @@ def _spline_psf_model(paras):
         #     ax = fig.add_subplot(111,projection="3d")
         #     for k,color in zip(range(model_psf.shape[0]),["pink","blue","green","purple","orange"]):
         #         ax.scatter(xs[k].ravel(),ys[k].ravel(),model_psf[k].ravel(),c=color)
-        #     # plt.show()
+        #     plt.show()
         model_psf = psfs[:,:, :, wv_index].ravel()
         where_finite = np.where(np.isfinite(model_psf))
-        psf_func = interpolate.LSQBivariateSpline(xs.ravel()[where_finite],ys.ravel()[where_finite],model_psf[where_finite],xvec,yvec)
-        # if 1:
+        psf_func = interpolate.LSQBivariateSpline(xs.ravel()[where_finite],ys.ravel()[where_finite],model_psf[where_finite],xvec,yvec,kx=3,ky=3,eps=0.01)
+        # if 0:
         #     print(psf_func(0,0))
         #     x_psf_vec, y_psf_vec = np.arange(2*nx_psf * 1.)/2.-nx_psf//2, np.arange(2*ny_psf* 1.)/2.-ny_psf//2
         #     x_psf_grid, y_psf_grid = np.meshgrid(x_psf_vec, y_psf_vec)
@@ -707,10 +707,10 @@ if __name__ == "__main__":
     ## Variable parameters
     ##############################
     if 0:
-        planet = "b"
+        # planet = "b"
         # date = "090722"
         # date = "100711"
-        date = "100712"
+        # date = "100712"
         # date = "130725"
         # date = "130726"
         # date = "130727"
@@ -718,7 +718,10 @@ if __name__ == "__main__":
         # date = "100715"
         # date = "101104"
         # date = "110723"
-        # planet = "d"
+        # date = "110724"
+        # date = "110725"
+        planet = "d"
+        date = "130727"
         # date = "150720"
         # date = "150722"
         # date = "150723"
@@ -747,6 +750,7 @@ if __name__ == "__main__":
         planet_search = True
         debug_paras = True
         plot_transmissions = False
+        plt_psfs = True
         planet_model_string = "model"
         # planet_model_string = "CO"#"CO2 CO H2O CH4"
 
@@ -773,6 +777,7 @@ if __name__ == "__main__":
             planet = "c"
 
         plot_transmissions = False
+        plt_psfs = False
         #nice -n 15 /home/anaconda3/bin/python ./reduce_HPFonly_diagcov.py /data/osiris_data /data/osiris_data/HR_8799_c/20100715/reduced_jb/ /data/osiris_data/HR_8799_c/20100715/reduced_jb/20190308_HPF_only_sherlock_test/ /data/osiris_data/HR_8799_c/20100715/reduced_jb/s100715_a011001_Kbb_020.fits 20 1 'CO test' 1
 
 
@@ -947,7 +952,7 @@ if __name__ == "__main__":
                 dl_grid,dk_grid = np.array([[0]]),np.array([[0]])
                 # plcen_k,plcen_l = float(fileitem[kcen_id]),float(fileitem[lcen_id])
                 # plcen_k,plcen_l = 32-10,-35.79802955665025+46.8
-                plcen_k,plcen_l = 28,4#44,8
+                plcen_k,plcen_l = 30,9#44,8
             else:
                 planetRV_array = np.arange(-3*dprv,3*dprv,dprv/100)
                 dl_grid,dk_grid = np.meshgrid(np.linspace(-1.,1.,2*20+1),np.linspace(-1.,1.,2*20+1))
@@ -1580,20 +1585,26 @@ if __name__ == "__main__":
         specpool.close()
 
 
-        w=2
-        pl_x_vec = np.arange(-w,w+1)
-        pl_y_vec = np.arange(-w,w+1)
-        nospec_planet_model = np.zeros((2*w+1,2*w+1,nz))
-        for z in range(nz):
-            nospec_planet_model[:,:,z] = normalized_psfs_func_list[z](pl_x_vec,pl_y_vec).transpose()
+        if plt_psfs:
+            w=2
+            pl_x_vec = np.linspace(-w,w+1,100)
+            pl_y_vec = np.linspace(-w,w+1,100)
+            nospec_planet_model = np.zeros((100,100,nz))
+            # nospec_planet_model = np.zeros((2*w+1,2*w+1,nz))
+            for z in range(nz):
+                nospec_planet_model[:,:,z] = normalized_psfs_func_list[z](pl_x_vec,pl_y_vec).transpose()
 
-        # import matplotlib.pyplot as plt
-        # for bkg_k in range(2*w+1):
-        #     for bkg_l in range(2*w+1):
-        #         print(bkg_k*w+bkg_l+1)
-        #         plt.subplot(2*w+1,2*w+1,bkg_k*(2*w+1)+bkg_l+1)
-        #         plt.plot(nospec_planet_model[bkg_k,bkg_l,:])
-        # plt.show()
+            import matplotlib.pyplot as plt
+            plt.figure(1)
+            for k in range(25):
+                plt.subplot(5,5,k+1)
+                plt.imshow(nospec_planet_model[:,:,int(1600//25)*k],interpolation="nearest")
+            # for bkg_k in range(2*w+1):
+            #     for bkg_l in range(2*w+1):
+            #         print(bkg_k*w+bkg_l+1)
+            #         plt.subplot(2*w+1,2*w+1,bkg_k*(2*w+1)+bkg_l+1)
+            #         plt.plot(nospec_planet_model[bkg_k,bkg_l,:])
+            plt.show()
 
 
 
