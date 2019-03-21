@@ -114,6 +114,119 @@ if 0: # add barycenter RV
         result = get_BC_vel(MJDOBS+2400000.5,hip_id=114189,obsname="Keck Observatory",ephemeris="de430")
         new_list_data[k][bary_rv_id] = result[0][0]
 
+if 0: # add spectral band
+    filename_id = new_colnames.index("filename")
+    try:
+        ifs_filter_id = new_colnames.index("IFS filter")
+    except:
+        new_colnames.append("IFS filter")
+        new_list_data = [item+[np.nan,] for item in new_list_data]
+        ifs_filter_id = new_colnames.index("IFS filter")
+
+    for k,item in enumerate(new_list_data):
+        if "_Jbb_" in os.path.basename(item[filename_id]):
+            new_list_data[k][ifs_filter_id] = "Jbb"
+        if "_Hbb_" in os.path.basename(item[filename_id]):
+            new_list_data[k][ifs_filter_id] = "Hbb"
+        if "_Kbb_" in os.path.basename(item[filename_id]):
+            new_list_data[k][ifs_filter_id] = "Kbb"
+
+# Add star Simbad info
+if 0:
+    try:
+        type_id = old_colnames.index("type")
+    except:
+        new_colnames.append("type")
+        new_list_data = [item+[np.nan,] for item in new_list_data]
+        type_id = new_colnames.index("type")
+    try:
+        Jmag_id = old_colnames.index("Jmag")
+    except:
+        new_colnames.append("Jmag")
+        new_list_data = [item+[np.nan,] for item in new_list_data]
+        Jmag_id = new_colnames.index("Jmag")
+    try:
+        Hmag_id = old_colnames.index("Hmag")
+    except:
+        new_colnames.append("Hmag")
+        new_list_data = [item+[np.nan,] for item in new_list_data]
+        Hmag_id = new_colnames.index("Hmag")
+    try:
+        Kmag_id = old_colnames.index("Kmag")
+    except:
+        new_colnames.append("Kmag")
+        new_list_data = [item+[np.nan,] for item in new_list_data]
+        Kmag_id = new_colnames.index("Kmag")
+    try:
+        rv_simbad_id = old_colnames.index("RV Simbad")
+    except:
+        new_colnames.append("RV Simbad")
+        new_list_data = [item+[np.nan,] for item in new_list_data]
+        rv_simbad_id = new_colnames.index("RV Simbad")
+    try:
+        starname_id = old_colnames.index("star name")
+    except:
+        new_colnames.append("star name")
+        new_list_data = [item+[np.nan,] for item in new_list_data]
+        starname_id = new_colnames.index("star name")
+
+    filename_id = new_colnames.index("filename")
+
+    for k,item in enumerate(new_list_data):
+        filename = item[filename_id]
+
+        refstar_name = os.path.dirname(filename).split(os.path.sep)[-1]
+        new_list_data[k][starname_id] = refstar_name
+
+        if refstar_name == "HD_210501":
+            new_list_data[k][rv_simbad_id] = -20.20 #+-2.5
+            new_list_data[k][type_id] = "A0"
+            new_list_data[k][Jmag_id] = 7.615
+            new_list_data[k][Hmag_id] = 7.606
+            new_list_data[k][Kmag_id] = 7.597
+        elif refstar_name == "HIP_1123":
+            new_list_data[k][rv_simbad_id] = -0.9 #+-2
+            new_list_data[k][type_id] = "A1"
+            new_list_data[k][Jmag_id] = 6.186
+            new_list_data[k][Hmag_id] = 6.219
+            new_list_data[k][Kmag_id] = 6.189
+        elif refstar_name == "HIP_116886":
+            new_list_data[k][rv_simbad_id] = np.nan #unknown
+            new_list_data[k][type_id] = "A5"
+            new_list_data[k][Jmag_id] = 9.375
+            new_list_data[k][Hmag_id] = 9.212
+            new_list_data[k][Kmag_id] = 9.189
+        elif refstar_name == "HR_8799":
+            new_list_data[k][rv_simbad_id] = -12.6 #
+            new_list_data[k][type_id] = "F0"
+            new_list_data[k][Jmag_id] = 5.383
+            new_list_data[k][Hmag_id] = 5.280
+            new_list_data[k][Kmag_id] = 5.240
+        elif refstar_name == "BD+14_4774":
+            new_list_data[k][rv_simbad_id] =  -16
+            new_list_data[k][type_id] = "A0"
+            new_list_data[k][Jmag_id] = 9.291
+            new_list_data[k][Hmag_id] = 9.655
+            new_list_data[k][Kmag_id] = 9.613
+        elif refstar_name == "HD_7215":
+            new_list_data[k][rv_simbad_id] =  -2.1
+            new_list_data[k][type_id] = "A0"
+            new_list_data[k][Jmag_id] = 6.906
+            new_list_data[k][Hmag_id] = 6.910
+            new_list_data[k][Kmag_id] = 6.945
+        elif refstar_name == "HIP_18717":
+            new_list_data[k][rv_simbad_id] =  28.5
+            new_list_data[k][type_id] = "A0"
+            new_list_data[k][Jmag_id] = 6.064
+            new_list_data[k][Hmag_id] = 6.090
+            new_list_data[k][Kmag_id] = 6.074
+        else:
+            new_list_data[k][rv_simbad_id] =  np.nan
+            new_list_data[k][type_id] = np.nan
+            new_list_data[k][Jmag_id] = np.nan
+            new_list_data[k][Hmag_id] = np.nan
+            new_list_data[k][Kmag_id] = np.nan
+
 from scipy.interpolate import interp1d
 def get_err_from_posterior(x,posterior):
     ind = np.argsort(posterior)
@@ -124,7 +237,7 @@ def get_err_from_posterior(x,posterior):
     lf = interp1d(cum_posterior[0:argmax_post],x[0:argmax_post],bounds_error=False,fill_value=np.nan)
     rf = interp1d(cum_posterior[argmax_post::],x[argmax_post::],bounds_error=False,fill_value=np.nan)
     return x[argmax_post],(rf(1-0.6827)-lf(1-0.6827))/2.
-if 1:
+if 0:
     try:
         post_filename_id = old_colnames.index("posterior filename")
     except:

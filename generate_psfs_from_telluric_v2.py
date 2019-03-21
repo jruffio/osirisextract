@@ -61,13 +61,13 @@ def _spline_psf_model(paras):
 # OSIRISDATA = "/scratch/groups/bmacint/osiris_data/"
 OSIRISDATA = "/data/osiris_data/"
 if 1:
-    IFSfilter = "Kbb"#"Jbb"#"Hbb"#"Kbb"
+    IFSfilter = "Hbb"#"Jbb"#"Hbb"#"Kbb"
     planet = "b"
     # planet = "c"
     # planet = "d"
     if "b" in planet:
-        date_list = ["20090722","20100711","20100712","20130725","20130726","20130727"] # Kbb
-        # date_list = ["20090903","20090723","20100713","20090730"] # Hbb
+        # date_list = ["20090722","20100711","20100712","20130725","20130726","20130727"] # Kbb
+        date_list = ["20090903","20090723","20100713","20090730"] # Hbb
         # date_list = ["20130726", "20130727", "20091111"] #Jbb
         # date_list = [date_list[4],]
     elif "c" in planet:
@@ -207,7 +207,7 @@ if 1:
     filename_filter = "*/s*"+IFSfilter+"*020_psfs_centers_v2.fits"
 
     for date in date_list:
-        plt.figure(1,figsize=(12,4))
+        fig = plt.figure(1,figsize=(12,4))
         psfs_list = []
         centers_list = []
         refstar_filelist = glob.glob(os.path.join(OSIRISDATA,foldername,date,"reduced_telluric_jb",filename_filter))
@@ -221,6 +221,7 @@ if 1:
             plt.legend(loc="upper left",bbox_to_anchor=(1.0,1.0))
             print("Saving "+os.path.join(OSIRISDATA,foldername,date,"reduced_telluric_jb",date+"_"+IFSfilter+"_psfs_centers_ql.png"))
             plt.savefig(os.path.join(OSIRISDATA,foldername,date,"reduced_telluric_jb",date+"_"+IFSfilter+"_psfs_centers_ql.png"),bbox_inches='tight')
+        plt.close(1)
 
 # build psf model
 if 1:
@@ -426,6 +427,7 @@ if 1:
 
             print("Saving "+os.path.join(OSIRISDATA,foldername,date,"reduced_telluric_jb",date+"_"+IFSfilter+"_psfs_ql.png"))
             plt.savefig(os.path.join(OSIRISDATA,foldername,date,"reduced_telluric_jb",date+"_"+IFSfilter+"_psfs_ql.png"),bbox_inches='tight')
+            plt.close(1)
 
 # calibrate flux
 if 1:
@@ -541,6 +543,7 @@ if 1:
             print("Saving "+os.path.join(OSIRISDATA,foldername,date,"reduced_telluric_jb",date+"_"+IFSfilter+"_psfs_flux_ql.png"))
             plt.savefig(os.path.join(OSIRISDATA,foldername,date,"reduced_telluric_jb",date+"_"+IFSfilter+"_psfs_flux_ql.png"),bbox_inches='tight')
             # plt.show()
+        plt.close(1)
 
 # ao on (good psfs): get repaired spec for ref star fits #1
 if 1:
@@ -548,7 +551,6 @@ if 1:
 
     ref_spec_list = []
     for date in date_list:
-        plt.figure(1,figsize=(12,8))
         psfs_list = []
         centers_list = []
         refstar_filelist = glob.glob(os.path.join(OSIRISDATA,foldername,date,"reduced_telluric_jb",filename_filter))
@@ -637,6 +639,7 @@ if 1:
             plt.legend(loc="upper left",bbox_to_anchor=(1.0,1.0))
             print("Saving "+os.path.join(OSIRISDATA,foldername,date,"reduced_telluric_jb",date+"_"+IFSfilter+"_ao_off_flux_ql.png"))
             plt.savefig(os.path.join(OSIRISDATA,foldername,date,"reduced_telluric_jb",date+"_"+IFSfilter+"_ao_off_flux_ql.png"),bbox_inches='tight')
+        plt.close(1)
         # hdulist = pyfits.HDUList()
         # hdulist.append(pyfits.PrimaryHDU(data=np.array([wvs,ref_spec_list])))
         # try:
