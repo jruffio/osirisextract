@@ -10,13 +10,12 @@ import astropy.io.fits as pyfits
 import numpy as np
 from copy import copy
 
-fileinfos_filename = "/home/sda/jruffio/pyOSIRIS/osirisextract/fileinfos.xml"
-out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
-tree = ET.parse(fileinfos_filename)
-root = tree.getroot()
 
+out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
+
+planet = "b"
 # planet = "c"
-planet = "d"
+# planet = "d"
 
 IFSfilter = "Kbb"
 # IFSfilter = "Hbb"
@@ -37,6 +36,7 @@ with open(fileinfos_filename, 'r') as csvfile:
         kcen_id = colnames.index("kcen")
         lcen_id = colnames.index("lcen")
         rvcen_id = colnames.index("RVcen")
+        rvcensig_id = colnames.index("RVcensig")
     except:
         pass
     filename_id = colnames.index("filename")
@@ -312,15 +312,20 @@ if 0:
     # plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_CCF"+molecule+"_zoomed.png"),bbox_inches='tight')
     exit()
 
-# plot CCF
+# plot RVs
 if 1:
-    plt.figure(1,figsize=(9,0.75*9))
-    plt.subplot(2,1,1)
     rv_star = -12.6#-12.6+-1.4km/s HR 8799 Rob and Simbad
     bary_star_list = np.array([-float(item[bary_rv_id])/1000+rv_star for item in list_data])
     baryrv_list = np.array([-float(item[bary_rv_id])/1000 for item in list_data])
     rv_list = np.array([float(item[rvcen_id]) for item in list_data])
-    plt.plot(rv_list,"x",color="red",label="Measured raw RV")
+    rv_list[37] = np.nan
+    # rv_list[31] = np.nan
+    rvsig_list = np.array([float(item[rvcensig_id]) for item in list_data])
+    valid_list = np.array([not ("201007" in item[filename_id]) for item in list_data])
+    rv_list[np.where(valid_list)] = np.nan
+    plt.figure(1,figsize=(9,0.75*9))
+    plt.subplot(2,1,1)
+    plt.errorbar(np.arange(np.size(rv_list)),rv_list,yerr=rvsig_list,fmt="x",color="red",label="Measured raw RV ($1\sigma$)")
     plt.plot(baryrv_list,color="#006699",label="Barycentric RV")
     plt.plot(bary_star_list,color="#ff9900",label="Barycentric + HR8799 RV")
     plt.xlabel("Exposure Index",fontsize=15)
@@ -328,11 +333,15 @@ if 1:
     plt.legend(fontsize=10)
     plt.legend(fontsize=10,loc="upper left")
     plt.subplot(2,1,2)
-    plt.plot(rv_list-bary_star_list,"x",color="red",label="Estimated Planet RV")
-    plt.plot(np.zeros(rv_list.shape)+np.mean(rv_list-bary_star_list),linestyle=":",color="pink",label="Mean Planet RV")
+    # plt.plot(rv_list-bary_star_list,"x",color="red",label="Estimated Planet RV")
+    plt.plot(np.arange(np.size(rv_list)),np.zeros(rv_list.shape)+np.nanmean(rv_list-bary_star_list),linestyle=":",color="pink",label="Mean Planet RV")
+    plt.errorbar(np.arange(np.size(rv_list)),rv_list-bary_star_list,yerr=rvsig_list,fmt="x",color="red",label="Estimated Planet RV ($1\sigma$)")
     plt.xlabel("Exposure Index",fontsize=15)
     plt.ylabel("RV (km/s)",fontsize=15)
-    plt.ylim([-20,20])
+    print(np.nansum((rv_list-bary_star_list)/rvsig_list)/(np.sum(1./rvsig_list[np.where(np.isfinite(rv_list))])),
+        np.sqrt(np.size(rvsig_list[np.where(np.isfinite(rv_list))]))/(np.sum(1./rvsig_list[np.where(np.isfinite(rv_list))])))
+    print(np.nanmean(rv_list[10:50]-bary_star_list[10:50]))
+    # plt.ylim([-20,20])
     plt.legend(fontsize=10,loc="upper left")
     # plt.show()
     print("Saving "+os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_RV.pdf"))

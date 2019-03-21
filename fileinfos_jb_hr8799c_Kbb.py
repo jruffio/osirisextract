@@ -258,7 +258,7 @@ if 0:
             new_list_data[seq_ind][xoffset_id] = dx
             new_list_data[seq_ind][yoffset_id] = dy
 
-if 0:
+if 1:
     from scipy.signal import correlate2d
     try:
         cen_filename_id = old_colnames.index("cen filename")
@@ -284,6 +284,12 @@ if 0:
         new_colnames.append("RVcen")
         new_list_data = [item+[np.nan,] for item in new_list_data]
         rvcen_id = new_colnames.index("RVcen")
+    try:
+        rvcensig_id = old_colnames.index("RVcensig")
+    except:
+        new_colnames.append("RVcensig")
+        new_list_data = [item+[np.nan,] for item in new_list_data]
+        rvcensig_id = new_colnames.index("RVcensig")
 
     filename_id = old_colnames.index("filename")
     bary_rv_id = new_colnames.index("barycenter rv")
@@ -364,8 +370,11 @@ if 0:
         print(filename)
         # if filename == '/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a034001_Kbb_020.fits':
         #     continue
-        hdulist = pyfits.open(os.path.join(os.path.dirname(filename),myfolder,
+        try:
+            hdulist = pyfits.open(os.path.join(os.path.dirname(filename),myfolder,
                                            os.path.basename(filename).replace(".fits",suffix+"_planetRV.fits")))
+        except:
+            continue
         planetRV = hdulist[0].data
         NplanetRV_hd = np.where((planetRV[1::]-planetRV[0:(np.size(planetRV)-1)]) < 0)[0][0]+1
         planetRV_hd = hdulist[0].data[0:NplanetRV_hd]
@@ -412,6 +421,16 @@ if 0:
         new_list_data[k][kcen_id] = ymax
         new_list_data[k][lcen_id] = xmax
         new_list_data[k][rvcen_id] = planetRV_hd[zmax]
+
+
+        logposterior = hdulist[0].data[0,0,9,0:NplanetRV_hd,ymax,xmax]
+        posterior = np.exp(logposterior-np.nanmax(logposterior))
+        ind = np.argsort(posterior)
+        cum_posterior = np.zeros(np.shape(posterior))
+        cum_posterior[ind] = np.cumsum(posterior[ind])
+        cum_posterior = cum_posterior/np.max(cum_posterior)
+        rv_sigma = np.abs(planetRV_hd[np.argmin(np.abs(cum_posterior - (1-0.6827)))] - planetRV_hd[np.argmax(posterior)])
+        new_list_data[k][rvcensig_id] = rv_sigma
         print(planetRV_hd[zmax]-(bary_rv+rv_star))
 
 print("NEW")

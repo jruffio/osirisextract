@@ -1325,6 +1325,15 @@ if __name__ == "__main__":
                         refstar_mag = 6.910
                     elif IFSfilter == "Kbb":
                         refstar_mag = 6.945
+                elif refstar_name == "HIP_18717":
+                    refstar_RV =  28.5
+                    ref_star_type = "A0"
+                    if IFSfilter == "Jbb":
+                        refstar_mag = 6.064
+                    elif IFSfilter == "Hbb":
+                        refstar_mag = 6.090
+                    elif IFSfilter == "Kbb":
+                        refstar_mag = 6.074
                 else:
                     raise(Exception("Ref star name unknown"))
                 refstarsinfo_fileid = refstars_filelist.index(os.path.basename(ori_refstar_filename))

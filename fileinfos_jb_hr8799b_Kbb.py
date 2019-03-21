@@ -13,10 +13,12 @@ from copy import copy
 planet = "b"
 # planet = "c"
 # planet = "d"
-IFSfilter = "Kbb"
-# IFSfilter = "Hbb"
+# IFSfilter = "Kbb"
+IFSfilter = "Hbb"
 
-fileinfos_filename = "/data/osiris_data/HR_8799_"+planet+"/fileinfos_"+IFSfilter+"_jb.csv"
+
+
+fileinfos_filename = "/data/osiris_data/HR_8799_"+planet+"/fileinfos_Kbb_jb.csv"
 
 # create file if none exists
 if len(glob.glob(fileinfos_filename)) == 0:
@@ -54,8 +56,8 @@ for item in old_list_table:
     print(item)
 
 if 0: # add filename
-    filename_id = old_colnames.index("filename")
-    old_filelist = [item[filename_id] for item in old_list_data]
+    filename_id = new_colnames.index("filename")
+    old_filelist = [item[filename_id] for item in new_list_data]
 
     reductionname = "reduced_jb"
     filenamefilter = "s*_a*"+IFSfilter+"_020.fits"
@@ -65,10 +67,27 @@ if 0: # add filename
             new_list_data.append([filename,]+[np.nan,]*(N_col-1))
     print(new_list_data)
 
+if 0: # add spectral band
+    filename_id = new_colnames.index("filename")
+    try:
+        ifs_filter_id = new_colnames.index("IFS filter")
+    except:
+        new_colnames.append("IFS filter")
+        new_list_data = [item+[np.nan,] for item in new_list_data]
+        ifs_filter_id = new_colnames.index("IFS filter")
+
+    for k,item in enumerate(new_list_data):
+        if "_Jbb_" in os.path.basename(item[filename_id]):
+            new_list_data[k][ifs_filter_id] = "Jbb"
+        if "_Hbb_" in os.path.basename(item[filename_id]):
+            new_list_data[k][ifs_filter_id] = "Hbb"
+        if "_Kbb_" in os.path.basename(item[filename_id]):
+            new_list_data[k][ifs_filter_id] = "Kbb"
+
 #sort files
 if 0:
-    filename_id = old_colnames.index("filename")
-    filelist = [item[filename_id] for item in old_list_data]
+    filename_id = new_colnames.index("filename")
+    filelist = [item[filename_id] for item in new_list_data]
     filelist_sorted = copy(filelist)
     filelist_sorted.sort()
     if 0:
@@ -77,43 +96,46 @@ if 0:
         exit()
     print(len(filelist_sorted)) #37
     # exit()
-    new_list_data = []
+    new_new_list_data = []
     for filename in filelist_sorted:
-        new_list_data.append(old_list_data[filelist.index(filename)])
+        new_new_list_data.append(new_list_data[filelist.index(filename)])
 
+    new_list_data = new_new_list_data
 
 if 0: # add MJD-OBS
-    filename_id = old_colnames.index("filename")
-    MJDOBS_id = old_colnames.index("MJD-OBS")
+    filename_id = new_colnames.index("filename")
+    MJDOBS_id = new_colnames.index("MJD-OBS")
 
-    for k,item in enumerate(old_list_data):
+    for k,item in enumerate(new_list_data):
         hdulist = pyfits.open(item[filename_id])
         prihdr0 = hdulist[0].header
         new_list_data[k][MJDOBS_id] = prihdr0["MJD-OBS"]
 
 if 0: # add barycenter RV
     from barycorrpy import get_BC_vel
-    filename_id = old_colnames.index("filename")
-    MJDOBS_id = old_colnames.index("MJD-OBS")
+    filename_id = new_colnames.index("filename")
+    MJDOBS_id = new_colnames.index("MJD-OBS")
     try:
-        bary_rv_id = old_colnames.index("barycenter rv")
+        bary_rv_id = new_colnames.index("barycenter rv")
     except:
         new_colnames.append("barycenter rv")
         new_list_data = [item+[np.nan,] for item in new_list_data]
         bary_rv_id = new_colnames.index("barycenter rv")
 
-    for k,item in enumerate(old_list_data):
+    for k,item in enumerate(new_list_data):
         MJDOBS = float(item[MJDOBS_id])
         result = get_BC_vel(MJDOBS+2400000.5,hip_id=114189,obsname="Keck Observatory",ephemeris="de430")
         new_list_data[k][bary_rv_id] = result[0][0]
 
-if 0: # add filename
-    if 0:
-        filename_id = old_colnames.index("filename")
-        filelist = [item[filename_id] for item in old_list_data]
+if 1: # add filename
+    if 1:
+        filename_id = new_colnames.index("filename")
+        ifs_filter_id = new_colnames.index("IFS filter")
+        filelist = [item[filename_id] for item in new_list_data]
         filelist.sort()
-        for filename in filelist:
-            print("[\"{0}\",0,0],".format(filename) )
+        for k,filename in enumerate(filelist):
+            if "Hbb" in new_list_data[k][ifs_filter_id]:
+                print("[\"{0}\",,],".format(filename) )
         exit()
     else:
         sequence_list =[["/data/osiris_data/HR_8799_b/20090722/reduced_jb/s090722_a023001_Kbb_020.fits",0,0],
@@ -179,7 +201,36 @@ if 0: # add filename
                         ["/data/osiris_data/HR_8799_b/20130727/reduced_jb/s130727_a040001_Kbb_020.fits",14,4],
                         ["/data/osiris_data/HR_8799_b/20130727/reduced_jb/s130727_a041001_Kbb_020.fits",14,5],
                         ["/data/osiris_data/HR_8799_b/20130727/reduced_jb/s130727_a051001_Kbb_020.fits",15,0],
-                        ["/data/osiris_data/HR_8799_b/20130727/reduced_jb/s130727_a057001_Kbb_020.fits",16,0]]
+                        ["/data/osiris_data/HR_8799_b/20130727/reduced_jb/s130727_a057001_Kbb_020.fits",16,0],
+                        \
+                        ["/data/osiris_data/HR_8799_b/20090723/reduced_jb/s090723_a019001_Hbb_020.fits",17,0],
+                        ["/data/osiris_data/HR_8799_b/20090723/reduced_jb/s090723_a020001_Hbb_020.fits",17,1],
+                        ["/data/osiris_data/HR_8799_b/20090723/reduced_jb/s090723_a021001_Hbb_020.fits",17,2],
+                        ["/data/osiris_data/HR_8799_b/20090723/reduced_jb/s090723_a021002_Hbb_020.fits",17,3],
+                        ["/data/osiris_data/HR_8799_b/20090723/reduced_jb/s090723_a021003_Hbb_020.fits",17,4],
+                        ["/data/osiris_data/HR_8799_b/20090723/reduced_jb/s090723_a029001_Hbb_020.fits",18,0],
+                        ["/data/osiris_data/HR_8799_b/20090730/reduced_jb/s090730_a021001_Hbb_020.fits",19,0],
+                        ["/data/osiris_data/HR_8799_b/20090730/reduced_jb/s090730_a022001_Hbb_020.fits",19,1],
+                        ["/data/osiris_data/HR_8799_b/20090730/reduced_jb/s090730_a022002_Hbb_020.fits",19,2],
+                        ["/data/osiris_data/HR_8799_b/20090730/reduced_jb/s090730_a024001_Hbb_020.fits",20,0],
+                        ["/data/osiris_data/HR_8799_b/20090730/reduced_jb/s090730_a026001_Hbb_020.fits",21,0],
+                        ["/data/osiris_data/HR_8799_b/20090730/reduced_jb/s090730_a027001_Hbb_020.fits",22,0],
+                        ["/data/osiris_data/HR_8799_b/20090730/reduced_jb/s090730_a027002_Hbb_020.fits",22,1],
+                        ["/data/osiris_data/HR_8799_b/20090730/reduced_jb/s090730_a029001_Hbb_020.fits",23,0],
+                        ["/data/osiris_data/HR_8799_b/20090903/reduced_jb/s090903_a016001_Hbb_020.fits",24,0],
+                        ["/data/osiris_data/HR_8799_b/20090903/reduced_jb/s090903_a016002_Hbb_020.fits",24,1],
+                        ["/data/osiris_data/HR_8799_b/20090903/reduced_jb/s090903_a016003_Hbb_020.fits",24,2],
+                        ["/data/osiris_data/HR_8799_b/20090903/reduced_jb/s090903_a020001_Hbb_020.fits",25,0],
+                        ["/data/osiris_data/HR_8799_b/20090903/reduced_jb/s090903_a022001_Hbb_020.fits",25,1],
+                        ["/data/osiris_data/HR_8799_b/20090903/reduced_jb/s090903_a023001_Hbb_020.fits",25,2],
+                        ["/data/osiris_data/HR_8799_b/20090903/reduced_jb/s090903_a024001_Hbb_020.fits",25,3],
+                        ["/data/osiris_data/HR_8799_b/20090903/reduced_jb/s090903_a025001_Hbb_020.fits",25,4],
+                        ["/data/osiris_data/HR_8799_b/20090903/reduced_jb/s090903_a026001_Hbb_020.fits",25,5],
+                        ["/data/osiris_data/HR_8799_b/20090903/reduced_jb/s090903_a027001_Hbb_020.fits",25,6],
+                        ["/data/osiris_data/HR_8799_b/20090903/reduced_jb/s090903_a028001_Hbb_020.fits",25,7],
+                        ["/data/osiris_data/HR_8799_b/20090903/reduced_jb/s090903_a029001_Hbb_020.fits",25,8],
+                        ["/data/osiris_data/HR_8799_b/20100713/reduced_jb/s100713_a020001_Hbb_020.fits",26,0],
+                        ["/data/osiris_data/HR_8799_b/20100713/reduced_jb/s100713_a021001_Hbb_020.fits",26,1]]
 
     try:
         sequence_id = old_colnames.index("sequence")
@@ -284,6 +335,17 @@ if 0:
             new_list_data[seq_ind][xoffset_id] = dx
             new_list_data[seq_ind][yoffset_id] = dy
 
+from scipy.interpolate import interp1d
+def get_err_from_posterior(x,posterior):
+    ind = np.argsort(posterior)
+    cum_posterior = np.zeros(np.shape(posterior))
+    cum_posterior[ind] = np.cumsum(posterior[ind])
+    cum_posterior = cum_posterior/np.max(cum_posterior)
+    argmax_post = np.argmax(cum_posterior)
+    lf = interp1d(cum_posterior[0:argmax_post],x[0:argmax_post],bounds_error=False,fill_value=np.nan)
+    rf = interp1d(cum_posterior[argmax_post::],x[argmax_post::],bounds_error=False,fill_value=np.nan)
+    return x[argmax_post],(rf(1-0.6827)-lf(1-0.6827))/2.
+
 if 0:
     from scipy.signal import correlate2d
     try:
@@ -310,6 +372,12 @@ if 0:
         new_colnames.append("RVcen")
         new_list_data = [item+[np.nan,] for item in new_list_data]
         rvcen_id = new_colnames.index("RVcen")
+    try:
+        rvcensig_id = old_colnames.index("RVcensig")
+    except:
+        new_colnames.append("RVcensig")
+        new_list_data = [item+[np.nan,] for item in new_list_data]
+        rvcensig_id = new_colnames.index("RVcensig")
 
     filename_id = old_colnames.index("filename")
     bary_rv_id = new_colnames.index("barycenter rv")
@@ -327,62 +395,6 @@ if 0:
     dwv = CDELT1/1000.
     init_wv = CRVAL1/1000. # wv for first slice in mum
 
-    # suffix = "_outputHPF_cutoff80_sherlock_v0"
-    # myfolder = "sherlock/20190117_HPFonly"
-    # for k,item in enumerate(old_list_data):
-    #     filename = item[filename_id]
-    #     # if filename == '/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a034001_Kbb_020.fits':
-    #     #     continue
-    #     hdulist = pyfits.open(os.path.join(os.path.dirname(filename),myfolder,
-    #                                        os.path.basename(filename).replace(".fits",suffix+"_wvshifts.fits")))
-    #     wvshifts = hdulist[0].data
-    #     Nwvshifts_hd = np.where((wvshifts[1::]-wvshifts[0:(np.size(wvshifts)-1)]) < 0)[0][0]+1
-    #     wvshifts_hd = hdulist[0].data[0:Nwvshifts_hd]
-    #     wvshifts = hdulist[0].data[Nwvshifts_hd::]
-    #     rv_per_pix = 3e5*dwv/(init_wv+dwv*nl//2) # 38.167938931297705
-    #     rvshifts_hd = wvshifts_hd/dwv*rv_per_pix
-    #     rvshifts = hdulist[0].data[Nwvshifts_hd::]
-    #
-    #     new_list_data[k][cen_filename_id] = os.path.join(os.path.dirname(filename),myfolder,
-    #                                        os.path.basename(filename).replace(".fits",suffix+".fits"))
-    #     hdulist = pyfits.open(os.path.join(os.path.dirname(filename),myfolder,
-    #                                        os.path.basename(filename).replace(".fits",suffix+".fits")))
-    #     cube_hd = hdulist[0].data[2,0:Nwvshifts_hd,:,:]
-    #     cube = hdulist[0].data[2,Nwvshifts_hd::,:,:]
-    #
-    #     bary_rv = -float(item[bary_rv_id])/1000. # RV in km/s
-    #     rv_star = -12.6#-12.6+-1.4km/s HR 8799 Rob and Simbad
-    #
-    #     # print(bary_rv+rv_star)
-    #     guess_rv_id = np.argmin(np.abs(rvshifts_hd-(bary_rv+rv_star)))
-    #     guess_rv_im = copy(cube_hd[guess_rv_id,:,:])
-    #     ny,nx = guess_rv_im.shape
-    #     nan_mask_boxsize = 5
-    #     guess_rv_im[np.where(np.isnan(correlate2d(guess_rv_im,np.ones((nan_mask_boxsize,nan_mask_boxsize)),mode="same")))] = np.nan
-    #     guess_rv_im[0:nan_mask_boxsize//2,:] = np.nan
-    #     guess_rv_im[-nan_mask_boxsize//2+1::,:] = np.nan
-    #     guess_rv_im[:,0:nan_mask_boxsize//2] = np.nan
-    #     guess_rv_im[:,-nan_mask_boxsize//2+1::] = np.nan
-    #
-    #     # plt.imshow(guess_rv_im)
-    #     # plt.show()
-    #     guesspos = np.unravel_index(np.nanargmax(guess_rv_im),guess_rv_im.shape)
-    #     guess_y,guess_x = guesspos
-    #
-    #     cube_hd_cp = copy(cube_hd)
-    #     cube_hd_cp[:,0:np.max([0,(guess_y-5)]),:] = np.nan
-    #     cube_hd_cp[:,np.min([ny,(guess_y+5)])::,:] = np.nan
-    #     cube_hd_cp[:,:,0:np.max([0,(guess_x-5)])] = np.nan
-    #     cube_hd_cp[:,:,np.min([nx,(guess_x+5)])::] = np.nan
-    #
-    #     # plt.imshow(cube_hd_cp[100,:,:])
-    #     # plt.show()
-    #
-    #     zmax,ymax,xmax = np.unravel_index(np.nanargmax(cube_hd_cp),cube_hd.shape)
-    #
-    #     new_list_data[k][kcen_id] = ymax
-    #     new_list_data[k][lcen_id] = xmax
-    #     new_list_data[k][rvcen_id] = rvshifts_hd[zmax]
     suffix = "_outputHPF_cutoff40_sherlock_v1_search"
     myfolder = "sherlock/20190309_HPF_only"
     for k,item in enumerate(old_list_data):
@@ -390,9 +402,15 @@ if 0:
         print(filename)
         # if filename == '/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a034001_Kbb_020.fits':
         #     continue
-        hdulist = pyfits.open(os.path.join(os.path.dirname(filename),myfolder,
+        try:
+            print(os.path.join(os.path.dirname(filename),myfolder,
                                            os.path.basename(filename).replace(".fits",suffix+"_planetRV.fits")))
+            hdulist = pyfits.open(os.path.join(os.path.dirname(filename),myfolder,
+                                           os.path.basename(filename).replace(".fits",suffix+"_planetRV.fits")))
+        except:
+            continue
         planetRV = hdulist[0].data
+        print(hdulist[0].data.shape)
         NplanetRV_hd = np.where((planetRV[1::]-planetRV[0:(np.size(planetRV)-1)]) < 0)[0][0]+1
         planetRV_hd = hdulist[0].data[0:NplanetRV_hd]
         planetRV = hdulist[0].data[NplanetRV_hd::]
@@ -437,8 +455,11 @@ if 0:
 
         new_list_data[k][kcen_id] = ymax
         new_list_data[k][lcen_id] = xmax
-        new_list_data[k][rvcen_id] = planetRV_hd[zmax]
-        print(planetRV_hd[zmax]-(bary_rv+rv_star))
+
+        logposterior = hdulist[0].data[0,0,9,0:NplanetRV_hd,ymax,xmax]
+        posterior = np.exp(logposterior-np.nanmax(logposterior))
+        new_list_data[k][rvcen_id],new_list_data[k][rvcensig_id] = get_err_from_posterior(planetRV_hd,posterior)
+        print(new_list_data[k][rvcen_id],planetRV_hd[zmax],planetRV_hd[zmax]-(bary_rv+rv_star))
 
 print("NEW")
 for item in new_list_data:
@@ -447,76 +468,8 @@ print(new_colnames)
 
 exit()
 
-
 #Save NEW file
 with open(fileinfos_filename, 'w+') as csvfile:
     csvwriter = csv.writer(csvfile, delimiter=';')
     csvwriter.writerows([new_colnames])
     csvwriter.writerows(new_list_data)
-exit()
-
-
-
-
-with open(fileinfos_filename, 'w+') as csvfile:
-    csvwriter = csv.writer(csvfile, delimiter=';')
-    csvwriter.writerows([col_names])
-    csvwriter.writerows(np_tableval_str)
-
-
-#
-# if 0:
-#     root = ET.Element("HR8799")
-#     userelement = ET.Element("c")
-#     root.append(userelement)
-#     tree = ET.ElementTree(root)
-#     with open(fileinfos_filename, "wb") as fh:
-#         tree.write(fh)
-#     exit()
-# else:
-#     tree = ET.parse(fileinfos_filename)
-#     root = tree.getroot()
-#     root_children = root.getchildren()
-#     planet_c = root.find("c")
-#     # exit()
-#
-#
-# # planet separation
-# if 1:
-#     OSIRISDATA = "/data/osiris_data/"
-#     if 1:
-#         foldername = "HR_8799_c"
-#         sep = 0.950
-#         telluric = os.path.join(OSIRISDATA,"HR_8799_c/20100715/reduced_telluric/HD_210501","s100715_a005001_Kbb_020.fits")
-#         template_spec = os.path.join(OSIRISDATA,"hr8799c_osiris_template.save")
-#     year = "*"
-#     reductionname = "reduced_jb"
-#     filenamefilter = "s*_a*001_Kbb_020.fits"
-#
-#     filelist = glob.glob(os.path.join(OSIRISDATA,foldername,year,reductionname,filenamefilter))
-#     filelist.sort()
-#     for filename in filelist:
-#         print(filename)
-#         filebasename = os.path.basename(filename)
-#         if planet_c.find(filebasename) is None:
-#             fileelement = ET.Element(filebasename)
-#             planet_c.append(fileelement)
-#         else:
-#             fileelement = planet_c.find(filebasename)
-#
-#         print(fileelement.tag)
-#         print(fileelement.attrib)
-#
-#         fileelement.set("sep","0.950")
-#
-#
-# if 1:
-#     tree = ET.ElementTree(root)
-#     with open(fileinfos_filename, "wb") as fh:
-#         tree.write(fh)
-# exit()
-#
-#
-# # HR_8799_c/20110723/reduced_quinn/sherlock/logs/parallelized_osiris_s110723_a025001_tlc_Kbb_020.out
-# # HR_8799_c/20110723/reduced_quinn/sherlock/polyfit_ADIcenter/
-# # HR_8799_c/20110723/reduced_quinn/sherlock/polyfit_ADIcenter/s110723_a017001_tlc_Kbb_020_output_centerADI.fits

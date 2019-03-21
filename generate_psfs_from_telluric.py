@@ -34,12 +34,13 @@ def align_and_scale_star(params):
 # OSIRISDATA = "/scratch/groups/bmacint/osiris_data/"
 OSIRISDATA = "/data/osiris_data/"
 if 1:
-    IFSfilter = "Kbb"#"Hbb"#"Kbb"
+    IFSfilter = "Hbb"#"Kbb"#"Hbb"#"Kbb"
     # planet = "b"
     # planet = "c"
     planet = "d"
     if "b" in planet:
         date_list = ["20090722","20100711","20100712","20130725","20130726","20130727"] # Kbb
+        date_list = ["20090903","20090723","20100713","20090730"] # Hbb
         date_list = [date_list[5],]
     elif "c" in planet:
         date_list = ["20100715","20101104","20110723","20110724","20110725"] #Kbb
