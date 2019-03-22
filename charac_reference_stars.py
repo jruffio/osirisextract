@@ -166,7 +166,8 @@ def _task_fit_refstar(paras):
 
         HPFparas,HPFchi2,rank,s = np.linalg.lstsq(model,data_sig,rcond=None)
         data_model = np.dot(model,HPFparas)
-        residuals = data_model-data
+        residuals = np.zeros(data.shape) +np.nan
+        residuals[where_finite_data] = data_model-data[where_finite_data]
         HPFchi2 = np.nansum((residuals)**2)
         slogdet_icovphi0 = np.linalg.slogdet(np.dot(model.T,model))
 
@@ -227,21 +228,26 @@ if __name__ == "__main__":
     except:
         pass
 
-    if 1:
+    if 0:
         OSIRISDATA = "/data/osiris_data/"
         # IFSfilter = "Jbb"
-        # IFSfilter = "Hbb"
-        IFSfilter = "Kbb"
+        IFSfilter = "Hbb"
+        # IFSfilter = "Kbb"
         # refstar_name = "HD_210501"
         refstar_name = "HR_8799"
+        # refstar_name = "BD+14_4774"
         cutoff = 5
 
+        filelist = []
+        date = "*"
+        date = "20090723"
+        date=   "20100713"
         filename_filter = "s*"+IFSfilter+"*020_psfs_repaired_spec_v2.fits"
-        filelist = glob.glob(os.path.join(OSIRISDATA,"HR_8799_*","*","reduced_telluric_jb",refstar_name,filename_filter))
-        filename_filter = "ao_off_s*"+IFSfilter+"*020_spec_v2.fits"
-        filelist.extend(glob.glob(os.path.join(OSIRISDATA,"HR_8799_*","*","reduced_telluric_jb",refstar_name,filename_filter)))
+        filelist.extend(glob.glob(os.path.join(OSIRISDATA,"HR_8799_*",date,"reduced_telluric_jb",refstar_name,filename_filter)))
+        # filename_filter = "ao_off_s*"+IFSfilter+"*020_spec_v2.fits"
+        # filelist.extend(glob.glob(os.path.join(OSIRISDATA,"HR_8799_*",date,"reduced_telluric_jb",refstar_name,filename_filter)))
         print(filelist)
-        spec_filename = filelist[0]
+        spec_filename = filelist[1]
         numthreads = 28
         print(OSIRISDATA)
         print(spec_filename)
@@ -400,13 +406,13 @@ if __name__ == "__main__":
 
 
 
-        data = LPFvsHPF(spec,cutoff)[1]
-        data_norma = np.nanstd(data)
-        data /= data_norma
+        data_lpf,data_hpf = LPFvsHPF(spec,cutoff)
+        data_norma = np.nanstd(data_hpf)
+        data = data_hpf/data_norma
 
         atm_model = []
         for atm_trans_func in atm_trans_list:
-            tmp_model = LPFvsHPF(atm_trans_func(wvs),cutoff)[1]
+            tmp_model = LPFvsHPF(atm_trans_func(wvs)*data_lpf,cutoff)[1]
             tmp_model /= np.nanstd(tmp_model)
             atm_model.append(tmp_model)
 
@@ -531,8 +537,9 @@ if __name__ == "__main__":
             data_sig = data_sig[where_finite_data]
             model = model[where_finite_data[0],:]
 
-            HPFparas,HPFchi2,rank,s = np.linalg.lstsq(model,data,rcond=None)
-            data_model = np.dot(model,HPFparas)
+            HPFparas,HPFchi2,rank,s = np.linalg.lstsq(model,data_sig,rcond=None)
+            data_model = np.zeros(data.shape) +np.nan
+            data_model[where_finite_data] = np.dot(model,HPFparas)
             residuals = data_model-data
             HPFchi2 = np.nansum((residuals)**2)
 

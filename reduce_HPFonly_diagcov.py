@@ -796,7 +796,7 @@ if __name__ == "__main__":
         ny,nx,nz = imgs.shape
         init_wv = prihdr["CRVAL1"]/1000. # wv for first slice in mum
         dwv = prihdr["CDELT1"]/1000. # wv interval between 2 slices in mum
-        wvs=np.arange(init_wv,init_wv+dwv*nz-1e-6,dwv)
+        wvs=np.linspace(init_wv,init_wv+dwv*nz,nz,endpoint=False)
         # print(wvs[0],wvs[-1])
         # exit()
 

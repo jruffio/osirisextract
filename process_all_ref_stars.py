@@ -27,9 +27,9 @@ refstar_name_list = ["HD_210501","HIP_1123","HR_8799","BD+14_4774","HD_7215","HI
 for IFSfilter in IFSfilter_list:
     for refstar_name in refstar_name_list:
 
-        filename_filter = "s*"+IFSfilter+"*020_psfs_repaired_spec_v2.fits"
+        filename_filter = "s*"+IFSfilter+"*[0-9][0-9][0-9]_psfs_repaired_spec_v2.fits"
         filelist = glob.glob(os.path.join(OSIRISDATA,"HR_8799_*","*","reduced_telluric_jb",refstar_name,filename_filter))
-        filename_filter = "ao_off_s*"+IFSfilter+"*020_spec_v2.fits"
+        filename_filter = "ao_off_s*"+IFSfilter+"*[0-9][0-9][0-9]_spec_v2.fits"
         filelist.extend(glob.glob(os.path.join(OSIRISDATA,"HR_8799_*","*","reduced_telluric_jb",refstar_name,filename_filter)))
         filelist.sort()
 

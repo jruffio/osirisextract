@@ -47,40 +47,38 @@ new_list_data = copy(old_list_data)
 for item in old_list_table:
     print(item)
 
-if 0: # add filename
+if 1: # add filename
     filename_id = new_colnames.index("filename")
     old_filelist = [item[filename_id] for item in new_list_data]
 
     reductionname = "reduced_telluric_jb"
-    filenamefilter = "s*_a*_*_020.fits"
+    filenamefilter = "s*_a*_*_[0-9][0-9][0-9].fits"
     filelist = glob.glob(os.path.join("/data/osiris_data/HR_8799_*","*",reductionname,"*",filenamefilter))
+    filelist.sort()
     for filename in filelist:
         if filename not in old_filelist:
             new_list_data.append([filename,]+[np.nan,]*(N_col-1))
     print(new_list_data)
 
-if 0: # add filename for ao off
+if 1: # add filename for ao off
     filename_id = new_colnames.index("filename")
     old_filelist = [item[filename_id] for item in new_list_data]
 
     reductionname = "reduced_telluric_jb"
     filenamefilter = "ao_off_s*_a*_*_020.fits"
     filelist = glob.glob(os.path.join("/data/osiris_data/HR_8799_*","*",reductionname,"*",filenamefilter))
+    filelist.sort()
     for filename in filelist:
         if filename not in old_filelist:
             new_list_data.append([filename,]+[np.nan,]*(N_col-1))
     print(new_list_data)
 
 #sort files
-if 0:
+if 1:
     filename_id = new_colnames.index("filename")
     filelist = [item[filename_id] for item in new_list_data]
     filelist_sorted = copy(filelist)
     filelist_sorted.sort()
-    if 0:
-        for filename in filelist_sorted:
-            print('["'+os.path.join("/data/osiris_data/HR_8799_b/20090722/reduced_jb",filename)+'",,],')
-        exit()
     print(len(filelist_sorted)) #37
     # exit()
     new_new_list_data = []
@@ -89,7 +87,7 @@ if 0:
 
     new_list_data = new_new_list_data
 
-if 0: # add MJD-OBS
+if 1: # add MJD-OBS
     filename_id = new_colnames.index("filename")
     MJDOBS_id = new_colnames.index("MJD-OBS")
 
@@ -98,7 +96,7 @@ if 0: # add MJD-OBS
         prihdr0 = hdulist[0].header
         new_list_data[k][MJDOBS_id] = prihdr0["MJD-OBS"]
 
-if 0: # add barycenter RV
+if 1: # add barycenter RV
     from barycorrpy import get_BC_vel
     filename_id = new_colnames.index("filename")
     MJDOBS_id = new_colnames.index("MJD-OBS")
@@ -114,7 +112,7 @@ if 0: # add barycenter RV
         result = get_BC_vel(MJDOBS+2400000.5,hip_id=114189,obsname="Keck Observatory",ephemeris="de430")
         new_list_data[k][bary_rv_id] = result[0][0]
 
-if 0: # add spectral band
+if 1: # add spectral band
     filename_id = new_colnames.index("filename")
     try:
         ifs_filter_id = new_colnames.index("IFS filter")
@@ -132,7 +130,7 @@ if 0: # add spectral band
             new_list_data[k][ifs_filter_id] = "Kbb"
 
 # Add star Simbad info
-if 0:
+if 1:
     try:
         type_id = old_colnames.index("type")
     except:
@@ -220,6 +218,12 @@ if 0:
             new_list_data[k][Jmag_id] = 6.064
             new_list_data[k][Hmag_id] = 6.090
             new_list_data[k][Kmag_id] = 6.074
+        elif refstar_name == "HIP_111538":
+            new_list_data[k][rv_simbad_id] =  1.6
+            new_list_data[k][type_id] = "A0"
+            new_list_data[k][Jmag_id] = 9.393
+            new_list_data[k][Hmag_id] = 9.431
+            new_list_data[k][Kmag_id] = 9.406
         else:
             new_list_data[k][rv_simbad_id] =  np.nan
             new_list_data[k][type_id] = np.nan
@@ -328,7 +332,7 @@ print("NEW")
 for item in new_list_data:
     print(item)
 print(new_colnames)
-exit()
+# exit()
 
 #Save NEW file
 with open(fileinfos_filename, 'w+') as csvfile:
