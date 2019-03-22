@@ -227,7 +227,7 @@ if __name__ == "__main__":
     except:
         pass
 
-    if 0:
+    if 1:
         OSIRISDATA = "/data/osiris_data/"
         # IFSfilter = "Jbb"
         # IFSfilter = "Hbb"
@@ -275,75 +275,6 @@ if __name__ == "__main__":
         nl=1574
         R0=4000
 
-    if refstar_name == "HD_210501":
-        refstar_RV = -20.20 #+-2.5
-        ref_star_type = "A0"
-        if IFSfilter == "Jbb":
-            refstar_mag = 7.615
-        elif IFSfilter == "Hbb":
-            refstar_mag = 7.606
-        elif IFSfilter == "Kbb":
-            refstar_mag = 7.597
-    elif refstar_name == "HIP_1123":
-        refstar_RV = -0.9 #+-2
-        ref_star_type = "A1"
-        if IFSfilter == "Jbb":
-            refstar_mag = 6.186
-        elif IFSfilter == "Hbb":
-            refstar_mag = 6.219
-        elif IFSfilter == "Kbb":
-            refstar_mag = 6.189
-    elif refstar_name == "HIP_116886":
-        print("I don't knwo the RV of that star")
-        exit()
-        refstar_RV = 0 #unknown
-        ref_star_type = "A5"
-        if IFSfilter == "Jbb":
-            refstar_mag = 9.375
-        elif IFSfilter == "Hbb":
-            refstar_mag = 9.212
-        elif IFSfilter == "Kbb":
-            refstar_mag = 9.189
-    elif refstar_name == "HR_8799":
-        refstar_RV = -12.6 #
-        ref_star_type = "F0"
-        if IFSfilter == "Jbb":
-            refstar_mag = 5.383
-        elif IFSfilter == "Hbb":
-            refstar_mag = 5.280
-        elif IFSfilter == "Kbb":
-            refstar_mag = 5.240
-    elif refstar_name == "BD+14_4774":
-        refstar_RV =  -16
-        ref_star_type = "A0"
-        if IFSfilter == "Jbb":
-            refstar_mag = 9.291
-        elif IFSfilter == "Hbb":
-            refstar_mag = 9.655
-        elif IFSfilter == "Kbb":
-            refstar_mag = 9.613
-    elif refstar_name == "HD_7215":
-        refstar_RV =  -2.1
-        ref_star_type = "A0"
-        if IFSfilter == "Jbb":
-            refstar_mag = 6.906
-        elif IFSfilter == "Hbb":
-            refstar_mag = 6.910
-        elif IFSfilter == "Kbb":
-            refstar_mag = 6.945
-    elif refstar_name == "HIP_18717":
-        refstar_RV =  28.5
-        ref_star_type = "A0"
-        if IFSfilter == "Jbb":
-            refstar_mag = 6.064
-        elif IFSfilter == "Hbb":
-            refstar_mag = 6.090
-        elif IFSfilter == "Kbb":
-            refstar_mag = 6.074
-    else:
-        raise(Exception("Ref star name unknown"))
-
-
     fileinfos_refstars_filename = os.path.join(OSIRISDATA,"fileinfos_refstars_jb.csv")
     with open(fileinfos_refstars_filename, 'r') as csvfile:
         csv_reader = csv.reader(csvfile, delimiter=';')
@@ -353,6 +284,29 @@ if __name__ == "__main__":
     refstarsinfo_filename_id = refstarsinfo_colnames.index("filename")
     refstarsinfo_filelist = [os.path.basename(item[refstarsinfo_filename_id]) for item in refstarsinfo_list_data]
 
+    for fileid,refstarsinfo_file in enumerate(refstarsinfo_filelist):
+        if os.path.basename(refstarsinfo_file).replace(".fits","") in spec_filename:
+            fileitem = refstarsinfo_list_data[fileid]
+            break
+
+    type_id = refstarsinfo_colnames.index("type")
+    Jmag_id = refstarsinfo_colnames.index("Jmag")
+    Hmag_id = refstarsinfo_colnames.index("Hmag")
+    Kmag_id = refstarsinfo_colnames.index("Kmag")
+    rv_simbad_id = refstarsinfo_colnames.index("RV Simbad")
+    starname_id = refstarsinfo_colnames.index("star name")
+
+    refstar_RV = float(fileitem[rv_simbad_id])
+    ref_star_type = fileitem[type_id]
+    if IFSfilter == "Jbb":
+        refstar_mag = float(fileitem[Jmag_id])
+    elif IFSfilter == "Hbb":
+        refstar_mag = float(fileitem[Hmag_id])
+    elif IFSfilter == "Kbb":
+        refstar_mag = float(fileitem[Kmag_id])
+
+    if np.isnan(refstar_mag):
+        raise(Exception("Ref star name unknown"))
 
     if 1:
         specpool = mp.Pool(processes=numthreads)
