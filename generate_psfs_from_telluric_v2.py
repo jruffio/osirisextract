@@ -17,6 +17,8 @@ from pyklip.fakes import gaussfit2d
 from scipy import interpolate
 from astropy.stats import mad_std
 from copy import copy
+from reduce_HPFonly_diagcov import _remove_bad_pixels_z, _remove_edges,_tpool_init,_arraytonumpy,_spline_psf_model
+import ctypes
 try:
     import mkl
     mkl_exists = True
@@ -39,31 +41,6 @@ def align_and_scale_star(params):
             output[l,k,:,:] = klip.align_and_scale(cube[k,:,:],center,old_center=centers[k],scale_factor=ref_wv/wvs[k])
     return output
 
-def _spline_psf_model(paras):
-    psfs,xs,ys,xvec,yvec,chunk_id = paras
-    normalized_psfs_func_list = []
-    for wv_index in range(psfs.shape[1]):
-        if 0:#np.isnan(psf_func(0,0)[0,0]):
-            model_psf = psfs[:,wv_index,:,:]
-            import matplotlib.pyplot as plt
-            from mpl_toolkits.mplot3d import Axes3D
-            fig = plt.figure(1)
-            ax = fig.add_subplot(111,projection="3d")
-            for k,color in zip(range(model_psf.shape[0]),["pink","blue","green","purple","orange"]):
-                ax.scatter(xs[k].ravel(),ys[k].ravel(),model_psf[k].ravel(),c=color)
-        model_psf = psfs[:,wv_index,:,:].ravel()
-        where_nans = np.where(np.isfinite(model_psf))
-        psf_func = interpolate.LSQBivariateSpline(xs.ravel()[where_nans],ys.ravel()[where_nans],model_psf[where_nans],xvec,yvec,kx=3,ky=3,eps=0.01)
-        if 0:
-            print(psf_func(0,0))
-            x_psf_vec, y_psf_vec = np.arange(2*nx_psf * 1.)/2.-nx_psf//2, np.arange(2*ny_psf* 1.)/2.-ny_psf//2
-            x_psf_grid, y_psf_grid = np.meshgrid(x_psf_vec, y_psf_vec)
-            ax.scatter(x_psf_grid.ravel(),y_psf_grid.ravel(),psf_func(x_psf_vec,y_psf_vec).transpose().ravel(),c="red")
-            plt.show()
-        normalized_psfs_func_list.append(psf_func)
-    # print(len(normalized_psfs_func_list))
-    return chunk_id,normalized_psfs_func_list
-
 #------------------------------------------------
 if __name__ == "__main__":
     try:
@@ -75,23 +52,23 @@ if __name__ == "__main__":
     OSIRISDATA = "/data/osiris_data/"
     if 1:
         IFSfilter = "Kbb"#"Jbb"#"Hbb"#"Kbb"
-        planet = "c"
-        # planet = "c"
+        # planet = "b"
+        planet = "d"
         # planet = "d"
         if "b" in planet:#/data/osiris_data/HR_8799_b/20161107/reduced_telluric_jb/HD_210501/s161107_a032002_Kbb_020.fits
-            #date_list = ["20090722","20100711","20100712","20130725","20130726","20130727","20161106","20161107","20161108","20180722"] # Kbb
+            # date_list = ["20090722","20100711","20100712","20130725","20130726","20130727","20161106","20161107","20161108","20180722"] # Kbb
             # date_list = ["20090723","20090730","20090903","20090723","20100713"] # Hbb
             date_list = ["20091111","20130726", "20130727","20161106","20161107","20161108","20180722"] #Jbb
-            # date_list = [date_list[-2],]
+            # date_list = [date_list[1],]
         elif "c" in planet:
-            date_list = ["20100715","20101104","20110723","20110724","20110725","20130726","20171103"] #Kbb
+            # date_list = ["20100715","20101104","20110723","20110724","20110725","20130726","20171103"] #Kbb
             # date_list = ["20101028","20101104","20110724","20110725","20171103"] # Hbb
-            # date_list = ["20130726","20131029", "20131030", "20131031"] #Jbb
+            date_list = ["20130726","20131029", "20131030", "20131031"] #Jbb
             # date_list = [date_list[4],]
             # date_list = ["20101104"] #Hbb
         elif "d" in planet:
             date_list = ["20130727","20150720","20150722","20150723","20150828"] #Kbb
-            date_list = [date_list[0],]
+            # date_list = [date_list[0],]
         foldername = "HR_8799_"+planet
 
 
@@ -127,17 +104,117 @@ if __name__ == "__main__":
                 with pyfits.open(refstar_filename) as hdulist:
                     oripsfs = hdulist[0].data # Nx, NY, Nwvs
 
+                    # # remove bad pixels
+                    # oribadpixs = hdulist[2].data.astype(np.float)
+                    # oribadpixs[np.where(oribadpixs==0)] = np.nan
+                    # # widen pad pixel in the spectral direction
+                    # for m in range(oribadpixs.shape[0]):
+                    #     for n in range(oribadpixs.shape[1]):
+                    #         widen_nans = np.where(np.isnan(np.correlate(oribadpixs[m,n,:],np.ones(3),mode="same")))[0]
+                    #         oribadpixs[m,n,widen_nans] = np.nan
+                    # oripsfs[np.where(np.isnan(oribadpixs))] = np.nan
+                    # where_borders = np.where(np.nansum(oribadpixs,axis=2)<=200)
+                    # oripsfs[where_borders[0],where_borders[1],:] = np.nan
+
                     # remove bad pixels
-                    oribadpixs = hdulist[2].data.astype(np.float)
-                    oribadpixs[np.where(oribadpixs==0)] = np.nan
-                    # widen pad pixel in the spectral direction
-                    for m in range(oribadpixs.shape[0]):
-                        for n in range(oribadpixs.shape[1]):
-                            widen_nans = np.where(np.isnan(np.correlate(oribadpixs[m,n,:],np.ones(3),mode="same")))[0]
-                            oribadpixs[m,n,widen_nans] = np.nan
-                    oripsfs[np.where(np.isnan(oribadpixs))] = np.nan
-                    where_borders = np.where(np.nansum(oribadpixs,axis=2)<=200)
-                    oripsfs[where_borders[0],where_borders[1],:] = np.nan
+                    if 1:
+                        print(oripsfs.shape)
+                        oripsfs = np.moveaxis(oripsfs,0,1)
+                        # print(oripsfs.shape)
+                        # oripsfs = np.moveaxis(oripsfs,1,0)
+
+                        nan_mask_boxsize=3
+                        ny,nx,nz = oripsfs.shape
+                        dtype=ctypes.c_double
+                        persistence_imgs = None
+                        persistence_imgs_shape = None
+                        sigmas_imgs = None
+                        sigmas_imgs_shape = None
+                        original_imgs = mp.Array(dtype, np.size(oripsfs))
+                        original_imgs_shape = oripsfs.shape
+                        original_imgs_np = _arraytonumpy(original_imgs, original_imgs_shape,dtype=dtype)
+                        original_imgs_np[:] = oripsfs
+                        badpix_imgs = mp.Array(dtype, np.size(oripsfs))
+                        badpix_imgs_shape = oripsfs.shape
+                        badpix_imgs_np = _arraytonumpy(badpix_imgs, badpix_imgs_shape,dtype=dtype)
+                        badpix_imgs_np[:] = 0#padimgs_hdrbadpix
+                        badpix_imgs_np[np.where(oripsfs==0)] = np.nan
+                        originalHPF_imgs = None
+                        originalHPF_imgs_shape = None
+                        originalLPF_imgs = None
+                        originalLPF_imgs_shape = None
+                        output_maps = None
+                        output_maps_shape = None
+                        out1dfit = None
+                        out1dfit_shape = None
+                        outres = None
+                        outres_shape = None
+                        outautocorrres = None
+                        outautocorrres_shape = None
+                        wvs_imgs = None
+                        psfs_stamps = None
+                        psfs_stamps_shape = None
+
+                        ##############################
+                        ## INIT threads and shared memory
+                        ##############################
+                        numthreads=28
+                        tpool = mp.Pool(processes=numthreads, initializer=_tpool_init,
+                                        initargs=(original_imgs,sigmas_imgs,badpix_imgs,originalLPF_imgs,originalHPF_imgs, original_imgs_shape, output_maps,
+                                                  output_maps_shape,wvs_imgs,psfs_stamps, psfs_stamps_shape,outres,outres_shape,outautocorrres,outautocorrres_shape,persistence_imgs,out1dfit,out1dfit_shape),
+                                        maxtasksperchild=50)
+
+                        chunk_size = nz//(3*numthreads)
+                        N_chunks = nz//chunk_size
+                        wvs_indices_list = []
+                        for k in range(N_chunks-1):
+                            wvs_indices_list.append(np.arange((k*chunk_size),((k+1)*chunk_size)))
+                        wvs_indices_list.append(np.arange(((N_chunks-1)*chunk_size),nz))
+
+                        tasks = [tpool.apply_async(_remove_bad_pixels_z, args=(col_index,nan_mask_boxsize, dtype,100,10))
+                                 for col_index in range(nx)]
+                        #save it to shared memory
+                        for col_index, bad_pix_task in enumerate(tasks):
+                            print("Finished rm bad pixel z col {0}".format(col_index))
+                            bad_pix_task.wait()
+
+
+                        tasks = [tpool.apply_async(_remove_edges, args=(wvs_indices,nan_mask_boxsize,dtype))
+                                 for wvs_indices in wvs_indices_list]
+                        #save it to shared memory
+                        for chunk_index, rmedge_task in enumerate(tasks):
+                            print("Finished rm edge chunk {0}".format(chunk_index))
+                            rmedge_task.wait()
+
+
+                        # # plt.figure(1)
+                        # # tpool.close()
+                        # # plt.imshow(badpix_imgs_np[:,:,1020])
+                        # # plt.figure(2)
+                        # # plt.imshow(oripsfs[:,:,1020])
+                        # # plt.show()
+                        # plt.figure(20)
+                        # plt.plot(oripsfs[20,10,:])
+                        # plt.plot(oripsfs[19,10,:])
+                        # plt.plot(oripsfs[20,11,:])
+                        # plt.plot(oripsfs[19,10,:])
+
+                        oribadpixs = hdulist[2].data.astype(np.int)
+                        oribadpixs = np.moveaxis(oribadpixs,0,1)
+                        badpix_imgs_np[np.where(oribadpixs==0)] = np.nan
+                        where_nans = np.where(np.isnan(badpix_imgs_np))
+                        original_imgs_np[where_nans] = np.nan
+
+                        oripsfs = copy(original_imgs_np)
+                        oripsfs = np.moveaxis(oripsfs,1,0)
+                        tpool.close()
+
+                        # plt.figure(1)
+                        # tpool.close()
+                        # plt.imshow(badpix_imgs_np[:,:,1020])
+                        # plt.figure(2)
+                        # plt.imshow(oripsfs[:,:,1020])
+                        # plt.show()
 
                     # Move dimensions of input array to match pyklip conventions
                     oripsfs = np.rollaxis(np.rollaxis(oripsfs,2),2,1) # Nwvs, Ny, Nx
@@ -152,7 +229,7 @@ if __name__ == "__main__":
                     pixelsbefore = psf_cube_size//2
                     pixelsafter = psf_cube_size - pixelsbefore
 
-                    oripsfs = np.pad(oripsfs,((0,0),(pixelsbefore,pixelsafter),(pixelsbefore,pixelsafter)),mode="constant",constant_values=0)
+                    oripsfs = np.pad(oripsfs,((0,0),(pixelsbefore,pixelsafter),(pixelsbefore,pixelsafter)),mode="constant",constant_values=np.nan)
                     psfs_centers = np.array([np.unravel_index(np.nanargmax(img),img.shape) for img in oripsfs])
                     # Change center index order to match y,x convention
                     psfs_centers = [(cent[1],cent[0]) for cent in psfs_centers]
@@ -568,7 +645,10 @@ if __name__ == "__main__":
                     psfs_repaired = hdulist[0].data
                     psfs_repaired_vec = np.nansum(psfs_repaired,axis=(1,2))
 
-                where_bad_slices = np.where(np.abs(psfs_vec-psfs_repaired_vec)/psfs_repaired_vec>0.01)
+                res = psfs_vec-psfs_repaired_vec
+                where_finite = np.where(np.isfinite(res))
+                res -= np.polyval(np.polyfit(np.arange(np.size(res))[where_finite],res[where_finite],1),np.arange(np.size(res)))
+                where_bad_slices = np.where(np.abs(res)/psfs_repaired_vec>0.01)
                 if len(where_bad_slices[0])<0.5*np.size(psfs_repaired_vec):
                     psfs_repaired_vec[where_bad_slices] = np.nan
                 ref_spec_list.append(psfs_repaired_vec)
@@ -625,9 +705,6 @@ if __name__ == "__main__":
 
     # ao off: get repaired spec for ref star fits
     if run_all:
-        from reduce_HPFonly_diagcov import _remove_bad_pixels_z, _remove_edges,_tpool_init,_arraytonumpy
-        import ctypes
-
         filename_filter = "*/ao_off_s*"+IFSfilter+"*[0-9][0-9][0-9].fits"
 
         ref_spec_list = []

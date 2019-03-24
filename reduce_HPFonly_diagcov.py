@@ -27,6 +27,7 @@ import sys
 import xml.etree.ElementTree as ET
 import csv
 import time
+from PyAstronomy import pyasl
 from scipy.sparse.linalg import lsqr
 from scipy.sparse import csc_matrix
 from scipy.sparse import bsr_matrix
@@ -663,32 +664,30 @@ def convolve_spectrum(wvs,spectrum,R,mypool=None):
         return conv_spectrum
 
 def _spline_psf_model(paras):
-    psfs,xs,ys,xvec,yvec = paras
+    psfs,xs,ys,xvec,yvec,chunk_id = paras
     normalized_psfs_func_list = []
-    for wv_index in range(psfs.shape[-1]):
-        # if 1:#np.isnan(psf_func(0,0)[0,0]):
-        #     # if wv_index <1660:
-        #     #     continue
-        #     model_psf = psfs[:,:, :, wv_index]
-        #     import matplotlib.pyplot as plt
-        #     from mpl_toolkits.mplot3d import Axes3D
-        #     fig = plt.figure(1)
-        #     ax = fig.add_subplot(111,projection="3d")
-        #     for k,color in zip(range(model_psf.shape[0]),["pink","blue","green","purple","orange"]):
-        #         ax.scatter(xs[k].ravel(),ys[k].ravel(),model_psf[k].ravel(),c=color)
-        #     plt.show()
-        model_psf = psfs[:,:, :, wv_index].ravel()
-        where_finite = np.where(np.isfinite(model_psf))
-        psf_func = interpolate.LSQBivariateSpline(xs.ravel()[where_finite],ys.ravel()[where_finite],model_psf[where_finite],xvec,yvec,kx=3,ky=3,eps=0.01)
-        # if 0:
-        #     print(psf_func(0,0))
-        #     x_psf_vec, y_psf_vec = np.arange(2*nx_psf * 1.)/2.-nx_psf//2, np.arange(2*ny_psf* 1.)/2.-ny_psf//2
-        #     x_psf_grid, y_psf_grid = np.meshgrid(x_psf_vec, y_psf_vec)
-        #     ax.scatter(x_psf_grid.ravel(),y_psf_grid.ravel(),psf_func(x_psf_vec,y_psf_vec).transpose().ravel(),c="red")
-        #     plt.show()
+    for wv_index in range(psfs.shape[1]):
+        if 0:#np.isnan(psf_func(0,0)[0,0]):
+            model_psf = psfs[:,wv_index,:,:]
+            import matplotlib.pyplot as plt
+            from mpl_toolkits.mplot3d import Axes3D
+            fig = plt.figure(1)
+            ax = fig.add_subplot(111,projection="3d")
+            for k,color in zip(range(model_psf.shape[0]),["pink","blue","green","purple","orange"]):
+                ax.scatter(xs[k].ravel(),ys[k].ravel(),model_psf[k].ravel(),c=color)
+        model_psf = psfs[:,wv_index,:,:].ravel()
+        where_nans = np.where(np.isfinite(model_psf))
+        psf_func = interpolate.LSQBivariateSpline(xs.ravel()[where_nans],ys.ravel()[where_nans],model_psf[where_nans],xvec,yvec,kx=3,ky=3,eps=0.01)
+        if 0:
+            print(psf_func(0,0))
+            x_psf_vec, y_psf_vec = np.arange(2*nx_psf * 1.)/2.-nx_psf//2, np.arange(2*ny_psf* 1.)/2.-ny_psf//2
+            x_psf_grid, y_psf_grid = np.meshgrid(x_psf_vec, y_psf_vec)
+            ax.scatter(x_psf_grid.ravel(),y_psf_grid.ravel(),psf_func(x_psf_vec,y_psf_vec).transpose().ravel(),c="red")
+            plt.show()
         normalized_psfs_func_list.append(psf_func)
     # print(len(normalized_psfs_func_list))
-    return normalized_psfs_func_list
+    return chunk_id,normalized_psfs_func_list
+
 
 #------------------------------------------------
 if __name__ == "__main__":
@@ -707,10 +706,11 @@ if __name__ == "__main__":
     ## Variable parameters
     ##############################
     if 0:
-        # planet = "b"
+        planet = "b"
         # date = "090722"
         # date = "100711"
         # date = "100712"
+        date = "100713"
         # date = "130725"
         # date = "130726"
         # date = "130727"
@@ -720,25 +720,26 @@ if __name__ == "__main__":
         # date = "110723"
         # date = "110724"
         # date = "110725"
-        planet = "d"
-        date = "130727"
+        # planet = "d"
+        # date = "130727"
         # date = "150720"
         # date = "150722"
         # date = "150723"
         # date = "150828"
-        IFSfilter = "Kbb"
-        # IFSfilter = "Hbb" # "Kbb" or "Hbb"
+        # IFSfilter = "Kbb"
+        IFSfilter = "Hbb" # "Kbb" or "Hbb"
+        scale = "020"
 
         inputDir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/"
-        outputdir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/20190310_HPF_only/"
+        outputdir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/20190323_HPF_only/"
         # outputdir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/20190305_HPF_only_noperscor/"
         # outputdir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/20190228_mol_temp/"
 
         # inputDir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb_pairsub/"
         # outputdir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb_pairsub/20190228_HPF_only/"
 
-        print(os.path.join(inputDir,"s"+date+"*"+IFSfilter+"_020.fits"))
-        filelist = glob.glob(os.path.join(inputDir,"s"+date+"*"+IFSfilter+"_020.fits"))
+        print(os.path.join(inputDir,"s"+date+"*"+IFSfilter+"_"+scale+".fits"))
+        filelist = glob.glob(os.path.join(inputDir,"s"+date+"*"+IFSfilter+"_"+scale+".fits"))
         filelist.sort()
         print(filelist)
         # exit()
@@ -749,8 +750,8 @@ if __name__ == "__main__":
         numthreads = 28
         planet_search = True
         debug_paras = True
-        plot_transmissions = False
-        plt_psfs = True
+        plot_transmissions = True
+        plt_psfs = False
         planet_model_string = "model"
         # planet_model_string = "CO"#"CO2 CO H2O CH4"
 
@@ -783,7 +784,7 @@ if __name__ == "__main__":
 
     for filename in filelist:
         print("Processing "+filename)
-        
+
         ##############################
         ## Read OSIRIS spectral cube
         ##############################
@@ -812,7 +813,12 @@ if __name__ == "__main__":
             CRVAL1 = 1473.
             CDELT1 = 0.2
             nl=1651
-            R0=5000
+            R0=4000#5000
+        elif IFSfilter=="Jbb": #Hbb 1651 1473.0 0.2
+            CRVAL1 = 1180.
+            CDELT1 = 0.15
+            nl=1574
+            R0=4000
         dwv = CDELT1/1000.
 
         debug = False
@@ -852,6 +858,7 @@ if __name__ == "__main__":
         cutoff = 40
         dtype = ctypes.c_double
 
+        scale = filename.split("_")[-1].split(".fits")[0]
         if mask_starline:
             suffix = "HPF_cutoff{0}_sherlock_v1_starline".format(cutoff)
         else:
@@ -867,6 +874,8 @@ if __name__ == "__main__":
             raise("IFS filter name unknown")
         hr8799_type = "F0"
         hr8799_rv = -12.6 #+-1.4
+        hr8799_limbdark = 0.5
+        hr8799_vsini = 49 # true = 49
         c_kms = 299792.458
         dprv = 3e5*dwv/(init_wv+dwv*nz//2) # 38.167938931297705
         
@@ -880,7 +889,7 @@ if __name__ == "__main__":
         molecular_template_folder = os.path.join(osiris_data_dir,"molecular_templates")
         sky_transmission_folder = os.path.join(osiris_data_dir,"sky_transmission")
         ref_star_folder = os.path.join(os.path.dirname(filename),"..","reduced_telluric_jb")
-        fileinfos_filename = os.path.join(inputDir,"..","..","fileinfos_"+IFSfilter+"_jb.csv")
+        fileinfos_filename = os.path.join(inputDir,"..","..","fileinfos_Kbb_jb.csv")
         fileinfos_refstars_filename = os.path.join(osiris_data_dir,"fileinfos_refstars_jb.csv")
 
         if use_R_calib:
@@ -965,17 +974,6 @@ if __name__ == "__main__":
 
         plcen_k,plcen_l = plcen_k+padding,plcen_l+padding
 
-
-        ##############################
-        ## refstars info (barycenter correction)
-        ##############################
-        with open(fileinfos_refstars_filename, 'r') as csvfile:
-            csv_reader = csv.reader(csvfile, delimiter=';')
-            refstarsinfo_list_table = list(csv_reader)
-            refstarsinfo_colnames = refstarsinfo_list_table[0]
-            refstarsinfo_list_data = refstarsinfo_list_table[1::]
-        refstarsinfo_filename_id = refstarsinfo_colnames.index("filename")
-        refstars_filelist = [os.path.basename(item[refstarsinfo_filename_id]) for item in refstarsinfo_list_data]
 
         ##############################
         ## Planet spectrum model
@@ -1154,35 +1152,14 @@ if __name__ == "__main__":
         # plt.legend()
         # plt.show()
 
-        ##############################
-        ## Reference star*transmission spectrum
-        ##############################
-        # refstar_name_filter = "HIP_1123"
-        refstar_name_filter = "*"
-        # refstar_name_filter = "HD_210501"
-        spdc_refstar_filelist = glob.glob(os.path.join(ref_star_folder,refstar_name_filter,"s*"+IFSfilter+"_020.fits"))
-        spdc_refstar_filelist.sort()
-        psfs_refstar_filelist = glob.glob(os.path.join(ref_star_folder,refstar_name_filter,"s*"+IFSfilter+"_020_psfs_badpix2.fits"))
-        psfs_refstar_filelist.sort()
-        spec_refstar_filelist = glob.glob(os.path.join(ref_star_folder,refstar_name_filter,"s*"+IFSfilter+"_020_psfs_repaired.fits"))
-        spec_refstar_filelist.sort()
-        centers_refstar_filelist = glob.glob(os.path.join(ref_star_folder,refstar_name_filter,"s*"+IFSfilter+"_020_psfs_centers_badpix2.fits"))
-        centers_refstar_filelist.sort()
 
-        print(spdc_refstar_filelist)
-        print(psfs_refstar_filelist)
-        print(spec_refstar_filelist)
-        print(centers_refstar_filelist)
-
+        ##############################
+        ## Persistence model
+        ##############################
         if model_persistence:
             persistence_arr = np.zeros((ny,nx,nz))
-            persistence_filelist = glob.glob(os.path.join(ref_star_folder,"*","s*"+IFSfilter+"_020.fits"))
-            persistence_filelist.extend(glob.glob(os.path.join(ref_star_folder,"*","*persistence*"+IFSfilter+"_020.fits")))
-            # for spdc_refstar_filename in persistence_filelist[0:1]:
-            #     print(spdc_refstar_filename)
-            #     with pyfits.open(spdc_refstar_filename) as hdulist:
-            #         coucou = copy(hdulist[0].header)
-            #         print(coucou["MJD-OBS"])
+            persistence_filelist = glob.glob(os.path.join(ref_star_folder,"*","s*"+IFSfilter+"_"+scale+".fits"))
+            persistence_filelist.extend(glob.glob(os.path.join(ref_star_folder,"*","*persistence*"+IFSfilter+"_"+scale+".fits")))
             for spdc_refstar_filename in persistence_filelist:
                 # print(spdc_refstar_filename)
                 with pyfits.open(spdc_refstar_filename) as hdulist:
@@ -1195,36 +1172,6 @@ if __name__ == "__main__":
                         persis_where2mask = np.where(spdc_refstar_im<np.nanmax(spdc_refstar_im)/10)
                         spdc_refstar_cube[persis_where2mask[0],persis_where2mask[1],:] = 0
                         persistence_arr += spdc_refstar_cube
-                        # import matplotlib.pyplot as plt
-                        # plt.figure(1)
-                        # plt.imshow(spdc_refstar_cube[:,:,100],interpolation="nearest")
-                        # plt.show()
-
-                    # if 0:
-                    #     print(coucou["MJD-OBS"])
-                    #     # tmpdata = np.zeros(hdulist[0].data.shape)
-                    #     # maxx,maxy = np.unravel_index(np.nanargmax(np.nansum(hdulist[0].data,axis=2)),(nx,ny))
-                    #     # newmaxy,newmaxx = 33,9
-                    #     # tmpdata[newmaxx-5:newmaxx+5,newmaxy-5:newmaxy+5,:] = hdulist[0].data[maxx-5:maxx+5,maxy-5:maxy+5,:]
-                    #
-                    #     hdulist2 = pyfits.HDUList()
-                    #     hdulist2.append(pyfits.PrimaryHDU(data=hdulist[0].data,header=coucou))
-                    #     try:
-                    #         hdulist2.writeto(os.path.join(os.path.dirname(spdc_refstar_filename),"hacked_persistence_s100715_a005001_"+IFSfilter+"_020.fits"), overwrite=True)
-                    #     except TypeError:
-                    #         hdulist2.writeto(os.path.join(os.path.dirname(spdc_refstar_filename),"hacked_persistence_s100715_a005001_"+IFSfilter+"_020.fits"), clobber=True)
-                    #     hdulist2.close()
-                    #     exit()
-
-            # import matplotlib.pyplot as plt
-            # # spdc_refstar_im[persis_where2mask]=np.nan
-            # # plt.imshow(spdc_refstar_im,interpolation="nearest")
-            # plt.figure(1)
-            # plt.imshow(persistence_arr[:,:,100],interpolation="nearest")
-            # plt.show()
-            # exit()
-            # # # plt.figure(2)
-            # # # plt.plot(persistence_arr[48,8,:],label="before")
 
             window_size=100
             threshold=7
@@ -1246,179 +1193,50 @@ if __name__ == "__main__":
             # plt.legend()
             # plt.show()
 
+
+        ##############################
+        ## Reference star*transmission spectrum
+        ##############################
+        with open(fileinfos_refstars_filename, 'r') as csvfile:
+            csv_reader = csv.reader(csvfile, delimiter=';')
+            refstarsinfo_list_table = list(csv_reader)
+            refstarsinfo_colnames = refstarsinfo_list_table[0]
+            refstarsinfo_list_data = refstarsinfo_list_table[1::]
+        refstarsinfo_filename_id = refstarsinfo_colnames.index("filename")
+        refstarsinfo_filelist = [os.path.basename(item[refstarsinfo_filename_id]) for item in refstarsinfo_list_data]
+        type_id = refstarsinfo_colnames.index("type")
+        Jmag_id = refstarsinfo_colnames.index("Jmag")
+        Hmag_id = refstarsinfo_colnames.index("Hmag")
+        Kmag_id = refstarsinfo_colnames.index("Kmag")
+        rv_simbad_id = refstarsinfo_colnames.index("RV Simbad")
+        starname_id = refstarsinfo_colnames.index("star name")
+
         phoenix_wv_filename = os.path.join(phoenix_folder,"WAVE_PHOENIX-ACES-AGSS-COND-2011.fits")
         with pyfits.open(phoenix_wv_filename) as hdulist:
             phoenix_wvs = hdulist[0].data/1.e4
         crop_phoenix = np.where((phoenix_wvs>wvs[0]-(wvs[-1]-wvs[0])/2)*(phoenix_wvs<wvs[-1]+(wvs[-1]-wvs[0])/2))
         phoenix_wvs = phoenix_wvs[crop_phoenix]
 
-
-        psfs_refstar_list = []
         transmission_table = []
         transmission4planet_list = []
         HR8799pho_spec_func_list = []
-        hr8799_flux_list = []
-        # print(spdc_refstar_filelist)
-        # print(psfs_refstar_filelist)
-        # print(spec_refstar_filelist)
-        # exit()
+
         for Rid,R in enumerate(R_list):
+            refstar_name_filter = "HIP_1123"
+            # refstar_name_filter = "HD_210501"
+            # refstar_name_filter = "*"
+            transmission_filelist = []
+            transmission_filelist.extend(glob.glob(os.path.join(ref_star_folder,refstar_name_filter,"s*"+IFSfilter+"_"+scale+"_psfs_repaired_spec_v2_cutoff20_transmission.fits")))
+            transmission_filelist.extend(glob.glob(os.path.join(ref_star_folder,refstar_name_filter,"ao_off_s*"+IFSfilter+"_"+scale+"_spec_v2_cutoff20_transmission.fits")))
+            transmission_filelist.sort()
+
             transmission_list = []
-            for ori_refstar_filename,psfs_refstar_filename,spec_refstar_filename in \
-                    zip(spdc_refstar_filelist,psfs_refstar_filelist,spec_refstar_filelist):
-                refstar_name = ori_refstar_filename.split(os.path.sep)[-2]
-
-                Reff = R
-                if refstar_name == "HD_210501":
-                    refstar_RV = -20.20 #+-2.5
-                    ref_star_type = "A0"
-                    if IFSfilter == "Jbb":
-                        refstar_mag = 7.615
-                    elif IFSfilter == "Hbb":
-                        refstar_mag = 7.606
-                    elif IFSfilter == "Kbb":
-                        refstar_mag = 7.597
-                elif refstar_name == "HIP_1123":
-                    refstar_RV = -0.9 #+-2
-                    ref_star_type = "A1"
-                    if IFSfilter == "Jbb":
-                        refstar_mag = 6.186
-                    elif IFSfilter == "Hbb":
-                        refstar_mag = 6.219
-                    elif IFSfilter == "Kbb":
-                        refstar_mag = 6.189
-                elif refstar_name == "HIP_116886":
-                    print("I don't knwo the RV of that star")
-                    exit()
-                    refstar_RV = 0 #unknown
-                    ref_star_type = "A5"
-                    if IFSfilter == "Jbb":
-                        refstar_mag = 9.375
-                    elif IFSfilter == "Hbb":
-                        refstar_mag = 9.212
-                    elif IFSfilter == "Kbb":
-                        refstar_mag = 9.189
-                elif refstar_name == "HR_8799":
-                    refstar_RV = -12.6 #
-                    ref_star_type = "F0"
-                    if IFSfilter == "Jbb":
-                        refstar_mag = 5.383
-                    elif IFSfilter == "Hbb":
-                        refstar_mag = 5.280
-                    elif IFSfilter == "Kbb":
-                        refstar_mag = 5.240
-                elif refstar_name == "BD+14_4774":
-                    refstar_RV =  -16
-                    ref_star_type = "A0"
-                    if IFSfilter == "Jbb":
-                        refstar_mag = 9.291
-                    elif IFSfilter == "Hbb":
-                        refstar_mag = 9.655
-                    elif IFSfilter == "Kbb":
-                        refstar_mag = 9.613
-                elif refstar_name == "HD_7215":
-                    refstar_RV =  -2.1
-                    ref_star_type = "A0"
-                    if IFSfilter == "Jbb":
-                        refstar_mag = 6.906
-                    elif IFSfilter == "Hbb":
-                        refstar_mag = 6.910
-                    elif IFSfilter == "Kbb":
-                        refstar_mag = 6.945
-                elif refstar_name == "HIP_18717":
-                    refstar_RV =  28.5
-                    ref_star_type = "A0"
-                    if IFSfilter == "Jbb":
-                        refstar_mag = 6.064
-                    elif IFSfilter == "Hbb":
-                        refstar_mag = 6.090
-                    elif IFSfilter == "Kbb":
-                        refstar_mag = 6.074
-                else:
-                    raise(Exception("Ref star name unknown"))
-                refstarsinfo_fileid = refstars_filelist.index(os.path.basename(ori_refstar_filename))
-                refstarsinfo_fileitem = refstarsinfo_list_data[refstarsinfo_fileid]
-                refstarsinfo_baryrv_id = refstarsinfo_colnames.index("barycenter rv")
-                refstarsinfo_bary_rv = -float(refstarsinfo_fileitem[refstarsinfo_baryrv_id])/1000
-
-                ##############################
-                ## Reference star phoenix model
-                ##############################
-                try:
-                    phoenix_model_refstar_filename = glob.glob(os.path.join(phoenix_folder,refstar_name+"*.fits"))[0]
-                except:
-                    phoenix_model_refstar_filename = glob.glob(os.path.join(phoenix_folder,ref_star_type+"*.fits"))[0]
-                phoenix_refstar_filename=phoenix_model_refstar_filename.replace(".fits","_gaussconv_R{0}_{1}.csv".format(Reff,IFSfilter))
-
-                if len(glob.glob(phoenix_refstar_filename)) == 0:
-                    with pyfits.open(phoenix_model_refstar_filename) as hdulist:
-                        phoenix_refstar = hdulist[0].data[crop_phoenix]
-                    print("convolving: "+phoenix_model_refstar_filename)
-                    phoenix_refstar_conv = convolve_spectrum(phoenix_wvs,phoenix_refstar,Reff,specpool)
-
-                    with open(phoenix_refstar_filename, 'w+') as csvfile:
-                        csvwriter = csv.writer(csvfile, delimiter=' ')
-                        csvwriter.writerows([["wvs","spectrum"]])
-                        csvwriter.writerows([[a,b] for a,b in zip(phoenix_wvs,phoenix_refstar_conv)])
-
-                with open(phoenix_refstar_filename, 'r') as csvfile:
-                    csv_reader = csv.reader(csvfile, delimiter=' ')
-                    list_starspec = list(csv_reader)
-                    refstarpho_spec_str_arr = np.array(list_starspec, dtype=np.str)
-                    col_names = refstarpho_spec_str_arr[0]
-                    refstarpho_spec = refstarpho_spec_str_arr[1::,1].astype(np.float)
-                    refstarpho_spec_wvs = refstarpho_spec_str_arr[1::,0].astype(np.float)
-                    where_IFSfilter = np.where((refstarpho_spec_wvs>wvs[0])*(refstarpho_spec_wvs<wvs[-1]))
-                    refstarpho_spec = refstarpho_spec/np.mean(refstarpho_spec[where_IFSfilter])
-                    refstarpho_spec_func = interp1d(refstarpho_spec_wvs,refstarpho_spec,bounds_error=False,fill_value=np.nan)
-
-                ##############################
-                ## Reference star OSIRIS
-                ##############################
-                with pyfits.open(spec_refstar_filename) as hdulist:
-                    spec_refstar = np.nansum(hdulist[0].data,axis=(1,2))
-                with pyfits.open(psfs_refstar_filename) as hdulist:
-                    psfs = hdulist[0].data
-                    psfs = np.moveaxis(psfs,0,2)
-                    psfs_spec = np.nansum(psfs,axis=(0,1))
-                # import matplotlib.pyplot as plt
-                # plt.subplot(1,2,1)
-                # plt.plot(spec_refstar,label="repaired")
-                # plt.plot(psfs_spec,label="psfs")
-                # plt.subplot(1,2,2)
-                # plt.plot(np.abs(psfs_spec-spec_refstar)/spec_refstar)
-                # plt.show()
-                if Rid == 0:
-                    hr8799_flux_list.append(np.nansum(spec_refstar)* 10**(-1./2.5*(hr8799_mag-refstar_mag)))
-                if Rid == 0:
-                    psfs_refstar_list.append(psfs/spec_refstar[None,None,:])
-                where_bad_slices = np.where(np.abs(psfs_spec-spec_refstar)/spec_refstar>0.01)
-                if len(where_bad_slices[0])<0.5*nz:
-                    spec_refstar[where_bad_slices] = np.nan
-
-                    # import matplotlib.pyplot as plt
-                    # print(R)
-                    # tmp = spec_refstar
-                    # tmp = tmp/np.nanmean(tmp)
-                    # plt.plot(wvs,tmp,label="spec_refstar")
-                    # plt.plot(wvs,refstarpho_spec_func(wvs*(1-(refstarsinfo_bary_rv)/c_kms)),label="refstarpho bary")
-                    # tmp = refstarpho_spec_func(wvs*(1-(refstar_RV+refstarsinfo_bary_rv)/c_kms))
-                    # tmp = tmp/np.nanmean(tmp)
-                    # plt.plot(tmp,label="refstarpho bary + RV")
-                    # tmp = refstarpho_spec_func(wvs*(1-(refstar_RV+38/2+refstarsinfo_bary_rv)/c_kms))
-                    # tmp = tmp/np.nanmean(tmp)
-                    # plt.plot(tmp,label="refstarpho bary + RV ++")
-                    # tmp = refstarpho_spec_func(wvs*(1-(refstar_RV-38/2+refstarsinfo_bary_rv)/c_kms))
-                    # tmp = tmp/np.nanmean(tmp)
-                    # plt.plot(tmp,label="refstarpho bary + RV --")
-                    # plt.legend()
-                    # plt.show()
-                    transmission = spec_refstar / refstarpho_spec_func(wvs*(1-(refstar_RV+refstarsinfo_bary_rv)/c_kms))
-                    transmission = transmission/np.nanmean(transmission)
-                    # print(refstar_name)
-                    # if refstar_name == "HD_210501":
-                    #     transmission[795:810] = np.nan
-                    transmission_list.append(transmission)
+            for transmission_filename in transmission_filelist:
+                with pyfits.open(transmission_filename) as hdulist:
+                    transmission_wvs = hdulist[0].data[0,:]
+                    transmission_spec = hdulist[0].data[1,:]
+                    transmission_list.append(transmission_spec/np.nanmean(transmission_spec))
+            mean_transmission_func = interp1d(wvs,np.nanmean(np.array(transmission_list),axis=0),bounds_error=False,fill_value=np.nan)
 
             if plot_transmissions:
                 import matplotlib.pyplot as plt
@@ -1430,18 +1248,16 @@ if __name__ == "__main__":
                 plt.legend()
                 plt.show()
 
-            mean_transmission_func = interp1d(wvs,np.nanmean(np.array(transmission_list),axis=0),bounds_error=False,fill_value=np.nan)
             transmission_func_list = [mean_transmission_func]
             transmission4planet_list.append(mean_transmission_func)
             transmission_table.append(transmission_func_list)
 
-            # extract phoenix model for HR8799
-            phoenix_model_HR8799_filename = glob.glob(os.path.join(phoenix_folder,"HR_8799"+"*.fits"))[0]
-            phoenix_HR8799_filename=phoenix_model_HR8799_filename.replace(".fits","_gaussconv_R{0}_{1}.csv".format(Reff,IFSfilter))
-
             ##############################
             ## HR 8799 phoenix model
             ##############################
+
+            phoenix_model_HR8799_filename = glob.glob(os.path.join(phoenix_folder,"HR_8799"+"*.fits"))[0]
+            phoenix_HR8799_filename=phoenix_model_HR8799_filename.replace(".fits","_gaussconv_R{0}_{1}.csv".format(R,IFSfilter))
             if use_R_calib:
                 with pyfits.open(phoenix_model_HR8799_filename) as hdulist:
                     phoenix_HR8799 = hdulist[0].data[crop_phoenix]
@@ -1453,7 +1269,7 @@ if __name__ == "__main__":
                     with pyfits.open(phoenix_model_HR8799_filename) as hdulist:
                         phoenix_HR8799 = hdulist[0].data[crop_phoenix]
                     print("convolving: "+phoenix_model_HR8799_filename)
-                    phoenix_HR8799_conv = convolve_spectrum(phoenix_wvs,phoenix_HR8799,Reff,specpool)
+                    phoenix_HR8799_conv = convolve_spectrum(phoenix_wvs,phoenix_HR8799,R,specpool)
 
                     with open(phoenix_HR8799_filename, 'w+') as csvfile:
                         csvwriter = csv.writer(csvfile, delimiter=' ')
@@ -1468,9 +1284,23 @@ if __name__ == "__main__":
                     HR8799pho_spec = HR8799pho_spec_str_arr[1::,1].astype(np.float)
                     HR8799pho_spec_wvs = HR8799pho_spec_str_arr[1::,0].astype(np.float)
 
+
                 where_IFSfilter = np.where((HR8799pho_spec_wvs>wvs[0])*(HR8799pho_spec_wvs<wvs[-1]))
                 HR8799pho_spec = HR8799pho_spec/np.mean(HR8799pho_spec[where_IFSfilter])
-                HR8799pho_spec_func = interp1d(HR8799pho_spec_wvs/(1-(hr8799_rv+hr8799_bary_rv)/c_kms),HR8799pho_spec,bounds_error=False,fill_value=np.nan)
+
+                HR8799pho_spec_func = interp1d(HR8799pho_spec_wvs,HR8799pho_spec,bounds_error=False,fill_value=np.nan)
+                # import matplotlib.pyplot as plt
+                # plt.plot(HR8799pho_spec_wvs,HR8799pho_spec,label="ori")
+                wvs4broadening = np.arange(HR8799pho_spec_wvs[0],HR8799pho_spec_wvs[-1],
+                                           np.median(HR8799pho_spec_wvs[1::] - HR8799pho_spec_wvs[0:np.size(HR8799pho_spec_wvs)-1])*50)
+                # plt.plot(wvs4broadening,HR8799pho_spec_func(wvs4broadening),label="sampling")
+                broadened_HR8799pho_spec = pyasl.rotBroad(wvs4broadening, HR8799pho_spec_func(wvs4broadening), hr8799_limbdark, hr8799_vsini)
+                # plt.plot(wvs4broadening,broadened_HR8799pho_spec,label="broad")
+                # plt.legend()
+                # plt.show()
+
+                HR8799pho_spec_func = interp1d(wvs4broadening/(1-(hr8799_rv+hr8799_bary_rv)/c_kms),broadened_HR8799pho_spec,bounds_error=False,fill_value=np.nan)
+
                 # #remove
                 # import matplotlib.pyplot as plt
                 # plt.plot(HR8799pho_spec_func(wvs),color="red")
@@ -1480,21 +1310,34 @@ if __name__ == "__main__":
 
             HR8799pho_spec_func_list.append(HR8799pho_spec_func)
 
-        hr8799_flux = np.mean(hr8799_flux_list)
+        ##############################
+        ## calibrate flux
+        ##############################
+        #... extract fluxes from the spectra
+        refstar_name_filter = "*"
+        psfs_rep4flux_filelist = glob.glob(os.path.join(ref_star_folder,refstar_name_filter,"s*"+IFSfilter+"_"+scale+"_psfs_repaired_v2.fits"))
+        psfs_rep4flux_filelist.sort()
+        hr8799_flux_list = []
+        for psfs_rep4flux_filename in psfs_rep4flux_filelist:
+            for fileid,refstarsinfo_file in enumerate(refstarsinfo_filelist):
+                if os.path.basename(refstarsinfo_file).replace(".fits","") in psfs_rep4flux_filename:
+                    fileitem = refstarsinfo_list_data[fileid]
+                    break
+            refstar_RV = float(fileitem[rv_simbad_id])
+            ref_star_type = fileitem[type_id]
+            if IFSfilter == "Jbb":
+                refstar_mag = float(fileitem[Jmag_id])
+            elif IFSfilter == "Hbb":
+                refstar_mag = float(fileitem[Hmag_id])
+            elif IFSfilter == "Kbb":
+                refstar_mag = float(fileitem[Kmag_id])
 
-        # import matplotlib.pyplot as plt
-        # for R,planet_partial_template_func_list,transmission4planet,HR8799pho_spec_func,transmission_list in zip(R_list,planet_model_func_table,transmission4planet_list,HR8799pho_spec_func_list,transmission_table):
-        #     planet_model = planet_partial_template_func_list[0](wvs*(1-(-12.)/c_kms))*transmission4planet(wvs)
-        #     planet_model = planet_model/np.sum(planet_model)*hr8799_flux
-        #     star_model = HR8799pho_spec_func(wvs)*transmission_list[0](wvs)
-        #     star_model = star_model/np.sum(star_model)*hr8799_flux
-        #     print(hr8799_flux)
-        #     plt.plot(wvs,transmission4planet(wvs),label="transmission {0}".format(R))
-        #     plt.plot(wvs,planet_partial_template_func_list[0](wvs*(1-(-12.)/c_kms)),label="plante {0}".format(R))
-        #     # plt.plot(wvs,2e-5*planet_model,label="{0}".format(R))
-        #     # plt.plot(wvs,transmission4planet(wvs),label="{0}".format(R))
-        # plt.legend()
-        # plt.show()
+            with pyfits.open(psfs_rep4flux_filename) as hdulist:
+                psfs_repaired = hdulist[0].data
+                bbflux = np.nansum(psfs_repaired)
+            hr8799_flux_list.append(bbflux* 10**(-1./2.5*(hr8799_mag-refstar_mag)))
+
+        hr8799_flux = np.mean(hr8799_flux_list)
 
         ##############################
         ## Sky transmission spectrum model
@@ -1529,70 +1372,36 @@ if __name__ == "__main__":
         ##############################
         ## Create PSF model
         ##############################
-        psfs_refstar_arr = np.array(psfs_refstar_list)
-        Npsfs, ny_psf,nx_psf,nz_psf = psfs_refstar_arr.shape
+        with pyfits.open(os.path.join(ref_star_folder,"20"+date+"_"+IFSfilter+"_hdpsfs_v2.fits")) as hdulist:
+            psfs_refstar_arr = hdulist[0].data[None,:,:,:]
+        with pyfits.open(os.path.join(ref_star_folder,"20"+date+"_"+IFSfilter+"_hdpsfs_xy_v2.fits")) as hdulist:
+            hdpsfs_xy = hdulist[0].data
+            hdpsfs_x,hdpsfs_y = hdpsfs_xy
+
+        nx_psf,ny_psf = 15,15
+        nz_psf = psfs_refstar_arr.shape[1]
         x_psf_vec, y_psf_vec = np.arange(nx_psf * 1.)-nx_psf//2,np.arange(ny_psf* 1.)-ny_psf//2
         x_psf_grid, y_psf_grid = np.meshgrid(x_psf_vec, y_psf_vec)
-        x_psf_vec_hd, y_psf_vec_hd = np.linspace(0,nx_psf * 1.,100)-nx_psf//2,np.linspace(0,ny_psf* 1.,100)-ny_psf//2
-        x_psf_grid_list = np.zeros((Npsfs,)+x_psf_grid.shape)
-        y_psf_grid_list = np.zeros((Npsfs,)+y_psf_grid.shape)
 
-        # import matplotlib.pyplot as plt
-
-        for k,centers_filename in enumerate(centers_refstar_filelist):
-            with pyfits.open(centers_filename) as hdulist:
-                psfs_centers = hdulist[0].data
-
-            # plt.subplot(2,2,1)
-            # plt.plot(psfs_centers[:,0],label=os.path.basename(centers_filename)+suffix)
-            # plt.subplot(2,2,3)
-            # plt.plot(psfs_centers[:,0]-np.median(psfs_centers[:,0]),label=os.path.basename(centers_filename)+suffix)
-            # plt.subplot(2,2,2)
-            # plt.plot(psfs_centers[:,1],label=os.path.basename(centers_filename)+suffix)
-            # plt.subplot(2,2,4)
-            # plt.plot(psfs_centers[:,1]-np.median(psfs_centers[:,1]),label=os.path.basename(centers_filename)+suffix)
-
-            avg_center = np.median(psfs_centers,axis=0)
-            # print(avg_center)
-            x_psf_grid_list[k,:,:] = x_psf_grid+(nx_psf//2-avg_center[0])
-            y_psf_grid_list[k,:,:] = y_psf_grid+(ny_psf//2-avg_center[1])
-        # plt.show()
-
-        # import matplotlib.pyplot as plt
-        # for k in range(Npsfs):
-        #     plt.subplot(1,Npsfs,k+1)
-        #     plt.imshow(psfs_refstar_arr[k,:,:,1500])#1660
-        # plt.show()
-        normalized_psfs_func_list = []
-        # if debug:
-        #     specpool.close()
-        #     a = _spline_psf_model((psfs_refstar_arr,x_psf_grid_list,
-        #                                                       y_psf_grid_list,
-        #                                                       x_psf_grid[0,0:nx_psf-1]+0.5,y_psf_grid[0:ny_psf-1,0]+0.5))
-        #     import matplotlib.pyplot as plt
-        #     tmp = np.zeros(len(a))
-        #     for k in range(len(a)):
-        #         tmp[k] = a[k](0,0)
-        #
-        #     plt.plot(tmp)
-        #     plt.show()
-        #     exit()
         chunk_size=20
         N_chunks = nz_psf//chunk_size
-        psfs_list = []
+        psfs_chunks = []
         for k in range(N_chunks-1):
-            psfs_list.append(psfs_refstar_arr[:,:,:,k*chunk_size:(k+1)*chunk_size])
-        psfs_list.append(psfs_refstar_arr[:,:,:,(N_chunks-1)*chunk_size:nz_psf])
-        outputs_list = specpool.map(_spline_psf_model, zip(psfs_list,
-                                                           itertools.repeat(x_psf_grid_list),
-                                                           itertools.repeat(y_psf_grid_list),
+            psfs_chunks.append(psfs_refstar_arr[:,k*chunk_size:(k+1)*chunk_size,:,:])
+        psfs_chunks.append(psfs_refstar_arr[:,(N_chunks-1)*chunk_size:nz_psf,:,:])
+        outputs_list = specpool.map(_spline_psf_model, zip(psfs_chunks,
+                                                           itertools.repeat(hdpsfs_x[None,:,:]),
+                                                           itertools.repeat(hdpsfs_y[None,:,:]),
                                                            itertools.repeat(x_psf_grid[0,0:nx_psf-1]+0.5),
-                                                           itertools.repeat(y_psf_grid[0:ny_psf-1,0]+0.5)))
+                                                           itertools.repeat(y_psf_grid[0:ny_psf-1,0]+0.5),
+                                                           np.arange(len(psfs_chunks))))
+
+        normalized_psfs_func_list = []
+        chunks_ids = []
         for out in outputs_list:
-            normalized_psfs_func_list.extend(out)
-
+            normalized_psfs_func_list.extend(out[1])
+            chunks_ids.append(out[0])
         specpool.close()
-
 
         if plt_psfs:
             w=2
@@ -1754,7 +1563,7 @@ if __name__ == "__main__":
 
             filename1_skysub = filename.replace("_pairsub","")
             filename2_skysub = os.path.join(os.path.dirname(filename1_skysub),
-                                            subfilename.replace(".fits","_"+IFSfilter+"_020.fits"))
+                                            subfilename.replace(".fits","_"+IFSfilter+"_"+scale+".fits"))
             with pyfits.open(filename1_skysub) as hdulist:
                 imgs1_skysub = np.rollaxis(np.rollaxis(hdulist[0].data,2),2,1)
                 imgs1_skysub = np.moveaxis(imgs1_skysub,0,2)

@@ -128,7 +128,7 @@ def LPFvsHPF(myvec,cutoff):
 
 
 def _task_fit_refstar(paras):
-    vsini_arr, limbdark_arr,RV_arr,wvs,refstarpho_spec_func,atm_model,data = paras
+    vsini_arr, limbdark_arr,RV_arr,wvs,refstarpho_spec_func,atm_model,spec,cutoff = paras
     vsini_ravel= np.ravel(vsini_arr)
     limbdark_ravel= np.ravel(limbdark_arr)
     RV_ravel= np.ravel(RV_arr)
@@ -137,51 +137,48 @@ def _task_fit_refstar(paras):
     c_kms = 299792.458
 
     for k,(vsini,limbdark,rv) in enumerate(zip(vsini_ravel,limbdark_ravel,RV_ravel)):
-        refstarpho_spec = refstarpho_spec_func(wvs*(1-rv/c_kms))
-        broadened_refstarpho = pyasl.rotBroad(wvs, refstarpho_spec, limbdark, vsini)
-        broadened_refstarpho = LPFvsHPF(broadened_refstarpho,cutoff)[1]
+        hd_wvs =np.linspace(wvs[0],wvs[-1],10*(np.size(wvs)-1)+1)
+        refstarpho_spec = refstarpho_spec_func(hd_wvs*(1-rv/c_kms))
+        broadened_refstarpho = pyasl.rotBroad(hd_wvs, refstarpho_spec, limbdark, vsini)
+        broadened_refstarpho = broadened_refstarpho[::10]
 
-        # refstarpho_spec_hpf = LPFvsHPF(refstarpho_spec_func(wvs*(1-rv/c_kms)),cutoff)[1]
-        # broadened_refstarpho = pyasl.rotBroad(wvs, refstarpho_spec_hpf, limbdark, vsini)
-
-        model = copy(atm_model)
-        model.insert(0,broadened_refstarpho)
+        model = [atm*broadened_refstarpho for atm in atm_model]
+        # model = [broadened_refstarpho for atm in atm_model]
+        model = [LPFvsHPF(vec,cutoff)[1] for vec in model]
+        model = [vec/np.nanstd(vec) for vec in model]
         model = np.array(model).transpose()
 
-        sigmas_vec = np.ones(data.shape)
+        # model = model[:,5:6]
+
+        sigmas_vec = np.ones(spec.shape)
         logdet_Sigma = np.sum(2*np.log(sigmas_vec))
         model = model/sigmas_vec[:,None]
-        data_sig = data/sigmas_vec
+        spec_hpf = LPFvsHPF(spec,cutoff)[1]
+        spec_norma = np.nanstd(spec_hpf)
+        data_sig = spec_hpf/spec_norma/sigmas_vec
+        data_sig[0:200] = np.nan
+        data_sig[np.size(data_sig)-200::] = np.nan
 
         where_finite_data = np.where(np.isfinite(data_sig))
         data_sig = data_sig[where_finite_data]
         model = model[where_finite_data[0],:]
 
-        # for k in range(model.shape[1]):
-        #     plt.plot(model[:,k],label="model")
-        # plt.plot(data,label="data")
-        # plt.plot(refstarpho_spec_hpf)
-        # plt.legend()
-        # plt.show()
-
         HPFparas,HPFchi2,rank,s = np.linalg.lstsq(model,data_sig,rcond=None)
         data_model = np.dot(model,HPFparas)
-        residuals = np.zeros(data.shape) +np.nan
-        residuals[where_finite_data] = data_model-data[where_finite_data]
-        HPFchi2 = np.nansum((residuals)**2)
+        HPFchi2 = np.nansum((data_sig - data_model)**2)
         slogdet_icovphi0 = np.linalg.slogdet(np.dot(model.T,model))
+        # residuals = np.zeros(spec.shape) +np.nan
+        # residuals[where_finite_data] = data_model*spec_norma-spec[where_finite_data]
 
         posterior[k] = -0.5*logdet_Sigma-0.5*slogdet_icovphi0[1]- (model.shape[0]-model.shape[-1]+2-1)/(2)*np.log(HPFchi2)
+        # print(posterior[k])
 
     posterior.shape = vsini_arr.shape
-    # vsini_ravel.shape = vsini_arr.shape
-    # print(vsini_ravel)
-    # print("posterior.shape",posterior.shape)
     return posterior
 
-def fit_refstar(vsini_grid,limbdark_grid,RV_grid,wvs,refstarpho_spec_func,atm_model,data,mypool=None):
+def fit_refstar(vsini_grid,limbdark_grid,RV_grid,wvs,refstarpho_spec_func,atm_model,spec,cutoff,mypool=None):
     if mypool is None:
-        return _task_fit_refstar((vsini_grid,limbdark_grid,RV_grid,wvs,refstarpho_spec_func,atm_model,data))
+        return _task_fit_refstar((vsini_grid,limbdark_grid,RV_grid,wvs,refstarpho_spec_func,atm_model,spec,cutoff))
     else:
         posterior = np.zeros(vsini_grid.shape)
 
@@ -204,10 +201,11 @@ def fit_refstar(vsini_grid,limbdark_grid,RV_grid,wvs,refstarpho_spec_func,atm_mo
         RV_grid_list.append(RV_grid[:,indices,:])
 
         outputs_list = mypool.map(_task_fit_refstar, zip(vsini_grid_list,limbdark_grid_list,RV_grid_list,
-                                                       itertools.repeat(wvs),
-                                                       itertools.repeat(refstarpho_spec_func),
-                                                       itertools.repeat(atm_model),
-                                                       itertools.repeat(data)))
+                                                         itertools.repeat(wvs),
+                                                         itertools.repeat(refstarpho_spec_func),
+                                                         itertools.repeat(atm_model),
+                                                         itertools.repeat(spec),
+                                                         itertools.repeat(cutoff)))
         for k,(indices,out) in enumerate(zip(indices_list,outputs_list)):
             posterior[:,indices,:] = out
 
@@ -235,19 +233,21 @@ if __name__ == "__main__":
         # IFSfilter = "Kbb"
         # refstar_name = "HD_210501"
         refstar_name = "HR_8799"
+        # refstar_name = "HIP_1123"
         # refstar_name = "BD+14_4774"
         cutoff = 5
 
         filelist = []
         date = "*"
-        date = "20090723"
-        date=   "20100713"
+        # date = "20090723"
+        # date=   "20100711"
+        date = "20100713"
         filename_filter = "s*"+IFSfilter+"*020_psfs_repaired_spec_v2.fits"
         filelist.extend(glob.glob(os.path.join(OSIRISDATA,"HR_8799_*",date,"reduced_telluric_jb",refstar_name,filename_filter)))
-        # filename_filter = "ao_off_s*"+IFSfilter+"*020_spec_v2.fits"
-        # filelist.extend(glob.glob(os.path.join(OSIRISDATA,"HR_8799_*",date,"reduced_telluric_jb",refstar_name,filename_filter)))
+        filename_filter = "ao_off_s*"+IFSfilter+"*020_spec_v2.fits"
+        filelist.extend(glob.glob(os.path.join(OSIRISDATA,"HR_8799_*",date,"reduced_telluric_jb",refstar_name,filename_filter)))
         print(filelist)
-        spec_filename = filelist[1]
+        spec_filename = filelist[0]
         numthreads = 28
         print(OSIRISDATA)
         print(spec_filename)
@@ -265,306 +265,322 @@ if __name__ == "__main__":
         cutoff = int(sys.argv[6])
         #nice -n 15 /home/anaconda3/bin/python charac_reference_stars.py /data/osiris_data/ /data/osiris_data/HR_8799_b/20130726/reduced_telluric_jb/HR_8799/s130726_a063001_Jbb_020_psfs_repaired_spec_v2.fits HR_8799 Jbb 28 5
 
-    if IFSfilter=="Kbb": #Kbb 1965.0 0.25
-        CRVAL1 = 1965.
-        CDELT1 = 0.25
-        nl=1665
-        R0=4000
-    elif IFSfilter=="Hbb": #Hbb 1651 1473.0 0.2
-        CRVAL1 = 1473.
-        CDELT1 = 0.2
-        nl=1651
-        R0=4000
-    elif IFSfilter=="Jbb": #Hbb 1651 1473.0 0.2
-        CRVAL1 = 1180.
-        CDELT1 = 0.15
-        nl=1574
-        R0=4000
-
-    fileinfos_refstars_filename = os.path.join(OSIRISDATA,"fileinfos_refstars_jb.csv")
-    with open(fileinfos_refstars_filename, 'r') as csvfile:
-        csv_reader = csv.reader(csvfile, delimiter=';')
-        refstarsinfo_list_table = list(csv_reader)
-        refstarsinfo_colnames = refstarsinfo_list_table[0]
-        refstarsinfo_list_data = refstarsinfo_list_table[1::]
-    refstarsinfo_filename_id = refstarsinfo_colnames.index("filename")
-    refstarsinfo_filelist = [os.path.basename(item[refstarsinfo_filename_id]) for item in refstarsinfo_list_data]
-
-    for fileid,refstarsinfo_file in enumerate(refstarsinfo_filelist):
-        if os.path.basename(refstarsinfo_file).replace(".fits","") in spec_filename:
-            fileitem = refstarsinfo_list_data[fileid]
-            break
-
-    type_id = refstarsinfo_colnames.index("type")
-    Jmag_id = refstarsinfo_colnames.index("Jmag")
-    Hmag_id = refstarsinfo_colnames.index("Hmag")
-    Kmag_id = refstarsinfo_colnames.index("Kmag")
-    rv_simbad_id = refstarsinfo_colnames.index("RV Simbad")
-    starname_id = refstarsinfo_colnames.index("star name")
-
-    refstar_RV = float(fileitem[rv_simbad_id])
-    ref_star_type = fileitem[type_id]
-    if IFSfilter == "Jbb":
-        refstar_mag = float(fileitem[Jmag_id])
-    elif IFSfilter == "Hbb":
-        refstar_mag = float(fileitem[Hmag_id])
-    elif IFSfilter == "Kbb":
-        refstar_mag = float(fileitem[Kmag_id])
-
-    if np.isnan(refstar_mag):
-        raise(Exception("Ref star name unknown"))
-
+    # for spec_filename in filelist:
     if 1:
-        specpool = mp.Pool(processes=numthreads)
+        if IFSfilter=="Kbb": #Kbb 1965.0 0.25
+            CRVAL1 = 1965.
+            CDELT1 = 0.25
+            nl=1665
+            R0=4000
+        elif IFSfilter=="Hbb": #Hbb 1651 1473.0 0.2
+            CRVAL1 = 1473.
+            CDELT1 = 0.2
+            nl=1651
+            R0=4000
+        elif IFSfilter=="Jbb": #Hbb 1651 1473.0 0.2
+            CRVAL1 = 1180.
+            CDELT1 = 0.15
+            nl=1574
+            R0=4000
+        # R0 = 2000
 
-        sky_transmission_folder = os.path.join(OSIRISDATA,"sky_transmission")
-        filelist_skytrans = glob.glob(os.path.join(sky_transmission_folder,"mktrans_zm_*_*.dat"))
-        # if 1:
-        #     filelist_skytrans = filelist_skytrans[3:5]
+        fileinfos_refstars_filename = os.path.join(OSIRISDATA,"fileinfos_refstars_jb.csv")
+        with open(fileinfos_refstars_filename, 'r') as csvfile:
+            csv_reader = csv.reader(csvfile, delimiter=';')
+            refstarsinfo_list_table = list(csv_reader)
+            refstarsinfo_colnames = refstarsinfo_list_table[0]
+            refstarsinfo_list_data = refstarsinfo_list_table[1::]
+        refstarsinfo_filename_id = refstarsinfo_colnames.index("filename")
+        refstarsinfo_filelist = [os.path.basename(item[refstarsinfo_filename_id]) for item in refstarsinfo_list_data]
 
-        atm_trans_list = []
-        atm_trans_wvs_list = []
-        for filename_skytrans in filelist_skytrans:
-            if len(glob.glob(filename_skytrans.replace(".dat","_bb_R{0}.csv".format(R0)))) == 0:
-                skybg_arr=np.loadtxt(filename_skytrans)
-                skytrans_wvs = skybg_arr[:,0]
-                skytrans_spec = skybg_arr[:,1]
-                print("convolving: "+filename_skytrans)
-                skytrans_spec_conv = convolve_spectrum(skytrans_wvs,skytrans_spec,R0,specpool)
+        for fileid,refstarsinfo_file in enumerate(refstarsinfo_filelist):
+            if os.path.basename(refstarsinfo_file).replace(".fits","") in spec_filename:
+                fileitem = refstarsinfo_list_data[fileid]
+                break
 
-                with open(filename_skytrans.replace(".dat","_bb_R{0}.csv".format(R0)), 'w+') as csvfile:
+        type_id = refstarsinfo_colnames.index("type")
+        Jmag_id = refstarsinfo_colnames.index("Jmag")
+        Hmag_id = refstarsinfo_colnames.index("Hmag")
+        Kmag_id = refstarsinfo_colnames.index("Kmag")
+        rv_simbad_id = refstarsinfo_colnames.index("RV Simbad")
+        starname_id = refstarsinfo_colnames.index("star name")
+
+        refstar_RV = float(fileitem[rv_simbad_id])
+        ref_star_type = fileitem[type_id]
+        if IFSfilter == "Jbb":
+            refstar_mag = float(fileitem[Jmag_id])
+        elif IFSfilter == "Hbb":
+            refstar_mag = float(fileitem[Hmag_id])
+        elif IFSfilter == "Kbb":
+            refstar_mag = float(fileitem[Kmag_id])
+
+        if np.isnan(refstar_mag):
+            raise(Exception("Ref star name unknown"))
+
+        if 1:
+            specpool = mp.Pool(processes=numthreads)
+
+            sky_transmission_folder = os.path.join(OSIRISDATA,"sky_transmission")
+            filelist_skytrans = glob.glob(os.path.join(sky_transmission_folder,"mktrans_zm_*_*.dat"))
+            # if 1:
+            #     filelist_skytrans = filelist_skytrans[3:5]
+
+            atm_trans_list = []
+            atm_trans_wvs_list = []
+            for filename_skytrans in filelist_skytrans:
+                if len(glob.glob(filename_skytrans.replace(".dat","_bb_R{0}.csv".format(R0)))) == 0:
+                    skybg_arr=np.loadtxt(filename_skytrans)
+                    skytrans_wvs = skybg_arr[:,0]
+                    skytrans_spec = skybg_arr[:,1]
+                    print("convolving: "+filename_skytrans)
+                    skytrans_spec_conv = convolve_spectrum(skytrans_wvs,skytrans_spec,R0,specpool)
+
+                    with open(filename_skytrans.replace(".dat","_bb_R{0}.csv".format(R0)), 'w+') as csvfile:
+                        csvwriter = csv.writer(csvfile, delimiter=' ')
+                        csvwriter.writerows([["wvs","spectrum"]])
+                        csvwriter.writerows([[a,b] for a,b in zip(skytrans_wvs,skytrans_spec_conv)])
+
+                with open(filename_skytrans.replace(".dat","_bb_R{0}.csv".format(R0)), 'r') as csvfile:
+                    csv_reader = csv.reader(csvfile, delimiter=' ')
+                    list_starspec = list(csv_reader)
+                    spec_str_arr = np.array(list_starspec, dtype=np.str)
+                    col_names = spec_str_arr[0]
+                    skytrans_spec = spec_str_arr[1::,1].astype(np.float)
+                    skytrans_wvs = spec_str_arr[1::,0].astype(np.float)
+
+
+                atm_trans_wvs_list.append(skytrans_wvs)
+                atm_trans_list.append(interp1d(skytrans_wvs,skytrans_spec,bounds_error=False,fill_value=np.nan))
+
+
+            # for wvs,spec in zip(atm_trans_wvs_list,atm_trans_list):
+            #         plt.plot(wvs,spec(wvs))
+            # plt.show()
+            # exit()
+
+            print(spec_filename)
+            for refstarsinfo_id, refstarsinfo_file in enumerate(refstarsinfo_filelist):
+                if os.path.basename(refstarsinfo_file).replace(".fits","") in spec_filename:
+                    refstarsinfo_fileid = refstarsinfo_id
+                    break
+            refstarsinfo_fileitem = refstarsinfo_list_data[refstarsinfo_fileid]
+            refstarsinfo_baryrv_id = refstarsinfo_colnames.index("barycenter rv")
+            refstarsinfo_bary_rv = -float(refstarsinfo_fileitem[refstarsinfo_baryrv_id])/1000
+
+            with pyfits.open(spec_filename) as hdulist:
+                wvs = hdulist[0].data[0,:]
+                spec = hdulist[0].data[1,:]
+
+
+            phoenix_folder = os.path.join(OSIRISDATA,"phoenix")
+            phoenix_wv_filename = os.path.join(phoenix_folder,"WAVE_PHOENIX-ACES-AGSS-COND-2011.fits")
+            with pyfits.open(phoenix_wv_filename) as hdulist:
+                phoenix_wvs = hdulist[0].data/1.e4
+            crop_phoenix = np.where((phoenix_wvs>wvs[0]-(wvs[-1]-wvs[0])/2)*(phoenix_wvs<wvs[-1]+(wvs[-1]-wvs[0])/2))
+            phoenix_wvs = phoenix_wvs[crop_phoenix]
+            try:
+                phoenix_model_refstar_filename = glob.glob(os.path.join(phoenix_folder,refstar_name+"*.fits"))[0]
+            except:
+                phoenix_model_refstar_filename = glob.glob(os.path.join(phoenix_folder,ref_star_type+"*.fits"))[0]
+            phoenix_refstar_filename=phoenix_model_refstar_filename.replace(".fits","_gaussconv_R{0}_{1}.csv".format(R0,IFSfilter))
+
+            if len(glob.glob(phoenix_refstar_filename)) == 0:
+                with pyfits.open(phoenix_model_refstar_filename) as hdulist:
+                    phoenix_refstar = hdulist[0].data[crop_phoenix]
+                print("convolving: "+phoenix_model_refstar_filename)
+
+                phoenix_refstar_conv = convolve_spectrum(phoenix_wvs,phoenix_refstar,R0,specpool)
+
+                with open(phoenix_refstar_filename, 'w+') as csvfile:
                     csvwriter = csv.writer(csvfile, delimiter=' ')
                     csvwriter.writerows([["wvs","spectrum"]])
-                    csvwriter.writerows([[a,b] for a,b in zip(skytrans_wvs,skytrans_spec_conv)])
+                    csvwriter.writerows([[a,b] for a,b in zip(phoenix_wvs,phoenix_refstar_conv)])
 
-            with open(filename_skytrans.replace(".dat","_bb_R{0}.csv".format(R0)), 'r') as csvfile:
+            with open(phoenix_refstar_filename, 'r') as csvfile:
                 csv_reader = csv.reader(csvfile, delimiter=' ')
                 list_starspec = list(csv_reader)
-                spec_str_arr = np.array(list_starspec, dtype=np.str)
-                col_names = spec_str_arr[0]
-                skytrans_spec = spec_str_arr[1::,1].astype(np.float)
-                skytrans_wvs = spec_str_arr[1::,0].astype(np.float)
+                refstarpho_spec_str_arr = np.array(list_starspec, dtype=np.str)
+                col_names = refstarpho_spec_str_arr[0]
+                refstarpho_spec = refstarpho_spec_str_arr[1::,1].astype(np.float)
+                refstarpho_spec_wvs = refstarpho_spec_str_arr[1::,0].astype(np.float)
+                where_IFSfilter = np.where((refstarpho_spec_wvs>wvs[0])*(refstarpho_spec_wvs<wvs[-1]))
+                refstarpho_spec = refstarpho_spec/np.mean(refstarpho_spec[where_IFSfilter])
+                refstarpho_spec_func = interp1d(refstarpho_spec_wvs,refstarpho_spec,bounds_error=False,fill_value=np.nan)
 
+            filters_folder = os.path.join(OSIRISDATA,"filters")
+            print(os.path.join(filters_folder,"osiris_spec_"+IFSfilter+"_data.txt"))
+            filterdata = np.loadtxt(os.path.join(filters_folder,"osiris_spec_"+IFSfilter+"_data.txt"))
+            filter_wvs  = filterdata[:,0]/1000.
+            filterspec =convolve_spectrum(filter_wvs,filterdata[:,1]/100.,R0,specpool)
+            filter_trans_func  = interp1d(filter_wvs,filterspec)
 
-            atm_trans_wvs_list.append(skytrans_wvs)
-            atm_trans_list.append(interp1d(skytrans_wvs,skytrans_spec,bounds_error=False,fill_value=np.nan))
+            atm_model = []
+            for atm_trans_func in atm_trans_list:
+                tmp_model = atm_trans_func(wvs)*filter_trans_func(wvs)
+                tmp_model /= np.nanstd(tmp_model)
+                atm_model.append(tmp_model)
 
+            if 1:
+                N_vsini = 100
+                vsini_vec = np.linspace(1,500,N_vsini)
+                N_limbdark = 3#5
+                limbdark_vec = np.linspace(0,1,N_limbdark)
+                # limbdark_vec = np.array([0.0,1.0])
+                N_RV = 80+1#201
+                RV_vec = np.linspace(-40+refstarsinfo_bary_rv+refstar_RV,40+refstarsinfo_bary_rv+refstar_RV,N_RV)
+                # print(RV_vec)
+                # print(refstarsinfo_bary_rv,refstar_RV)
+                # exit()
+                vsini_grid, limbdark_grid,RV_grid = np.meshgrid(vsini_vec, limbdark_vec, RV_vec)
+            else:
+                N_vsini = 100
+                vsini_vec = np.linspace(1,500,N_vsini)
+                N_limbdark = 3#5
+                limbdark_vec = np.linspace(0,1,N_limbdark)
+                # limbdark_vec = np.array([0.0])
+                N_RV = 5#201
+                RV_vec = np.linspace(-40+refstarsinfo_bary_rv+refstar_RV,40+refstarsinfo_bary_rv+refstar_RV,N_RV)
+                vsini_grid, limbdark_grid,RV_grid = np.meshgrid(vsini_vec, limbdark_vec, RV_vec)
 
-        # for wvs,spec in zip(atm_trans_wvs_list,atm_trans_list):
-        #         plt.plot(wvs,spec(wvs))
-        # plt.show()
-        # exit()
-
-        print(spec_filename)
-        for refstarsinfo_id, refstarsinfo_file in enumerate(refstarsinfo_filelist):
-            if os.path.basename(refstarsinfo_file).replace(".fits","") in spec_filename:
-                refstarsinfo_fileid = refstarsinfo_id
-                break
-        refstarsinfo_fileitem = refstarsinfo_list_data[refstarsinfo_fileid]
-        refstarsinfo_baryrv_id = refstarsinfo_colnames.index("barycenter rv")
-        refstarsinfo_bary_rv = -float(refstarsinfo_fileitem[refstarsinfo_baryrv_id])/1000
-
-        with pyfits.open(spec_filename) as hdulist:
-            wvs = hdulist[0].data[0,:]
-            spec = hdulist[0].data[1,:]
-
-
-        phoenix_folder = os.path.join(OSIRISDATA,"phoenix")
-        phoenix_wv_filename = os.path.join(phoenix_folder,"WAVE_PHOENIX-ACES-AGSS-COND-2011.fits")
-        with pyfits.open(phoenix_wv_filename) as hdulist:
-            phoenix_wvs = hdulist[0].data/1.e4
-        crop_phoenix = np.where((phoenix_wvs>wvs[0]-(wvs[-1]-wvs[0])/2)*(phoenix_wvs<wvs[-1]+(wvs[-1]-wvs[0])/2))
-        phoenix_wvs = phoenix_wvs[crop_phoenix]
-        try:
-            phoenix_model_refstar_filename = glob.glob(os.path.join(phoenix_folder,refstar_name+"*.fits"))[0]
-        except:
-            phoenix_model_refstar_filename = glob.glob(os.path.join(phoenix_folder,ref_star_type+"*.fits"))[0]
-        phoenix_refstar_filename=phoenix_model_refstar_filename.replace(".fits","_gaussconv_R{0}_{1}.csv".format(R0,IFSfilter))
-
-        if len(glob.glob(phoenix_refstar_filename)) == 0:
-            with pyfits.open(phoenix_model_refstar_filename) as hdulist:
-                phoenix_refstar = hdulist[0].data[crop_phoenix]
-            print("convolving: "+phoenix_model_refstar_filename)
-
-            phoenix_refstar_conv = convolve_spectrum(phoenix_wvs,phoenix_refstar,R0,specpool)
-
-            with open(phoenix_refstar_filename, 'w+') as csvfile:
-                csvwriter = csv.writer(csvfile, delimiter=' ')
-                csvwriter.writerows([["wvs","spectrum"]])
-                csvwriter.writerows([[a,b] for a,b in zip(phoenix_wvs,phoenix_refstar_conv)])
-
-        with open(phoenix_refstar_filename, 'r') as csvfile:
-            csv_reader = csv.reader(csvfile, delimiter=' ')
-            list_starspec = list(csv_reader)
-            refstarpho_spec_str_arr = np.array(list_starspec, dtype=np.str)
-            col_names = refstarpho_spec_str_arr[0]
-            refstarpho_spec = refstarpho_spec_str_arr[1::,1].astype(np.float)
-            refstarpho_spec_wvs = refstarpho_spec_str_arr[1::,0].astype(np.float)
-            where_IFSfilter = np.where((refstarpho_spec_wvs>wvs[0])*(refstarpho_spec_wvs<wvs[-1]))
-            refstarpho_spec = refstarpho_spec/np.mean(refstarpho_spec[where_IFSfilter])
-            refstarpho_spec_func = interp1d(refstarpho_spec_wvs,refstarpho_spec,bounds_error=False,fill_value=np.nan)
-
-
-
-        data_lpf,data_hpf = LPFvsHPF(spec,cutoff)
-        data_norma = np.nanstd(data_hpf)
-        data = data_hpf/data_norma
-
-        atm_model = []
-        for atm_trans_func in atm_trans_list:
-            tmp_model = LPFvsHPF(atm_trans_func(wvs)*data_lpf,cutoff)[1]
-            tmp_model /= np.nanstd(tmp_model)
-            atm_model.append(tmp_model)
-
-        if 1:
-            N_vsini = 500
-            vsini_vec = np.linspace(1,500,N_vsini)
-            N_limbdark = 4#5
-            limbdark_vec = np.linspace(0,1,N_limbdark)
-            # limbdark_vec = np.array([0.0,1.0])
-            N_RV = 80*4+1#201
-            RV_vec = np.linspace(-40+refstarsinfo_bary_rv+refstar_RV,40+refstarsinfo_bary_rv+refstar_RV,N_RV)
-            # print(RV_vec)
-            # print(refstarsinfo_bary_rv,refstar_RV)
-            # exit()
-            vsini_grid, limbdark_grid,RV_grid = np.meshgrid(vsini_vec, limbdark_vec, RV_vec)
-        else:
-            N_vsini = 100
-            vsini_vec = np.linspace(1,500,N_vsini)
-            N_limbdark = 2#5
-            limbdark_vec = np.linspace(0,1,N_limbdark)
-            # limbdark_vec = np.array([0.0])
-            N_RV = 5#201
-            RV_vec = np.linspace(-50+refstarsinfo_bary_rv+refstar_RV,50+refstarsinfo_bary_rv+refstar_RV,N_RV)
-            # RV_vec = np.array([refstarsinfo_bary_rv+refstar_RV,])
-            # print(RV_vec)
-            # print(refstarsinfo_bary_rv,refstar_RV)
-            # exit()
-            vsini_grid, limbdark_grid,RV_grid = np.meshgrid(vsini_vec, limbdark_vec, RV_vec)
-
-        posterior = fit_refstar(vsini_grid,
-                                limbdark_grid,
-                                RV_grid,
-                                wvs,
-                                refstarpho_spec_func,
-                                atm_model,
-                                data,
-                                mypool=specpool)#specpool)
-
-        hdulist = pyfits.HDUList()
-        hdulist.append(pyfits.PrimaryHDU(data=posterior))
-        try:
-            hdulist.writeto(os.path.join(spec_filename.replace(".fits","_cutoff{0}_logpost.fits".format(cutoff))), overwrite=True)
-        except TypeError:
-            hdulist.writeto(os.path.join(spec_filename.replace(".fits","_cutoff{0}_logpost.fits".format(cutoff))), clobber=True)
-        hdulist.close()
-        hdulist = pyfits.HDUList()
-        hdulist.append(pyfits.PrimaryHDU(data=vsini_vec))
-        try:
-            hdulist.writeto(os.path.join(spec_filename.replace(".fits","_cutoff{0}_logpost_vsini.fits".format(cutoff))), overwrite=True)
-        except TypeError:
-            hdulist.writeto(os.path.join(spec_filename.replace(".fits","_cutoff{0}_logpost_vsini.fits".format(cutoff))), clobber=True)
-        hdulist.close()
-        hdulist = pyfits.HDUList()
-        hdulist.append(pyfits.PrimaryHDU(data=limbdark_vec))
-        try:
-            hdulist.writeto(os.path.join(spec_filename.replace(".fits","_cutoff{0}_logpost_limbdar.fits".format(cutoff))), overwrite=True)
-        except TypeError:
-            hdulist.writeto(os.path.join(spec_filename.replace(".fits","_cutoff{0}_logpost_limbdar.fits".format(cutoff))), clobber=True)
-        hdulist.close()
-        hdulist = pyfits.HDUList()
-        hdulist.append(pyfits.PrimaryHDU(data=RV_vec))
-        try:
-            hdulist.writeto(os.path.join(spec_filename.replace(".fits","_cutoff{0}_logpost_rv.fits".format(cutoff))), overwrite=True)
-        except TypeError:
-            hdulist.writeto(os.path.join(spec_filename.replace(".fits","_cutoff{0}_logpost_rv.fits".format(cutoff))), clobber=True)
-        hdulist.close()
-
-        specpool.close()
-    if 1:
-        print(spec_filename)
-        post_filename = spec_filename.replace(".fits","_cutoff{0}_logpost.fits".format(cutoff))
-        print(post_filename)
-        with pyfits.open(post_filename) as hdulist:
-            logposterior = hdulist[0].data
-        with pyfits.open(post_filename.replace(".fits","_vsini.fits")) as hdulist:
-            vsini_vec = hdulist[0].data
-        with pyfits.open(post_filename.replace(".fits","_limbdar.fits")) as hdulist:
-            limbdark_vec = hdulist[0].data
-        with pyfits.open(post_filename.replace(".fits","_rv.fits")) as hdulist:
-            RV_vec = hdulist[0].data
-
-        posterior = np.exp(logposterior-np.nanmax(logposterior))
-        plt.figure(1,figsize=(9,9))
-        plt.subplot(3,3,1)
-        plt.plot(vsini_vec,np.sum(posterior,axis=(0,2)))
-        plt.xlabel("vsini (km/s)")
-        plt.subplot(3,3,5)
-        plt.plot(limbdark_vec,np.sum(posterior,axis=(1,2)))
-        plt.xlabel("Limb Darkening")
-        plt.subplot(3,3,9)
-        plt.plot(RV_vec,np.sum(posterior,axis=(0,1)))
-        plt.xlabel("Stellar RV")
-
-        plt.subplot(3,3,4)
-        plt.imshow(np.sum(posterior,axis=2),interpolation="nearest",origin="lower",extent=[vsini_vec[0],vsini_vec[-1],limbdark_vec[0],limbdark_vec[-1]],aspect="auto")
-        plt.subplot(3,3,7)
-        plt.imshow(np.sum(posterior,axis=0).T,interpolation="nearest",origin="lower",extent=[vsini_vec[0],vsini_vec[-1],RV_vec[0],RV_vec[-1]],aspect="auto")
-        plt.subplot(3,3,8)
-        plt.imshow(np.sum(posterior,axis=1).T,interpolation="nearest",origin="lower",extent=[limbdark_vec[0],limbdark_vec[-1],RV_vec[0],RV_vec[-1]],aspect="auto")
-
-
-        if 1:
-            c_kms = 299792.458
-
-            max_k,max_l,max_m = np.unravel_index(np.argmax(posterior),posterior.shape)
-
-            vsini,limbdark,rv=vsini_grid[max_k,max_l,max_m],limbdark_grid[max_k,max_l,max_m],RV_grid[max_k,max_l,max_m]
-
-            refstarpho_spec = refstarpho_spec_func(wvs*(1-rv/c_kms))
-            broadened_refstarpho = pyasl.rotBroad(wvs, refstarpho_spec, limbdark, vsini)
-            broadened_refstarpho_hpf = LPFvsHPF(broadened_refstarpho,cutoff)[1]
-            model = copy(atm_model)
-            model.insert(0,broadened_refstarpho_hpf)
-            model = np.array(model).transpose()
-
-            sigmas_vec = np.ones(data.shape)
-            logdet_Sigma = np.sum(2*np.log(sigmas_vec))
-            model = model/sigmas_vec[:,None]
-            data_sig = data/sigmas_vec
-
-            where_finite_data = np.where(np.isfinite(data_sig))
-            data_sig = data_sig[where_finite_data]
-            model = model[where_finite_data[0],:]
-
-            HPFparas,HPFchi2,rank,s = np.linalg.lstsq(model,data_sig,rcond=None)
-            data_model = np.zeros(data.shape) +np.nan
-            data_model[where_finite_data] = np.dot(model,HPFparas)
-            residuals = data_model-data
-            HPFchi2 = np.nansum((residuals)**2)
-
-            plt.subplot(3,3,3)
-            plt.plot(data,label="data")
-            plt.plot(data_model,label="data_model")
-            plt.plot(residuals,label="residuals")
-            plt.legend()
-
-            transmission_model = spec - broadened_refstarpho*HPFparas[0]*data_norma
-            plt.subplot(3,3,6)
-            plt.plot(spec,label="original")
-            plt.plot(broadened_refstarpho*HPFparas[0]*data_norma,label="star model")
-            plt.plot(transmission_model,label="transmission")
-            plt.legend()
+            posterior = fit_refstar(vsini_grid,
+                                    limbdark_grid,
+                                    RV_grid,
+                                    wvs,
+                                    refstarpho_spec_func,
+                                    atm_model,
+                                    spec,
+                                    cutoff,
+                                    mypool=specpool)#specpool)
 
             hdulist = pyfits.HDUList()
-            hdulist.append(pyfits.PrimaryHDU(data=transmission_model))
+            hdulist.append(pyfits.PrimaryHDU(data=posterior))
             try:
-                hdulist.writeto(os.path.join(spec_filename.replace(".fits","_cutoff{0}_transmission.fits".format(cutoff))), overwrite=True)
+                hdulist.writeto(os.path.join(spec_filename.replace(".fits","_cutoff{0}_logpost.fits".format(cutoff))), overwrite=True)
             except TypeError:
-                hdulist.writeto(os.path.join(spec_filename.replace(".fits","_cutoff{0}_transmission.fits".format(cutoff))), clobber=True)
+                hdulist.writeto(os.path.join(spec_filename.replace(".fits","_cutoff{0}_logpost.fits".format(cutoff))), clobber=True)
+            hdulist.close()
+            hdulist = pyfits.HDUList()
+            hdulist.append(pyfits.PrimaryHDU(data=vsini_vec))
+            try:
+                hdulist.writeto(os.path.join(spec_filename.replace(".fits","_cutoff{0}_logpost_vsini.fits".format(cutoff))), overwrite=True)
+            except TypeError:
+                hdulist.writeto(os.path.join(spec_filename.replace(".fits","_cutoff{0}_logpost_vsini.fits".format(cutoff))), clobber=True)
+            hdulist.close()
+            hdulist = pyfits.HDUList()
+            hdulist.append(pyfits.PrimaryHDU(data=limbdark_vec))
+            try:
+                hdulist.writeto(os.path.join(spec_filename.replace(".fits","_cutoff{0}_logpost_limbdar.fits".format(cutoff))), overwrite=True)
+            except TypeError:
+                hdulist.writeto(os.path.join(spec_filename.replace(".fits","_cutoff{0}_logpost_limbdar.fits".format(cutoff))), clobber=True)
+            hdulist.close()
+            hdulist = pyfits.HDUList()
+            hdulist.append(pyfits.PrimaryHDU(data=RV_vec))
+            try:
+                hdulist.writeto(os.path.join(spec_filename.replace(".fits","_cutoff{0}_logpost_rv.fits".format(cutoff))), overwrite=True)
+            except TypeError:
+                hdulist.writeto(os.path.join(spec_filename.replace(".fits","_cutoff{0}_logpost_rv.fits".format(cutoff))), clobber=True)
             hdulist.close()
 
-        plt.savefig(os.path.join(spec_filename.replace(".fits","_corner.png")),bbox_inches='tight')
-        # plt.show()
+            specpool.close()
+        if 1:
+            print(spec_filename)
+            post_filename = spec_filename.replace(".fits","_cutoff{0}_logpost.fits".format(cutoff))
+            print(post_filename)
+            with pyfits.open(post_filename) as hdulist:
+                logposterior = hdulist[0].data
+            with pyfits.open(post_filename.replace(".fits","_vsini.fits")) as hdulist:
+                vsini_vec = hdulist[0].data
+            with pyfits.open(post_filename.replace(".fits","_limbdar.fits")) as hdulist:
+                limbdark_vec = hdulist[0].data
+            with pyfits.open(post_filename.replace(".fits","_rv.fits")) as hdulist:
+                RV_vec = hdulist[0].data
 
-        # plt.show()
+            posterior = np.exp(logposterior-np.nanmax(logposterior))
+            plt.figure(1,figsize=(9,9))
+            plt.subplot(3,3,1)
+            plt.plot(vsini_vec,np.nansum(posterior,axis=(0,2)))
+            plt.xlabel("vsini (km/s)")
+            plt.subplot(3,3,5)
+            plt.plot(limbdark_vec,np.nansum(posterior,axis=(1,2)))
+            plt.xlabel("Limb Darkening")
+            plt.subplot(3,3,9)
+            plt.plot(RV_vec,np.nansum(posterior,axis=(0,1)))
+            plt.xlabel("Stellar RV")
+
+            plt.subplot(3,3,4)
+            plt.imshow(np.nansum(posterior,axis=2),interpolation="nearest",origin="lower",extent=[vsini_vec[0],vsini_vec[-1],limbdark_vec[0],limbdark_vec[-1]],aspect="auto")
+            plt.subplot(3,3,7)
+            plt.imshow(np.nansum(posterior,axis=0).T,interpolation="nearest",origin="lower",extent=[vsini_vec[0],vsini_vec[-1],RV_vec[0],RV_vec[-1]],aspect="auto")
+            plt.subplot(3,3,8)
+            plt.imshow(np.nansum(posterior,axis=1).T,interpolation="nearest",origin="lower",extent=[limbdark_vec[0],limbdark_vec[-1],RV_vec[0],RV_vec[-1]],aspect="auto")
+
+
+            if 1:
+                c_kms = 299792.458
+
+                max_k,max_l,max_m = np.unravel_index(np.argmax(posterior),posterior.shape)
+
+                vsini,limbdark,rv=vsini_grid[max_k,max_l,max_m],limbdark_grid[max_k,max_l,max_m],RV_grid[max_k,max_l,max_m]
+
+                refstarpho_spec = refstarpho_spec_func(wvs*(1-rv/c_kms))
+                broadened_refstarpho = pyasl.rotBroad(wvs, refstarpho_spec, limbdark, vsini)
+
+
+                model = [atm*broadened_refstarpho for atm in atm_model]
+                # model = [broadened_refstarpho for atm in atm_model]
+                model = [LPFvsHPF(vec,cutoff)[1] for vec in model]
+                model = [vec/np.nanstd(vec) for vec in model]
+                model = np.array(model).transpose()
+
+                # model = model[:,5:6]
+
+                sigmas_vec = np.ones(spec.shape)
+                logdet_Sigma = np.sum(2*np.log(sigmas_vec))
+                model = model/sigmas_vec[:,None]
+                spec_hpf = LPFvsHPF(spec,cutoff)[1]
+                spec_norma = np.nanstd(spec_hpf)
+                data_sig = spec_hpf/spec_norma/sigmas_vec
+                data_sig[0:200] = np.nan
+                data_sig[np.size(data_sig)-200::] = np.nan
+
+                where_finite_data = np.where(np.isfinite(data_sig))
+                data_sig = data_sig[where_finite_data]
+                model = model[where_finite_data[0],:]
+
+                HPFparas,HPFchi2,rank,s = np.linalg.lstsq(model,data_sig,rcond=None)
+                data_model = np.dot(model,HPFparas)
+                HPFchi2 = np.nansum((data_sig - data_model)**2)
+                slogdet_icovphi0 = np.linalg.slogdet(np.dot(model.T,model))
+                residuals = np.zeros(spec.shape) +np.nan
+                print(residuals.shape,residuals[where_finite_data].shape,data_model.shape,spec_hpf.shape,spec_hpf[where_finite_data].shape)
+                residuals[where_finite_data] = data_model*sigmas_vec[where_finite_data]*spec_norma-spec_hpf[where_finite_data]
+
+                plt.subplot(3,3,2)
+                plt.plot(data_sig,label="data")
+                plt.plot(data_model,label="data_model")
+                plt.plot(data_sig-data_model,label="residuals")
+                plt.legend()
+
+                transmission_model = spec/broadened_refstarpho
+                transmission_model = transmission_model/np.nanmean(transmission_model)
+                plt.subplot(3,3,3)
+                plt.plot(spec,label="original")
+                plt.plot(broadened_refstarpho/np.nanmean(broadened_refstarpho)*np.nanmean(spec),label="star model")
+                plt.legend()
+                plt.subplot(3,3,6)
+                plt.plot(transmission_model,label="transmission")
+                plt.legend()
+                # plt.show()
+
+                hdulist = pyfits.HDUList()
+                hdulist.append(pyfits.PrimaryHDU(data=np.array([wvs,transmission_model])))
+                try:
+                    hdulist.writeto(os.path.join(spec_filename.replace(".fits","_cutoff{0}_transmission.fits".format(cutoff))), overwrite=True)
+                except TypeError:
+                    hdulist.writeto(os.path.join(spec_filename.replace(".fits","_cutoff{0}_transmission.fits".format(cutoff))), clobber=True)
+                hdulist.close()
+
+            plt.savefig(os.path.join(spec_filename.replace(".fits","_cutoff{0}_corner.png".format(cutoff))),bbox_inches='tight')
+            # plt.show()
+
+            # plt.show()
