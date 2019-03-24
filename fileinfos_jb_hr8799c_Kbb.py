@@ -15,7 +15,7 @@ IFSfilter = "Kbb"
 # planet = "d"
 # IFSfilter = "Hbb"
 
-fileinfos_filename = "/data/osiris_data/HR_8799_"+planet+"/fileinfos_"+IFSfilter+"_jb.csv"
+fileinfos_filename = "/data/osiris_data/HR_8799_"+planet+"/fileinfos_Kbb_jb.csv"
 
 # create file if none exists
 if len(glob.glob(fileinfos_filename)) == 0:
@@ -53,63 +53,97 @@ for item in old_list_table:
     print(item)
 
 if 0: # add filename
-    filename_id = old_colnames.index("filename")
-    old_filelist = [item[filename_id] for item in old_list_data]
+    filename_id = new_colnames.index("filename")
+    old_filelist = [item[filename_id] for item in new_list_data]
 
     reductionname = "reduced_jb"
-    filenamefilter = "s*_a*"+IFSfilter+"_020.fits"
+    filenamefilter = "s*_a*_[0-9][0-9][0-9].fits"
     filelist = glob.glob(os.path.join("/data/osiris_data/HR_8799_"+planet,"*",reductionname,filenamefilter))
     for filename in filelist:
         if filename not in old_filelist:
             new_list_data.append([filename,]+[np.nan,]*(N_col-1))
     print(new_list_data)
 
+if 0: # add spectral band
+    filename_id = new_colnames.index("filename")
+    try:
+        ifs_filter_id = new_colnames.index("IFS filter")
+    except:
+        new_colnames.append("IFS filter")
+        new_list_data = [item+[np.nan,] for item in new_list_data]
+        ifs_filter_id = new_colnames.index("IFS filter")
+
+    for k,item in enumerate(new_list_data):
+        if "_Jbb_" in os.path.basename(item[filename_id]):
+            new_list_data[k][ifs_filter_id] = "Jbb"
+        if "_Hbb_" in os.path.basename(item[filename_id]):
+            new_list_data[k][ifs_filter_id] = "Hbb"
+        if "_Kbb_" in os.path.basename(item[filename_id]):
+            new_list_data[k][ifs_filter_id] = "Kbb"
+
 #sort files
 if 0:
-    filename_id = old_colnames.index("filename")
-    filelist = [item[filename_id] for item in old_list_data]
+    filename_id = new_colnames.index("filename")
+    filelist = [item[filename_id] for item in new_list_data]
     filelist_sorted = copy(filelist)
     filelist_sorted.sort()
+    if 0:
+        for filename in filelist_sorted:
+            print('["'+os.path.join("/data/osiris_data/HR_8799_b/20090722/reduced_jb",filename)+'",,],')
+        exit()
     print(len(filelist_sorted)) #37
     # exit()
-    new_list_data = []
+    new_new_list_data = []
     for filename in filelist_sorted:
-        new_list_data.append(old_list_data[filelist.index(filename)])
+        new_new_list_data.append(new_list_data[filelist.index(filename)])
 
-    new_colnames = old_colnames
+    new_list_data = new_new_list_data
 
 if 0: # add MJD-OBS
-    filename_id = old_colnames.index("filename")
-    MJDOBS_id = old_colnames.index("MJD-OBS")
+    filename_id = new_colnames.index("filename")
+    MJDOBS_id = new_colnames.index("MJD-OBS")
 
-    for k,item in enumerate(old_list_data):
+    for k,item in enumerate(new_list_data):
         hdulist = pyfits.open(item[filename_id])
         prihdr0 = hdulist[0].header
         new_list_data[k][MJDOBS_id] = prihdr0["MJD-OBS"]
 
-if 0: # add barycenter RV
+if 1: # add barycenter RV
     from barycorrpy import get_BC_vel
-    filename_id = old_colnames.index("filename")
-    MJDOBS_id = old_colnames.index("MJD-OBS")
+    filename_id = new_colnames.index("filename")
+    MJDOBS_id = new_colnames.index("MJD-OBS")
     try:
-        bary_rv_id = old_colnames.index("barycenter rv")
+        bary_rv_id = new_colnames.index("barycenter rv")
     except:
         new_colnames.append("barycenter rv")
         new_list_data = [item+[np.nan,] for item in new_list_data]
         bary_rv_id = new_colnames.index("barycenter rv")
 
-    for k,item in enumerate(old_list_data):
+    for k,item in enumerate(new_list_data):
         MJDOBS = float(item[MJDOBS_id])
         result = get_BC_vel(MJDOBS+2400000.5,hip_id=114189,obsname="Keck Observatory",ephemeris="de430")
         new_list_data[k][bary_rv_id] = result[0][0]
 
 if 0: # add filename
     if 0:
-        filename_id = old_colnames.index("filename")
-        filelist = [item[filename_id] for item in old_list_data]
+        filename_id = new_colnames.index("filename")
+        ifs_filter_id = new_colnames.index("IFS filter")
+        filelist = [item[filename_id] for item in new_list_data]
         filelist.sort()
-        for filename in filelist:
-            print("[\"{0}\",0,0],".format(filename) )
+        seqid = 0
+        imid = 0
+        pastnum = 0
+        for k,filename in enumerate(filelist):
+            # if "Hbb" in new_list_data[k][ifs_filter_id]:
+            #     print("[\"{0}\",,],".format(filename) )
+            currnum = int(os.path.basename(filename).split("_a")[1][0:3])
+            if currnum ==  pastnum or currnum == pastnum+1:
+                imid += 1
+            else:
+                seqid += 1
+                imid = 0
+            print("[\"{0}\",{1},{2}],".format(filename,seqid,imid) )
+            pastnum = currnum
         exit()
     else:
         sequence_list = [["/data/osiris_data/HR_8799_c/20100715/reduced_jb/s100715_a010001_Kbb_020.fits",1,0],
@@ -127,16 +161,33 @@ if 0: # add filename
                         ["/data/osiris_data/HR_8799_c/20100715/reduced_jb/s100715_a025001_Kbb_020.fits",2,0],
                         ["/data/osiris_data/HR_8799_c/20100715/reduced_jb/s100715_a026001_Kbb_020.fits",2,1],
                         ["/data/osiris_data/HR_8799_c/20100715/reduced_jb/s100715_a027001_Kbb_020.fits",2,2],
-                        ["/data/osiris_data/HR_8799_c/20100715/reduced_jb/s100715_a028001_Kbb_020.fits",2,6],
-                        ["/data/osiris_data/HR_8799_c/20100715/reduced_jb/s100715_a029001_Kbb_020.fits",2,7],
-                        ["/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a014001_Kbb_020.fits",3,0],
-                        ["/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a016001_Kbb_020.fits",4,0],
-                        ["/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a026001_Kbb_020.fits",5,0],
-                        ["/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a034001_Kbb_020.fits",6,0],
-                        ["/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a035001_Kbb_020.fits",6,1],
-                        ["/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a036001_Kbb_020.fits",6,2],
-                        ["/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a037001_Kbb_020.fits",6,3],
-                        ["/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a038001_Kbb_020.fits",6,4],
+                        ["/data/osiris_data/HR_8799_c/20100715/reduced_jb/s100715_a028001_Kbb_020.fits",2,3],
+                        ["/data/osiris_data/HR_8799_c/20100715/reduced_jb/s100715_a029001_Kbb_020.fits",2,4],
+                        ["/data/osiris_data/HR_8799_c/20101028/reduced_jb/s101028_a021001_Hbb_020.fits",3,0],
+                        ["/data/osiris_data/HR_8799_c/20101028/reduced_jb/s101028_a022001_Hbb_020.fits",3,1],
+                        ["/data/osiris_data/HR_8799_c/20101028/reduced_jb/s101028_a023001_Hbb_020.fits",3,2],
+                        ["/data/osiris_data/HR_8799_c/20101028/reduced_jb/s101028_a024001_Hbb_020.fits",3,3],
+                        ["/data/osiris_data/HR_8799_c/20101028/reduced_jb/s101028_a028001_Hbb_020.fits",4,0],
+                        ["/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a014001_Kbb_020.fits",5,0],
+                        ["/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a015001_Hbb_020.fits",5,1],
+                        ["/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a016001_Kbb_020.fits",5,2],
+                        ["/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a017001_Hbb_020.fits",5,3],
+                        ["/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a018001_Hbb_020.fits",5,4],
+                        ["/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a019001_Hbb_020.fits",5,5],
+                        ["/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a020001_Hbb_020.fits",5,6],
+                        ["/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a026001_Kbb_020.fits",6,0],
+                        ["/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a027001_Hbb_020.fits",6,1],
+                        ["/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a028001_Hbb_020.fits",6,2],
+                        ["/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a029001_Hbb_020.fits",6,3],
+                        ["/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a030001_Hbb_020.fits",6,4],
+                        ["/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a031001_Hbb_020.fits",6,5],
+                        ["/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a032001_Hbb_020.fits",6,6],
+                        ["/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a033001_Hbb_020.fits",6,7],
+                        ["/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a034001_Kbb_020.fits",6,8],
+                        ["/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a035001_Kbb_020.fits",6,9],
+                        ["/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a036001_Kbb_020.fits",6,10],
+                        ["/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a037001_Kbb_020.fits",6,11],
+                        ["/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a038001_Kbb_020.fits",6,12],
                         ["/data/osiris_data/HR_8799_c/20110723/reduced_jb/s110723_a017001_Kbb_020.fits",7,0],
                         ["/data/osiris_data/HR_8799_c/20110723/reduced_jb/s110723_a018001_Kbb_020.fits",7,1],
                         ["/data/osiris_data/HR_8799_c/20110723/reduced_jb/s110723_a024001_Kbb_020.fits",8,0],
@@ -149,27 +200,112 @@ if 0: # add filename
                         ["/data/osiris_data/HR_8799_c/20110723/reduced_jb/s110723_a032001_Kbb_020.fits",9,0],
                         ["/data/osiris_data/HR_8799_c/20110723/reduced_jb/s110723_a033001_Kbb_020.fits",9,1],
                         ["/data/osiris_data/HR_8799_c/20110723/reduced_jb/s110723_a034001_Kbb_020.fits",9,2],
-                        ["/data/osiris_data/HR_8799_c/20110724/reduced_jb/s110724_a030001_Kbb_020.fits",10,0],
+                        ["/data/osiris_data/HR_8799_c/20110724/reduced_jb/s110724_a023001_Hbb_020.fits",10,0],
+                        ["/data/osiris_data/HR_8799_c/20110724/reduced_jb/s110724_a024001_Hbb_020.fits",10,1],
+                        ["/data/osiris_data/HR_8799_c/20110724/reduced_jb/s110724_a025001_Hbb_020.fits",10,2],
+                        ["/data/osiris_data/HR_8799_c/20110724/reduced_jb/s110724_a026001_Hbb_020.fits",10,3],
+                        ["/data/osiris_data/HR_8799_c/20110724/reduced_jb/s110724_a027001_Hbb_020.fits",10,4],
+                        ["/data/osiris_data/HR_8799_c/20110724/reduced_jb/s110724_a028001_Hbb_020.fits",10,5],
+                        ["/data/osiris_data/HR_8799_c/20110724/reduced_jb/s110724_a029001_Hbb_020.fits",10,6],
+                        ["/data/osiris_data/HR_8799_c/20110724/reduced_jb/s110724_a030001_Kbb_020.fits",10,7],
                         ["/data/osiris_data/HR_8799_c/20110724/reduced_jb/s110724_a032001_Kbb_020.fits",11,0],
                         ["/data/osiris_data/HR_8799_c/20110724/reduced_jb/s110724_a038001_Kbb_020.fits",12,0],
-                        ["/data/osiris_data/HR_8799_c/20110725/reduced_jb/s110725_a035001_Kbb_020.fits",13,0],
-                        ["/data/osiris_data/HR_8799_c/20110725/reduced_jb/s110725_a050001_Kbb_020.fits",14,0],]
+                        ["/data/osiris_data/HR_8799_c/20110724/reduced_jb/s110724_a039001_Hbb_020.fits",12,1],
+                        ["/data/osiris_data/HR_8799_c/20110724/reduced_jb/s110724_a041001_Hbb_020.fits",13,0],
+                        ["/data/osiris_data/HR_8799_c/20110724/reduced_jb/s110724_a042001_Hbb_020.fits",13,1],
+                        ["/data/osiris_data/HR_8799_c/20110724/reduced_jb/s110724_a043001_Hbb_020.fits",13,2],
+                        ["/data/osiris_data/HR_8799_c/20110724/reduced_jb/s110724_a044001_Hbb_020.fits",13,3],
+                        ["/data/osiris_data/HR_8799_c/20110725/reduced_jb/s110725_a035001_Kbb_020.fits",14,0],
+                        ["/data/osiris_data/HR_8799_c/20110725/reduced_jb/s110725_a036001_Hbb_020.fits",14,1],
+                        ["/data/osiris_data/HR_8799_c/20110725/reduced_jb/s110725_a037001_Hbb_020.fits",14,2],
+                        ["/data/osiris_data/HR_8799_c/20110725/reduced_jb/s110725_a038001_Hbb_020.fits",14,3],
+                        ["/data/osiris_data/HR_8799_c/20110725/reduced_jb/s110725_a039001_Hbb_020.fits",14,4],
+                        ["/data/osiris_data/HR_8799_c/20110725/reduced_jb/s110725_a040001_Hbb_020.fits",14,5],
+                        ["/data/osiris_data/HR_8799_c/20110725/reduced_jb/s110725_a041001_Hbb_020.fits",14,6],
+                        ["/data/osiris_data/HR_8799_c/20110725/reduced_jb/s110725_a042001_Hbb_020.fits",14,7],
+                        ["/data/osiris_data/HR_8799_c/20110725/reduced_jb/s110725_a043001_Hbb_020.fits",14,8],
+                        ["/data/osiris_data/HR_8799_c/20110725/reduced_jb/s110725_a044001_Hbb_020.fits",14,9],
+                        ["/data/osiris_data/HR_8799_c/20110725/reduced_jb/s110725_a045001_Hbb_020.fits",14,10],
+                        ["/data/osiris_data/HR_8799_c/20110725/reduced_jb/s110725_a050001_Kbb_020.fits",15,0],
+                        ["/data/osiris_data/HR_8799_c/20110725/reduced_jb/s110725_a051001_Hbb_020.fits",15,1],
+                        ["/data/osiris_data/HR_8799_c/20110725/reduced_jb/s110725_a052001_Hbb_020.fits",15,2],
+                        ["/data/osiris_data/HR_8799_c/20110725/reduced_jb/s110725_a053001_Hbb_020.fits",15,3],
+                        ["/data/osiris_data/HR_8799_c/20110725/reduced_jb/s110725_a055001_Hbb_020.fits",16,0],
+                        ["/data/osiris_data/HR_8799_c/20110725/reduced_jb/s110725_a056001_Hbb_020.fits",16,1],
+                        ["/data/osiris_data/HR_8799_c/20130726/reduced_jb/s130726_a034001_Kbb_020.fits",17,0],
+                        ["/data/osiris_data/HR_8799_c/20130726/reduced_jb/s130726_a035001_Kbb_020.fits",17,1],
+                        ["/data/osiris_data/HR_8799_c/20130726/reduced_jb/s130726_a036001_Kbb_020.fits",17,2],
+                        ["/data/osiris_data/HR_8799_c/20130726/reduced_jb/s130726_a037001_Kbb_020.fits",17,3],
+                        ["/data/osiris_data/HR_8799_c/20130726/reduced_jb/s130726_a038001_Kbb_020.fits",17,4],
+                        ["/data/osiris_data/HR_8799_c/20130726/reduced_jb/s130726_a039001_Kbb_020.fits",17,5],
+                        ["/data/osiris_data/HR_8799_c/20130726/reduced_jb/s130726_a040001_Kbb_020.fits",17,6],
+                        ["/data/osiris_data/HR_8799_c/20130726/reduced_jb/s130726_a041001_Kbb_020.fits",17,7],
+                        ["/data/osiris_data/HR_8799_c/20130726/reduced_jb/s130726_a042001_Kbb_020.fits",17,8],
+                        ["/data/osiris_data/HR_8799_c/20130726/reduced_jb/s130726_a057001_Kbb_020.fits",18,0],
+                        ["/data/osiris_data/HR_8799_c/20130726/reduced_jb/s130726_a058001_Jbb_020.fits",18,1],
+                        ["/data/osiris_data/HR_8799_c/20130726/reduced_jb/s130726_a059001_Jbb_020.fits",18,2],
+                        ["/data/osiris_data/HR_8799_c/20130726/reduced_jb/s130726_a060001_Jbb_020.fits",18,3],
+                        ["/data/osiris_data/HR_8799_c/20131029/reduced_jb/s131029_a018001_Jbb_020.fits",19,0],
+                        ["/data/osiris_data/HR_8799_c/20131029/reduced_jb/s131029_a019001_Jbb_020.fits",19,1],
+                        ["/data/osiris_data/HR_8799_c/20131029/reduced_jb/s131029_a020001_Jbb_020.fits",19,2],
+                        ["/data/osiris_data/HR_8799_c/20131029/reduced_jb/s131029_a021001_Jbb_020.fits",19,3],
+                        ["/data/osiris_data/HR_8799_c/20131029/reduced_jb/s131029_a025001_Jbb_020.fits",20,0],
+                        ["/data/osiris_data/HR_8799_c/20131029/reduced_jb/s131029_a032001_Jbb_020.fits",21,0],
+                        ["/data/osiris_data/HR_8799_c/20131029/reduced_jb/s131029_a033001_Jbb_020.fits",21,1],
+                        ["/data/osiris_data/HR_8799_c/20131030/reduced_jb/s131030_a015001_Jbb_020.fits",22,0],
+                        ["/data/osiris_data/HR_8799_c/20131030/reduced_jb/s131030_a016001_Jbb_020.fits",22,1],
+                        ["/data/osiris_data/HR_8799_c/20131030/reduced_jb/s131030_a017001_Jbb_020.fits",22,2],
+                        ["/data/osiris_data/HR_8799_c/20131030/reduced_jb/s131030_a018001_Jbb_020.fits",22,3],
+                        ["/data/osiris_data/HR_8799_c/20131030/reduced_jb/s131030_a022001_Jbb_020.fits",23,0],
+                        ["/data/osiris_data/HR_8799_c/20131030/reduced_jb/s131030_a023001_Jbb_020.fits",23,1],
+                        ["/data/osiris_data/HR_8799_c/20131030/reduced_jb/s131030_a024001_Jbb_020.fits",23,2],
+                        ["/data/osiris_data/HR_8799_c/20131030/reduced_jb/s131030_a025001_Jbb_020.fits",23,3],
+                        ["/data/osiris_data/HR_8799_c/20131030/reduced_jb/s131030_a026001_Jbb_020.fits",23,4],
+                        ["/data/osiris_data/HR_8799_c/20131030/reduced_jb/s131030_a027001_Jbb_020.fits",23,5],
+                        ["/data/osiris_data/HR_8799_c/20131031/reduced_jb/s131031_a015001_Jbb_020.fits",24,0],
+                        ["/data/osiris_data/HR_8799_c/20131031/reduced_jb/s131031_a016001_Jbb_020.fits",24,1],
+                        ["/data/osiris_data/HR_8799_c/20131031/reduced_jb/s131031_a017001_Jbb_020.fits",24,2],
+                        ["/data/osiris_data/HR_8799_c/20131031/reduced_jb/s131031_a018001_Jbb_020.fits",24,3],
+                        ["/data/osiris_data/HR_8799_c/20131031/reduced_jb/s131031_a019001_Jbb_020.fits",24,4],
+                        ["/data/osiris_data/HR_8799_c/20131031/reduced_jb/s131031_a024001_Jbb_020.fits",25,0],
+                        ["/data/osiris_data/HR_8799_c/20131031/reduced_jb/s131031_a025001_Jbb_020.fits",25,1],
+                        ["/data/osiris_data/HR_8799_c/20131031/reduced_jb/s131031_a026001_Jbb_020.fits",25,2],
+                        ["/data/osiris_data/HR_8799_c/20131031/reduced_jb/s131031_a027001_Jbb_020.fits",25,3],
+                        ["/data/osiris_data/HR_8799_c/20131031/reduced_jb/s131031_a028001_Jbb_020.fits",25,4],
+                        ["/data/osiris_data/HR_8799_c/20131031/reduced_jb/s131031_a029001_Jbb_020.fits",25,5],
+                        ["/data/osiris_data/HR_8799_c/20171103/reduced_jb/s171103_a021002_Kbb_020.fits",26,0],
+                        ["/data/osiris_data/HR_8799_c/20171103/reduced_jb/s171103_a022002_Kbb_020.fits",26,1],
+                        ["/data/osiris_data/HR_8799_c/20171103/reduced_jb/s171103_a023002_Hbb_020.fits",26,2],
+                        ["/data/osiris_data/HR_8799_c/20171103/reduced_jb/s171103_a024002_Hbb_020.fits",26,3],
+                        ["/data/osiris_data/HR_8799_c/20171103/reduced_jb/s171103_a026002_Kbb_020.fits",27,0],
+                        ["/data/osiris_data/HR_8799_c/20171103/reduced_jb/s171103_a027002_Hbb_020.fits",27,1],
+                        ["/data/osiris_data/HR_8799_c/20171103/reduced_jb/s171103_a028002_Hbb_020.fits",27,2],
+                        ["/data/osiris_data/HR_8799_c/20171103/reduced_jb/s171103_a029002_Hbb_020.fits",27,3],
+                        ["/data/osiris_data/HR_8799_c/20171103/reduced_jb/s171103_a030002_Hbb_020.fits",27,4],
+                        ["/data/osiris_data/HR_8799_c/20171103/reduced_jb/s171103_a031002_Hbb_020.fits",27,5],
+                        ["/data/osiris_data/HR_8799_c/20171103/reduced_jb/s171103_a032002_Hbb_020.fits",27,6],
+                        ["/data/osiris_data/HR_8799_c/20171103/reduced_jb/s171103_a033002_Hbb_020.fits",27,7],
+                        ["/data/osiris_data/HR_8799_c/20171103/reduced_jb/s171103_a034002_Hbb_020.fits",27,8],
+                        ["/data/osiris_data/HR_8799_c/20171103/reduced_jb/s171103_a035002_Hbb_020.fits",27,9],
+                        ["/data/osiris_data/HR_8799_c/20171103/reduced_jb/s171103_a036002_Hbb_020.fits",27,10],
+                        ["/data/osiris_data/HR_8799_c/20171103/reduced_jb/s171103_a037002_Hbb_020.fits",27,11],
+                        ["/data/osiris_data/HR_8799_c/20171103/reduced_jb/s171103_a038002_Hbb_020.fits",27,12]]
 
     try:
-        sequence_id = old_colnames.index("sequence")
+        sequence_id = new_colnames.index("sequence")
     except:
         new_colnames.append("sequence")
         new_list_data = [item+[np.nan,] for item in new_list_data]
         sequence_id = new_colnames.index("sequence")
     try:
-        sequence_it_id = old_colnames.index("sequence it")
+        sequence_it_id = new_colnames.index("sequence it")
     except:
         new_colnames.append("sequence it")
         new_list_data = [item+[np.nan,] for item in new_list_data]
         sequence_it_id = new_colnames.index("sequence it")
-    filename_id = old_colnames.index("filename")
+    filename_id = new_colnames.index("filename")
 
-    for k,item in enumerate(old_list_data):
+    for k,item in enumerate(new_list_data):
         filename = item[filename_id]
         for seq_filename, sec_num,sec_it in sequence_list:
             if filename == seq_filename:
@@ -217,22 +353,22 @@ if 0:
         return delta_x,delta_y
 
     try:
-        xoffset_id = old_colnames.index("header offset x")
+        xoffset_id = new_colnames.index("header offset x")
     except:
         new_colnames.append("header offset x")
         new_list_data = [item+[np.nan,] for item in new_list_data]
         xoffset_id = new_colnames.index("header offset x")
     try:
-        yoffset_id = old_colnames.index("header offset y")
+        yoffset_id = new_colnames.index("header offset y")
     except:
         new_colnames.append("header offset y")
         new_list_data = [item+[np.nan,] for item in new_list_data]
         yoffset_id = new_colnames.index("header offset y")
-    sequence_id = old_colnames.index("sequence")
-    sequence_it_id = old_colnames.index("sequence it")
-    filename_id = old_colnames.index("filename")
+    sequence_id = new_colnames.index("sequence")
+    sequence_it_id = new_colnames.index("sequence it")
+    filename_id = new_colnames.index("filename")
 
-    old_sequence_num = [int(item[sequence_id]) for item in old_list_data]
+    old_sequence_num = [int(item[sequence_id]) for item in new_list_data]
     unique_sequence_num = np.unique(old_sequence_num)
     print(unique_sequence_num)
     for seq_num in unique_sequence_num:
@@ -242,12 +378,12 @@ if 0:
             new_list_data[seq_indices[0]][xoffset_id] = 0
             new_list_data[seq_indices[0]][yoffset_id] = 0
 
-        seq_it_list = [int(old_list_data[seq_ind][sequence_it_id]) for seq_ind in seq_indices]
+        seq_it_list = [int(new_list_data[seq_ind][sequence_it_id]) for seq_ind in seq_indices]
         seq_indices=seq_indices[np.argsort(seq_it_list)]
 
         prihdr_list = []
         for seq_ind in seq_indices:
-            item = old_list_data[seq_ind]
+            item = new_list_data[seq_ind]
             hdulist = pyfits.open(item[filename_id])
             prihdr0 = hdulist[0].header
             prihdr_list.append(prihdr0)
@@ -258,7 +394,7 @@ if 0:
             new_list_data[seq_ind][xoffset_id] = dx
             new_list_data[seq_ind][yoffset_id] = dy
 
-if 1:
+if 0:
     from scipy.signal import correlate2d
     try:
         cen_filename_id = old_colnames.index("cen filename")

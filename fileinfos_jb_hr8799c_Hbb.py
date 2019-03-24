@@ -341,7 +341,7 @@ for item in new_list_data:
     print(item)
 print(new_colnames)
 
-# exit()
+exit()
 
 
 #Save NEW file

@@ -1372,9 +1372,9 @@ if __name__ == "__main__":
         ##############################
         ## Create PSF model
         ##############################
-        with pyfits.open(os.path.join(ref_star_folder,"20"+date+"_"+IFSfilter+"_hdpsfs_v2.fits")) as hdulist:
+        with pyfits.open(os.path.join(ref_star_folder,"*"+IFSfilter+"_hdpsfs_v2.fits")) as hdulist:
             psfs_refstar_arr = hdulist[0].data[None,:,:,:]
-        with pyfits.open(os.path.join(ref_star_folder,"20"+date+"_"+IFSfilter+"_hdpsfs_xy_v2.fits")) as hdulist:
+        with pyfits.open(os.path.join(ref_star_folder,"*"+IFSfilter+"_hdpsfs_xy_v2.fits")) as hdulist:
             hdpsfs_xy = hdulist[0].data
             hdpsfs_x,hdpsfs_y = hdpsfs_xy
 
