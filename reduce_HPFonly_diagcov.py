@@ -707,10 +707,10 @@ if __name__ == "__main__":
     ##############################
     if 0:
         planet = "b"
-        # date = "090722"
+        date = "090722"
         # date = "100711"
         # date = "100712"
-        date = "100713"
+        # date = "100713"
         # date = "130725"
         # date = "130726"
         # date = "130727"
@@ -726,8 +726,8 @@ if __name__ == "__main__":
         # date = "150722"
         # date = "150723"
         # date = "150828"
-        # IFSfilter = "Kbb"
-        IFSfilter = "Hbb" # "Kbb" or "Hbb"
+        IFSfilter = "Kbb"
+        # IFSfilter = "Hbb" # "Kbb" or "Hbb"
         scale = "020"
 
         inputDir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/"
@@ -1222,14 +1222,14 @@ if __name__ == "__main__":
         HR8799pho_spec_func_list = []
 
         for Rid,R in enumerate(R_list):
-            refstar_name_filter = "HIP_1123"
+            # refstar_name_filter = "HIP_1123"
             # refstar_name_filter = "HD_210501"
-            # refstar_name_filter = "*"
+            refstar_name_filter = "*"
             transmission_filelist = []
             transmission_filelist.extend(glob.glob(os.path.join(ref_star_folder,refstar_name_filter,"s*"+IFSfilter+"_"+scale+"_psfs_repaired_spec_v2_cutoff20_transmission.fits")))
             transmission_filelist.extend(glob.glob(os.path.join(ref_star_folder,refstar_name_filter,"ao_off_s*"+IFSfilter+"_"+scale+"_spec_v2_cutoff20_transmission.fits")))
             transmission_filelist.sort()
-
+            print(transmission_filelist)
             transmission_list = []
             for transmission_filename in transmission_filelist:
                 with pyfits.open(transmission_filename) as hdulist:
