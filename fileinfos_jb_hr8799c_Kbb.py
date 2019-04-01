@@ -108,7 +108,7 @@ if 0: # add MJD-OBS
         prihdr0 = hdulist[0].header
         new_list_data[k][MJDOBS_id] = prihdr0["MJD-OBS"]
 
-if 1: # add barycenter RV
+if 0: # add barycenter RV
     from barycorrpy import get_BC_vel
     filename_id = new_colnames.index("filename")
     MJDOBS_id = new_colnames.index("MJD-OBS")
@@ -124,7 +124,7 @@ if 1: # add barycenter RV
         result = get_BC_vel(MJDOBS+2400000.5,hip_id=114189,obsname="Keck Observatory",ephemeris="de430")
         new_list_data[k][bary_rv_id] = result[0][0]
 
-if 0: # add filename
+if 1: # add filename
     if 0:
         filename_id = new_colnames.index("filename")
         ifs_filter_id = new_colnames.index("IFS filter")
@@ -312,7 +312,7 @@ if 0: # add filename
                 new_list_data[k][sequence_id] = sec_num
                 new_list_data[k][sequence_it_id] = sec_it
 
-if 0:
+if 1:
     def determine_mosaic_offsets_from_header(prihdr_list):
         OBFMXIM_list = []
         OBFMYIM_list = []
@@ -394,6 +394,26 @@ if 0:
             new_list_data[seq_ind][xoffset_id] = dx
             new_list_data[seq_ind][yoffset_id] = dy
 
+
+from scipy.interpolate import interp1d
+def get_err_from_posterior(x,posterior):
+    ind = np.argsort(posterior)
+    cum_posterior = np.zeros(np.shape(posterior))
+    cum_posterior[ind] = np.cumsum(posterior[ind])
+    cum_posterior = cum_posterior/np.max(cum_posterior)
+    argmax_post = np.argmax(cum_posterior)
+    if len(x[0:argmax_post]) < 2:
+        lx = np.nan
+    else:
+        lf = interp1d(cum_posterior[0:argmax_post],x[0:argmax_post],bounds_error=False,fill_value=np.nan)
+        lx = lf(1-0.6827)
+    if len(x[argmax_post::]) < 2:
+        rx = np.nan
+    else:
+        rf = interp1d(cum_posterior[argmax_post::],x[argmax_post::],bounds_error=False,fill_value=np.nan)
+        rx = rf(1-0.6827)
+    return x[argmax_post],(rx-lx)/2.
+
 if 0:
     from scipy.signal import correlate2d
     try:
@@ -427,98 +447,44 @@ if 0:
         new_list_data = [item+[np.nan,] for item in new_list_data]
         rvcensig_id = new_colnames.index("RVcensig")
 
-    filename_id = old_colnames.index("filename")
+    filename_id = new_colnames.index("filename")
     bary_rv_id = new_colnames.index("barycenter rv")
+    ifs_filter_id_id = new_colnames.index("IFS filter")
 
-    if IFSfilter=="Kbb": #Kbb 1965.0 0.25
-        CRVAL1 = 1965.
-        CDELT1 = 0.25
-        nl=1665
-        R=4000
-    elif IFSfilter=="Hbb": #Hbb 1651 1473.0 0.2
-        CRVAL1 = 1473.
-        CDELT1 = 0.2
-        nl=1651
-        R=5000
-    dwv = CDELT1/1000.
-    init_wv = CRVAL1/1000. # wv for first slice in mum
+    # if IFSfilter=="Kbb": #Kbb 1965.0 0.25
+    #     CRVAL1 = 1965.
+    #     CDELT1 = 0.25
+    #     nl=1665
+    #     R=4000
+    # elif IFSfilter=="Hbb": #Hbb 1651 1473.0 0.2
+    #     CRVAL1 = 1473.
+    #     CDELT1 = 0.2
+    #     nl=1651
+    #     R=5000
+    # dwv = CDELT1/1000.
+    # init_wv = CRVAL1/1000. # wv for first slice in mum
 
-    # suffix = "_outputHPF_cutoff80_sherlock_v0"
-    # myfolder = "sherlock/20190117_HPFonly"
-    # for k,item in enumerate(old_list_data):
-    #     filename = item[filename_id]
-    #     # if filename == '/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a034001_Kbb_020.fits':
-    #     #     continue
-    #     hdulist = pyfits.open(os.path.join(os.path.dirname(filename),myfolder,
-    #                                        os.path.basename(filename).replace(".fits",suffix+"_wvshifts.fits")))
-    #     wvshifts = hdulist[0].data
-    #     Nwvshifts_hd = np.where((wvshifts[1::]-wvshifts[0:(np.size(wvshifts)-1)]) < 0)[0][0]+1
-    #     wvshifts_hd = hdulist[0].data[0:Nwvshifts_hd]
-    #     wvshifts = hdulist[0].data[Nwvshifts_hd::]
-    #     rv_per_pix = 3e5*dwv/(init_wv+dwv*nl//2) # 38.167938931297705
-    #     rvshifts_hd = wvshifts_hd/dwv*rv_per_pix
-    #     rvshifts = hdulist[0].data[Nwvshifts_hd::]
-    #
-    #     new_list_data[k][cen_filename_id] = os.path.join(os.path.dirname(filename),myfolder,
-    #                                        os.path.basename(filename).replace(".fits",suffix+".fits"))
-    #     hdulist = pyfits.open(os.path.join(os.path.dirname(filename),myfolder,
-    #                                        os.path.basename(filename).replace(".fits",suffix+".fits")))
-    #     cube_hd = hdulist[0].data[2,0:Nwvshifts_hd,:,:]
-    #     cube = hdulist[0].data[2,Nwvshifts_hd::,:,:]
-    #
-    #     bary_rv = -float(item[bary_rv_id])/1000. # RV in km/s
-    #     rv_star = -12.6#-12.6+-1.4km/s HR 8799 Rob and Simbad
-    #
-    #     # print(bary_rv+rv_star)
-    #     guess_rv_id = np.argmin(np.abs(rvshifts_hd-(bary_rv+rv_star)))
-    #     guess_rv_im = copy(cube_hd[guess_rv_id,:,:])
-    #     ny,nx = guess_rv_im.shape
-    #     nan_mask_boxsize = 5
-    #     guess_rv_im[np.where(np.isnan(correlate2d(guess_rv_im,np.ones((nan_mask_boxsize,nan_mask_boxsize)),mode="same")))] = np.nan
-    #     guess_rv_im[0:nan_mask_boxsize//2,:] = np.nan
-    #     guess_rv_im[-nan_mask_boxsize//2+1::,:] = np.nan
-    #     guess_rv_im[:,0:nan_mask_boxsize//2] = np.nan
-    #     guess_rv_im[:,-nan_mask_boxsize//2+1::] = np.nan
-    #
-    #     # plt.imshow(guess_rv_im)
-    #     # plt.show()
-    #     guesspos = np.unravel_index(np.nanargmax(guess_rv_im),guess_rv_im.shape)
-    #     guess_y,guess_x = guesspos
-    #
-    #     cube_hd_cp = copy(cube_hd)
-    #     cube_hd_cp[:,0:np.max([0,(guess_y-5)]),:] = np.nan
-    #     cube_hd_cp[:,np.min([ny,(guess_y+5)])::,:] = np.nan
-    #     cube_hd_cp[:,:,0:np.max([0,(guess_x-5)])] = np.nan
-    #     cube_hd_cp[:,:,np.min([nx,(guess_x+5)])::] = np.nan
-    #
-    #     # plt.imshow(cube_hd_cp[100,:,:])
-    #     # plt.show()
-    #
-    #     zmax,ymax,xmax = np.unravel_index(np.nanargmax(cube_hd_cp),cube_hd.shape)
-    #
-    #     new_list_data[k][kcen_id] = ymax
-    #     new_list_data[k][lcen_id] = xmax
-    #     new_list_data[k][rvcen_id] = rvshifts_hd[zmax]
     suffix = "_outputHPF_cutoff40_sherlock_v1_search"
-    myfolder = "sherlock/20190309_HPF_only"
+    myfolder = "sherlock/20190324_HPF_only"
     for k,item in enumerate(old_list_data):
         filename = item[filename_id]
         print(filename)
         # if filename == '/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a034001_Kbb_020.fits':
         #     continue
         try:
+            print(os.path.join(os.path.dirname(filename),myfolder,
+                                           os.path.basename(filename).replace(".fits",suffix+"_planetRV.fits")))
             hdulist = pyfits.open(os.path.join(os.path.dirname(filename),myfolder,
                                            os.path.basename(filename).replace(".fits",suffix+"_planetRV.fits")))
         except:
             continue
         planetRV = hdulist[0].data
+        print(hdulist[0].data.shape)
         NplanetRV_hd = np.where((planetRV[1::]-planetRV[0:(np.size(planetRV)-1)]) < 0)[0][0]+1
         planetRV_hd = hdulist[0].data[0:NplanetRV_hd]
         planetRV = hdulist[0].data[NplanetRV_hd::]
-        rv_per_pix = 3e5*dwv/(init_wv+dwv*nl//2) # 38.167938931297705
+        # rv_per_pix = 3e5*dwv/(init_wv+dwv*nl//2) # 38.167938931297705
 
-        new_list_data[k][cen_filename_id] = os.path.join(os.path.dirname(filename),myfolder,
-                                           os.path.basename(filename).replace(".fits",suffix+".fits"))
         hdulist = pyfits.open(os.path.join(os.path.dirname(filename),myfolder,
                                            os.path.basename(filename).replace(".fits",suffix+".fits")))
         cube_hd = hdulist[0].data[0,0,0,0:NplanetRV_hd,:,:]
@@ -540,41 +506,44 @@ if 0:
 
         # plt.imshow(guess_rv_im)
         # plt.show()
-        guesspos = np.unravel_index(np.nanargmax(guess_rv_im),guess_rv_im.shape)
-        guess_y,guess_x = guesspos
+        try:
+            guesspos = np.unravel_index(np.nanargmax(guess_rv_im),guess_rv_im.shape)
+            guess_y,guess_x = guesspos
 
-        cube_hd_cp = copy(cube_hd)
-        cube_hd_cp[:,0:np.max([0,(guess_y-5)]),:] = np.nan
-        cube_hd_cp[:,np.min([ny,(guess_y+5)])::,:] = np.nan
-        cube_hd_cp[:,:,0:np.max([0,(guess_x-5)])] = np.nan
-        cube_hd_cp[:,:,np.min([nx,(guess_x+5)])::] = np.nan
+            cube_hd_cp = copy(cube_hd)
+            cube_hd_cp[:,0:np.max([0,(guess_y-5)]),:] = np.nan
+            cube_hd_cp[:,np.min([ny,(guess_y+5)])::,:] = np.nan
+            cube_hd_cp[:,:,0:np.max([0,(guess_x-5)])] = np.nan
+            cube_hd_cp[:,:,np.min([nx,(guess_x+5)])::] = np.nan
 
-        # plt.imshow(cube_hd_cp[100,:,:])
-        # plt.show()
+            # plt.imshow(cube_hd_cp[100,:,:])
+            # plt.show()
 
-        zmax,ymax,xmax = np.unravel_index(np.nanargmax(cube_hd_cp),cube_hd.shape)
-
-        new_list_data[k][kcen_id] = ymax
-        new_list_data[k][lcen_id] = xmax
-        new_list_data[k][rvcen_id] = planetRV_hd[zmax]
+            zmax,ymax,xmax = np.unravel_index(np.nanargmax(cube_hd_cp),cube_hd.shape)
 
 
-        logposterior = hdulist[0].data[0,0,9,0:NplanetRV_hd,ymax,xmax]
-        posterior = np.exp(logposterior-np.nanmax(logposterior))
-        ind = np.argsort(posterior)
-        cum_posterior = np.zeros(np.shape(posterior))
-        cum_posterior[ind] = np.cumsum(posterior[ind])
-        cum_posterior = cum_posterior/np.max(cum_posterior)
-        rv_sigma = np.abs(planetRV_hd[np.argmin(np.abs(cum_posterior - (1-0.6827)))] - planetRV_hd[np.argmax(posterior)])
-        new_list_data[k][rvcensig_id] = rv_sigma
-        print(planetRV_hd[zmax]-(bary_rv+rv_star))
+            logposterior = hdulist[0].data[0,0,9,0:NplanetRV_hd,ymax,xmax]
+            posterior = np.exp(logposterior-np.nanmax(logposterior))
+
+            new_list_data[k][kcen_id] = ymax
+            new_list_data[k][lcen_id] = xmax
+            new_list_data[k][rvcen_id],new_list_data[k][rvcensig_id] = get_err_from_posterior(planetRV_hd,posterior)
+            new_list_data[k][cen_filename_id] = os.path.join(os.path.dirname(filename),myfolder,
+                                               os.path.basename(filename).replace(".fits",suffix+".fits"))
+            print(new_list_data[k][rvcen_id],planetRV_hd[zmax],planetRV_hd[zmax]-(bary_rv+rv_star))
+        except:
+            new_list_data[k][kcen_id] = np.nan
+            new_list_data[k][lcen_id] = np.nan
+            new_list_data[k][rvcen_id],new_list_data[k][rvcensig_id] = np.nan,np.nan
+            new_list_data[k][cen_filename_id] = np.nan
+
 
 print("NEW")
 for item in new_list_data:
     print(item)
 print(new_colnames)
 
-exit()
+# exit()
 
 
 #Save NEW file

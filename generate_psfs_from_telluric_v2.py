@@ -2,7 +2,7 @@ __author__ = 'jruffio'
 
 
 import matplotlib
-matplotlib.use("Agg")
+# matplotlib.use("Agg")
 import os
 import sys
 import glob
@@ -17,7 +17,7 @@ from pyklip.fakes import gaussfit2d
 from scipy import interpolate
 from astropy.stats import mad_std
 from copy import copy
-from reduce_HPFonly_diagcov import _remove_bad_pixels_z, _remove_edges,_tpool_init,_arraytonumpy,_spline_psf_model
+from reduce_HPFonly_diagcov import _remove_bad_pixels_z, _remove_edges,_tpool_init,_arraytonumpy,_spline_psf_model,convolve_spectrum
 import ctypes
 try:
     import mkl
@@ -53,21 +53,30 @@ if __name__ == "__main__":
     if 1:
         IFSfilter = "Kbb"#"Jbb"#"Hbb"#"Kbb"
         # planet = "b"
+        # planet = "c"
         planet = "d"
-        # planet = "d"
+        # extra_filter = "a013001"
+        extra_filter = ""
         if "b" in planet:#/data/osiris_data/HR_8799_b/20161107/reduced_telluric_jb/HD_210501/s161107_a032002_Kbb_020.fits
-            # date_list = ["20090722","20100711","20100712","20130725","20130726","20130727","20161106","20161107","20161108","20180722"] # Kbb
-            # date_list = ["20090723","20090730","20090903","20090723","20100713"] # Hbb
-            date_list = ["20091111","20130726", "20130727","20161106","20161107","20161108","20180722"] #Jbb
+            if "Kbb" in IFSfilter:
+                date_list = ["20090722","20100711","20100712","20130725","20130726","20130727","20161106","20161107","20161108","20180722"] # Kbb
+            elif "Hbb" in IFSfilter:
+                date_list = ["20090723","20090730","20090903","20090723","20100713"] # Hbb
+            elif "Jbb" in IFSfilter:
+                date_list = ["20091111","20130726", "20130727","20161106","20161107","20161108","20180722"] #Jbb
             # date_list = [date_list[1],]
         elif "c" in planet:
-            # date_list = ["20100715","20101104","20110723","20110724","20110725","20130726","20171103"] #Kbb
-            # date_list = ["20101028","20101104","20110724","20110725","20171103"] # Hbb
-            date_list = ["20130726","20131029", "20131030", "20131031"] #Jbb
-            # date_list = [date_list[4],]
+            if "Kbb" in IFSfilter:
+                date_list = ["20100715","20101104","20110723","20110724","20110725","20130726","20171103"] #Kbb
+            elif "Hbb" in IFSfilter:
+                date_list = ["20101028","20101104","20110724","20110725","20171103"] # Hbb
+            elif "Jbb" in IFSfilter:
+                date_list = ["20130726","20131029", "20131030", "20131031"] #Jbb
+            # date_list = [date_list[1],]
             # date_list = ["20101104"] #Hbb
         elif "d" in planet:
-            date_list = ["20130727","20150720","20150722","20150723","20150828"] #Kbb
+            if "Kbb" in IFSfilter:
+                date_list = ["20130727","20150720","20150722","20150723","20150828"] #Kbb
             # date_list = [date_list[0],]
         foldername = "HR_8799_"+planet
 
@@ -91,7 +100,7 @@ if __name__ == "__main__":
     run_all = True
     # extract PSFs stamps and calculate centroids
     if run_all:
-        filename_filter = "*/s*"+IFSfilter+"*_[0-9][0-9][0-9].fits"
+        filename_filter = "*/s*"+extra_filter+"*"+IFSfilter+"*_[0-9][0-9][0-9].fits"
         psf_cube_size = 15
         for date in date_list:
             refstar_filelist = glob.glob(os.path.join(OSIRISDATA,foldername,date,"reduced_telluric_jb",filename_filter))
@@ -327,7 +336,7 @@ if __name__ == "__main__":
 
     # build psf model
     if run_all:
-        filename_filter = "*/s*"+IFSfilter+"*[0-9][0-9][0-9].fits"
+        filename_filter = "*/s*"+extra_filter+"*"+IFSfilter+"*[0-9][0-9][0-9].fits"
         for date in date_list:
             print(date)
             refstar_filelist = glob.glob(os.path.join(OSIRISDATA,foldername,date,"reduced_telluric_jb",filename_filter))
@@ -538,7 +547,7 @@ if __name__ == "__main__":
 
     # calibrate flux
     if run_all:
-        filename_filter = "*/s*"+IFSfilter+"*[0-9][0-9][0-9].fits"
+        filename_filter = "*/s*"+extra_filter+"*"+IFSfilter+"*[0-9][0-9][0-9].fits"
         for date in date_list:
             # build PSf splines
             if 1:
@@ -619,10 +628,16 @@ if __name__ == "__main__":
                     hdulist.writeto(refstar_filename.replace(".fits","_psfs_repaired_v2.fits"), clobber=True)
                 hdulist.close()
 
+    def jblin(p,x0,y0):
+        a = p[0]
+        b = p[1]
+        y = a*x0+b
+        delta = y0 - y
+        return 1e-4*np.sum(delta[np.where(delta>0)]**2) + np.sum(delta[np.where(delta<0)]**2)
 
     # ao on (good psfs): get repaired spec for ref star fits #1
-    if run_all:
-        filename_filter = "*/s*"+IFSfilter+"*[0-9][0-9][0-9].fits"
+    if 0 or run_all:
+        filename_filter = "*/s*"+extra_filter+"*"+IFSfilter+"*[0-9][0-9][0-9].fits"
 
         ref_spec_list = []
         for date in date_list:
@@ -645,13 +660,23 @@ if __name__ == "__main__":
                     psfs_repaired = hdulist[0].data
                     psfs_repaired_vec = np.nansum(psfs_repaired,axis=(1,2))
 
-                res = psfs_vec-psfs_repaired_vec
+                res = psfs_repaired_vec-psfs_vec+np.polyval([0.001,1],np.arange(np.size(psfs_vec)))
                 where_finite = np.where(np.isfinite(res))
-                res -= np.polyval(np.polyfit(np.arange(np.size(res))[where_finite],res[where_finite],1),np.arange(np.size(res)))
+                from scipy.optimize import minimize
+                out = minimize(jblin,[0,0],args=(np.arange(np.size(res)),res))
+                res -= np.polyval(out.x,np.arange(np.size(res)))
+
                 where_bad_slices = np.where(np.abs(res)/psfs_repaired_vec>0.01)
+                print(len(where_bad_slices[0]),np.size(psfs_repaired_vec),len(where_bad_slices[0])<0.5*np.size(psfs_repaired_vec))
                 if len(where_bad_slices[0])<0.5*np.size(psfs_repaired_vec):
                     psfs_repaired_vec[where_bad_slices] = np.nan
                 ref_spec_list.append(psfs_repaired_vec)
+                # plt.plot(np.abs(res)/psfs_repaired_vec>0.01)
+                # plt.plot(psfs_vec,"r")
+                # plt.plot(psfs_repaired_vec,"b")
+                # plt.plot(res)
+                # plt.show()
+                # exit()
 
                 hdulist = pyfits.HDUList()
                 hdulist.append(pyfits.PrimaryHDU(data=np.array([wvs,psfs_repaired_vec])))
@@ -662,7 +687,7 @@ if __name__ == "__main__":
                 hdulist.close()
 
     # Plot fluxes
-    if run_all:
+    if 0 or run_all:
         filename_filter = "*/s*"+IFSfilter+"*[0-9][0-9][0-9]_psfs_v2.fits"
 
         for date in date_list:
@@ -686,7 +711,7 @@ if __name__ == "__main__":
                 plt.plot(psfs_repaired_vec,linestyle="--",label="rep {0}".format(os.path.basename(refstar_filename)),alpha=0.5)
                 plt.plot(psfs_repaired_filt_vec,label="{0}".format(os.path.basename(refstar_filename)),alpha=1)
                 plt.subplot(2,1,2)
-                plt.plot((psfs_vec-psfs_repaired_vec)/psfs_repaired_vec,label="{0}".format(os.path.basename(refstar_filename)),alpha=1)
+                plt.plot((psfs_repaired_vec-psfs_vec)/psfs_repaired_vec,label="{0}".format(os.path.basename(refstar_filename)),alpha=1)
 
             if len(refstar_filelist)>0:
                 plt.subplot(2,1,1)
@@ -842,7 +867,302 @@ if __name__ == "__main__":
             # except TypeError:
             #     hdulist.writeto(os.path.join(OSIRISDATA,foldername,date,"reduced_telluric_jb",date+"_"+IFSfilter+"_ref_spec_v2.fits"), clobber=True)
             # hdulist.close()
-        exit()
+
+    # Calculate transmission
+    if 1 or run_all:
+        import csv
+        from PyAstronomy import pyasl
+        from scipy.interpolate import interp1d
+        numthreads=28
+        specpool = mp.Pool(processes=numthreads)
+
+        cutoff = 20
+
+        fileinfos_refstars_filename = os.path.join(OSIRISDATA,"fileinfos_refstars_jb.csv")
+        with open(fileinfos_refstars_filename, 'r') as csvfile:
+            csv_reader = csv.reader(csvfile, delimiter=';')
+            refstarsinfo_list_table = list(csv_reader)
+            refstarsinfo_colnames = refstarsinfo_list_table[0]
+            refstarsinfo_list_data = refstarsinfo_list_table[1::]
+        refstarsinfo_filename_id = refstarsinfo_colnames.index("filename")
+        refstarsinfo_filelist = [os.path.basename(item[refstarsinfo_filename_id]) for item in refstarsinfo_list_data]
+
+        for date in date_list:
+            filelist=[]
+            filename_filter = "ao_off_s*"+IFSfilter+"*020_spec_v2.fits"
+            filelist.extend(glob.glob(os.path.join(OSIRISDATA,foldername,date,"reduced_telluric_jb","*",filename_filter)))
+            filename_filter = "s*"+IFSfilter+"*020_psfs_repaired_spec_v2.fits"
+            filelist.extend(glob.glob(os.path.join(OSIRISDATA,foldername,date,"reduced_telluric_jb","*",filename_filter)))
+
+
+            for specid,spec_filename in enumerate(filelist):
+                print(spec_filename)
+                with pyfits.open(spec_filename) as hdulist:
+                    wvs = hdulist[0].data[0,:]
+                    spec = hdulist[0].data[1,:]/np.nanmean(hdulist[0].data[1,:])
+
+
+                for fileid,refstarsinfo_file in enumerate(refstarsinfo_filelist):
+                    if os.path.basename(refstarsinfo_file).replace(".fits","") in spec_filename:
+                        fileitem = refstarsinfo_list_data[fileid]
+                        break
+
+                type_id = refstarsinfo_colnames.index("type")
+                rv_simbad_id = refstarsinfo_colnames.index("RV Simbad")
+                vsini_fixed_id = refstarsinfo_colnames.index("vsini fixed")
+                starname_id = refstarsinfo_colnames.index("star name")
+
+                refstar_RV = float(fileitem[rv_simbad_id])
+                vsini_fixed = float(fileitem[vsini_fixed_id])
+                ref_star_type = fileitem[type_id]
+                refstar_name = fileitem[starname_id]
+
+                phoenix_folder = os.path.join(OSIRISDATA,"phoenix")
+                phoenix_wv_filename = os.path.join(phoenix_folder,"WAVE_PHOENIX-ACES-AGSS-COND-2011.fits")
+                with pyfits.open(phoenix_wv_filename) as hdulist:
+                    phoenix_wvs = hdulist[0].data/1.e4
+                crop_phoenix = np.where((phoenix_wvs>wvs[0]-(wvs[-1]-wvs[0])/2)*(phoenix_wvs<wvs[-1]+(wvs[-1]-wvs[0])/2))
+                phoenix_wvs = phoenix_wvs[crop_phoenix]
+                try:
+                    phoenix_model_refstar_filename = glob.glob(os.path.join(phoenix_folder,refstar_name+"*.fits"))[0]
+                except:
+                    phoenix_model_refstar_filename = glob.glob(os.path.join(phoenix_folder,ref_star_type+"*.fits"))[0]
+                phoenix_refstar_filename=phoenix_model_refstar_filename.replace(".fits","_gaussconv_R{0}_{1}.csv".format(R0,IFSfilter))
+                print(phoenix_refstar_filename)
+                if len(glob.glob(phoenix_refstar_filename)) == 0:
+                    with pyfits.open(phoenix_model_refstar_filename) as hdulist:
+                        phoenix_refstar = hdulist[0].data[crop_phoenix]
+                    print("convolving: "+phoenix_model_refstar_filename)
+
+                    phoenix_refstar_conv = convolve_spectrum(phoenix_wvs,phoenix_refstar,R0,specpool)
+
+                    with open(phoenix_refstar_filename, 'w+') as csvfile:
+                        csvwriter = csv.writer(csvfile, delimiter=' ')
+                        csvwriter.writerows([["wvs","spectrum"]])
+                        csvwriter.writerows([[a,b] for a,b in zip(phoenix_wvs,phoenix_refstar_conv)])
+
+                with open(phoenix_refstar_filename, 'r') as csvfile:
+                    csv_reader = csv.reader(csvfile, delimiter=' ')
+                    list_starspec = list(csv_reader)
+                    refstarpho_spec_str_arr = np.array(list_starspec, dtype=np.str)
+                    col_names = refstarpho_spec_str_arr[0]
+                    refstarpho_spec = refstarpho_spec_str_arr[1::,1].astype(np.float)
+                    refstarpho_spec_wvs = refstarpho_spec_str_arr[1::,0].astype(np.float)
+                    where_IFSfilter = np.where((refstarpho_spec_wvs>wvs[0])*(refstarpho_spec_wvs<wvs[-1]))
+                    refstarpho_spec = refstarpho_spec/np.mean(refstarpho_spec[where_IFSfilter])
+                    refstarpho_spec_func = interp1d(refstarpho_spec_wvs,refstarpho_spec,bounds_error=False,fill_value=np.nan)
+
+
+                c_kms = 299792.458
+                refstarpho_spec = refstarpho_spec_func(wvs*(1-refstar_RV/c_kms))
+                broadened_refstarpho = pyasl.rotBroad(wvs, refstarpho_spec, 0.5, vsini_fixed_id)
+
+                transmission_model = spec/broadened_refstarpho
+                transmission_model = transmission_model/np.nanmean(transmission_model)
+
+                hdulist = pyfits.HDUList()
+                hdulist.append(pyfits.PrimaryHDU(data=np.array([wvs,transmission_model])))
+                try:
+                    hdulist.writeto(os.path.join(spec_filename.replace(".fits","_cutoff{0}_transmission.fits".format(cutoff))), overwrite=True)
+                except TypeError:
+                    hdulist.writeto(os.path.join(spec_filename.replace(".fits","_cutoff{0}_transmission.fits".format(cutoff))), clobber=True)
+                hdulist.close()
+                # plt.plot(spec,label="spec")
+                # plt.plot(broadened_refstarpho,label="model")
+                # plt.plot(transmission_model,label="transmission")
+                # plt.legend()
+                # specpool.close()
+                # plt.show()
+                # exit()
+        specpool.close()
+
+    # Plot transmission
+    if 1 or run_all:
+        filename_filter = "*/*"+IFSfilter+"*[0-9][0-9][0-9]*"+"_cutoff20_transmission.fits"
+
+        for date in date_list:
+            plt.figure(1,figsize=(12,8))
+            psfs_list = []
+            centers_list = []
+            transmission_filelist = glob.glob(os.path.join(OSIRISDATA,foldername,date,"reduced_telluric_jb",filename_filter))
+
+
+            for transid,transmission_filename in enumerate(transmission_filelist):
+                print(transmission_filename)
+                with pyfits.open(transmission_filename) as hdulist:
+                    wvs = hdulist[0].data[0,:]
+                    transmission = hdulist[0].data[1,:]
+                plt.plot(transmission+transid*0.1+0.5,linestyle="-",
+                         label="{0} {1}".format(os.path.dirname(transmission_filename).split(os.path.sep)[-1],
+                                                os.path.basename(transmission_filename).split("bb_")[0]))
+
+            if len(transmission_filelist)>0:
+                plt.legend(loc="upper left",bbox_to_anchor=(1.0,1.0))
+
+            for transid,transmission_filename in enumerate(transmission_filelist):
+                print(transmission_filename)
+                with pyfits.open(transmission_filename) as hdulist:
+                    wvs = hdulist[0].data[0,:]
+                    transmission = hdulist[0].data[1,:]
+                plt.plot(transmission,linestyle="-",alpha=0.5)
+
+            if len(transmission_filelist)>0:
+                print("Saving "+os.path.join(OSIRISDATA,foldername,date,"reduced_telluric_jb",date+"_"+IFSfilter+"_transmission_ql.png"))
+                plt.savefig(os.path.join(OSIRISDATA,foldername,date,"reduced_telluric_jb",date+"_"+IFSfilter+"_transmission_ql.png"),bbox_inches='tight')
+                # plt.show()
+            try:
+                plt.close(1)
+            except:
+                pass
+
+    # for tmp in range(5):
+    #     # Calculate transmission
+    #     if 1 or run_all:
+    #         import csv
+    #         from PyAstronomy import pyasl
+    #         from scipy.interpolate import interp1d
+    #         numthreads=28
+    #         specpool = mp.Pool(processes=numthreads)
+    #
+    #         cutoff = 20
+    #
+    #         fileinfos_refstars_filename = os.path.join(OSIRISDATA,"fileinfos_refstars_jb.csv")
+    #         with open(fileinfos_refstars_filename, 'r') as csvfile:
+    #             csv_reader = csv.reader(csvfile, delimiter=';')
+    #             refstarsinfo_list_table = list(csv_reader)
+    #             refstarsinfo_colnames = refstarsinfo_list_table[0]
+    #             refstarsinfo_list_data = refstarsinfo_list_table[1::]
+    #         refstarsinfo_filename_id = refstarsinfo_colnames.index("filename")
+    #         refstarsinfo_filelist = [os.path.basename(item[refstarsinfo_filename_id]) for item in refstarsinfo_list_data]
+    #
+    #         for date in date_list:
+    #             filelist=[]
+    #             # filename_filter = "ao_off_s*"+IFSfilter+"*020_spec_v2.fits"
+    #             # filelist.extend(glob.glob(os.path.join(OSIRISDATA,foldername,date,"reduced_telluric_jb","*",filename_filter)))
+    #             # filename_filter = "s*"+IFSfilter+"*020_psfs_repaired_spec_v2.fits"
+    #             # filelist.extend(glob.glob(os.path.join(OSIRISDATA,foldername,date,"reduced_telluric_jb","*",filename_filter)))
+    #             filename_filter = "s*"+IFSfilter+"*020_psfs_repaired_spec_v2.fits"
+    #             filelist.extend(glob.glob(os.path.join(OSIRISDATA,foldername,date,"reduced_telluric_jb","HR_8799",filename_filter)))
+    #
+    #
+    #             for specid,spec_filename in enumerate(filelist):
+    #                 print(spec_filename)
+    #                 with pyfits.open(spec_filename) as hdulist:
+    #                     wvs = hdulist[0].data[0,:]
+    #                     spec = hdulist[0].data[1,:]/np.nanmean(hdulist[0].data[1,:])
+    #
+    #
+    #                 for fileid,refstarsinfo_file in enumerate(refstarsinfo_filelist):
+    #                     if os.path.basename(refstarsinfo_file).replace(".fits","") in spec_filename:
+    #                         fileitem = refstarsinfo_list_data[fileid]
+    #                         break
+    #
+    #                 type_id = refstarsinfo_colnames.index("type")
+    #                 rv_simbad_id = refstarsinfo_colnames.index("RV Simbad")
+    #                 vsini_fixed_id = refstarsinfo_colnames.index("vsini fixed")
+    #                 starname_id = refstarsinfo_colnames.index("star name")
+    #
+    #                 refstar_RV = float(fileitem[rv_simbad_id])
+    #                 vsini_fixed = float(fileitem[vsini_fixed_id])
+    #                 ref_star_type = fileitem[type_id]
+    #                 refstar_name = fileitem[starname_id]
+    #
+    #                 phoenix_folder = os.path.join(OSIRISDATA,"phoenix")
+    #                 phoenix_wv_filename = os.path.join(phoenix_folder,"WAVE_PHOENIX-ACES-AGSS-COND-2011.fits")
+    #                 with pyfits.open(phoenix_wv_filename) as hdulist:
+    #                     phoenix_wvs = hdulist[0].data/1.e4
+    #                 crop_phoenix = np.where((phoenix_wvs>wvs[0]-(wvs[-1]-wvs[0])/2)*(phoenix_wvs<wvs[-1]+(wvs[-1]-wvs[0])/2))
+    #                 phoenix_wvs = phoenix_wvs[crop_phoenix]
+    #                 try:
+    #                     phoenix_model_refstar_filename = glob.glob(os.path.join(phoenix_folder,refstar_name+"_{0}_".format(tmp+1)+"*.fits"))[0]
+    #                 except:
+    #                     phoenix_model_refstar_filename = glob.glob(os.path.join(phoenix_folder,ref_star_type+"*.fits"))[0]
+    #                 phoenix_refstar_filename=phoenix_model_refstar_filename.replace(".fits","_gaussconv_R{0}_{1}.csv".format(R0,IFSfilter))
+    #                 print(phoenix_refstar_filename)
+    #                 if len(glob.glob(phoenix_refstar_filename)) == 0:
+    #                     with pyfits.open(phoenix_model_refstar_filename) as hdulist:
+    #                         phoenix_refstar = hdulist[0].data[crop_phoenix]
+    #                     print("convolving: "+phoenix_model_refstar_filename)
+    #
+    #                     phoenix_refstar_conv = convolve_spectrum(phoenix_wvs,phoenix_refstar,R0,specpool)
+    #
+    #                     with open(phoenix_refstar_filename, 'w+') as csvfile:
+    #                         csvwriter = csv.writer(csvfile, delimiter=' ')
+    #                         csvwriter.writerows([["wvs","spectrum"]])
+    #                         csvwriter.writerows([[a,b] for a,b in zip(phoenix_wvs,phoenix_refstar_conv)])
+    #
+    #                 with open(phoenix_refstar_filename, 'r') as csvfile:
+    #                     csv_reader = csv.reader(csvfile, delimiter=' ')
+    #                     list_starspec = list(csv_reader)
+    #                     refstarpho_spec_str_arr = np.array(list_starspec, dtype=np.str)
+    #                     col_names = refstarpho_spec_str_arr[0]
+    #                     refstarpho_spec = refstarpho_spec_str_arr[1::,1].astype(np.float)
+    #                     refstarpho_spec_wvs = refstarpho_spec_str_arr[1::,0].astype(np.float)
+    #                     where_IFSfilter = np.where((refstarpho_spec_wvs>wvs[0])*(refstarpho_spec_wvs<wvs[-1]))
+    #                     refstarpho_spec = refstarpho_spec/np.mean(refstarpho_spec[where_IFSfilter])
+    #                     refstarpho_spec_func = interp1d(refstarpho_spec_wvs,refstarpho_spec,bounds_error=False,fill_value=np.nan)
+    #
+    #
+    #                 c_kms = 299792.458
+    #                 refstarpho_spec = refstarpho_spec_func(wvs*(1-refstar_RV/c_kms))
+    #                 broadened_refstarpho = pyasl.rotBroad(wvs, refstarpho_spec, 0.5, vsini_fixed_id)
+    #
+    #                 transmission_model = spec/broadened_refstarpho
+    #                 transmission_model = transmission_model/np.nanmean(transmission_model)
+    #
+    #                 hdulist = pyfits.HDUList()
+    #                 hdulist.append(pyfits.PrimaryHDU(data=np.array([wvs,transmission_model])))
+    #                 try:
+    #                     hdulist.writeto(os.path.join(spec_filename.replace(".fits","_{0}_".format(tmp+1)+"_cutoff{0}_transmission.fits".format(cutoff))), overwrite=True)
+    #                 except TypeError:
+    #                     hdulist.writeto(os.path.join(spec_filename.replace(".fits","_{0}_".format(tmp+1)+"_cutoff{0}_transmission.fits".format(cutoff))), clobber=True)
+    #                 hdulist.close()
+    #                 # plt.plot(spec,label="spec")
+    #                 # plt.plot(broadened_refstarpho,label="model")
+    #                 # plt.plot(transmission_model,label="transmission")
+    #                 # plt.legend()
+    #                 # specpool.close()
+    #                 # plt.show()
+    #                 # exit()
+    #         specpool.close()
+    #
+    #     # Plot transmission
+    #     if 1 or run_all:
+    #         filename_filter = "*/*"+IFSfilter+"*[0-9][0-9][0-9]*"+"_{0}_".format(tmp+1)+"_cutoff20_transmission.fits"
+    #
+    #         for date in date_list:
+    #             plt.figure(1,figsize=(12,8))
+    #             psfs_list = []
+    #             centers_list = []
+    #             transmission_filelist = glob.glob(os.path.join(OSIRISDATA,foldername,date,"reduced_telluric_jb",filename_filter))
+    #
+    #
+    #             for transid,transmission_filename in enumerate(transmission_filelist):
+    #                 print(transmission_filename)
+    #                 with pyfits.open(transmission_filename) as hdulist:
+    #                     wvs = hdulist[0].data[0,:]
+    #                     transmission = hdulist[0].data[1,:]
+    #                 plt.plot(transmission+transid*0.1+0.5,linestyle="-",label="{0}".format(os.path.basename(transmission_filename)))
+    #
+    #             if len(transmission_filelist)>0:
+    #                 plt.legend(loc="upper left",bbox_to_anchor=(1.0,1.0))
+    #
+    #             for transid,transmission_filename in enumerate(transmission_filelist):
+    #                 print(transmission_filename)
+    #                 with pyfits.open(transmission_filename) as hdulist:
+    #                     wvs = hdulist[0].data[0,:]
+    #                     transmission = hdulist[0].data[1,:]
+    #                 plt.plot(transmission,linestyle="-",label="{0}".format(os.path.basename(transmission_filename)),alpha=0.5)
+    #
+    #             if len(transmission_filelist)>0:
+    #                 print("Saving "+os.path.join(OSIRISDATA,foldername,date,"reduced_telluric_jb",date+"_"+IFSfilter+"_{0}_".format(tmp+1)+"_transmission_ql.png"))
+    #                 plt.savefig(os.path.join(OSIRISDATA,foldername,date,"reduced_telluric_jb",date+"_"+IFSfilter+"_{0}_".format(tmp+1)+"_transmission_ql.png"),bbox_inches='tight')
+    #                 # plt.show()
+    #             try:
+    #                 plt.close(1)
+    #             except:
+    #                 pass
+
 
     exit()
     # repair PSFs

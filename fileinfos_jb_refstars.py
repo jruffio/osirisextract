@@ -47,7 +47,7 @@ new_list_data = copy(old_list_data)
 for item in old_list_table:
     print(item)
 
-if 1: # add filename
+if 0: # add filename
     filename_id = new_colnames.index("filename")
     old_filelist = [item[filename_id] for item in new_list_data]
 
@@ -60,7 +60,7 @@ if 1: # add filename
             new_list_data.append([filename,]+[np.nan,]*(N_col-1))
     print(new_list_data)
 
-if 1: # add filename for ao off
+if 0: # add filename for ao off
     filename_id = new_colnames.index("filename")
     old_filelist = [item[filename_id] for item in new_list_data]
 
@@ -74,7 +74,7 @@ if 1: # add filename for ao off
     print(new_list_data)
 
 #sort files
-if 1:
+if 0:
     filename_id = new_colnames.index("filename")
     filelist = [item[filename_id] for item in new_list_data]
     filelist_sorted = copy(filelist)
@@ -87,7 +87,7 @@ if 1:
 
     new_list_data = new_new_list_data
 
-if 1: # add MJD-OBS
+if 0: # add MJD-OBS
     filename_id = new_colnames.index("filename")
     MJDOBS_id = new_colnames.index("MJD-OBS")
 
@@ -96,7 +96,7 @@ if 1: # add MJD-OBS
         prihdr0 = hdulist[0].header
         new_list_data[k][MJDOBS_id] = prihdr0["MJD-OBS"]
 
-if 1: # add barycenter RV
+if 0: # add barycenter RV
     from barycorrpy import get_BC_vel
     filename_id = new_colnames.index("filename")
     MJDOBS_id = new_colnames.index("MJD-OBS")
@@ -112,7 +112,7 @@ if 1: # add barycenter RV
         result = get_BC_vel(MJDOBS+2400000.5,hip_id=114189,obsname="Keck Observatory",ephemeris="de430")
         new_list_data[k][bary_rv_id] = result[0][0]
 
-if 1: # add spectral band
+if 0: # add spectral band
     filename_id = new_colnames.index("filename")
     try:
         ifs_filter_id = new_colnames.index("IFS filter")
@@ -162,6 +162,12 @@ if 1:
         new_list_data = [item+[np.nan,] for item in new_list_data]
         rv_simbad_id = new_colnames.index("RV Simbad")
     try:
+        vsini_fixed_id = old_colnames.index("vsini fixed")
+    except:
+        new_colnames.append("vsini fixed")
+        new_list_data = [item+[np.nan,] for item in new_list_data]
+        vsini_fixed_id = new_colnames.index("vsini fixed")
+    try:
         starname_id = old_colnames.index("star name")
     except:
         new_colnames.append("star name")
@@ -178,54 +184,63 @@ if 1:
 
         if refstar_name == "HD_210501":
             new_list_data[k][rv_simbad_id] = -20.20 #+-2.5
+            new_list_data[k][vsini_fixed_id] = 100 #+-2.5
             new_list_data[k][type_id] = "A0"
             new_list_data[k][Jmag_id] = 7.615
             new_list_data[k][Hmag_id] = 7.606
             new_list_data[k][Kmag_id] = 7.597
         elif refstar_name == "HIP_1123":
-            new_list_data[k][rv_simbad_id] = -0.9 #+-2
+            new_list_data[k][rv_simbad_id] = 0.9 #+-2
+            new_list_data[k][vsini_fixed_id] = 75 #+-2.5
             new_list_data[k][type_id] = "A1"
             new_list_data[k][Jmag_id] = 6.186
             new_list_data[k][Hmag_id] = 6.219
             new_list_data[k][Kmag_id] = 6.189
         elif refstar_name == "HIP_116886":
-            new_list_data[k][rv_simbad_id] = np.nan #unknown
+            new_list_data[k][rv_simbad_id] = 0#actually dunno np.nan
+            new_list_data[k][vsini_fixed_id] = 50#actually dunno np.nan
             new_list_data[k][type_id] = "A5"
             new_list_data[k][Jmag_id] = 9.375
             new_list_data[k][Hmag_id] = 9.212
             new_list_data[k][Kmag_id] = 9.189
         elif refstar_name == "HR_8799":
             new_list_data[k][rv_simbad_id] = -12.6 #
+            new_list_data[k][vsini_fixed_id] = 49 #+-2.5
             new_list_data[k][type_id] = "F0"
             new_list_data[k][Jmag_id] = 5.383
             new_list_data[k][Hmag_id] = 5.280
             new_list_data[k][Kmag_id] = 5.240
         elif refstar_name == "BD+14_4774":
-            new_list_data[k][rv_simbad_id] =  -16
+            new_list_data[k][rv_simbad_id] = 0#actually dunno np.nan
+            new_list_data[k][vsini_fixed_id] = 50#actually dunno np.nan
             new_list_data[k][type_id] = "A0"
             new_list_data[k][Jmag_id] = 9.291
             new_list_data[k][Hmag_id] = 9.655
             new_list_data[k][Kmag_id] = 9.613
         elif refstar_name == "HD_7215":
             new_list_data[k][rv_simbad_id] =  -2.1
+            new_list_data[k][vsini_fixed_id] = 81.3
             new_list_data[k][type_id] = "A0"
             new_list_data[k][Jmag_id] = 6.906
             new_list_data[k][Hmag_id] = 6.910
             new_list_data[k][Kmag_id] = 6.945
         elif refstar_name == "HIP_18717":
             new_list_data[k][rv_simbad_id] =  28.5
+            new_list_data[k][vsini_fixed_id] = np.nan
             new_list_data[k][type_id] = "A0"
             new_list_data[k][Jmag_id] = 6.064
             new_list_data[k][Hmag_id] = 6.090
             new_list_data[k][Kmag_id] = 6.074
         elif refstar_name == "HIP_111538":
             new_list_data[k][rv_simbad_id] =  1.6
+            new_list_data[k][vsini_fixed_id] = np.nan
             new_list_data[k][type_id] = "A0"
             new_list_data[k][Jmag_id] = 9.393
             new_list_data[k][Hmag_id] = 9.431
             new_list_data[k][Kmag_id] = 9.406
         else:
             new_list_data[k][rv_simbad_id] =  np.nan
+            new_list_data[k][vsini_fixed_id] = np.nan
             new_list_data[k][type_id] = np.nan
             new_list_data[k][Jmag_id] = np.nan
             new_list_data[k][Hmag_id] = np.nan

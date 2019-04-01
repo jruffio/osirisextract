@@ -12,17 +12,11 @@ import numpy as np
 print("coucou")
 
 # OSIRISDATA = "/scratch/groups/bmacint/osiris_data/"
-OSIRISDATA = "/home/sda/jruffio/osiris_data/"
+OSIRISDATA = "/data/osiris_data/"
 if 1:
+    # foldername = "HR_8799_b"
     foldername = "HR_8799_c"
-    sep = 0.950
-    telluric = os.path.join(OSIRISDATA,"HR_8799_c/20100715/reduced_telluric/HD_210501","s100715_a005001_Kbb_020.fits")
-    template_spec = os.path.join(OSIRISDATA,"hr8799c_osiris_template.save")
-if 0:
-    foldername = "HR_8799_d"
-    sep = 0.950
-    # telluric = os.path.join(OSIRISDATA,foldername,"20150722/reduced_telluric/HD_210501",".fits")
-    # template_spec = os.path.join(OSIRISDATA,"hr8799c_osiris_template.save")
+    # foldername = "HR_8799_d"
 
 if 1:
     year = "*"
@@ -30,7 +24,7 @@ if 1:
     # filenamefilter = "s*_a*001_tlc_Kbb_020.fits"
     # filenamefilter = "s*_a*001_tlc_Hbb_020.fits"
     reductionname = "reduced_jb"
-    filenamefilter = "s*_a*001_Kbb_020.fits"
+    filenamefilter = "s*_a*_Hbb_020.fits"
 
     filelist = glob.glob(os.path.join(OSIRISDATA,foldername,year,reductionname,filenamefilter))
     filelist.sort()
@@ -51,6 +45,7 @@ if 1:
                     print(prihdr["COMMENT"][k+2])
                     break
             # exit()
+    exit()
 
 if 0:
     year = "*"

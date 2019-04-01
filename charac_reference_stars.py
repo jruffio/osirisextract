@@ -3,7 +3,7 @@ __author__ = 'jruffio'
 
 
 import matplotlib
-matplotlib.use("Agg")
+# matplotlib.use("Agg")
 
 import numpy as np
 import matplotlib.pylab as plt
@@ -111,9 +111,12 @@ def convolve_spectrum(wvs,spectrum,R,mypool=None):
 def LPFvsHPF(myvec,cutoff):
     myvec_cp = copy(myvec)
     #handling nans:
+    wherenans0 = np.where(np.isnan(myvec_cp))
+    for k in wherenans0[0]:
+        myvec_cp[k] = np.nanmedian(myvec_cp[np.max([0,k-10]):np.min([np.size(myvec_cp),k+10])])
     wherenans = np.where(np.isnan(myvec_cp))
     for k in wherenans[0]:
-        myvec_cp[k] = np.nanmedian(myvec_cp[np.max([0,k-10]):np.min([np.size(myvec_cp),k+10])])
+        myvec_cp[k] = np.nanmedian(myvec_cp[np.max([0,k-50]):np.min([np.size(myvec_cp),k+50])])
 
     fftmyvec = np.fft.fft(np.concatenate([myvec_cp,myvec_cp[::-1]],axis=0))
     LPF_fftmyvec = copy(fftmyvec)
@@ -121,8 +124,8 @@ def LPFvsHPF(myvec,cutoff):
     LPF_myvec = np.real(np.fft.ifft(LPF_fftmyvec))[0:np.size(myvec_cp)]
     HPF_myvec = myvec_cp - LPF_myvec
 
-    LPF_myvec[wherenans] = np.nan
-    HPF_myvec[wherenans] = np.nan
+    LPF_myvec[wherenans0] = np.nan
+    HPF_myvec[wherenans0] = np.nan
     return LPF_myvec,HPF_myvec
 
 
@@ -226,24 +229,24 @@ if __name__ == "__main__":
     except:
         pass
 
-    if 0:
+    if 1:
         OSIRISDATA = "/data/osiris_data/"
         # IFSfilter = "Jbb"
         IFSfilter = "Hbb"
         # IFSfilter = "Kbb"
         # refstar_name = "HD_210501"
-        refstar_name = "HR_8799"
+        # refstar_name = "HR_8799"
         # refstar_name = "HIP_1123"
-        # refstar_name = "BD+14_4774"
-        cutoff = 5
+        refstar_name = "BD+14_4774"
+        cutoff = 20
 
         filelist = []
         date = "*"
-        # date = "20090723"
+        date = "20090730"
         # date=   "20100711"
-        date = "20100713"
-        filename_filter = "s*"+IFSfilter+"*020_psfs_repaired_spec_v2.fits"
-        filelist.extend(glob.glob(os.path.join(OSIRISDATA,"HR_8799_*",date,"reduced_telluric_jb",refstar_name,filename_filter)))
+        # date = "20100713"
+        # filename_filter = "s*"+IFSfilter+"*020_psfs_repaired_spec_v2.fits"
+        # filelist.extend(glob.glob(os.path.join(OSIRISDATA,"HR_8799_*",date,"reduced_telluric_jb",refstar_name,filename_filter)))
         filename_filter = "ao_off_s*"+IFSfilter+"*020_spec_v2.fits"
         filelist.extend(glob.glob(os.path.join(OSIRISDATA,"HR_8799_*",date,"reduced_telluric_jb",refstar_name,filename_filter)))
         print(filelist)
@@ -265,8 +268,8 @@ if __name__ == "__main__":
         cutoff = int(sys.argv[6])
         #nice -n 15 /home/anaconda3/bin/python charac_reference_stars.py /data/osiris_data/ /data/osiris_data/HR_8799_b/20130726/reduced_telluric_jb/HR_8799/s130726_a063001_Jbb_020_psfs_repaired_spec_v2.fits HR_8799 Jbb 28 5
 
-    # for spec_filename in filelist:
-    if 1:
+    for spec_filename in filelist:
+    # if 1:
         if IFSfilter=="Kbb": #Kbb 1965.0 0.25
             CRVAL1 = 1965.
             CDELT1 = 0.25
@@ -420,7 +423,7 @@ if __name__ == "__main__":
                 tmp_model /= np.nanstd(tmp_model)
                 atm_model.append(tmp_model)
 
-            if 1:
+            if 0:
                 N_vsini = 100
                 vsini_vec = np.linspace(1,500,N_vsini)
                 N_limbdark = 3#5
@@ -433,15 +436,16 @@ if __name__ == "__main__":
                 # exit()
                 vsini_grid, limbdark_grid,RV_grid = np.meshgrid(vsini_vec, limbdark_vec, RV_vec)
             else:
-                N_vsini = 100
+                N_vsini = 10
                 vsini_vec = np.linspace(1,500,N_vsini)
-                N_limbdark = 3#5
+                N_limbdark = 2#5
                 limbdark_vec = np.linspace(0,1,N_limbdark)
                 # limbdark_vec = np.array([0.0])
-                N_RV = 5#201
+                N_RV = 3#201
                 RV_vec = np.linspace(-40+refstarsinfo_bary_rv+refstar_RV,40+refstarsinfo_bary_rv+refstar_RV,N_RV)
                 vsini_grid, limbdark_grid,RV_grid = np.meshgrid(vsini_vec, limbdark_vec, RV_vec)
 
+            print("Starting fit_refstar")
             posterior = fit_refstar(vsini_grid,
                                     limbdark_grid,
                                     RV_grid,

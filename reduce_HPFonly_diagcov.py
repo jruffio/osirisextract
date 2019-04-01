@@ -705,33 +705,40 @@ if __name__ == "__main__":
     ##############################
     ## Variable parameters
     ##############################
-    if 0:
-        planet = "b"
-        date = "090722"
+    print(len(sys.argv))
+    if len(sys.argv) == 1:
+        # planet = "b"
+        # date = "090722"
+        # date = "090730"
         # date = "100711"
         # date = "100712"
         # date = "100713"
         # date = "130725"
         # date = "130726"
         # date = "130727"
-        # planet = "c"
+        # date = "161106"
+        # date = "180722"
+        planet = "c"
         # date = "100715"
         # date = "101104"
         # date = "110723"
-        # date = "110724"
+        date = "110724"
         # date = "110725"
+        # date = "130726"
         # planet = "d"
         # date = "130727"
         # date = "150720"
         # date = "150722"
         # date = "150723"
         # date = "150828"
-        IFSfilter = "Kbb"
-        # IFSfilter = "Hbb" # "Kbb" or "Hbb"
+        IFSfilter = "Hbb"
+        # IFSfilter = "Hbb"
+        # IFSfilter = "Jbb" # "Kbb" or "Hbb"
         scale = "020"
+        # scale = "035"
 
         inputDir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/"
-        outputdir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/20190323_HPF_only/"
+        outputdir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/20190401_HPF_only/"
         # outputdir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/20190305_HPF_only_noperscor/"
         # outputdir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/20190228_mol_temp/"
 
@@ -741,17 +748,19 @@ if __name__ == "__main__":
         print(os.path.join(inputDir,"s"+date+"*"+IFSfilter+"_"+scale+".fits"))
         filelist = glob.glob(os.path.join(inputDir,"s"+date+"*"+IFSfilter+"_"+scale+".fits"))
         filelist.sort()
+        filelist = [filelist[-1]]
         print(filelist)
         # exit()
         # print(os.path.join(inputDir,"s"+date+"*"+IFSfilter+"_020.fits"))
         # filelist = filelist[1:]
         # filelist = filelist[len(filelist)-3:len(filelist)-2]
 
-        numthreads = 28
+        numthreads = 10
         planet_search = True
         debug_paras = True
-        plot_transmissions = True
+        plot_transmissions = False
         plt_psfs = False
+        plot_persistence = True
         planet_model_string = "model"
         # planet_model_string = "CO"#"CO2 CO H2O CH4"
 
@@ -770,6 +779,7 @@ if __name__ == "__main__":
 
         filelist = [filename]
         IFSfilter = filename.split("_")[-2]
+        date = os.path.basename(filename).split("_")[0].replace("s","")
         if "HR_8799_b" in filename:
             planet = "b"
         if "HR_8799_c" in filename:
@@ -779,7 +789,10 @@ if __name__ == "__main__":
 
         plot_transmissions = False
         plt_psfs = False
+        plot_persistence = False
         #nice -n 15 /home/anaconda3/bin/python ./reduce_HPFonly_diagcov.py /data/osiris_data /data/osiris_data/HR_8799_c/20100715/reduced_jb/ /data/osiris_data/HR_8799_c/20100715/reduced_jb/20190308_HPF_only_sherlock_test/ /data/osiris_data/HR_8799_c/20100715/reduced_jb/s100715_a011001_Kbb_020.fits 20 1 'CO test' 1
+
+        #nice -n 15 /home/anaconda3/bin/python ./reduce_HPFonly_diagcov.py /data/osiris_data /data/osiris_data/HR_8799_b/20180722/reduced_jb/ /data/osiris_data/HR_8799_b/20180722/reduced_jb/20190326_HPF_only_sherlock_test/ /data/osiris_data/HR_8799_b/20180722/reduced_jb/s180722_a033002_Kbb_035.fits 20 1 'model' 1
 
 
     for filename in filelist:
@@ -793,7 +806,9 @@ if __name__ == "__main__":
             prihdr = hdulist[0].header
             curr_mjdobs = prihdr["MJD-OBS"]
             imgs = np.moveaxis(imgs,0,2)
+            imgs = imgs[0:64,0:19,:]
             imgs_hdrbadpix = np.moveaxis(np.rollaxis(np.rollaxis(hdulist[2].data,2),2,1),0,2)
+            imgs_hdrbadpix = imgs_hdrbadpix[0:64,0:19,:]
         ny,nx,nz = imgs.shape
         init_wv = prihdr["CRVAL1"]/1000. # wv for first slice in mum
         dwv = prihdr["CDELT1"]/1000. # wv interval between 2 slices in mum
@@ -1127,6 +1142,9 @@ if __name__ == "__main__":
                         where_IFSfilter = np.where((oriplanet_spec_wvs>wvs[0])*(oriplanet_spec_wvs<wvs[-1]))
                         oriplanet_spec = oriplanet_spec/np.mean(oriplanet_spec[where_IFSfilter])
                         planet_spec_func = interp1d(oriplanet_spec_wvs,oriplanet_spec,bounds_error=False,fill_value=np.nan)
+                        # import matplotlib.pyplot as plt
+                        # plt.plot(planet_spec_func(wvs))
+                        # plt.show()
                         planet_partial_template_func_list.append(planet_spec_func)
             planet_model_func_table.append(planet_partial_template_func_list)
 
@@ -1162,14 +1180,43 @@ if __name__ == "__main__":
             persistence_filelist.extend(glob.glob(os.path.join(ref_star_folder,"*","*persistence*"+IFSfilter+"_"+scale+".fits")))
             for spdc_refstar_filename in persistence_filelist:
                 # print(spdc_refstar_filename)
+
+                if 0: # Hack to include a Jbb header into a Kbb raw file
+                    # with pyfits.open("/data/osiris_data/HR_8799_b/20130726/raw_telluric_Jbb/HR_8799/bad/s130726_a050001.fits") as hdulist1:
+                    # with pyfits.open("/data/osiris_data/HR_8799_c/20130726/raw_telluric_Jbb/HR_8799/s130726_a050001.fits") as hdulist1:
+                    # with pyfits.open("/data/osiris_data/HR_8799_c/20130726/raw_telluric_Jbb/HR_8799/s130726_a051001.fits") as hdulist1:
+                    with pyfits.open("/data/osiris_data/HR_8799_c/20130726/raw_telluric_Jbb/HR_8799/s130726_a052001.fits") as hdulist1:
+                        tmphdr0 = hdulist1[0].header
+                        tmphdr1 = hdulist1[1].header
+                        tmphdr2 = hdulist1[2].header
+                    # with pyfits.open("/data/osiris_data/HR_8799_b/20130726/raw_telluric_Kbb/HD_210501/s130726_a033001.fits") as hdulist:
+                    # with pyfits.open("/data/osiris_data/HR_8799_c/20130726/raw_telluric_Kbb/HD_210501/s130726_a031001.fits") as hdulist:
+                    # with pyfits.open("/data/osiris_data/HR_8799_c/20130726/raw_telluric_Kbb/HD_210501/s130726_a032001.fits") as hdulist:
+                    with pyfits.open("/data/osiris_data/HR_8799_c/20130726/raw_telluric_Kbb/HD_210501/s130726_a033001.fits") as hdulist:
+                        data0 = hdulist[0].data
+                        data1 = hdulist[1].data
+                        data2 = hdulist[2].data
+                    hdulist = pyfits.HDUList()
+                    hdulist.append(pyfits.PrimaryHDU(data=data0,header=tmphdr0))
+                    hdulist.append(pyfits.PrimaryHDU(data=data1,header=tmphdr1))
+                    hdulist.append(pyfits.PrimaryHDU(data=data2,header=tmphdr2))
+                    try:
+                        hdulist.writeto("/data/osiris_data/HR_8799_c/20130726/test/s130726_a033001_fakeJbb.fits", overwrite=True)
+                    except TypeError:
+                        hdulist.writeto("/data/osiris_data/HR_8799_c/20130726/test/s130726_a033001_fakeJbb.fits", clobber=True)
+                    hdulist.close()
+                    exit()
+
                 with pyfits.open(spdc_refstar_filename) as hdulist:
                     spdc_refstar_prihdr = hdulist[0].header
                     print(spdc_refstar_prihdr["MJD-OBS"],spdc_refstar_prihdr["MJD-OBS"] < curr_mjdobs,spdc_refstar_filename)
                     if spdc_refstar_prihdr["MJD-OBS"] < curr_mjdobs:
                         spdc_refstar_cube = np.rollaxis(np.rollaxis(hdulist[0].data,2),2,1)
                         spdc_refstar_cube = np.moveaxis(spdc_refstar_cube,0,2)
+                        spdc_refstar_cube = spdc_refstar_cube[0:64,0:19,:]
+
                         spdc_refstar_im = np.nansum(spdc_refstar_cube,axis=2)
-                        persis_where2mask = np.where(spdc_refstar_im<np.nanmax(spdc_refstar_im)/10)
+                        persis_where2mask = np.where(spdc_refstar_im<np.nanmax(spdc_refstar_im)/4)
                         spdc_refstar_cube[persis_where2mask[0],persis_where2mask[1],:] = 0
                         persistence_arr += spdc_refstar_cube
 
@@ -1189,9 +1236,10 @@ if __name__ == "__main__":
                     persistence_arr[m,n,widen_nans] = np.nan
                     persistence_arr[m,n,widen_nans] = smooth_vec[widen_nans]
 
-            # plt.plot(persistence_arr[48,8,:],label="after")
-            # plt.legend()
-            # plt.show()
+            if plot_persistence:
+                import matplotlib.pyplot as plt
+                plt.imshow(np.nansum(persistence_arr,axis=2))
+                plt.show()
 
 
         ##############################
@@ -1610,10 +1658,7 @@ if __name__ == "__main__":
                 print("Finished col {0}".format(col_index))
                 task.wait()
             persistence_imgs_np[:] = copy(originalHPF_imgs_np)
-            # import matplotlib.pyplot as plt
-            # plt.plot(persistence_imgs_np[48+5,8+5,:],label="after")
-            # plt.legend()
-            # plt.show()
+
 
             original_imgs_np[:] = save_original_imgs_np
 
@@ -1626,6 +1671,8 @@ if __name__ == "__main__":
             task.wait()
 
         badpix_imgs_np[np.where(padimgs_hdrbadpix==0)] = np.nan
+        badpix_imgs_np[:,:,(padnz-20)::]=np.nan
+        badpix_imgs_np[:,:,0:20]=np.nan
         if mask_starline:
             badpix_imgs_np[:,:,795:810]=np.nan
         if mask_20101104_artifact:
@@ -1633,6 +1680,12 @@ if __name__ == "__main__":
             badpix_imgs_np[(padny-5-padding):padny,:,:]=np.nan
             badpix_imgs_np[43:50,:,0:400]=np.nan
             badpix_imgs_np[43:50,:,0:400]=np.nan
+        if IFSfilter == "Jbb":
+            badpix_imgs_np[:,:,1000::]=np.nan
+            badpix_imgs_np[:,:,0:100]=np.nan
+        if IFSfilter == "Hbb" and date == "101104":
+            badpix_imgs_np[0:10,:,:]=np.nan
+
 
         # import matplotlib.pyplot as plt
         # tmpk, tmpl = 49,12

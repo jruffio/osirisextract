@@ -13,14 +13,17 @@ from copy import copy
 
 out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
 
-planet = "b"
-# planet = "c"
+# planet = "b"
+planet = "c"
 # planet = "d"
 
-IFSfilter = "Kbb"
+# IFSfilter = "Kbb"
 # IFSfilter = "Hbb"
+# IFSfilter = "all"
+# suffix = "KbbHbb"
+suffix = "all"
 
-fileinfos_filename = "/data/osiris_data/HR_8799_"+planet+"/fileinfos_"+IFSfilter+"_jb.csv"
+fileinfos_filename = "/data/osiris_data/HR_8799_"+planet+"/fileinfos_Kbb_jb.csv"
 
 #read file
 with open(fileinfos_filename, 'r') as csvfile:
@@ -29,7 +32,6 @@ with open(fileinfos_filename, 'r') as csvfile:
     colnames = list_table[0]
     N_col = len(colnames)
     list_data = list_table[1::]
-    N_lines =  len(list_data)
 
     try:
         cen_filename_id = colnames.index("cen filename")
@@ -40,7 +42,12 @@ with open(fileinfos_filename, 'r') as csvfile:
     except:
         pass
     filename_id = colnames.index("filename")
+    mjdobs_id = colnames.index("MJD-OBS")
     bary_rv_id = colnames.index("barycenter rv")
+    ifs_filter_id = colnames.index("IFS filter")
+    xoffset_id = colnames.index("header offset x")
+    yoffset_id = colnames.index("header offset y")
+    sequence_id = colnames.index("sequence")
 
 filelist = [item[filename_id] for item in list_data]
 filelist_sorted = copy(filelist)
@@ -49,7 +56,10 @@ print(len(filelist_sorted)) #37
 # exit()
 new_list_data = []
 for filename in filelist_sorted:
-    new_list_data.append(list_data[filelist.index(filename)])
+    if 1 or "Kbb" in list_data[filelist.index(filename)][ifs_filter_id] or \
+       "Hbb" in list_data[filelist.index(filename)][ifs_filter_id]:
+        if 1:#"20190324_HPF_only" in list_data[filelist.index(filename)][cen_filename_id]:
+            new_list_data.append(list_data[filelist.index(filename)])
 list_data=new_list_data
 # print(new_list_data)
 # exit()
@@ -76,24 +86,25 @@ if "d" in planet:
                 new_list_data.append(item)
     list_data = new_list_data
 
-    N_lines =  len(valid_d_files)
+N_lines =  len(list_data)
 
 # plot 2D images
-if 0:
-    if IFSfilter=="Kbb": #Kbb 1965.0 0.25
-        CRVAL1 = 1965.
-        CDELT1 = 0.25
-        nl=1665
-        R=4000
-    elif IFSfilter=="Hbb": #Hbb 1651 1473.0 0.2
-        CRVAL1 = 1473.
-        CDELT1 = 0.2
-        nl=1651
-        R=5000
-    dwv = CDELT1/1000.
-    init_wv = CRVAL1/1000. # wv for first slice in mum
+if 1:
+    # if IFSfilter=="Kbb": #Kbb 1965.0 0.25
+    #     CRVAL1 = 1965.
+    #     CDELT1 = 0.25
+    #     nl=1665
+    #     R=4000
+    # elif IFSfilter=="Hbb": #Hbb 1651 1473.0 0.2
+    #     CRVAL1 = 1473.
+    #     CDELT1 = 0.2
+    #     nl=1651
+    #     R=5000
+    # dwv = CDELT1/1000.
+    # init_wv = CRVAL1/1000. # wv for first slice in mum
 
-    f,ax_list = plt.subplots(N_lines//15+1,15,sharey="row",sharex="col",figsize=(15*0.6,2.25*(N_lines//15+1)))
+    seqref = -1
+    f,ax_list = plt.subplots(N_lines//15+1,15,sharey="row",sharex="col",figsize=(15*0.6*2,2*2.25*(N_lines//15+1)))
     try:
         ax_list = [myax for rowax in ax_list for myax in rowax ]
     except:
@@ -106,6 +117,10 @@ if 0:
 
         # reducfilename = os.path.join(os.path.dirname(item[filename_id]),"sherlock","20190309_HPF_only",os.path.basename(item[filename_id]).replace(".fits","_outputHPF_cutoff40_sherlock_v1_search.fits"))
         reducfilename = item[cen_filename_id]#.replace("search","search_CO")
+        plt.sca(ax)
+        plt.ylabel(os.path.basename(item[filename_id]).split("bb_")[0],fontsize=10)
+        if "20190324_HPF_only" not in reducfilename:
+            continue
         print(k,item)
         # print(reducfilename)
         # reducfilename = item[cen_filename_id].replace("20190117_HPFonly","20190125_HPFonly").replace("sherlock_v0","sherlock_v1_search")
@@ -118,7 +133,7 @@ if 0:
         NplanetRV_hd = np.where((planetRV[1::]-planetRV[0:(np.size(planetRV)-1)]) < 0)[0][0]+1
         planetRV_hd = hdulist[0].data[0:NplanetRV_hd]
         planetRV = hdulist[0].data[NplanetRV_hd::]
-        rv_per_pix = 3e5*dwv/(init_wv+dwv*nl//2) # 38.167938931297705
+        # rv_per_pix = 3e5*dwv/(init_wv+dwv*nl//2) # 38.167938931297705
 
         hdulist = pyfits.open(reducfilename)
         cube_hd = hdulist[0].data[0,0,0,0:NplanetRV_hd,:,:]
@@ -135,33 +150,49 @@ if 0:
             rvcen = bary_rv + rv_star
         zcen = np.argmin(np.abs(planetRV_hd-rvcen))
         image = copy(cube_hd[zcen,:,:])
+        delta_AIC = cube_hd[zcen,kcen,lcen]
 
-        plt.sca(ax)
         ny,nx = image.shape
-        plt.imshow(image,interpolation="nearest",origin="lower")
-        # plt.clim([0,cube_hd[zcen,kcen,lcen]/2.0])
-        plt.clim([0,np.nanstd(cube_hd)*10])
-        # plt.clim([0,50])
-        plt.xticks([0,10])
+        if 1:#delta_AIC>50:
+            plt.imshow(image,interpolation="nearest",origin="lower")
+            # plt.clim([0,cube_hd[zcen,kcen,lcen]/2.0])
+            # plt.clim([0,np.nanstd(cube_hd)*10])
+            # plt.clim([0,30])
+            plt.clim([0,np.max([np.nanstd(cube_hd)*10,30])])
+            plt.xticks([0,10])
 
         try:
-            circle = plt.Circle((lcen,kcen),5,color="red", fill=False)
+            circle = plt.Circle((lcen,kcen),5,color="orange", fill=False)
             ax.add_artist(circle)
             # print(hdulist[0].data[0,0,11,zcen,kcen,lcen])
         except:
             pass
         # plt.title(os.path.basename(item[filename_id]).split(IFSfilter)[0])
 
+        xoffset = float(item[xoffset_id])
+        yoffset = float(item[yoffset_id])
+        sequence = float(item[sequence_id])
+        print(seqref,sequence)
+        if seqref == sequence:
+            arrow = plt.arrow(lcenref,kcenref,xoffset,yoffset,color="red")
+            ax.add_artist(arrow)
+        else:
+            lcenref = lcen
+            kcenref = kcen
+            seqref = sequence
+            circle = plt.Circle((xoffset+lcenref,kcenref+yoffset),3,color="red", fill=False)
+            ax.add_artist(circle)
+        circle = plt.Circle((xoffset+lcenref,kcenref+yoffset),1,color="red", fill=False)
+        ax.add_artist(circle)
 
-
-    f.subplots_adjust(wspace=0,hspace=0)
-    plt.show()
-    print("Saving "+os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_images.pdf"))
-    plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_images.pdf"),bbox_inches='tight')
-    plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_images.png"),bbox_inches='tight')
-    # print("Saving "+os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_images_tentativedetec.pdf"))
-    # plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_images_tentativedetec.pdf"),bbox_inches='tight')
-    # plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_images_tentativedetec.png"),bbox_inches='tight')
+    # plt.show()
+    # f.subplots_adjust(wspace=0,hspace=0)
+    print("Saving "+os.path.join(out_pngs,"HR8799"+planet+"_"+suffix+"_images.pdf"))
+    plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+suffix+"_images.png"),bbox_inches='tight')
+    plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+suffix+"_images.pdf"),bbox_inches='tight')
+    # print("Saving "+os.path.join(out_pngs,"HR8799"+planet+"_"+suffix+"_images_tentativedetec.pdf"))
+    # plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+suffix+"_images_tentativedetec.pdf"),bbox_inches='tight')
+    # plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+suffix+"_images_tentativedetec.png"),bbox_inches='tight')
     exit()
 
 # plot CCF
@@ -316,26 +347,28 @@ if 0:
 if 1:
     rv_star = -12.6#-12.6+-1.4km/s HR 8799 Rob and Simbad
     bary_star_list = np.array([-float(item[bary_rv_id])/1000+rv_star for item in list_data])
+    mjdobs_list = np.array([float(item[mjdobs_id]) for item in list_data])
+    mjdobs_list = np.arange(np.size(mjdobs_list))
     baryrv_list = np.array([-float(item[bary_rv_id])/1000 for item in list_data])
     rv_list = np.array([float(item[rvcen_id]) for item in list_data])
-    rv_list[37] = np.nan
+    # rv_list[37] = np.nan
     # rv_list[31] = np.nan
     rvsig_list = np.array([float(item[rvcensig_id]) for item in list_data])
-    valid_list = np.array([not ("201007" in item[filename_id]) for item in list_data])
-    rv_list[np.where(valid_list)] = np.nan
+    # valid_list = np.array([not ("201007" in item[filename_id]) for item in list_data])
+    # rv_list[np.where(valid_list)] = np.nan
     plt.figure(1,figsize=(9,0.75*9))
     plt.subplot(2,1,1)
-    plt.errorbar(np.arange(np.size(rv_list)),rv_list,yerr=rvsig_list,fmt="x",color="red",label="Measured raw RV ($1\sigma$)")
-    plt.plot(baryrv_list,color="#006699",label="Barycentric RV")
-    plt.plot(bary_star_list,color="#ff9900",label="Barycentric + HR8799 RV")
+    plt.errorbar(mjdobs_list,rv_list,yerr=rvsig_list,fmt="x",color="red",label="Measured raw RV ($1\sigma$)")
+    plt.plot(mjdobs_list,baryrv_list,color="#006699",label="Barycentric RV")
+    plt.plot(mjdobs_list,bary_star_list,color="#ff9900",label="Barycentric + HR8799 RV")
     plt.xlabel("Exposure Index",fontsize=15)
     plt.ylabel("RV (km/s)",fontsize=15)
     plt.legend(fontsize=10)
     plt.legend(fontsize=10,loc="upper left")
     plt.subplot(2,1,2)
     # plt.plot(rv_list-bary_star_list,"x",color="red",label="Estimated Planet RV")
-    plt.plot(np.arange(np.size(rv_list)),np.zeros(rv_list.shape)+np.nanmean(rv_list-bary_star_list),linestyle=":",color="pink",label="Mean Planet RV")
-    plt.errorbar(np.arange(np.size(rv_list)),rv_list-bary_star_list,yerr=rvsig_list,fmt="x",color="red",label="Estimated Planet RV ($1\sigma$)")
+    plt.plot(mjdobs_list,np.zeros(rv_list.shape)+np.nanmean(rv_list-bary_star_list),linestyle=":",color="pink",label="Mean Planet RV")
+    plt.errorbar(mjdobs_list,rv_list-bary_star_list,yerr=rvsig_list,fmt="x",color="red",label="Estimated Planet RV ($1\sigma$)")
     plt.xlabel("Exposure Index",fontsize=15)
     plt.ylabel("RV (km/s)",fontsize=15)
     print(np.nansum((rv_list-bary_star_list)/rvsig_list)/(np.sum(1./rvsig_list[np.where(np.isfinite(rv_list))])),
@@ -343,7 +376,7 @@ if 1:
     print(np.nanmean(rv_list[10:50]-bary_star_list[10:50]))
     # plt.ylim([-20,20])
     plt.legend(fontsize=10,loc="upper left")
-    # plt.show()
+    plt.show()
     print("Saving "+os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_RV.pdf"))
     plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_RV.pdf"),bbox_inches='tight')
     plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_RV.png"),bbox_inches='tight')
