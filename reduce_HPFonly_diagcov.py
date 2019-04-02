@@ -731,7 +731,7 @@ if __name__ == "__main__":
         # date = "150722"
         # date = "150723"
         # date = "150828"
-        IFSfilter = "Hbb"
+        IFSfilter = "Kbb"
         # IFSfilter = "Hbb"
         # IFSfilter = "Jbb" # "Kbb" or "Hbb"
         scale = "020"
@@ -748,7 +748,7 @@ if __name__ == "__main__":
         print(os.path.join(inputDir,"s"+date+"*"+IFSfilter+"_"+scale+".fits"))
         filelist = glob.glob(os.path.join(inputDir,"s"+date+"*"+IFSfilter+"_"+scale+".fits"))
         filelist.sort()
-        filelist = [filelist[-1]]
+        filelist = [filelist[0]]
         print(filelist)
         # exit()
         # print(os.path.join(inputDir,"s"+date+"*"+IFSfilter+"_020.fits"))
@@ -760,7 +760,7 @@ if __name__ == "__main__":
         debug_paras = True
         plot_transmissions = False
         plt_psfs = False
-        plot_persistence = True
+        plot_persistence = False
         planet_model_string = "model"
         # planet_model_string = "CO"#"CO2 CO H2O CH4"
 
@@ -976,7 +976,7 @@ if __name__ == "__main__":
                 dl_grid,dk_grid = np.array([[0]]),np.array([[0]])
                 # plcen_k,plcen_l = float(fileitem[kcen_id]),float(fileitem[lcen_id])
                 # plcen_k,plcen_l = 32-10,-35.79802955665025+46.8
-                plcen_k,plcen_l = 30,9#44,8
+                plcen_k,plcen_l = 32,11#44,8
             else:
                 planetRV_array = np.arange(-3*dprv,3*dprv,dprv/100)
                 dl_grid,dk_grid = np.meshgrid(np.linspace(-1.,1.,2*20+1),np.linspace(-1.,1.,2*20+1))
@@ -1218,6 +1218,8 @@ if __name__ == "__main__":
                         spdc_refstar_im = np.nansum(spdc_refstar_cube,axis=2)
                         persis_where2mask = np.where(spdc_refstar_im<np.nanmax(spdc_refstar_im)/4)
                         spdc_refstar_cube[persis_where2mask[0],persis_where2mask[1],:] = 0
+                        # persis_where2mask = np.where(spdc_refstar_cube<np.nanmax(spdc_refstar_cube)/2)
+                        # spdc_refstar_cube[persis_where2mask] = 0
                         persistence_arr += spdc_refstar_cube
 
             window_size=100
@@ -1239,6 +1241,7 @@ if __name__ == "__main__":
             if plot_persistence:
                 import matplotlib.pyplot as plt
                 plt.imshow(np.nansum(persistence_arr,axis=2))
+                plt.clim([0,10])
                 plt.show()
 
 
