@@ -710,6 +710,7 @@ if __name__ == "__main__":
         # planet = "b"
         # date = "090722"
         # date = "090730"
+        # date = "090903"
         # date = "100711"
         # date = "100712"
         # date = "100713"
@@ -720,9 +721,10 @@ if __name__ == "__main__":
         # date = "180722"
         planet = "c"
         # date = "100715"
+        date = "101028"
         # date = "101104"
         # date = "110723"
-        date = "110724"
+        # date = "110724"
         # date = "110725"
         # date = "130726"
         # planet = "d"
@@ -731,8 +733,8 @@ if __name__ == "__main__":
         # date = "150722"
         # date = "150723"
         # date = "150828"
-        IFSfilter = "Kbb"
-        # IFSfilter = "Hbb"
+        # IFSfilter = "Kbb"
+        IFSfilter = "Hbb"
         # IFSfilter = "Jbb" # "Kbb" or "Hbb"
         scale = "020"
         # scale = "035"
@@ -748,9 +750,9 @@ if __name__ == "__main__":
         print(os.path.join(inputDir,"s"+date+"*"+IFSfilter+"_"+scale+".fits"))
         filelist = glob.glob(os.path.join(inputDir,"s"+date+"*"+IFSfilter+"_"+scale+".fits"))
         filelist.sort()
-        filelist = [filelist[0]]
         print(filelist)
         # exit()
+        filelist = [filelist[-1]]
         # print(os.path.join(inputDir,"s"+date+"*"+IFSfilter+"_020.fits"))
         # filelist = filelist[1:]
         # filelist = filelist[len(filelist)-3:len(filelist)-2]
@@ -791,8 +793,8 @@ if __name__ == "__main__":
         plt_psfs = False
         plot_persistence = False
         #nice -n 15 /home/anaconda3/bin/python ./reduce_HPFonly_diagcov.py /data/osiris_data /data/osiris_data/HR_8799_c/20100715/reduced_jb/ /data/osiris_data/HR_8799_c/20100715/reduced_jb/20190308_HPF_only_sherlock_test/ /data/osiris_data/HR_8799_c/20100715/reduced_jb/s100715_a011001_Kbb_020.fits 20 1 'CO test' 1
-
-        #nice -n 15 /home/anaconda3/bin/python ./reduce_HPFonly_diagcov.py /data/osiris_data /data/osiris_data/HR_8799_b/20180722/reduced_jb/ /data/osiris_data/HR_8799_b/20180722/reduced_jb/20190326_HPF_only_sherlock_test/ /data/osiris_data/HR_8799_b/20180722/reduced_jb/s180722_a033002_Kbb_035.fits 20 1 'model' 1
+        #CO CH4 CO2 H2O
+        #nice -n 15 /home/anaconda3/bin/python ./reduce_HPFonly_diagcov.py /data/osiris_data /data/osiris_data/HR_8799_b/20180722/reduced_jb/ /data/osiris_data/HR_8799_b/20180722/reduced_jb/20190326_HPF_only_sherlock_test/ /data/osiris_data/HR_8799_b/20180722/reduced_jb/s180722_a033002_Kbb_035.fits 20 1 'CO' 1
 
 
     for filename in filelist:
@@ -1004,9 +1006,9 @@ if __name__ == "__main__":
                     suffix = suffix+"_"+molecule
                     print(molecule)
                     travis_mol_filename=os.path.join(molecular_template_folder,
-                                                  "lte11-4.0_hr8799"+planet+"_pgs=4d6_Kzz=1d8_gs=5um."+molecule+"only.7")
+                                                  "lte11-4.0_hr8799c_pgs=4d6_Kzz=1d8_gs=5um."+molecule+"only.7")
                     travis_mol_filename_D2E=os.path.join(molecular_template_folder,
-                                                  "lte11-4.0_hr8799"+planet+"_pgs=4d6_Kzz=1d8_gs=5um."+molecule+"only.7_D2E")
+                                                  "lte11-4.0_hr8799c_pgs=4d6_Kzz=1d8_gs=5um."+molecule+"only.7_D2E")
                     mol_template_filename=travis_mol_filename+"_gaussconv_R{0}_{1}.csv".format(R,IFSfilter)
 
                     # file1 = open(travis_mol_filename_D2E, 'r')
