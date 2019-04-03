@@ -865,7 +865,7 @@ if __name__ == "__main__":
             for molecule in molecules_list_ref:
                 if molecule in planet_model_string:
                     molecules_list.append(molecule)
-                    planet_model_string.replace(molecule,"")
+                    planet_model_string = planet_model_string.replace(molecule,"")
             # print(molecules_list)
             # exit(0)
         pairsub = "pairsub" in inputDir
