@@ -28,6 +28,7 @@ import xml.etree.ElementTree as ET
 import csv
 import time
 from PyAstronomy import pyasl
+import scipy.linalg as la
 from scipy.sparse.linalg import lsqr
 from scipy.sparse import csc_matrix
 from scipy.sparse import bsr_matrix
@@ -230,7 +231,7 @@ def LPFvsHPF(myvec,cutoff):
 #                                     wvs_imgs,planetRV_array,
 #                                     dtype,cutoff,planet_search,(plcen_k,plcen_l),
 #                                     R_list,
-#                                     wvsol_shifts,wvsol_offsets)
+#                                     numbasis_list,wvsol_offsets)
 def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indices,
                             normalized_psfs_func_list,
                             transmission_table,
@@ -239,7 +240,7 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
                             transmission4planet_list,
                             hr8799_flux,
                             wvs,planetRV_array,dtype,cutoff,planet_search,centroid_guess,
-                            R_list,wvsol_shifts,wvsol_offsets,R_calib_arr=None,model_persistence=False):
+                            R_list,numbasis_list,wvsol_offsets,R_calib_arr=None,model_persistence=False):
     global original,sigmas,badpix,originalLPF,originalHPF, original_shape, output, output_shape, lambdas, img_center, \
         psfs, psfs_shape, Npixproc, Npixtot,outres,outres_shape,outautocorrres,outautocorrres_shape,persistence,out1dfit,out1dfit_shape
     original_np = _arraytonumpy(original, original_shape,dtype=dtype)
@@ -365,26 +366,58 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
         for model_id, (tr_list,planet_partial_template_func_list,HR8799pho_spec_func,tr4planet) in \
                 enumerate(zip(transmission_table,planet_model_func_table,HR8799pho_spec_func_list,transmission4planet_list)):
             # print("coucou4")
-            for custwvoff_id,custom_wvoffset in enumerate(wvsol_shifts):
+
+            line_list = []
+            for transmission in tr_list:
+                HR8799_obsspec = transmission(wvs) * \
+                                HR8799pho_spec_func(wvs)
+                LPF_HR8799_obsspec,HPF_HR8799_obsspec = LPFvsHPF(HR8799_obsspec,cutoff)
+
+                # import matplotlib.pyplot as plt
+                # plt.plot(transmission(wvs-data_wvsol_offsets[bkg_k,bkg_l]-custom_wvoffset),label="trans")
+                # plt.plot(HR8799pho_spec_func(wvs-data_wvsol_offsets[bkg_k,bkg_l]-custom_wvoffset),label="HR8799")
+                # plt.plot(HR8799_obsspec,label="HR8799 model")
+                # plt.plot(LPF_HR8799_obsspec,label="LPF HR8799 model")
+                # plt.plot(HPF_HR8799_obsspec,label="HPF HR8799 model")
+
+                line_spec = HPF_HR8799_obsspec/LPF_HR8799_obsspec
+                line_list.append(line_spec)
+
+            for numbasis_id,numbasis in enumerate(numbasis_list):
                 # print("coucou5")
                 HPFmodelH0_list = []
+                if 1:
+                    meanline = np.nanmean(line_list,axis=0)
+                    mean_wherenans = np.where(np.isnan(meanline))
+                    for myline in line_list:
+                        wherenans = np.where(np.isnan(myline))
+                        myline[wherenans] = meanline[wherenans]
+                        myline[mean_wherenans] = 0
 
-                for transmission in tr_list:
-                    HR8799_obsspec = transmission(wvs-custom_wvoffset) * \
-                                    HR8799pho_spec_func(wvs-custom_wvoffset)
-                    LPF_HR8799_obsspec,HPF_HR8799_obsspec = LPFvsHPF(HR8799_obsspec,cutoff)
+                    covar_trans = np.cov(np.array(line_list))
+                    evals, evecs = la.eigh(covar_trans, eigvals=(len(line_list)-numbasis, len(line_list)-1))
 
-                    # import matplotlib.pyplot as plt
-                    # plt.plot(transmission(wvs-data_wvsol_offsets[bkg_k,bkg_l]-custom_wvoffset),label="trans")
-                    # plt.plot(HR8799pho_spec_func(wvs-data_wvsol_offsets[bkg_k,bkg_l]-custom_wvoffset),label="HR8799")
-                    # plt.plot(HR8799_obsspec,label="HR8799 model")
-                    # plt.plot(LPF_HR8799_obsspec,label="LPF HR8799 model")
-                    # plt.plot(HPF_HR8799_obsspec,label="HPF HR8799 model")
+                    evals = np.copy(evals[::-1])
+                    evecs = np.copy(evecs[:,::-1], order='F') #fortran order to improve memory caching in matrix multiplication
 
-                    line_spec = HPF_HR8799_obsspec/LPF_HR8799_obsspec
+                    kl_basis = np.dot(np.array(line_list).T, evecs)
+                    kl_basis = kl_basis * (1. / np.sqrt(evals * (np.size(line_list[0]) - 1)))[None, :]  #multiply a value for each row
+                    kl_basis = kl_basis.T
+
+                    kl_basis[:,mean_wherenans[0]] = np.nan
+
+                    # import  matplotlib.pyplot as plt
+                    # plt.plot(meanline,label="mean")
+                    # for n in range(numbasis):
+                    #     plt.plot(kl_basis[n,:],label="{0}".format(n))
+                    # plt.legend()
+                    # plt.show()
+
+                    new_line_list = kl_basis
+
 
                     # plt.plot(line_spec,label="line_spec")
-
+                for line_spec in new_line_list:
                     bkg_model = np.zeros((2*w+1,2*w+1,2*w+1,2*w+1,data_nz))
                     for bkg_k in range(2*w+1):
                         for bkg_l in range(2*w+1):
@@ -437,7 +470,7 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
                                     # plt.plot(planet_model[bkg_k,bkg_l,:],label="psf")
 
                                     wvs4planet_model = wvs*(1-(planetRV_array[plrv_id])/c_kms) \
-                                                       -data_wvsol_offsets[bkg_k,bkg_l]-custom_wvoffset
+                                                       -data_wvsol_offsets[bkg_k,bkg_l]
 
                                     # import matplotlib.pyplot as plt
                                     # plt.subplot(1,2,1)
@@ -449,7 +482,7 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
                                     # plt.show()
                                     if pl_fun_id == 0:
                                         planet_model[bkg_k,bkg_l,:] *= planet_partial_template_func(wvs4planet_model) * \
-                                            tr4planet(wvs-custom_wvoffset)
+                                            tr4planet(wvs)
                                     else:
                                         planet_model[bkg_k,bkg_l,:] *= planet_partial_template_func(wvs4planet_model)
 
@@ -555,19 +588,19 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
                             final_planet = np.nansum(canvas_planet,axis=(0,1))
                             final_res = final_HPFdata-final_template
                             final_norma_res = np.nansum(canvas_norma_res,axis=(0,1))
-                            outres_np[custwvoff_id,model_id,0,:,row,col] = final_HPFdata
-                            outres_np[custwvoff_id,model_id,1,:,row,col] = final_template
-                            outres_np[custwvoff_id,model_id,2,:,row,col] = final_res
-                            outres_np[custwvoff_id,model_id,3,:,row,col] = final_planet
-                            outres_np[custwvoff_id,model_id,4,:,row,col] = final_sigmas
-                            outres_np[custwvoff_id,model_id,5,:,row,col] = final_norma_res
+                            outres_np[numbasis_id,model_id,0,:,row,col] = final_HPFdata
+                            outres_np[numbasis_id,model_id,1,:,row,col] = final_template
+                            outres_np[numbasis_id,model_id,2,:,row,col] = final_res
+                            outres_np[numbasis_id,model_id,3,:,row,col] = final_planet
+                            outres_np[numbasis_id,model_id,4,:,row,col] = final_sigmas
+                            outres_np[numbasis_id,model_id,5,:,row,col] = final_norma_res
 
                             # #remove
                             # import matplotlib.pyplot as plt
-                            # # plt.subplot(1,5,custwvoff_id+1 )
+                            # # plt.subplot(1,5,numbasis_id+1 )
                             # plt.plot(final_norma_res,label="{0}".format(custom_wvoffset))
                             # print(custom_wvoffset,np.nanstd(final_norma_res))
-                            # plt.ylim([-2,2])
+                            # # plt.ylim([-2,2])
                             # plt.show()
 
     
@@ -586,35 +619,35 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
 
                         # delta AIC ~ likelihood ratio
                         if HPFparas[0]>0:
-                            output_maps_np[custwvoff_id,model_id,0,row,col,plrv_id] = AIC_HPF_H0-AIC_HPF
+                            output_maps_np[numbasis_id,model_id,0,row,col,plrv_id] = AIC_HPF_H0-AIC_HPF
                         else:
-                            output_maps_np[custwvoff_id,model_id,0,row,col,plrv_id] = 0
+                            output_maps_np[numbasis_id,model_id,0,row,col,plrv_id] = 0
                         # AIC for planet + star model
-                        output_maps_np[custwvoff_id,model_id,1,row,col,plrv_id] = AIC_HPF
+                        output_maps_np[numbasis_id,model_id,1,row,col,plrv_id] = AIC_HPF
                         # AIC for star model only
-                        output_maps_np[custwvoff_id,model_id,2,row,col,plrv_id] = AIC_HPF_H0
+                        output_maps_np[numbasis_id,model_id,2,row,col,plrv_id] = AIC_HPF_H0
                         # Chi2 of the stamp
-                        output_maps_np[custwvoff_id,model_id,3,row,col,plrv_id] = HPFchi2
+                        output_maps_np[numbasis_id,model_id,3,row,col,plrv_id] = HPFchi2
                         # Size of the data
-                        output_maps_np[custwvoff_id,model_id,4,row,col,plrv_id] = Npixs_HPFdata
+                        output_maps_np[numbasis_id,model_id,4,row,col,plrv_id] = Npixs_HPFdata
                         # number of parameters of the model
-                        output_maps_np[custwvoff_id,model_id,5,row,col,plrv_id] = HPFmodel.shape[-1]
+                        output_maps_np[numbasis_id,model_id,5,row,col,plrv_id] = HPFmodel.shape[-1]
                         # estimated scaling factor of the covariance matrix of the data
-                        output_maps_np[custwvoff_id,model_id,6,row,col,plrv_id] = HPFchi2/Npixs_HPFdata
+                        output_maps_np[numbasis_id,model_id,6,row,col,plrv_id] = HPFchi2/Npixs_HPFdata
                         #
-                        output_maps_np[custwvoff_id,model_id,7,row,col,plrv_id] = logdet_Sigma
-                        output_maps_np[custwvoff_id,model_id,8,row,col,plrv_id] =  slogdet_icovphi0[0]*slogdet_icovphi0[1]
+                        output_maps_np[numbasis_id,model_id,7,row,col,plrv_id] = logdet_Sigma
+                        output_maps_np[numbasis_id,model_id,8,row,col,plrv_id] =  slogdet_icovphi0[0]*slogdet_icovphi0[1]
                         # marginalized posterior
-                        output_maps_np[custwvoff_id,model_id,9,row,col,plrv_id] = -0.5*logdet_Sigma-0.5*slogdet_icovphi0[1]- (Npixs_HPFdata-HPFmodel.shape[-1]+2-1)/(2)*np.log(HPFchi2+deltachi2)
+                        output_maps_np[numbasis_id,model_id,9,row,col,plrv_id] = -0.5*logdet_Sigma-0.5*slogdet_icovphi0[1]- (Npixs_HPFdata-HPFmodel.shape[-1]+2-1)/(2)*np.log(HPFchi2+deltachi2)
                         for plmod_id in range(len(planet_partial_template_func_list)):
                             # print(plmod_id)
                             # SNR
-                            output_maps_np[custwvoff_id,model_id,10+plmod_id*3,row,col,plrv_id] = HPFparas[plmod_id]/np.sqrt(np.abs(covphi[plmod_id,plmod_id]))
+                            output_maps_np[numbasis_id,model_id,10+plmod_id*3,row,col,plrv_id] = HPFparas[plmod_id]/np.sqrt(np.abs(covphi[plmod_id,plmod_id]))
                             # estimated planet to star flux ratio
-                            output_maps_np[custwvoff_id,model_id,10+plmod_id*3+1,row,col,plrv_id] = HPFparas[plmod_id]
+                            output_maps_np[numbasis_id,model_id,10+plmod_id*3+1,row,col,plrv_id] = HPFparas[plmod_id]
                             # error bar on estimated planet to star flux ratio
-                            output_maps_np[custwvoff_id,model_id,10+plmod_id*3+2,row,col,plrv_id] = np.sign(covphi[plmod_id,plmod_id])*np.sqrt(np.abs(covphi[plmod_id,plmod_id]))
-                        # print(output_maps_np[custwvoff_id,model_id,:,row,col,plrv_id])
+                            output_maps_np[numbasis_id,model_id,10+plmod_id*3+2,row,col,plrv_id] = np.sign(covphi[plmod_id,plmod_id])*np.sqrt(np.abs(covphi[plmod_id,plmod_id]))
+                        # print(output_maps_np[numbasis_id,model_id,:,row,col,plrv_id])
                         # print(HPFchi2,deltachi2)
                         # exit()
                     # except:
@@ -720,27 +753,27 @@ if __name__ == "__main__":
         # date = "161106"
         # date = "180722"
         planet = "c"
-        # date = "100715"
-        date = "101028"
+        date = "100715"
+        # date = "101028"
         # date = "101104"
         # date = "110723"
         # date = "110724"
         # date = "110725"
         # date = "130726"
+        # date = "171103"
         # planet = "d"
-        # date = "130727"
         # date = "150720"
         # date = "150722"
         # date = "150723"
         # date = "150828"
-        # IFSfilter = "Kbb"
-        IFSfilter = "Hbb"
+        IFSfilter = "Kbb"
+        # IFSfilter = "Hbb"
         # IFSfilter = "Jbb" # "Kbb" or "Hbb"
         scale = "020"
         # scale = "035"
 
         inputDir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/"
-        outputdir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/20190401_HPF_only/"
+        outputdir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/20190405_HPF_only/"
         # outputdir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/20190305_HPF_only_noperscor/"
         # outputdir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/20190228_mol_temp/"
 
@@ -752,19 +785,19 @@ if __name__ == "__main__":
         filelist.sort()
         print(filelist)
         # exit()
-        filelist = [filelist[-1]]
+        filelist = [filelist[1]]
         # print(os.path.join(inputDir,"s"+date+"*"+IFSfilter+"_020.fits"))
-        # filelist = filelist[1:]
+        # filelist = filelist[4:]
         # filelist = filelist[len(filelist)-3:len(filelist)-2]
 
-        numthreads = 10
+        numthreads = 28
         planet_search = True
         debug_paras = True
         plot_transmissions = False
         plt_psfs = False
         plot_persistence = False
-        planet_model_string = "model"
-        # planet_model_string = "CO"#"CO2 CO H2O CH4"
+        # planet_model_string = "model"
+        planet_model_string = "CO"#"CO2 CO H2O CH4"
 
         osiris_data_dir = "/data/osiris_data"
         if "d" in planet:
@@ -842,7 +875,8 @@ if __name__ == "__main__":
         if debug:
             planet_search = False
         model_based_sky_trans = False
-        if "HR_8799_d" in filename and ("20130727" in filename or "20150720" in filename or "20150722" in filename or "20150723" in filename):
+        # if "HR_8799_d" in filename and ("20130727" in filename or "20150720" in filename or "20150722" in filename or "20150723" in filename):
+        if len(glob.glob(os.path.join(os.path.join(inputDir,".."),"master_wvshifts_"+IFSfilter+".fits"))) == 1:
             use_wvsol_offsets = True
         else:
             use_wvsol_offsets = False
@@ -869,6 +903,10 @@ if __name__ == "__main__":
             # print(molecules_list)
             # exit(0)
         pairsub = "pairsub" in inputDir
+
+        numbasis_list = [1]
+        if planet == "d" or (IFSfilter == "Hbb" and date == "171103"):
+            numbasis_list = [1,2,3]
 
         padding = 5
         nan_mask_boxsize=3
@@ -920,21 +958,11 @@ if __name__ == "__main__":
                 R_list = [R0]#[2000,2500,3000,3500,4000,4500,5000]
 
         if use_wvsol_offsets:
-            wvsol_shifts = np.array([0,])
-
-            wvsol_offsets_inputdir = os.path.join(inputDir,"..","..")
-            wvsol_offsets_filename = os.path.join(wvsol_offsets_inputdir,"master_wvshifts.fits")
+            wvsol_offsets_filename = os.path.join(os.path.join(inputDir,".."),"master_wvshifts_"+IFSfilter+".fits")
             hdulist = pyfits.open(wvsol_offsets_filename)
             wvsol_offsets = hdulist[0].data
             hdulist.close()
         else:
-            if debug_paras:
-                wvsol_shifts = np.array([0,])
-                # wvsol_shifts = np.linspace(-2*dwv,2*dwv,5)
-            else:
-                wvsol_shifts = np.array([0,])
-                # wvsol_shifts = np.linspace(-2*dwv,2*dwv,5)
-
             wvsol_offsets = np.zeros((ny,nx))
         wvsol_offsets = np.pad(wvsol_offsets,((padding,padding),(padding,padding)),mode="constant",constant_values=0)
 
@@ -978,7 +1006,7 @@ if __name__ == "__main__":
                 dl_grid,dk_grid = np.array([[0]]),np.array([[0]])
                 # plcen_k,plcen_l = float(fileitem[kcen_id]),float(fileitem[lcen_id])
                 # plcen_k,plcen_l = 32-10,-35.79802955665025+46.8
-                plcen_k,plcen_l = 32,11#44,8
+                plcen_k,plcen_l = 26,6#44,8
             else:
                 planetRV_array = np.arange(-3*dprv,3*dprv,dprv/100)
                 dl_grid,dk_grid = np.meshgrid(np.linspace(-1.,1.,2*20+1),np.linspace(-1.,1.,2*20+1))
@@ -1289,7 +1317,61 @@ if __name__ == "__main__":
                     transmission_wvs = hdulist[0].data[0,:]
                     transmission_spec = hdulist[0].data[1,:]
                     transmission_list.append(transmission_spec/np.nanmean(transmission_spec))
-            mean_transmission_func = interp1d(wvs,np.nanmean(np.array(transmission_list),axis=0),bounds_error=False,fill_value=np.nan)
+            mean_transmission = np.nanmean(np.array(transmission_list),axis=0)
+
+            if 0:
+                mean_wherenans = np.where(np.isnan(mean_transmission))
+                for mytransmission in transmission_list:
+                    wherenans = np.where(np.isnan(mytransmission))
+                    print(wherenans)
+                    mytransmission[wherenans] = mean_transmission[wherenans]
+
+                    mytransmission[mean_wherenans] = 0
+
+                # for mytransmission in transmission_list:
+                #     wherenans = np.where(np.isnan(mytransmission))
+                #     print(2, wherenans)
+                #     exit()
+                covar_trans = np.cov(np.array(transmission_list))
+                numbasis = 3
+                evals, evecs = la.eigh(covar_trans, eigvals=(len(transmission_list)-numbasis, len(transmission_list)-1))
+
+                evals = np.copy(evals[::-1])
+                evecs = np.copy(evecs[:,::-1], order='F') #fortran order to improve memory caching in matrix multiplication
+
+                kl_basis = np.dot(np.array(transmission_list).T, evecs)
+                kl_basis = kl_basis * (1. / np.sqrt(evals * (np.size(transmission_list[0]) - 1)))[None, :]  #multiply a value for each row
+                kl_basis = kl_basis.T
+
+                print(kl_basis.shape)
+                # exit()
+                for n in range(numbasis):
+                    kl_basis[n,mean_wherenans[0]] = np.nan
+
+                import  matplotlib.pyplot as plt
+                plt.plot(mean_transmission,label="mean")
+                for n in range(numbasis):
+                    plt.plot(kl_basis[n,:],label="{0}".format(n))
+                plt.legend()
+                plt.show()
+
+            mean_transmission_func1 = interp1d(wvs,mean_transmission,bounds_error=False,fill_value=np.nan)
+            imgs_hdrbadpix[:,:,np.where(np.isnan(mean_transmission))[0]] = 0
+
+
+            # refstar_name_filter = "*"
+            # transmission_filelist = []
+            # # transmission_filelist.extend(glob.glob(os.path.join(ref_star_folder,refstar_name_filter,"s*"+IFSfilter+"_"+scale+"_psfs_repaired_spec_v2_cutoff20_transmission.fits")))
+            # transmission_filelist.extend(glob.glob(os.path.join(ref_star_folder,refstar_name_filter,"ao_off_s*"+IFSfilter+"_"+scale+"_spec_v2_cutoff20_transmission.fits")))
+            # transmission_filelist.sort()
+            # print(transmission_filelist)
+            # transmission_list = []
+            # for transmission_filename in transmission_filelist[0:2]:
+            #     with pyfits.open(transmission_filename) as hdulist:
+            #         transmission_wvs = hdulist[0].data[0,:]
+            #         transmission_spec = hdulist[0].data[1,:]
+            #         transmission_list.append(transmission_spec/np.nanmean(transmission_spec))
+            # mean_transmission_func2 = interp1d(wvs,np.nanmean(np.array(transmission_list),axis=0),bounds_error=False,fill_value=np.nan)
 
             if plot_transmissions:
                 import matplotlib.pyplot as plt
@@ -1301,8 +1383,10 @@ if __name__ == "__main__":
                 plt.legend()
                 plt.show()
 
-            transmission_func_list = [mean_transmission_func]
-            transmission4planet_list.append(mean_transmission_func)
+            # transmission_func_list = [mean_transmission_func1]
+            # transmission_func_list = [mean_transmission_func1,mean_transmission_func2]
+            transmission_func_list = [interp1d(wvs,mytrans,bounds_error=False,fill_value=np.nan) for mytrans in transmission_list]
+            transmission4planet_list.append(mean_transmission_func1)
             transmission_table.append(transmission_func_list)
 
             ##############################
@@ -1511,11 +1595,11 @@ if __name__ == "__main__":
         nout = 10+3*4
         nshifts = np.size(planetRV_array)
         if planet_search:
-            output_maps = mp.Array(dtype, len(wvsol_shifts)*len(transmission_table)*nout*padny*padnx*nshifts)
-            output_maps_shape = (len(wvsol_shifts),len(transmission_table),nout,padny,padnx,nshifts)
+            output_maps = mp.Array(dtype, len(numbasis_list)*len(transmission_table)*nout*padny*padnx*nshifts)
+            output_maps_shape = (len(numbasis_list),len(transmission_table),nout,padny,padnx,nshifts)
         else:
-            output_maps = mp.Array(dtype, len(wvsol_shifts)*len(transmission_table)*nout*dl_grid.shape[0]*dl_grid.shape[1]*nshifts)
-            output_maps_shape = (len(wvsol_shifts),len(transmission_table),nout,dl_grid.shape[0],dl_grid.shape[1],nshifts)
+            output_maps = mp.Array(dtype, len(numbasis_list)*len(transmission_table)*nout*dl_grid.shape[0]*dl_grid.shape[1]*nshifts)
+            output_maps_shape = (len(numbasis_list),len(transmission_table),nout,dl_grid.shape[0],dl_grid.shape[1],nshifts)
         output_maps_np = _arraytonumpy(output_maps,output_maps_shape,dtype=dtype)
         output_maps_np[:] = np.nan
         if planet_search:
@@ -1527,11 +1611,11 @@ if __name__ == "__main__":
         out1dfit_np = _arraytonumpy(out1dfit,out1dfit_shape,dtype=dtype)
         out1dfit_np[:] = np.nan
         if planet_search:
-            outres = mp.Array(dtype, len(wvsol_shifts)*len(transmission_table)*6*padny*padnx*padimgs.shape[-1])
-            outres_shape = (len(wvsol_shifts),len(transmission_table),6,padimgs.shape[-1],padny,padnx)
+            outres = mp.Array(dtype, len(numbasis_list)*len(transmission_table)*6*padny*padnx*padimgs.shape[-1])
+            outres_shape = (len(numbasis_list),len(transmission_table),6,padimgs.shape[-1],padny,padnx)
         else:
-            outres = mp.Array(dtype, len(wvsol_shifts)*len(transmission_table)*6*dl_grid.shape[0]*dl_grid.shape[1]*padimgs.shape[-1])
-            outres_shape = (len(wvsol_shifts),len(transmission_table),6,padimgs.shape[-1],dl_grid.shape[0],dl_grid.shape[1])
+            outres = mp.Array(dtype, len(numbasis_list)*len(transmission_table)*6*dl_grid.shape[0]*dl_grid.shape[1]*padimgs.shape[-1])
+            outres_shape = (len(numbasis_list),len(transmission_table),6,padimgs.shape[-1],dl_grid.shape[0],dl_grid.shape[1])
         outres_np = _arraytonumpy(outres,outres_shape,dtype=dtype)
         outres_np[:] = np.nan
         if planet_search:
@@ -1690,6 +1774,9 @@ if __name__ == "__main__":
             badpix_imgs_np[:,:,0:100]=np.nan
         if IFSfilter == "Hbb" and date == "101104":
             badpix_imgs_np[0:10,:,:]=np.nan
+        if IFSfilter == "Hbb" and date == "171103":
+            badpix_imgs_np[:,:,(padnz-50)::]=np.nan
+            badpix_imgs_np[:,:,0:50]=np.nan
 
 
         # import matplotlib.pyplot as plt
@@ -1789,7 +1876,7 @@ if __name__ == "__main__":
                                     wvs_imgs,planetRV_array,
                                     dtype,cutoff,planet_search,(plcen_k,plcen_l),
                                     R_list,
-                                    wvsol_shifts,wvsol_offsets,R_calib_arr,model_persistence=model_persistence)
+                                    numbasis_list,wvsol_offsets,R_calib_arr,model_persistence=model_persistence)
             exit()
         else:
             chunk_size = 5#N_valid_pix//(3*numthreads)
@@ -1818,7 +1905,7 @@ if __name__ == "__main__":
                                                                       wvs_imgs,planetRV_array,
                                                                       dtype,cutoff,planet_search,(plcen_k,plcen_l),
                                                                       R_list,
-                                                                      wvsol_shifts,wvsol_offsets,R_calib_arr,
+                                                                      numbasis_list,wvsol_offsets,R_calib_arr,
                                                                       model_persistence))
                      for plcen_k_indices, plcen_l_indices, row_indices, col_indices in zip(plcen_k_indices_list,plcen_l_indices_list, row_indices_list, col_indices_list)]
             #save it to shared memory

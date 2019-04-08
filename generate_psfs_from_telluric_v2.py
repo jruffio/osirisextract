@@ -51,10 +51,10 @@ if __name__ == "__main__":
     # OSIRISDATA = "/scratch/groups/bmacint/osiris_data/"
     OSIRISDATA = "/data/osiris_data/"
     if 1:
-        IFSfilter = "Kbb"#"Jbb"#"Hbb"#"Kbb"
+        IFSfilter = "Hbb"#"Jbb"#"Hbb"#"Kbb"
         # planet = "b"
-        # planet = "c"
-        planet = "d"
+        planet = "c"
+        # planet = "d"
         # extra_filter = "a013001"
         extra_filter = ""
         if "b" in planet:#/data/osiris_data/HR_8799_b/20161107/reduced_telluric_jb/HD_210501/s161107_a032002_Kbb_020.fits
@@ -64,7 +64,7 @@ if __name__ == "__main__":
                 date_list = ["20090723","20090730","20090903","20090723","20100713"] # Hbb
             elif "Jbb" in IFSfilter:
                 date_list = ["20091111","20130726", "20130727","20161106","20161107","20161108","20180722"] #Jbb
-            # date_list = [date_list[1],]
+            date_list = [date_list[-1],]
         elif "c" in planet:
             if "Kbb" in IFSfilter:
                 date_list = ["20100715","20101104","20110723","20110724","20110725","20130726","20171103"] #Kbb
@@ -72,7 +72,7 @@ if __name__ == "__main__":
                 date_list = ["20101028","20101104","20110724","20110725","20171103"] # Hbb
             elif "Jbb" in IFSfilter:
                 date_list = ["20130726","20131029", "20131030", "20131031"] #Jbb
-            # date_list = [date_list[1],]
+            date_list = [date_list[-1],]
             # date_list = ["20101104"] #Hbb
         elif "d" in planet:
             if "Kbb" in IFSfilter:
@@ -97,7 +97,7 @@ if __name__ == "__main__":
         nl=1574
         R0=4000
 
-    run_all = True
+    run_all = False
     # extract PSFs stamps and calculate centroids
     if run_all:
         filename_filter = "*/s*"+extra_filter+"*"+IFSfilter+"*_[0-9][0-9][0-9].fits"
@@ -279,7 +279,10 @@ if __name__ == "__main__":
 
                     xarr_spot = int(np.round(np.nanmean(psfs_xcenters)))
                     yarr_spot = int(np.round(np.nanmean(psfs_ycenters)))
-                    for k,(im,spotx, spoty) in enumerate(zip(oripsfs,psfs_xcenters,psfs_ycenters)):
+                    # for k,(im,spotx, spoty) in enumerate(zip(oripsfs,psfs_xcenters,psfs_ycenters)):
+                    for k,im in enumerate(oripsfs):
+                        spotx, spoty = np.polyval(psfxcen_coefs,k),np.polyval(psfycen_coefs,k)
+
                         # Get the closest pixel
                         # Extract a stamp around the sat spot
                         stamp = im[(yarr_spot-pixelsbefore):(yarr_spot+pixelsafter),\
@@ -546,14 +549,14 @@ if __name__ == "__main__":
                     pass
 
     # calibrate flux
-    if run_all:
+    if 0 or run_all:
         filename_filter = "*/s*"+extra_filter+"*"+IFSfilter+"*[0-9][0-9][0-9].fits"
         for date in date_list:
             # build PSf splines
             if 1:
-                with pyfits.open(os.path.join(OSIRISDATA,foldername,date,"reduced_telluric_jb",date+"_"+IFSfilter+"_hdpsfs_v2.fits")) as hdulist:
+                with pyfits.open(glob.glob(os.path.join(OSIRISDATA,foldername,date,"reduced_telluric_jb","*"+"_"+IFSfilter+"_hdpsfs_v2.fits"))[0]) as hdulist:
                     psfs_refstar_arr = hdulist[0].data[None,:,:,:]
-                with pyfits.open(os.path.join(OSIRISDATA,foldername,date,"reduced_telluric_jb",date+"_"+IFSfilter+"_hdpsfs_xy_v2.fits")) as hdulist:
+                with pyfits.open(glob.glob(os.path.join(OSIRISDATA,foldername,date,"reduced_telluric_jb","*"+"_"+IFSfilter+"_hdpsfs_xy_v2.fits"))[0]) as hdulist:
                     hdpsfs_xy = hdulist[0].data
                     hdpsfs_x,hdpsfs_y = hdpsfs_xy
 
@@ -612,13 +615,14 @@ if __name__ == "__main__":
                         tmpstamp = normalized_psfs_func_list[z](pl_x_vec,pl_y_vec).transpose()
                         fitpsf = tmpstamp*np.nansum(tmpstamp[where_finite]*im[where_finite])/np.sum(tmpstamp[where_finite]**2)
                         (new_psfs[z,:,:])[where_nans] = fitpsf[where_nans]
-                        # plt.subplot(1,3,1)
-                        # plt.imshow(im)
-                        # plt.subplot(1,3,2)
-                        # plt.imshow(new_psfs[z,:,:])
-                        # plt.subplot(1,3,3)
-                        # plt.imshow(fitpsf)
-                        # plt.show()
+                        # if z == 290:
+                        #     plt.subplot(1,3,1)
+                        #     plt.imshow(im)
+                        #     plt.subplot(1,3,2)
+                        #     plt.imshow(new_psfs[z,:,:])
+                        #     plt.subplot(1,3,3)
+                        #     plt.imshow(fitpsf)
+                        #     plt.show()
 
                 hdulist = pyfits.HDUList()
                 hdulist.append(pyfits.PrimaryHDU(data=new_psfs))
@@ -660,21 +664,26 @@ if __name__ == "__main__":
                     psfs_repaired = hdulist[0].data
                     psfs_repaired_vec = np.nansum(psfs_repaired,axis=(1,2))
 
-                res = psfs_repaired_vec-psfs_vec+np.polyval([0.001,1],np.arange(np.size(psfs_vec)))
+                res = psfs_repaired_vec-psfs_vec#+np.polyval([0.001,1],np.arange(np.size(psfs_vec)))
                 where_finite = np.where(np.isfinite(res))
                 from scipy.optimize import minimize
                 out = minimize(jblin,[0,0],args=(np.arange(np.size(res)),res))
-                res -= np.polyval(out.x,np.arange(np.size(res)))
+                res_corr = res - np.polyval(out.x,np.arange(np.size(res)))
 
-                where_bad_slices = np.where(np.abs(res)/psfs_repaired_vec>0.01)
+                where_bad_slices = np.where(np.abs(res_corr)/psfs_repaired_vec>0.01)
                 print(len(where_bad_slices[0]),np.size(psfs_repaired_vec),len(where_bad_slices[0])<0.5*np.size(psfs_repaired_vec))
                 if len(where_bad_slices[0])<0.5*np.size(psfs_repaired_vec):
                     psfs_repaired_vec[where_bad_slices] = np.nan
                 ref_spec_list.append(psfs_repaired_vec)
-                # plt.plot(np.abs(res)/psfs_repaired_vec>0.01)
+                # plt.subplot(1,3,1)
                 # plt.plot(psfs_vec,"r")
                 # plt.plot(psfs_repaired_vec,"b")
+                # plt.subplot(1,3,2)
+                # plt.plot(np.abs(res_corr)/psfs_repaired_vec)
+                # plt.subplot(1,3,3)
                 # plt.plot(res)
+                # print(out.x)
+                # plt.plot(np.polyval(out.x,np.arange(np.size(res))))
                 # plt.show()
                 # exit()
 
@@ -729,7 +738,7 @@ if __name__ == "__main__":
 
 
     # ao off: get repaired spec for ref star fits
-    if run_all:
+    if 1 or run_all:
         filename_filter = "*/ao_off_s*"+IFSfilter+"*[0-9][0-9][0-9].fits"
 
         ref_spec_list = []
@@ -822,7 +831,7 @@ if __name__ == "__main__":
                         original_imgs_np[where_nans] = np.nan
 
                         flat_imgs = np.nansum(original_imgs_np,axis=2)
-                        where_too_small = np.where(flat_imgs<np.nanmax(flat_imgs)/100.)
+                        where_too_small = np.where(flat_imgs<np.nanmax(flat_imgs)/10.)
                         original_imgs_np[where_too_small[0],where_too_small[1],:] = np.nan
 
                         original_imgs_np[where_nans] = (np.ones(original_imgs_np.shape)*np.nanmedian(original_imgs_np,axis=(0,1))[None,None,:])[where_nans]

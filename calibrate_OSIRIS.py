@@ -110,7 +110,7 @@ def _CCF_thread(row_index,R_list,dwvs,wvs,skybg_wvs_list,skybg_spec_list,medwind
     output_ccf_np = _arraytonumpy(output_ccf, output_ccf_shape,dtype=dtype)
 
     badpix_np[0:medwindowsize//2,:,:] = np.nan
-    # badpix_np[(badpix_imgs_shape[0]-medwindowsize//2)::,:,:] = np.nan
+    # # badpix_np[(badpix_imgs_shape[0]-medwindowsize//2)::,:,:] = np.nan
     badpix_np[np.where(wvs>2.25)[0],:,:] = np.nan
 
     for k,(skybg_wvs,skybg_spec) in enumerate(zip(skybg_wvs_list,skybg_spec_list)):
@@ -131,20 +131,24 @@ def _CCF_thread(row_index,R_list,dwvs,wvs,skybg_wvs_list,skybg_spec_list,medwind
                 myvec[where_badpix] = sky_LPF[where_badpix]
                 sky_LPF,sky_HPF = LPFvsHPF_median(myvec,medwindowsize)
                 sky_HPF[where_badpix] = np.nan
+                where_validpix = np.where(np.isfinite(myvec_bad_pix))
                 for n,dwv in enumerate(dwvs):
                     hd_spec = hd_spec_func(wvs-dwv)
                     hd_spec_LPF,hd_spec_HPF = LPFvsHPF_median(hd_spec,cutoff)
-                    output_ccf_np[k,l,n,row_index,m]=np.nansum(sky_HPF*hd_spec_HPF)**2/np.nansum(hd_spec_HPF[where_badpix]**2)
+                    output_ccf_np[k,l,n,row_index,m]=np.nansum(sky_HPF*hd_spec_HPF)**2/np.nansum(hd_spec_HPF[where_validpix]**2)
+                    # print(output_ccf_np[k,l,n,row_index,m])
 
                 # hdwvs = np.linspace(wvs[0],wvs[-1],5000)
-                # plt.subplot(1,2,1)
+                # plt.subplot(1,3,1)
                 # plt.plot(wvs,sky_HPF/np.nanstd(sky_HPF),label="data")
                 # plt.plot(hdwvs,hd_spec_func(hdwvs)/np.nanstd(hd_spec_func(hdwvs)),label="OH")
                 # plt.legend()
-                # plt.subplot(1,2,2)
+                # plt.subplot(1,3,2)
                 # plt.plot(dwvs,output_ccf_np[k,l,:,row_index,m])
+                # plt.subplot(1,3,3)
+                # plt.plot(np.linspace(-1,1,np.size(dwvs)),output_ccf_np[k,l,:,row_index,m])
                 # plt.show()
-                # break
+                # # break
 
 
 def _remove_bad_pixels_xy(wvs_indices,dtype):
@@ -189,23 +193,35 @@ def _remove_edges(wvs_indices,nan_mask_boxsize,dtype):
 
 if 1:
     IFSfilter = "Kbb"
+    # IFSfilter = "Hbb"
+    # inputdir = "/data/osiris_data/HR_8799_d"
+    # inputdir = "/data/osiris_data/HR_8799_c"
+    # filelist = glob.glob(os.path.join(inputdir,"20100715/reduced_sky_jb/s*_Kbb_020.fits"))
+    # filelist = glob.glob(os.path.join(inputdir,"20101104/reduced_sky_jb/s*_Kbb_020.fits"))
+    # inputdir = "/data/osiris_data/HR_8799_b"
+    # filelist = glob.glob(os.path.join(inputdir,"201007/reduced_sky_jb/s*_Kbb_020.fits"))
+    inputdir = "/data/osiris_data/HR_8799_*"
+    filelist = glob.glob(os.path.join(inputdir,"2017*/reduced_sky_jb/s*_"+IFSfilter+"_[0-9][0-9][0-9].fits"))
+    print(filelist)
+    # exit()
+
     if IFSfilter=="Kbb": #Kbb 1965.0 0.25
         CRVAL1 = 1965.
         CDELT1 = 0.25
         nl=1665
-        R=3000
+        R=4000
     elif IFSfilter=="Hbb": #Hbb 1651 1473.0 0.2
         CRVAL1 = 1473.
         CDELT1 = 0.2
         nl=1651
-        R=5000
+        R=4000
     init_wv = CRVAL1/1000.
     dwv = CDELT1/1000.
     wvs=np.arange(init_wv,init_wv+dwv*nl-1e-6,dwv)
 
     cutoff = 40
     medwindowsize=200
-    nccf = 21 #11
+    nccf = 201 #11
     # nccf = 41
     dwvs_CCF = np.linspace(-dwv*1,dwv*1,nccf)
     # dwvs_CCF = np.linspace(-dwv*0.1,dwv*0.1,nccf)
@@ -215,21 +231,12 @@ if 1:
     debug = False
     numthreads = 28
     suffix="_Rfixed"
-
-
-    # inputdir = "/home/sda/jruffio/osiris_data/HR_8799_d"
-    inputdir = "/home/sda/jruffio/osiris_data/HR_8799_c"
-    # filename = "/home/sda/jruffio/osiris_data/HR_8799_c/20100715/reduced_sky_jb/s100715_a001001_Kbb_020.fits"
-    # filelist = glob.glob("/home/sda/jruffio/osiris_data/HR_8799_c/20100715/reduced_sky_jb/s*_Kbb_020.fits")
-    # filelist = glob.glob("/home/sda/jruffio/osiris_data/HR_8799_d/20150720/reduced_sky_Kbb/s*_Kbb_020.fits")
-    filelist = glob.glob(os.path.join(inputdir,"*/reduced_sky_jb_Kbb/s*_Kbb_020.fits"))
-
-if 1:
+if 0:
     # lambdas_air = lambdas_vac/(1+2.735182e-4+131.4182/lambdas_vac**2+2.76249e8/lambdas_vac**4)
     if 1:
         skybg_spec_list = []
         skybg_wvs_list = []
-        skyem_filelist = glob.glob("/home/sda/jruffio/osiris_data/sky_emission/mk_skybg_zm_*_ph.dat")[::3]
+        skyem_filelist = glob.glob("/data/osiris_data/sky_emission/mk_skybg_zm_*_ph.dat")[::3]
         for filename in skyem_filelist:#filename = "/home/sda/jruffio/osiris_data/sky_emission/mk_skybg_zm_10_10_ph.dat"
             print(filename)
             skybg_arr=np.loadtxt(filename)
@@ -246,7 +253,7 @@ if 1:
         # plt.legend()
         # plt.show()
     else:
-        filename = "/home/sda/jruffio/osiris_data/sky_emission/mk_skybg_zm_50_20_ph.dat"
+        filename = "/data/osiris_data/sky_emission/mk_skybg_zm_50_20_ph.dat"
         skybg_arr=np.loadtxt(filename)
         skybg_wvs = skybg_arr[:,0]/1000.
         skybg_spec = skybg_arr[:,1]
@@ -336,14 +343,30 @@ if 1:
             plt.legend()
             # plt.subplot(1,3,3)
             # plt.plot(sky_HPF)
-            plt.figure(2)
-            plt.subplot(1,3,1)
-            plt.imshow(skycube[321,:,:],interpolation="nearest")
-            plt.subplot(1,3,2)
-            original_imgs_np[np.where(np.isnan(badpix_imgs_np))] = np.nan
-            plt.imshow(original_imgs_np[321,:,:])
-            plt.subplot(1,3,3)
-            plt.imshow(original_imgs_np[325,:,:])
+            # plt.figure(2)
+            # plt.subplot(1,3,1)
+            # plt.imshow(skycube[321,:,:],interpolation="nearest")
+            # plt.subplot(1,3,2)
+            # original_imgs_np[np.where(np.isnan(badpix_imgs_np))] = np.nan
+            # plt.imshow(original_imgs_np[321,:,:])
+            # plt.subplot(1,3,3)
+            # plt.imshow(original_imgs_np[325,:,:])
+
+
+            skybg_spec = convolve_spectrum(skybg_wvs,skybg_spec,R)
+            hd_spec_func = interp1d(skybg_wvs,skybg_spec/np.nanstd(skybg_spec),bounds_error=False,fill_value=0)
+            where_validpix = np.where(np.isfinite(myvec_bad_pix))
+            output_ccf_np=np.zeros(dwvs_CCF.shape)
+            for n,dwv in enumerate(dwvs_CCF):
+                hd_spec = hd_spec_func(wvs-dwv)
+                hd_spec_LPF,hd_spec_HPF = LPFvsHPF_median(hd_spec,cutoff)
+                output_ccf_np[n]=np.nansum(sky_HPF*hd_spec_HPF)**2/np.nansum(hd_spec_HPF[where_validpix]**2)
+            plt.figure(3)
+            plt.subplot(1,2,1)
+            plt.plot(dwvs_CCF,output_ccf_np)
+            plt.subplot(1,2,2)
+            plt.plot(dwvs_CCF/dwv,output_ccf_np)
+
             plt.show()
 
         # ccf_arr_list.append(CCF(dwvs_CCF,wvs,sky_HPF/np.nanstd(sky_HPF),skybg_wvs,skybg_spec/np.nanstd(skybg_spec)))
@@ -423,27 +446,48 @@ if 1:
 
 
 if 1:
+    std_factor = np.zeros(20)
+    for k in np.arange(2,20):
+        a = np.random.randn(1000,k)
+        std_factor[k] = np.std(a - np.mean(a,axis=1)[:,None])/np.std(a)
+    print(std_factor)
+
+    IFSfilter = "Kbb"
+    inputdir = "/data/osiris_data/HR_8799_*"
     # filename_filter = "/home/sda/jruffio/osiris_data/HR_8799_d/20150720/reduced_sky_Kbb/s*_Kbb_020.fits"
-    filename_filter = os.path.join(inputdir,"*/reduced_sky_jb_Kbb/s*_Kbb_020.fits")
+    filename_filter = os.path.join(inputdir,"2015*/reduced_sky_jb/s*_"+IFSfilter+"_020.fits")
+    # filename_filter = os.path.join(inputdir,"20101104/reduced_sky_jb/s*_Kbb_020.fits")
+    # filename_filter = os.path.join(inputdir,"2013*/reduced_sky_jb/s*_Kbb_020.fits")
+    print(filename_filter)
+    # exit(0)
     filelist_out = glob.glob(filename_filter.replace(".fits","_OHccf"+suffix+"_output.fits"))
     filelist_R = glob.glob(filename_filter.replace(".fits","_OHccf"+suffix+"_R.fits"))
     filelist_dwv = glob.glob(filename_filter.replace(".fits","_OHccf"+suffix+"_dwv.fits"))
     filelist_model = glob.glob(filename_filter.replace(".fits","_OHccf"+suffix+"_model.fits"))
+    print(filelist_out)
+    # exit()
 
     wvshift_arr_list = []
+    plt.figure(1)
     for k,(filename_R,filename_dwv,filename_model,filename_out) in enumerate(zip(filelist_R,filelist_dwv,filelist_model,filelist_out)):
+        print(k)
+        # continue
         hdulist = pyfits.open(filename_out)
         output = hdulist[0].data
+        # plt.plot(dwvs_CCF/dwv,output[3,0,:,30,10])
+        # # plt.plot(dwvs_CCF)
+        # # print(dwv)
+        # plt.show()
 
 
-        plt.subplot(3,len(filelist_R),k+1)
+        plt.subplot(4,len(filelist_R),k+1)
         hdulist = pyfits.open(filename_R)
         R_arr = hdulist[0].data
-        plt.imshow(R_arr,interpolation="nearest")
+        plt.imshow(R_arr,interpolation="nearest",origin="lower")
         plt.clim([2000,6000])
         plt.colorbar()
 
-        plt.subplot(3,len(filelist_R),k+1+len(filelist_R))
+        plt.subplot(4,len(filelist_R),k+1+len(filelist_R))
         if 0:
             hdulist = pyfits.open(filename_dwv)
             wvshift_arr = hdulist[0].data
@@ -453,35 +497,62 @@ if 1:
                 for col in range(output.shape[4]):
                     chi2_allpara = output[3,0,:,row,col]
                     wvshift_arr[row,col] = dwvs_CCF[np.argmax(chi2_allpara)]
-        wvshift_arr_list.append(wvshift_arr[None,:,:])
-        plt.imshow(wvshift_arr/dwv,interpolation="nearest")
-        plt.clim([-0.5,0.5])
+        wvshift_arr_list.append(wvshift_arr[None,0:64,0:19])
+        plt.imshow(wvshift_arr/dwv,interpolation="nearest",origin="lower")
+        mymed = np.nanmedian(wvshift_arr[np.where((wvshift_arr>-1)*(wvshift_arr<1))])
+        plt.clim([-0.25+mymed/dwv,0.25+mymed/dwv])
         plt.colorbar()
 
-        plt.subplot(3,len(filelist_R),k+1+2*len(filelist_R))
+        plt.subplot(4,len(filelist_R),k+1+2*len(filelist_R))
         hdulist = pyfits.open(filename_model)
         bestmodel_arr = hdulist[0].data
-        plt.imshow(bestmodel_arr,interpolation="nearest")
+        plt.imshow(bestmodel_arr,interpolation="nearest",origin="lower")
         plt.clim([0,12])
         plt.colorbar()
 
-
     master_wvshift_arr = np.nanmedian(np.concatenate(wvshift_arr_list,axis=0),axis=0)
     master_wvshift_arr[np.where(np.abs(master_wvshift_arr)==1)]=np.nan
+    mymed = np.nanmedian(master_wvshift_arr[np.where((master_wvshift_arr>-1)*(master_wvshift_arr<1))])
     plt.figure(2)
-    plt.imshow(master_wvshift_arr/dwv,interpolation="nearest")
-    plt.clim([-0.5,0.5])
+    plt.subplot(1,2,1)
+    plt.imshow(master_wvshift_arr/dwv,interpolation="nearest",origin="lower")
+    plt.clim([-0.25+mymed/dwv,0.25+mymed/dwv])
+    plt.subplot(1,2,2)
+    plt.imshow(master_wvshift_arr/dwv*38,interpolation="nearest",origin="lower")
+    plt.clim([-10+mymed/dwv*38,10+mymed/dwv*38])
     plt.colorbar()
 
+
+    plt.figure(1)
+    for k,wvshift_arr in enumerate(wvshift_arr_list):
+        plt.subplot(4,len(filelist_R),k+1+3*len(filelist_R))
+        plt.imshow(wvshift_arr[0]/dwv-master_wvshift_arr/dwv,interpolation="nearest",origin="lower")
+        plt.clim([-0.25,0.25])
+        plt.colorbar()
+
+    plt.figure(3)
+    for k,wvshift_arr in enumerate(wvshift_arr_list):
+        plt.subplot(2,len(filelist_R),k+1)
+        data = np.ravel((wvshift_arr[0])/dwv)
+        data = data[np.where(data!=0)]
+        plt.hist(data,bins=100,range=[-1,1])
+        ref_std = np.std(data[np.where(np.abs(data)<0.75)])
+        plt.title("{0:.3f}".format(ref_std))
+        plt.xlim([-0.5,1])
+        plt.subplot(2,len(filelist_R),k+1+len(filelist_R))
+        data = np.ravel((wvshift_arr[0]-master_wvshift_arr)/dwv)
+        data = data[np.where(data!=0)]
+        plt.hist(data,bins=100,range=[-1,1])
+        plt.title("{0:.3f} // {1:.3f} / {2:.3f}".format(np.std(data[np.where(np.abs(data)<0.75)])/std_factor[len(wvshift_arr_list)],np.std(data[np.where(np.abs(data)<0.75)]),ref_std*std_factor[len(wvshift_arr_list)]))
+        plt.xlim([-0.5,1])
 
     hdulist = pyfits.HDUList()
     hdulist.append(pyfits.PrimaryHDU(data=master_wvshift_arr))
     try:
-        hdulist.writeto(os.path.join(inputdir,"master_wvshifts.fits"), overwrite=True)
+        hdulist.writeto(os.path.join("/data/osiris_data/","master_wvshifts_"+IFSfilter+".fits"), overwrite=True)
     except TypeError:
-        hdulist.writeto(os.path.join(inputdir,"master_wvshifts.fits"), clobber=True)
+        hdulist.writeto(os.path.join("/data/osiris_data/","master_wvshifts_"+IFSfilter+".fits"), clobber=True)
     hdulist.close()
-
     plt.show()
 
 
