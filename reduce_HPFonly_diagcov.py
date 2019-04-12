@@ -721,6 +721,32 @@ def _spline_psf_model(paras):
     # print(len(normalized_psfs_func_list))
     return chunk_id,normalized_psfs_func_list
 
+def return_64x19(cube):
+    #cube should be nz,ny,nx
+    if np.size(cube.shape) == 3:
+        _,ny,nx = cube.shape
+    else:
+        ny,nx = cube.shape
+    onesmask = np.ones((64,19))
+    if (ny != 64 or nx != 19):
+        mask = copy(cube).astype(np.float)
+        mask[np.where(mask==0)]=np.nan
+        mask[np.where(np.isfinite(mask))]=1
+        if np.size(cube.shape) == 3:
+            im = np.nansum(mask,axis=0)
+        else:
+            im = mask
+        ccmap =np.zeros((3,3))
+        for dk in range(3):
+            for dl in range(3):
+                ccmap[dk,dl] = np.nansum(im[dk:np.min([dk+64,ny]),dl:np.min([dl+19,nx])]*onesmask[0:(np.min([dk+64,ny])-dk),0:(np.min([dl+19,nx])-dl)])
+        dk,dl = np.unravel_index(np.argmax(ccmap),ccmap.shape)
+        if np.size(cube.shape) == 3:
+            return cube[:,dk:(dk+64),dl:(dl+19)]
+        else:
+            return cube[dk:(dk+64),dl:(dl+19)]
+    else:
+        return cube
 
 #------------------------------------------------
 if __name__ == "__main__":
@@ -753,27 +779,27 @@ if __name__ == "__main__":
         # date = "161106"
         # date = "180722"
         planet = "c"
-        date = "100715"
+        # date = "100715"
         # date = "101028"
         # date = "101104"
         # date = "110723"
         # date = "110724"
         # date = "110725"
         # date = "130726"
-        # date = "171103"
+        date = "171103"
         # planet = "d"
         # date = "150720"
         # date = "150722"
         # date = "150723"
         # date = "150828"
-        IFSfilter = "Kbb"
-        # IFSfilter = "Hbb"
+        # IFSfilter = "Kbb"
+        IFSfilter = "Hbb"
         # IFSfilter = "Jbb" # "Kbb" or "Hbb"
         scale = "020"
         # scale = "035"
 
         inputDir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/"
-        outputdir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/20190405_HPF_only/"
+        outputdir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/20190412_HPF_only/"
         # outputdir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/20190305_HPF_only_noperscor/"
         # outputdir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/20190228_mol_temp/"
 
@@ -785,7 +811,7 @@ if __name__ == "__main__":
         filelist.sort()
         print(filelist)
         # exit()
-        filelist = [filelist[1]]
+        filelist = [filelist[-4]]
         # print(os.path.join(inputDir,"s"+date+"*"+IFSfilter+"_020.fits"))
         # filelist = filelist[4:]
         # filelist = filelist[len(filelist)-3:len(filelist)-2]
@@ -796,8 +822,8 @@ if __name__ == "__main__":
         plot_transmissions = False
         plt_psfs = False
         plot_persistence = False
-        # planet_model_string = "model"
-        planet_model_string = "CO"#"CO2 CO H2O CH4"
+        planet_model_string = "model"
+        # planet_model_string = "CO"#"CO2 CO H2O CH4"
 
         osiris_data_dir = "/data/osiris_data"
         if "d" in planet:
@@ -837,13 +863,14 @@ if __name__ == "__main__":
         ## Read OSIRIS spectral cube
         ##############################
         with pyfits.open(filename) as hdulist:
-            imgs = np.rollaxis(np.rollaxis(hdulist[0].data,2),2,1)
             prihdr = hdulist[0].header
             curr_mjdobs = prihdr["MJD-OBS"]
+            imgs = np.rollaxis(np.rollaxis(hdulist[0].data,2),2,1)
+            imgs = return_64x19(imgs)
             imgs = np.moveaxis(imgs,0,2)
-            imgs = imgs[0:64,0:19,:]
-            imgs_hdrbadpix = np.moveaxis(np.rollaxis(np.rollaxis(hdulist[2].data,2),2,1),0,2)
-            imgs_hdrbadpix = imgs_hdrbadpix[0:64,0:19,:]
+            imgs_hdrbadpix = np.rollaxis(np.rollaxis(hdulist[2].data,2),2,1)
+            imgs_hdrbadpix = return_64x19(imgs_hdrbadpix)
+            imgs_hdrbadpix = np.moveaxis(imgs_hdrbadpix,0,2)
         ny,nx,nz = imgs.shape
         init_wv = prihdr["CRVAL1"]/1000. # wv for first slice in mum
         dwv = prihdr["CDELT1"]/1000. # wv interval between 2 slices in mum
@@ -876,7 +903,7 @@ if __name__ == "__main__":
             planet_search = False
         model_based_sky_trans = False
         # if "HR_8799_d" in filename and ("20130727" in filename or "20150720" in filename or "20150722" in filename or "20150723" in filename):
-        if len(glob.glob(os.path.join(os.path.join(inputDir,".."),"master_wvshifts_"+IFSfilter+".fits"))) == 1:
+        if len(glob.glob(os.path.join(inputDir,"..","master_wvshifts_"+IFSfilter+".fits"))) == 1:
             use_wvsol_offsets = True
         else:
             use_wvsol_offsets = False
@@ -958,7 +985,7 @@ if __name__ == "__main__":
                 R_list = [R0]#[2000,2500,3000,3500,4000,4500,5000]
 
         if use_wvsol_offsets:
-            wvsol_offsets_filename = os.path.join(os.path.join(inputDir,".."),"master_wvshifts_"+IFSfilter+".fits")
+            wvsol_offsets_filename = os.path.join(inputDir,"..","master_wvshifts_"+IFSfilter+".fits")
             hdulist = pyfits.open(wvsol_offsets_filename)
             wvsol_offsets = hdulist[0].data
             hdulist.close()
@@ -1242,8 +1269,8 @@ if __name__ == "__main__":
                     print(spdc_refstar_prihdr["MJD-OBS"],spdc_refstar_prihdr["MJD-OBS"] < curr_mjdobs,spdc_refstar_filename)
                     if spdc_refstar_prihdr["MJD-OBS"] < curr_mjdobs:
                         spdc_refstar_cube = np.rollaxis(np.rollaxis(hdulist[0].data,2),2,1)
+                        spdc_refstar_cube = return_64x19(spdc_refstar_cube)
                         spdc_refstar_cube = np.moveaxis(spdc_refstar_cube,0,2)
-                        spdc_refstar_cube = spdc_refstar_cube[0:64,0:19,:]
 
                         spdc_refstar_im = np.nansum(spdc_refstar_cube,axis=2)
                         persis_where2mask = np.where(spdc_refstar_im<np.nanmax(spdc_refstar_im)/4)

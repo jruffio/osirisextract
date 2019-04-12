@@ -127,7 +127,7 @@ if 0: # add barycenter RV
         result = get_BC_vel(MJDOBS+2400000.5,hip_id=114189,obsname="Keck Observatory",ephemeris="de430")
         new_list_data[k][bary_rv_id] = result[0][0]
 
-if 1: # add filename
+if 0: # add filename
     if 0:
         filename_id = new_colnames.index("filename")
         ifs_filter_id = new_colnames.index("IFS filter")
@@ -404,6 +404,55 @@ if 0:
             new_list_data[seq_ind][xoffset_id] = dx
             new_list_data[seq_ind][yoffset_id] = dy
 
+if 1: # wavelength solution error
+    try:
+        wvsolerr_id = old_colnames.index("wv sol err")
+    except:
+        new_colnames.append("wv sol err")
+        new_list_data = [item+[np.nan,] for item in new_list_data]
+        wvsolerr_id = new_colnames.index("wv sol err")
+    filename_id = new_colnames.index("filename")
+    ifs_filter_id = new_colnames.index("IFS filter")
+    MJDOBS_id = new_colnames.index("MJD-OBS")
+
+    for k,item in enumerate(new_list_data):
+        wvsolerr = np.nan
+        MJDOBS = float(item[MJDOBS_id])
+        if item[ifs_filter_id] == "Kbb":
+            #20100711 b = 20100712 b = 20100715 c = 20101104 c
+            if (55388.<MJDOBS) and (MJDOBS<55505.):
+                wvsolerr = 2.2
+            #20110723 c = 20110724 c = 20110725 c
+            elif (55765.<MJDOBS) and (MJDOBS<55768.):
+                wvsolerr = 2.9
+            #20130725 b = 20130726 b = 20130727 b
+            elif (56498.<MJDOBS) and (MJDOBS<56501.):
+                wvsolerr = 1.6
+            # 2015 d
+            elif (57223.<MJDOBS) and (MJDOBS<57263.):
+                wvsolerr = 1.6
+            #20161106 b = 20161107 b= 20161108 b
+            elif (57698.<MJDOBS) and (MJDOBS<57701.):
+                wvsolerr = 0.6
+            #20171103 c
+            #20180722 b
+            elif (58060.<MJDOBS) and (MJDOBS<58322.):
+                wvsolerr = 1.0
+        elif item[ifs_filter_id] == "Hbb":
+            pass
+            #20100713 b  = 20101028 c = 20101104 c
+            if (55388.<MJDOBS) and (MJDOBS<55505.):
+                wvsolerr = 1.1
+            #20110724 c = 20110725 c
+            elif (55765.<MJDOBS) and (MJDOBS<55768.):
+                wvsolerr = 1.5
+            #20171103 c
+            elif (58060.<MJDOBS) and (MJDOBS<58322.):
+                wvsolerr = 0.8
+        elif item[ifs_filter_id] == "Jbb":
+            pass
+        new_list_data[k][wvsolerr_id] = wvsolerr
+
 from scipy.interpolate import interp1d
 def get_err_from_posterior(x,posterior):
     ind = np.argsort(posterior)
@@ -423,7 +472,7 @@ def get_err_from_posterior(x,posterior):
         rx = rf(1-0.6827)
     return x[argmax_post],(rx-lx)/2.,argmax_post
 
-if 0:
+if 1:
     from scipy.signal import correlate2d
     try:
         cen_filename_id = old_colnames.index("cen filename")
@@ -480,7 +529,7 @@ if 0:
     # init_wv = CRVAL1/1000. # wv for first slice in mum
 
     suffix = "_outputHPF_cutoff40_sherlock_v1_search"
-    myfolder = "sherlock/20190401_HPF_only"
+    myfolder = "sherlock/20190409_HPF_only"
     for k,item in enumerate(old_list_data):
         filename = item[filename_id]
         print(filename)

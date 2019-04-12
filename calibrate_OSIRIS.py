@@ -12,6 +12,7 @@ import multiprocessing as mp
 from scipy.signal import correlate2d
 from scipy.ndimage.filters import median_filter
 from astropy.stats import mad_std
+from reduce_HPFonly_diagcov import return_64x19
 
 def convolve_spectrum(wvs,spectrum,R):
     conv_spectrum = np.zeros(spectrum.shape)
@@ -201,7 +202,7 @@ if 1:
     # inputdir = "/data/osiris_data/HR_8799_b"
     # filelist = glob.glob(os.path.join(inputdir,"201007/reduced_sky_jb/s*_Kbb_020.fits"))
     inputdir = "/data/osiris_data/HR_8799_*"
-    filelist = glob.glob(os.path.join(inputdir,"2017*/reduced_sky_jb/s*_"+IFSfilter+"_[0-9][0-9][0-9].fits"))
+    filelist = glob.glob(os.path.join(inputdir,"2018*/reduced_sky_jb/s*_"+IFSfilter+"_[0-9][0-9][0-9].fits"))
     print(filelist)
     # exit()
 
@@ -445,6 +446,30 @@ if 0:
             tpool.close()
 
 
+# if 1:
+#     IFSfilter = "*"
+#     inputdir = "/data/osiris_data/HR_8799_c"
+#     filename_filter = os.path.join(inputdir,"*/reduced_sky_jb/s*_"+IFSfilter+"_020.fits")
+#     # filename_filter = os.path.join(inputdir,"*/reduced_jb/s*_"+IFSfilter+"_020.fits")
+#     filelist = glob.glob(filename_filter)
+#     print(len(filelist))
+#     k = 0
+#     for filename in filelist:
+#         k+=1
+#         hdulist = pyfits.open(filename)
+#         data = np.rollaxis(np.rollaxis(hdulist[0].data,2),2,1)
+#         print(data.shape)
+#         data = return_64x19(data)
+#         plt.subplot(5,5,k)
+#         mask = copy(data)
+#         mask[np.where(data==0)]=np.nan
+#         mask[np.where(np.isfinite(mask))]=1
+#         im = np.nansum(mask,axis=0)
+#         plt.imshow(im,interpolation="nearest")
+#     plt.show()
+#     exit()
+
+
 if 1:
     std_factor = np.zeros(20)
     for k in np.arange(2,20):
@@ -452,107 +477,166 @@ if 1:
         std_factor[k] = np.std(a - np.mean(a,axis=1)[:,None])/np.std(a)
     print(std_factor)
 
-    IFSfilter = "Kbb"
+    #Kbb
+    #20100711 b = 20100712 b = 20100715 c = 20101104 c
+    #20110723 c = 20110724 c = 20110725 c
+    #20130725 b = 20130726 b = 20130727 b
+    #20161106 b = 20161107 b= 20161108 b
+    #20171103 c
+    #20180722 b
+    #Hbb
+    #20100713 b  = 20101028 c = 20101104 c
+    #20110724 c = 20110725 c
+    #20171103 c
+    IFSfilter = "Hbb"
     inputdir = "/data/osiris_data/HR_8799_*"
     # filename_filter = "/home/sda/jruffio/osiris_data/HR_8799_d/20150720/reduced_sky_Kbb/s*_Kbb_020.fits"
-    filename_filter = os.path.join(inputdir,"2015*/reduced_sky_jb/s*_"+IFSfilter+"_020.fits")
+    filename_filter = os.path.join(inputdir,"2017*/reduced_sky_jb/s*_"+IFSfilter+"_020.fits")
     # filename_filter = os.path.join(inputdir,"20101104/reduced_sky_jb/s*_Kbb_020.fits")
     # filename_filter = os.path.join(inputdir,"2013*/reduced_sky_jb/s*_Kbb_020.fits")
     print(filename_filter)
     # exit(0)
+    filelist = glob.glob(filename_filter)
+    filelist.sort()
     filelist_out = glob.glob(filename_filter.replace(".fits","_OHccf"+suffix+"_output.fits"))
+    filelist_out.sort()
     filelist_R = glob.glob(filename_filter.replace(".fits","_OHccf"+suffix+"_R.fits"))
+    filelist_R.sort()
     filelist_dwv = glob.glob(filename_filter.replace(".fits","_OHccf"+suffix+"_dwv.fits"))
+    filelist_dwv.sort()
     filelist_model = glob.glob(filename_filter.replace(".fits","_OHccf"+suffix+"_model.fits"))
+    filelist_model.sort()
     print(filelist_out)
+
+    dwv_map_list = []
+    for k,(filename_R,filename_dwv,filename_model,filename_out) in enumerate(zip(filelist_R,filelist_dwv,filelist_model,filelist_out)):
+        print(filename_dwv)
+        hdulist = pyfits.open(filename_dwv)
+        dwv_map = hdulist[0].data
+        dwv_map[np.where(np.abs(dwv_map)>0.75)] = np.nan
+        dwv_map = return_64x19(dwv_map)
+        dwv_map_list.append(dwv_map)
+    if len(dwv_map_list) <=2:
+        master_wvshift = np.nanmean(dwv_map_list,axis=0)
+    else:
+        print([dwv_map.shape for dwv_map in dwv_map_list])
+        master_wvshift = np.nanmedian(dwv_map_list,axis=0)
+    master_wvshift -= np.nanmedian(master_wvshift)
+    hdulist = pyfits.HDUList()
+    hdulist.append(pyfits.PrimaryHDU(data=master_wvshift*dwv))
+    try:
+        hdulist.writeto(os.path.join("/data/osiris_data/","master_wvshifts_"+IFSfilter+".fits"), overwrite=True)
+    except TypeError:
+        hdulist.writeto(os.path.join("/data/osiris_data/","master_wvshifts_"+IFSfilter+".fits"), clobber=True)
+    hdulist.close()
+
+    # for planet in ["b","c","d"]:
+    #     inputdir = "/data/osiris_data/HR_8799_"+planet
+    #     filename_filter = os.path.join(inputdir,"*/reduced_sky_jb/s*_"+IFSfilter+"_[0-9][0-9][0-9].fits")
+    #     filelist = glob.glob(filename_filter)
+    #     epoch_list = np.array([filename.split(os.path.sep)[4] for filename in filelist])
+    #     epoch_unique = np.unique(epoch_list)
+    #     for epoch in epoch_unique:
+    #         hdulist = pyfits.HDUList()
+    #         hdulist.append(pyfits.PrimaryHDU(data=master_wvshift*dwv))
+    #         try:
+    #             hdulist.writeto(os.path.join(inputdir,epoch,"master_wvshifts_"+IFSfilter+".fits"), overwrite=True)
+    #         except TypeError:
+    #             hdulist.writeto(os.path.join(inputdir,epoch,"master_wvshifts_"+IFSfilter+".fits"), clobber=True)
+    #         hdulist.close()
+
     # exit()
 
+    thresh = 0.5
     wvshift_arr_list = []
-    plt.figure(1)
-    for k,(filename_R,filename_dwv,filename_model,filename_out) in enumerate(zip(filelist_R,filelist_dwv,filelist_model,filelist_out)):
+    temp_list = []
+    cst_offset_list = []
+    for k,(filename,filename_R,filename_dwv,filename_model,filename_out) in enumerate(zip(filelist,filelist_R,filelist_dwv,filelist_model,filelist_out)):
         print(k)
-        # continue
-        hdulist = pyfits.open(filename_out)
-        output = hdulist[0].data
-        # plt.plot(dwvs_CCF/dwv,output[3,0,:,30,10])
-        # # plt.plot(dwvs_CCF)
-        # # print(dwv)
-        # plt.show()
 
+        # plt.subplot(4,len(filelist_R),k+1)
+        # hdulist = pyfits.open(filename_R)
+        # R_arr = hdulist[0].data
+        # plt.imshow(R_arr,interpolation="nearest",origin="lower")
+        # plt.clim([2000,6000])
+        # plt.colorbar()
 
-        plt.subplot(4,len(filelist_R),k+1)
-        hdulist = pyfits.open(filename_R)
-        R_arr = hdulist[0].data
-        plt.imshow(R_arr,interpolation="nearest",origin="lower")
-        plt.clim([2000,6000])
+        plt.figure(1)
+        plt.subplot(3,len(filelist_R),k+1)
+        hdulist = pyfits.open(filename_dwv)
+        dwv_map = return_64x19(hdulist[0].data)
+        dwv_map[np.where(np.abs(dwv_map)>0.9)] = np.nan
+            # wvshift_arr = np.zeros(output.shape[3::])
+            # for row in range(output.shape[3]):
+            #     for col in range(output.shape[4]):
+            #         chi2_allpara = output[3,0,:,row,col]
+            #         wvshift_arr[row,col] = dwvs_CCF[np.argmax(chi2_allpara)]
+        plt.imshow(dwv_map,interpolation="nearest",origin="lower")
+        mymed = np.nanmedian(dwv_map)
+        plt.clim([-0.25+mymed,0.25+mymed])
         plt.colorbar()
 
-        plt.subplot(4,len(filelist_R),k+1+len(filelist_R))
-        if 0:
-            hdulist = pyfits.open(filename_dwv)
-            wvshift_arr = hdulist[0].data
-        else:
-            wvshift_arr = np.zeros(output.shape[3::])
-            for row in range(output.shape[3]):
-                for col in range(output.shape[4]):
-                    chi2_allpara = output[3,0,:,row,col]
-                    wvshift_arr[row,col] = dwvs_CCF[np.argmax(chi2_allpara)]
-        wvshift_arr_list.append(wvshift_arr[None,0:64,0:19])
-        plt.imshow(wvshift_arr/dwv,interpolation="nearest",origin="lower")
-        mymed = np.nanmedian(wvshift_arr[np.where((wvshift_arr>-1)*(wvshift_arr<1))])
-        plt.clim([-0.25+mymed/dwv,0.25+mymed/dwv])
+        plt.subplot(3,len(filelist_R),k+1+len(filelist_R))
+        diff = dwv_map-master_wvshift
+        diff[np.where(np.abs(diff-np.nanmedian(diff))>thresh)] = np.nan
+        plt.title("{0:.2f} || {1:.2f}".format(np.nanmedian(diff)*38.167938931297705,
+                                      np.nanstd(diff)/std_factor[len(filelist_R)]*38.167938931297705),fontsize=7)
+        plt.imshow(diff,interpolation="nearest",origin="lower")
+        # mymed = np.nanmedian((dwv_map-master_wvshift)[np.where((dwv_map>-1)*(dwv_map<1))])
+        plt.clim([-0.25+mymed,0.25+mymed])
         plt.colorbar()
 
-        plt.subplot(4,len(filelist_R),k+1+2*len(filelist_R))
+        plt.subplot(3,len(filelist_R),k+1+2*len(filelist_R))
         hdulist = pyfits.open(filename_model)
         bestmodel_arr = hdulist[0].data
         plt.imshow(bestmodel_arr,interpolation="nearest",origin="lower")
         plt.clim([0,12])
         plt.colorbar()
 
-    master_wvshift_arr = np.nanmedian(np.concatenate(wvshift_arr_list,axis=0),axis=0)
-    master_wvshift_arr[np.where(np.abs(master_wvshift_arr)==1)]=np.nan
-    mymed = np.nanmedian(master_wvshift_arr[np.where((master_wvshift_arr>-1)*(master_wvshift_arr<1))])
-    plt.figure(2)
+        plt.figure(2)
+        plt.subplot(2,len(filelist_R),k+1)
+        plt.hist(dwv_map[np.isfinite(dwv_map)],bins=100,range=[-1,1])
+        plt.title("{0:.2f}".format(np.nanstd(dwv_map)))
+        plt.xlim([-1,1])
+
+        plt.subplot(2,len(filelist_R),k+1+len(filelist_R))
+        plt.hist(diff[np.where(np.isfinite(diff))],bins=100,range=[-1,1])
+        plt.title("{0:.3f} // {1:.3f} // {2:.3f}".format(np.nanstd(diff)/std_factor[len(filelist_R)],
+                                                         np.nanstd(diff)/std_factor[len(filelist_R)]*38.167938931297705,
+                                                         np.nanstd(dwv_map)*std_factor[len(filelist_R)]),fontsize=8)
+        plt.xlim([-0.5,1])
+
+        cst_offset_list.append(np.nanmean(diff))
+        hdulist = pyfits.open(filename)
+        temp_list.append(float(hdulist[0].header["DTMP6"]))
+        print(filename,np.nanmean(diff),float(hdulist[0].header["DTMP6"]))
+
+
+    mymed = np.nanmedian(master_wvshift)
+    plt.figure(3)
     plt.subplot(1,2,1)
-    plt.imshow(master_wvshift_arr/dwv,interpolation="nearest",origin="lower")
-    plt.clim([-0.25+mymed/dwv,0.25+mymed/dwv])
+    plt.imshow(master_wvshift,interpolation="nearest",origin="lower")
+    plt.clim([-0.25+mymed,0.25+mymed])
     plt.subplot(1,2,2)
-    plt.imshow(master_wvshift_arr/dwv*38,interpolation="nearest",origin="lower")
-    plt.clim([-10+mymed/dwv*38,10+mymed/dwv*38])
+    plt.imshow(master_wvshift*38.167938931297705,interpolation="nearest",origin="lower")
+    plt.clim([-10+mymed*38.167938931297705,10+mymed*38.167938931297705])
     plt.colorbar()
 
+    cst_offset_list = np.array(cst_offset_list)
+    filelist = np.array(filelist)
+    epoch_list = np.array([filename.split(os.path.sep)[4] for filename in filelist])
+    epoch_unique = np.unique(epoch_list)
+    for filename,epoch in zip(filelist,epoch_list):
+        print(os.path.join(os.path.dirname(filelist[np.where(epoch == epoch_list)][0]),"..","master_wvshifts_"+IFSfilter+".fits"))
+        print(cst_offset_list[np.where(epoch == epoch_list)])
+        hdulist = pyfits.HDUList()
+        hdulist.append(pyfits.PrimaryHDU(data=(master_wvshift+np.mean(cst_offset_list[np.where(epoch == epoch_list)]))*dwv))
+        try:
+            hdulist.writeto(os.path.join(os.path.dirname(filelist[np.where(epoch == epoch_list)][0]),"..","master_wvshifts_"+IFSfilter+".fits"), overwrite=True)
+        except TypeError:
+            hdulist.writeto(os.path.join(os.path.dirname(filelist[np.where(epoch == epoch_list)][0]),"..","master_wvshifts_"+IFSfilter+".fits"), clobber=True)
+        hdulist.close()
 
-    plt.figure(1)
-    for k,wvshift_arr in enumerate(wvshift_arr_list):
-        plt.subplot(4,len(filelist_R),k+1+3*len(filelist_R))
-        plt.imshow(wvshift_arr[0]/dwv-master_wvshift_arr/dwv,interpolation="nearest",origin="lower")
-        plt.clim([-0.25,0.25])
-        plt.colorbar()
-
-    plt.figure(3)
-    for k,wvshift_arr in enumerate(wvshift_arr_list):
-        plt.subplot(2,len(filelist_R),k+1)
-        data = np.ravel((wvshift_arr[0])/dwv)
-        data = data[np.where(data!=0)]
-        plt.hist(data,bins=100,range=[-1,1])
-        ref_std = np.std(data[np.where(np.abs(data)<0.75)])
-        plt.title("{0:.3f}".format(ref_std))
-        plt.xlim([-0.5,1])
-        plt.subplot(2,len(filelist_R),k+1+len(filelist_R))
-        data = np.ravel((wvshift_arr[0]-master_wvshift_arr)/dwv)
-        data = data[np.where(data!=0)]
-        plt.hist(data,bins=100,range=[-1,1])
-        plt.title("{0:.3f} // {1:.3f} / {2:.3f}".format(np.std(data[np.where(np.abs(data)<0.75)])/std_factor[len(wvshift_arr_list)],np.std(data[np.where(np.abs(data)<0.75)]),ref_std*std_factor[len(wvshift_arr_list)]))
-        plt.xlim([-0.5,1])
-
-    hdulist = pyfits.HDUList()
-    hdulist.append(pyfits.PrimaryHDU(data=master_wvshift_arr))
-    try:
-        hdulist.writeto(os.path.join("/data/osiris_data/","master_wvshifts_"+IFSfilter+".fits"), overwrite=True)
-    except TypeError:
-        hdulist.writeto(os.path.join("/data/osiris_data/","master_wvshifts_"+IFSfilter+".fits"), clobber=True)
-    hdulist.close()
     plt.show()
 
 

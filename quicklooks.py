@@ -13,8 +13,8 @@ from copy import copy
 
 out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
 
-planet = "b"
-# planet = "c"
+# planet = "b"
+planet = "c"
 # planet = "d"
 
 # IFSfilter = "Kbb"
@@ -49,6 +49,7 @@ with open(fileinfos_filename, 'r') as csvfile:
     yoffset_id = colnames.index("header offset y")
     sequence_id = colnames.index("sequence")
     status_id = colnames.index("status")
+    wvsolerr_id = colnames.index("wv sol err")
 
 filelist = [item[filename_id] for item in list_data]
 filelist_sorted = copy(filelist)
@@ -208,9 +209,11 @@ if 0:
     exit()
 
 # plot CCF
-if 1:
-    molecule_list = ["","_CH4","_CO","_CO2","_H20"]
-    molecule_str_list = ["Atmospheric model","CH4","CO","CO2","H20"]
+if 0:
+    molecule_list = ["_H2O"]#["","_CH4","_CO","_CO2","_H2O"]
+    molecule_str_list = ["H2O"]#["Atmospheric model","CH4","CO","CO2","H2O"]
+    molecule_list = ["","_CH4","_CO","_CO2","_H2O"]
+    molecule_str_list = ["Atmospheric model","CH4","CO","CO2","H2O"]
     for molecule,molecule_str in zip(molecule_list,molecule_str_list):
     # molecule = ""
     # molecule_str="Atmospheric model"
@@ -240,15 +243,22 @@ if 1:
             Nvalid_wideRV = np.zeros((200*3,64*3,19*3))
             summed_hdRV = np.zeros((400*3,64*3,19*3))
             Nvalid_hdRV = np.zeros((400*3,64*3,19*3))
+
+            filtered_list_data = []
             for k,item in enumerate(list_data):
                 if item[rvcen_id] == "nan":
                     continue
+                if int(item[status_id]) != 1 or item[ifs_filter_id] != IFSfilter:
+                    continue
+                filtered_list_data.append(item)
+            print(len(filtered_list_data))
+            # exit()
+
+            plt.figure(2,figsize=(10*2,7*2))
+            for k,item in enumerate(filtered_list_data):
                 reducfilename = item[cen_filename_id].replace("search","search"+molecule)
                 # reducfilename = item[cen_filename_id].replace("20190117_HPFonly","20190125_HPFonly").replace("sherlock_v0","sherlock_v1_search")
                 # reducfilename = item[cen_filename_id].replace("20190117_HPFonly","20190125_HPFonly_cov").replace("sherlock_v0","sherlock_v1_search_empcov")
-
-                if int(item[status_id]) != 1 or item[ifs_filter_id] != IFSfilter:
-                    continue
 
                 if len(glob.glob(reducfilename.replace(".fits","_planetRV.fits"))) == 0:
                     continue
@@ -277,10 +287,37 @@ if 1:
                 SNR_data = hdulist[0].data[0,0,10,NplanetRV_hd::,:,:]
                 SNR_data_cp = copy(SNR_data)
                 SNR_data_cp[np.where(np.abs(SNR_data)>100)] = np.nan
+                # if "20100712" in item[filename_id]:
+                #     print("skipping",item[filename_id])
+                #     continue
+                #     y,x = 46,8
+                #     SNR_data_cp[:,y-1:y+2,x-1:x+2] = np.nan
+                #     y,x = 21,9
+                #     SNR_data_cp[:,y-1:y+2,x-1:x+2] = np.nan
+
                 SNR_data_cp[98:103,:,:] = np.nan
-                stdSNR = np.nanstd(SNR_data_cp)
-                meanSNR = np.nanmean(SNR_data_cp,axis=0)[None,:,:]
-                SNR_data_calib = (SNR_data-meanSNR)/stdSNR
+                # print(SNR_data_cp.shape)
+                # exit()
+                meanSNR1 = np.nanmean(SNR_data_cp,axis=0)[None,:,:]
+                SNR_data_calib = (SNR_data-meanSNR1)
+                meanSNR2 = np.nanmedian(SNR_data_calib,axis=(1,2))[:,None,None]
+                SNR_data_calib = (SNR_data_calib-meanSNR2)
+
+                stdSNR = np.nanstd(SNR_data_cp-meanSNR1-meanSNR2)
+                SNR_data_calib = SNR_data_calib/stdSNR
+
+                plt.figure(2)
+                plt.subplot(7,10,k+1)
+                plt.title(os.path.basename(item[filename_id]).split("bb_")[0],fontsize=5)
+                plt.hist(np.ravel(SNR_data_calib)[np.where(np.isfinite(np.ravel(SNR_data_calib)))],bins=100,density=True)
+                plt.plot(np.linspace(-7,7,200),1/np.sqrt(2*np.pi)*np.exp(-0.5*np.linspace(-7,7,200)**2))
+                plt.yscale("log")
+
+                # plt.figure(2)
+                # plt.subplot(7,10,k+1)
+                # # plt.plot(np.nanmean((SNR_data_cp-meanSNR)/stdSNR,axis=0))
+                # plt.plot(np.nanmean((SNR_data_cp-meanSNR)/stdSNR,axis=(1,2)))
+
                 canvas = np.zeros(SNR_data_calib.shape)
                 canvas[np.where(np.isfinite(SNR_data_calib))] = 1
                 Nvalid_wideRV[(300-zcen):(300+NplanetRV-zcen),
@@ -288,7 +325,10 @@ if 1:
                 ((19*3)//2-lcen):((19*3)//2+nx-lcen)] += canvas
                 SNR_data_calib[np.where(np.isnan(SNR_data_calib))] = 0
 
-                SNR_data_calib_hd = hdulist[0].data[0,0,10,0:NplanetRV_hd,:,:]
+                SNR_data_calib_hd = hdulist[0].data[0,0,10,0:NplanetRV_hd,:,:]-meanSNR1
+                meanSNR3 = np.nanmedian(SNR_data_calib_hd,axis=(1,2))[:,None,None]
+                SNR_data_calib_hd = (SNR_data_calib_hd-meanSNR3)/stdSNR
+
                 canvas = np.zeros(hdulist[0].data[0,0,10,0:NplanetRV_hd,:,:].shape)
                 canvas[np.where(np.isfinite(hdulist[0].data[0,0,10,0:NplanetRV_hd,:,:]))] = 1
                 Nvalid_hdRV[((400*3)//2-zcenhd):((400*3)//2+NplanetRV_hd-zcenhd),
@@ -296,31 +336,32 @@ if 1:
                 ((19*3)//2-lcen):((19*3)//2+nx-lcen)] += canvas
                 SNR_data_calib_hd[np.where(np.isnan(SNR_data_calib_hd))] = 0
 
-                # if np.isnan(np.nanstd(SNR_data_cp)):
-                #     plt.figure(1)
-                #     plt.subplot(1,3,1)
-                #     plt.imshow(SNR_data[100,:,:],interpolation="nearest")
-                #     plt.subplot(1,3,2)
-                #     plt.imshow(np.nanstd(SNR_data_cp,axis=0),interpolation="nearest")
-                #     plt.subplot(1,3,3)
-                #     plt.imshow(SNR_data_calib[100,:,:],interpolation="nearest")
-                #     plt.show()
-                # SNR_data_calib = SNR_data
+                # plt.figure(3)
+                # print(item[filename_id])
+                # plt.imshow(np.nansum(SNR_data_calib,axis=0),interpolation="nearest")
+                # plt.colorbar()
+                # plt.show()
 
                 summed_wideRV[(300-zcen):(300+NplanetRV-zcen),
                 ((64*3)//2-kcen):((64*3)//2+ny-kcen),
                 ((19*3)//2-lcen):((19*3)//2+nx-lcen)] += copy(SNR_data_calib)
                 summed_hdRV[((400*3)//2-zcenhd):((400*3)//2+NplanetRV_hd-zcenhd),
                 ((64*3)//2-kcen):((64*3)//2+ny-kcen),
-                ((19*3)//2-lcen):((19*3)//2+nx-lcen)] += copy((SNR_data_calib_hd-meanSNR)/stdSNR)
+                ((19*3)//2-lcen):((19*3)//2+nx-lcen)] += copy(SNR_data_calib_hd)
 
+            # plt.show()
+            print("Saving "+os.path.join(out_pngs,"HR_8799_"+planet,"HR8799"+planet+"_"+IFSfilter+"_SNRhistmozaic"+molecule+".png"))
+            plt.savefig(os.path.join(out_pngs,"HR_8799_"+planet,"HR8799"+planet+"_"+IFSfilter+"_SNRhistmozaic"+molecule+".png"),bbox_inches='tight')
+            # plt.savefig(os.path.join(out_pngs,"HR_8799_"+planet,"HR8799"+planet+"_"+IFSfilter+"_SNRhistmozaic"+molecule+".pdf"),bbox_inches='tight')
+            plt.close(2)
+            # exit()
 
             # noise1 = copy(summed_wideRV[200:400,((64*3)//2+5):((64*3)//2+15),((19*3)//2-3):((19*3)//2+3)])
             summed_wideRV = summed_wideRV/Nvalid_wideRV
             summed_hdRV = summed_hdRV/Nvalid_hdRV
             Nvalid_wideRV = np.sum(Nvalid_wideRV,axis=0)
-            where_valid = np.where(Nvalid_wideRV>30)
-            where_notvalid = np.where(Nvalid_wideRV<=30)
+            where_valid = np.where(Nvalid_wideRV>0.8*len(filtered_list_data))
+            where_notvalid = np.where(Nvalid_wideRV<=0.8*len(filtered_list_data))
             noise1 = copy(summed_wideRV[200:400,:,:])
             noise1[:,((64*3)//2-5):((64*3)//2+5),((19*3)//2-5):((19*3)//2+5)] = np.nan
             noise1[:,where_notvalid[0],where_notvalid[1]] = np.nan
@@ -328,6 +369,8 @@ if 1:
             summed_wideRV = summed_wideRV/sigma
             summed_hdRV = summed_hdRV/sigma
             noise1 = noise1/sigma
+
+            plt.figure(1)
             # noise1 = summed_wideRV[200:400,((64*3)//2+5):((64*3)//2+15),((19*3)//2-3):((19*3)//2+3)]
             # noise2 = summed_wideRV[200:400,((64*3)//2-15):((64*3)//2-5),((19*3)//2-3):((19*3)//2+3)]
             # plt.subplot(1,2,1)
@@ -352,15 +395,15 @@ if 1:
             plt.ylim([-5,25])
             # plt.show()
             # exit()
-            print("Saving "+os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_CCF"+molecule+".pdf"))
-            plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_CCF"+molecule+".pdf"),bbox_inches='tight')
-            plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_CCF"+molecule+".png"),bbox_inches='tight')
+            plt.savefig(os.path.join(out_pngs,"HR_8799_"+planet,"HR8799"+planet+"_"+IFSfilter+"_CCF"+molecule+".png"),bbox_inches='tight')
+            print("Saving "+os.path.join(out_pngs,"HR_8799_"+planet,"HR8799"+planet+"_"+IFSfilter+"_CCF"+molecule+".pdf"))
+            plt.savefig(os.path.join(out_pngs,"HR_8799_"+planet,"HR8799"+planet+"_"+IFSfilter+"_CCF"+molecule+".pdf"),bbox_inches='tight')
 
             plt.gca().annotate(molecule_str,xy=(-1450,24.5),va="top",ha="left",fontsize=15,color="black")
             plt.xlim([-1500,1500])
-            print("Saving "+os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_CCF"+molecule+"_zoomed.pdf"))
-            plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_CCF"+molecule+"_zoomed.pdf"),bbox_inches='tight')
-            plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+IFSfilter+"_CCF"+molecule+"_zoomed.png"),bbox_inches='tight')
+            plt.savefig(os.path.join(out_pngs,"HR_8799_"+planet,"HR8799"+planet+"_"+IFSfilter+"_CCF"+molecule+"_zoomed.png"),bbox_inches='tight')
+            print("Saving "+os.path.join(out_pngs,"HR_8799_"+planet,"HR8799"+planet+"_"+IFSfilter+"_CCF"+molecule+"_zoomed.pdf"))
+            plt.savefig(os.path.join(out_pngs,"HR_8799_"+planet,"HR8799"+planet+"_"+IFSfilter+"_CCF"+molecule+"_zoomed.pdf"),bbox_inches='tight')
             plt.close(1)
     exit()
 
@@ -376,6 +419,7 @@ if 1:
     # rv_list[37] = np.nan
     # rv_list[31] = np.nan
     rvsig_list = np.array([float(item[rvcensig_id]) for item in list_data])
+    wvsolerr_list = np.array([float(item[wvsolerr_id]) for item in list_data])
     # valid_list = np.array([not ("201007" in item[filename_id]) for item in list_data])
     good_rv_list = copy(rv_list)
     good_rv_list[np.where(status_list!=1)] = np.nan
@@ -394,7 +438,8 @@ if 1:
     plt.subplot(2,1,2)
     # plt.plot(rv_list-bary_star_list,"x",color="red",label="Estimated Planet RV")
     plt.plot(mjdobs_list,np.zeros(rv_list.shape)+np.nanmean(rv_list-bary_star_list),linestyle=":",color="pink",label="Mean Planet RV")
-    plt.errorbar(mjdobs_list,good_rv_list-bary_star_list,yerr=rvsig_list,fmt="x",color="red",label="Estimated Planet RV ($1\sigma$)")
+    plt.errorbar(mjdobs_list,good_rv_list-bary_star_list,yerr=np.sqrt(rvsig_list**2+wvsolerr_list**2),fmt="x",color="red",label="Estimated Planet RV ($1\sigma$)")
+    plt.errorbar(mjdobs_list,good_rv_list-bary_star_list,yerr=rvsig_list,fmt="x",color="pink",label="Estimated Planet RV ($1\sigma$)")
     plt.plot(mjdobs_list,bad_rv_list-bary_star_list,linestyle="",marker="o",color="blue",label="Bad data")
     plt.xlabel("Exposure Index",fontsize=15)
     plt.ylabel("RV (km/s)",fontsize=15)
