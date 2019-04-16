@@ -147,91 +147,98 @@ if 0: # add filename
             pastnum = currnum
         exit()
     else:
-        sequence_list = [["/data/osiris_data/HR_8799_d/20130727/reduced_jb/s130727_a057001_Kbb_020.fits",1,0],
-                        ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a091001_Kbb_020.fits",2,0],
-                        ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a092001_Kbb_020.fits",2,1],
-                        ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a093001_Kbb_020.fits",2,2],
-                        ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a094001_Kbb_020.fits",2,3],
-                        ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a095001_Kbb_020.fits",2,4],
-                        ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a096001_Kbb_020.fits",2,5],
-                        ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a097001_Kbb_020.fits",2,6],
-                        ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a098001_Kbb_020.fits",2,7],
-                        ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a099001_Kbb_020.fits",2,8],
-                        ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a100001_Kbb_020.fits",2,9],
-                        ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a107001_Kbb_020.fits",3,0],
-                        ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a108001_Kbb_020.fits",3,1],
-                        ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a109001_Kbb_020.fits",3,2],
-                        ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a110001_Kbb_020.fits",3,3],
-                        ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a111001_Kbb_020.fits",3,4],
-                        ["/data/osiris_data/HR_8799_d/20150722/reduced_jb/s150722_a046001_Kbb_020.fits",4,0],
-                        ["/data/osiris_data/HR_8799_d/20150722/reduced_jb/s150722_a047001_Kbb_020.fits",4,1],
-                        ["/data/osiris_data/HR_8799_d/20150722/reduced_jb/s150722_a048001_Kbb_020.fits",4,2],
-                        ["/data/osiris_data/HR_8799_d/20150722/reduced_jb/s150722_a049001_Kbb_020.fits",4,3],
-                        ["/data/osiris_data/HR_8799_d/20150722/reduced_jb/s150722_a050001_Kbb_020.fits",4,4],
-                        ["/data/osiris_data/HR_8799_d/20150722/reduced_jb/s150722_a051001_Kbb_020.fits",4,5],
-                        ["/data/osiris_data/HR_8799_d/20150722/reduced_jb/s150722_a052001_Kbb_020.fits",4,6],
-                        ["/data/osiris_data/HR_8799_d/20150722/reduced_jb/s150722_a053001_Kbb_020.fits",4,7],
-                        ["/data/osiris_data/HR_8799_d/20150722/reduced_jb/s150722_a054001_Kbb_020.fits",4,8],
-                        ["/data/osiris_data/HR_8799_d/20150722/reduced_jb/s150722_a055001_Kbb_020.fits",4,9],
-                        ["/data/osiris_data/HR_8799_d/20150722/reduced_jb/s150722_a056001_Kbb_020.fits",4,10],
-                        ["/data/osiris_data/HR_8799_d/20150722/reduced_jb/s150722_a066001_Kbb_020.fits",5,0],
-                        ["/data/osiris_data/HR_8799_d/20150722/reduced_jb/s150722_a067001_Kbb_020.fits",5,1],
-                        ["/data/osiris_data/HR_8799_d/20150722/reduced_jb/s150722_a068001_Kbb_020.fits",5,2],
-                        ["/data/osiris_data/HR_8799_d/20150722/reduced_jb/s150722_a069001_Kbb_020.fits",5,3],
-                        ["/data/osiris_data/HR_8799_d/20150723/reduced_jb/s150723_a033001_Kbb_020.fits",6,0],
-                        ["/data/osiris_data/HR_8799_d/20150723/reduced_jb/s150723_a034001_Kbb_020.fits",6,1],
-                        ["/data/osiris_data/HR_8799_d/20150723/reduced_jb/s150723_a035001_Kbb_020.fits",6,2],
-                        ["/data/osiris_data/HR_8799_d/20150723/reduced_jb/s150723_a036001_Kbb_020.fits",6,3],
-                        ["/data/osiris_data/HR_8799_d/20150723/reduced_jb/s150723_a037001_Kbb_020.fits",6,4],
-                        ["/data/osiris_data/HR_8799_d/20150723/reduced_jb/s150723_a038001_Kbb_020.fits",6,5],
-                        ["/data/osiris_data/HR_8799_d/20150723/reduced_jb/s150723_a039001_Kbb_020.fits",6,6],
-                        ["/data/osiris_data/HR_8799_d/20150723/reduced_jb/s150723_a040001_Kbb_020.fits",6,7],
-                        ["/data/osiris_data/HR_8799_d/20150723/reduced_jb/s150723_a041001_Kbb_020.fits",6,8],
-                        ["/data/osiris_data/HR_8799_d/20150723/reduced_jb/s150723_a049001_Kbb_020.fits",7,0],
-                        ["/data/osiris_data/HR_8799_d/20150723/reduced_jb/s150723_a050001_Kbb_020.fits",7,1],
-                        ["/data/osiris_data/HR_8799_d/20150723/reduced_jb/s150723_a051001_Kbb_020.fits",7,2],
-                        ["/data/osiris_data/HR_8799_d/20150723/reduced_jb/s150723_a052001_Kbb_020.fits",7,3],
-                        ["/data/osiris_data/HR_8799_d/20150723/reduced_jb/s150723_a053001_Kbb_020.fits",7,4],
-                        ["/data/osiris_data/HR_8799_d/20150723/reduced_jb/s150723_a054001_Kbb_020.fits",7,5],
-                        ["/data/osiris_data/HR_8799_d/20150828/reduced_jb/s150828_a017001_Kbb_020.fits",8,0],
-                        ["/data/osiris_data/HR_8799_d/20150828/reduced_jb/s150828_a018001_Kbb_020.fits",8,1],
-                        ["/data/osiris_data/HR_8799_d/20150828/reduced_jb/s150828_a019001_Kbb_020.fits",8,2],
-                        ["/data/osiris_data/HR_8799_d/20150828/reduced_jb/s150828_a020001_Kbb_020.fits",8,3],
-                        ["/data/osiris_data/HR_8799_d/20150828/reduced_jb/s150828_a021001_Kbb_020.fits",8,4],
-                        ["/data/osiris_data/HR_8799_d/20150828/reduced_jb/s150828_a022001_Kbb_020.fits",8,5],
-                        ["/data/osiris_data/HR_8799_d/20150828/reduced_jb/s150828_a023001_Kbb_020.fits",8,6],
-                        ["/data/osiris_data/HR_8799_d/20150828/reduced_jb/s150828_a024001_Kbb_020.fits",8,7],
-                        ["/data/osiris_data/HR_8799_d/20150828/reduced_jb/s150828_a025001_Kbb_020.fits",8,8],
-                        ["/data/osiris_data/HR_8799_d/20150828/reduced_jb/s150828_a026001_Kbb_020.fits",8,9],
-                        ["/data/osiris_data/HR_8799_d/20150828/reduced_jb/s150828_a027001_Kbb_020.fits",8,10],
-                        ["/data/osiris_data/HR_8799_d/20150828/reduced_jb/s150828_a028001_Kbb_020.fits",8,11],
-                        ["/data/osiris_data/HR_8799_d/20150828/reduced_jb/s150828_a029001_Kbb_020.fits",8,12],
-                        ["/data/osiris_data/HR_8799_d/20150828/reduced_jb/s150828_a030001_Kbb_020.fits",8,13],
-                        ["/data/osiris_data/HR_8799_d/20150828/reduced_jb/s150828_a031001_Kbb_020.fits",8,14],
-                        ["/data/osiris_data/HR_8799_d/20150828/reduced_jb/s150828_a032001_Kbb_020.fits",8,15],
-                        ["/data/osiris_data/HR_8799_d/20150828/reduced_jb/s150828_a033001_Kbb_020.fits",8,16],
-                        ["/data/osiris_data/HR_8799_d/20150828/reduced_jb/s150828_a034001_Kbb_020.fits",8,17]]
+        sequence_list = [["/data/osiris_data/HR_8799_d/20130727/reduced_jb/s130727_a057001_Kbb_020.fits",1,0,0],
+                        ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a091001_Kbb_020.fits",2,0,0],
+                        ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a092001_Kbb_020.fits",2,1,0],
+                        ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a093001_Kbb_020.fits",2,2,0],
+                        ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a094001_Kbb_020.fits",2,3,0],
+                        ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a095001_Kbb_020.fits",2,4,0],
+                        ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a096001_Kbb_020.fits",2,5,0],
+                        ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a097001_Kbb_020.fits",2,6,0],
+                        ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a098001_Kbb_020.fits",2,7,0],
+                        ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a099001_Kbb_020.fits",2,8,0],
+                        ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a100001_Kbb_020.fits",2,9,0],
+                        ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a107001_Kbb_020.fits",3,0,0],
+                        ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a108001_Kbb_020.fits",3,1,0],
+                        ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a109001_Kbb_020.fits",3,2,0],
+                        ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a110001_Kbb_020.fits",3,3,0],
+                        ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a111001_Kbb_020.fits",3,4,0],
+                        ["/data/osiris_data/HR_8799_d/20150722/reduced_jb/s150722_a046001_Kbb_020.fits",4,0,0],
+                        ["/data/osiris_data/HR_8799_d/20150722/reduced_jb/s150722_a047001_Kbb_020.fits",4,1,0],
+                        ["/data/osiris_data/HR_8799_d/20150722/reduced_jb/s150722_a048001_Kbb_020.fits",4,2,0],
+                        ["/data/osiris_data/HR_8799_d/20150722/reduced_jb/s150722_a049001_Kbb_020.fits",4,3,0],
+                        ["/data/osiris_data/HR_8799_d/20150722/reduced_jb/s150722_a050001_Kbb_020.fits",4,4,0],
+                        ["/data/osiris_data/HR_8799_d/20150722/reduced_jb/s150722_a051001_Kbb_020.fits",4,5,0],
+                        ["/data/osiris_data/HR_8799_d/20150722/reduced_jb/s150722_a052001_Kbb_020.fits",4,6,0],
+                        ["/data/osiris_data/HR_8799_d/20150722/reduced_jb/s150722_a053001_Kbb_020.fits",4,7,0],
+                        ["/data/osiris_data/HR_8799_d/20150722/reduced_jb/s150722_a054001_Kbb_020.fits",4,8,0],
+                        ["/data/osiris_data/HR_8799_d/20150722/reduced_jb/s150722_a055001_Kbb_020.fits",4,9,0],
+                        ["/data/osiris_data/HR_8799_d/20150722/reduced_jb/s150722_a056001_Kbb_020.fits",4,10,0],
+                        ["/data/osiris_data/HR_8799_d/20150722/reduced_jb/s150722_a066001_Kbb_020.fits",5,0,0],
+                        ["/data/osiris_data/HR_8799_d/20150722/reduced_jb/s150722_a067001_Kbb_020.fits",5,1,0],
+                        ["/data/osiris_data/HR_8799_d/20150722/reduced_jb/s150722_a068001_Kbb_020.fits",5,2,0],
+                        ["/data/osiris_data/HR_8799_d/20150722/reduced_jb/s150722_a069001_Kbb_020.fits",5,3,0],
+                        ["/data/osiris_data/HR_8799_d/20150723/reduced_jb/s150723_a033001_Kbb_020.fits",6,0,0],
+                        ["/data/osiris_data/HR_8799_d/20150723/reduced_jb/s150723_a034001_Kbb_020.fits",6,1,0],
+                        ["/data/osiris_data/HR_8799_d/20150723/reduced_jb/s150723_a035001_Kbb_020.fits",6,2,0],
+                        ["/data/osiris_data/HR_8799_d/20150723/reduced_jb/s150723_a036001_Kbb_020.fits",6,3,0],
+                        ["/data/osiris_data/HR_8799_d/20150723/reduced_jb/s150723_a037001_Kbb_020.fits",6,4,0],
+                        ["/data/osiris_data/HR_8799_d/20150723/reduced_jb/s150723_a038001_Kbb_020.fits",6,5,0],
+                        ["/data/osiris_data/HR_8799_d/20150723/reduced_jb/s150723_a039001_Kbb_020.fits",6,6,0],
+                        ["/data/osiris_data/HR_8799_d/20150723/reduced_jb/s150723_a040001_Kbb_020.fits",6,7,0],
+                        ["/data/osiris_data/HR_8799_d/20150723/reduced_jb/s150723_a041001_Kbb_020.fits",6,8,0],
+                        ["/data/osiris_data/HR_8799_d/20150723/reduced_jb/s150723_a049001_Kbb_020.fits",7,0,0],
+                        ["/data/osiris_data/HR_8799_d/20150723/reduced_jb/s150723_a050001_Kbb_020.fits",7,1,0],
+                        ["/data/osiris_data/HR_8799_d/20150723/reduced_jb/s150723_a051001_Kbb_020.fits",7,2,0],
+                        ["/data/osiris_data/HR_8799_d/20150723/reduced_jb/s150723_a052001_Kbb_020.fits",7,3,0],
+                        ["/data/osiris_data/HR_8799_d/20150723/reduced_jb/s150723_a053001_Kbb_020.fits",7,4,0],
+                        ["/data/osiris_data/HR_8799_d/20150723/reduced_jb/s150723_a054001_Kbb_020.fits",7,5,0],
+                        ["/data/osiris_data/HR_8799_d/20150828/reduced_jb/s150828_a017001_Kbb_020.fits",8,0,0],
+                        ["/data/osiris_data/HR_8799_d/20150828/reduced_jb/s150828_a018001_Kbb_020.fits",8,1,0],
+                        ["/data/osiris_data/HR_8799_d/20150828/reduced_jb/s150828_a019001_Kbb_020.fits",8,2,0],
+                        ["/data/osiris_data/HR_8799_d/20150828/reduced_jb/s150828_a020001_Kbb_020.fits",8,3,0],
+                        ["/data/osiris_data/HR_8799_d/20150828/reduced_jb/s150828_a021001_Kbb_020.fits",8,4,0],
+                        ["/data/osiris_data/HR_8799_d/20150828/reduced_jb/s150828_a022001_Kbb_020.fits",8,5,0],
+                        ["/data/osiris_data/HR_8799_d/20150828/reduced_jb/s150828_a023001_Kbb_020.fits",8,6,0],
+                        ["/data/osiris_data/HR_8799_d/20150828/reduced_jb/s150828_a024001_Kbb_020.fits",8,7,0],
+                        ["/data/osiris_data/HR_8799_d/20150828/reduced_jb/s150828_a025001_Kbb_020.fits",8,8,0],
+                        ["/data/osiris_data/HR_8799_d/20150828/reduced_jb/s150828_a026001_Kbb_020.fits",8,9,0],
+                        ["/data/osiris_data/HR_8799_d/20150828/reduced_jb/s150828_a027001_Kbb_020.fits",8,10,0],
+                        ["/data/osiris_data/HR_8799_d/20150828/reduced_jb/s150828_a028001_Kbb_020.fits",8,11,0],
+                        ["/data/osiris_data/HR_8799_d/20150828/reduced_jb/s150828_a029001_Kbb_020.fits",8,12,0],
+                        ["/data/osiris_data/HR_8799_d/20150828/reduced_jb/s150828_a030001_Kbb_020.fits",8,13,0],
+                        ["/data/osiris_data/HR_8799_d/20150828/reduced_jb/s150828_a031001_Kbb_020.fits",8,14,0],
+                        ["/data/osiris_data/HR_8799_d/20150828/reduced_jb/s150828_a032001_Kbb_020.fits",8,15,0],
+                        ["/data/osiris_data/HR_8799_d/20150828/reduced_jb/s150828_a033001_Kbb_020.fits",8,16,0],
+                        ["/data/osiris_data/HR_8799_d/20150828/reduced_jb/s150828_a034001_Kbb_020.fits",8,17,0]]
 
     try:
-        sequence_id = new_colnames.index("sequence")
+        sequence_id = old_colnames.index("sequence")
     except:
         new_colnames.append("sequence")
         new_list_data = [item+[np.nan,] for item in new_list_data]
         sequence_id = new_colnames.index("sequence")
     try:
-        sequence_it_id = new_colnames.index("sequence it")
+        sequence_it_id = old_colnames.index("sequence it")
     except:
         new_colnames.append("sequence it")
         new_list_data = [item+[np.nan,] for item in new_list_data]
         sequence_it_id = new_colnames.index("sequence it")
-    filename_id = new_colnames.index("filename")
+    try:
+        status_id = old_colnames.index("status")
+    except:
+        new_colnames.append("status")
+        new_list_data = [item+[np.nan,] for item in new_list_data]
+        status_id = new_colnames.index("status")
+    filename_id = old_colnames.index("filename")
 
     for k,item in enumerate(new_list_data):
         filename = item[filename_id]
-        for seq_filename, sec_num,sec_it in sequence_list:
+        for seq_filename, sec_num,sec_it,status_it in sequence_list:
             if filename == seq_filename:
                 new_list_data[k][sequence_id] = sec_num
                 new_list_data[k][sequence_it_id] = sec_it
+                new_list_data[k][status_id] = status_it
 
 if 0:
     def determine_mosaic_offsets_from_header(prihdr_list):
@@ -315,6 +322,56 @@ if 0:
             new_list_data[seq_ind][xoffset_id] = dx
             new_list_data[seq_ind][yoffset_id] = dy
 
+
+if 0: # wavelength solution error
+    try:
+        wvsolerr_id = old_colnames.index("wv sol err")
+    except:
+        new_colnames.append("wv sol err")
+        new_list_data = [item+[np.nan,] for item in new_list_data]
+        wvsolerr_id = new_colnames.index("wv sol err")
+    filename_id = new_colnames.index("filename")
+    ifs_filter_id = new_colnames.index("IFS filter")
+    MJDOBS_id = new_colnames.index("MJD-OBS")
+
+    for k,item in enumerate(new_list_data):
+        wvsolerr = np.nan
+        MJDOBS = float(item[MJDOBS_id])
+        if item[ifs_filter_id] == "Kbb":
+            #20100711 b = 20100712 b = 20100715 c = 20101104 c
+            if (55388.<MJDOBS) and (MJDOBS<55505.):
+                wvsolerr = 2.2
+            #20110723 c = 20110724 c = 20110725 c
+            elif (55765.<MJDOBS) and (MJDOBS<55768.):
+                wvsolerr = 2.9
+            #20130725 b = 20130726 b = 20130727 b
+            elif (56498.<MJDOBS) and (MJDOBS<56501.):
+                wvsolerr = 1.6
+            # 2015 d
+            elif (57223.<MJDOBS) and (MJDOBS<57263.):
+                wvsolerr = 1.6
+            #20161106 b = 20161107 b= 20161108 b
+            elif (57698.<MJDOBS) and (MJDOBS<57701.):
+                wvsolerr = 0.6
+            #20171103 c
+            #20180722 b
+            elif (58060.<MJDOBS) and (MJDOBS<58322.):
+                wvsolerr = 1.0
+        elif item[ifs_filter_id] == "Hbb":
+            pass
+            #20100713 b  = 20101028 c = 20101104 c
+            if (55388.<MJDOBS) and (MJDOBS<55505.):
+                wvsolerr = 1.1
+            #20110724 c = 20110725 c
+            elif (55765.<MJDOBS) and (MJDOBS<55768.):
+                wvsolerr = 1.5
+            #20171103 c
+            elif (58060.<MJDOBS) and (MJDOBS<58322.):
+                wvsolerr = 0.8
+        elif item[ifs_filter_id] == "Jbb":
+            pass
+        new_list_data[k][wvsolerr_id] = wvsolerr
+
 from scipy.interpolate import interp1d
 def get_err_from_posterior(x,posterior):
     ind = np.argsort(posterior)
@@ -332,7 +389,7 @@ def get_err_from_posterior(x,posterior):
     else:
         rf = interp1d(cum_posterior[argmax_post::],x[argmax_post::],bounds_error=False,fill_value=np.nan)
         rx = rf(1-0.6827)
-    return x[argmax_post],(rx-lx)/2.
+    return x[argmax_post],(rx-lx)/2.,argmax_post
 
 if 1:
     from scipy.signal import correlate2d
@@ -366,6 +423,12 @@ if 1:
         new_colnames.append("RVcensig")
         new_list_data = [item+[np.nan,] for item in new_list_data]
         rvcensig_id = new_colnames.index("RVcensig")
+    try:
+        snr_id = old_colnames.index("snr")
+    except:
+        new_colnames.append("snr")
+        new_list_data = [item+[np.nan,] for item in new_list_data]
+        snr_id = new_colnames.index("snr")
 
     filename_id = new_colnames.index("filename")
     bary_rv_id = new_colnames.index("barycenter rv")
@@ -385,7 +448,7 @@ if 1:
     # init_wv = CRVAL1/1000. # wv for first slice in mum
 
     suffix = "_outputHPF_cutoff40_sherlock_v1_search"
-    myfolder = "sherlock/20190324_HPF_only"
+    myfolder = "sherlock/20190412_HPF_only"
     for k,item in enumerate(old_list_data):
         filename = item[filename_id]
         print(filename)
@@ -427,6 +490,7 @@ if 1:
         # plt.imshow(guess_rv_im)
         # plt.show()
         try:
+        # if 1:
             guesspos = np.unravel_index(np.nanargmax(guess_rv_im),guess_rv_im.shape)
             guess_y,guess_x = guesspos
 
@@ -445,17 +509,26 @@ if 1:
             logposterior = hdulist[0].data[0,0,9,0:NplanetRV_hd,ymax,xmax]
             posterior = np.exp(logposterior-np.nanmax(logposterior))
 
+
             new_list_data[k][kcen_id] = ymax
             new_list_data[k][lcen_id] = xmax
-            new_list_data[k][rvcen_id],new_list_data[k][rvcensig_id] = get_err_from_posterior(planetRV_hd,posterior)
+            new_list_data[k][rvcen_id],new_list_data[k][rvcensig_id],argmax_post = get_err_from_posterior(planetRV_hd,posterior)
             new_list_data[k][cen_filename_id] = os.path.join(os.path.dirname(filename),myfolder,
                                                os.path.basename(filename).replace(".fits",suffix+".fits"))
+
+
+            snr_cube_hd = hdulist[0].data[0,0,10,0:NplanetRV_hd,:,:]
+            snr_cube = hdulist[0].data[0,0,10,NplanetRV_hd::,:,:]
+            snr_cube[np.where(np.abs(planetRV)<100)] = np.nan
+            snr_std = np.nanstd(snr_cube)
+            new_list_data[k][snr_id] = snr_cube_hd[argmax_post,ymax,xmax]/snr_std
             print(new_list_data[k][rvcen_id],planetRV_hd[zmax],planetRV_hd[zmax]-(bary_rv+rv_star))
         except:
             new_list_data[k][kcen_id] = np.nan
             new_list_data[k][lcen_id] = np.nan
             new_list_data[k][rvcen_id],new_list_data[k][rvcensig_id] = np.nan,np.nan
             new_list_data[k][cen_filename_id] = np.nan
+            new_list_data[k][snr_id] = np.nan
 
 print("NEW")
 for item in new_list_data:
@@ -470,70 +543,7 @@ with open(fileinfos_filename, 'w+') as csvfile:
     csvwriter = csv.writer(csvfile, delimiter=';')
     csvwriter.writerows([new_colnames])
     csvwriter.writerows(new_list_data)
-# exit()
+exit()
 
 
 
-
-with open(fileinfos_filename, 'w+') as csvfile:
-    csvwriter = csv.writer(csvfile, delimiter=';')
-    csvwriter.writerows([col_names])
-    csvwriter.writerows(np_tableval_str)
-
-
-#
-# if 0:
-#     root = ET.Element("HR8799")
-#     userelement = ET.Element("c")
-#     root.append(userelement)
-#     tree = ET.ElementTree(root)
-#     with open(fileinfos_filename, "wb") as fh:
-#         tree.write(fh)
-#     exit()
-# else:
-#     tree = ET.parse(fileinfos_filename)
-#     root = tree.getroot()
-#     root_children = root.getchildren()
-#     planet_c = root.find("c")
-#     # exit()
-#
-#
-# # planet separation
-# if 1:
-#     OSIRISDATA = "/data/osiris_data/"
-#     if 1:
-#         foldername = "HR_8799_c"
-#         sep = 0.950
-#         telluric = os.path.join(OSIRISDATA,"HR_8799_c/20100715/reduced_telluric/HD_210501","s100715_a005001_Kbb_020.fits")
-#         template_spec = os.path.join(OSIRISDATA,"hr8799c_osiris_template.save")
-#     year = "*"
-#     reductionname = "reduced_jb"
-#     filenamefilter = "s*_a*001_Kbb_020.fits"
-#
-#     filelist = glob.glob(os.path.join(OSIRISDATA,foldername,year,reductionname,filenamefilter))
-#     filelist.sort()
-#     for filename in filelist:
-#         print(filename)
-#         filebasename = os.path.basename(filename)
-#         if planet_c.find(filebasename) is None:
-#             fileelement = ET.Element(filebasename)
-#             planet_c.append(fileelement)
-#         else:
-#             fileelement = planet_c.find(filebasename)
-#
-#         print(fileelement.tag)
-#         print(fileelement.attrib)
-#
-#         fileelement.set("sep","0.950")
-#
-#
-# if 1:
-#     tree = ET.ElementTree(root)
-#     with open(fileinfos_filename, "wb") as fh:
-#         tree.write(fh)
-# exit()
-#
-#
-# # HR_8799_c/20110723/reduced_quinn/sherlock/logs/parallelized_osiris_s110723_a025001_tlc_Kbb_020.out
-# # HR_8799_c/20110723/reduced_quinn/sherlock/polyfit_ADIcenter/
-# # HR_8799_c/20110723/reduced_quinn/sherlock/polyfit_ADIcenter/s110723_a017001_tlc_Kbb_020_output_centerADI.fits

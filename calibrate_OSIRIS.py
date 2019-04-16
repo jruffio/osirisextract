@@ -488,10 +488,10 @@ if 1:
     #20100713 b  = 20101028 c = 20101104 c
     #20110724 c = 20110725 c
     #20171103 c
-    IFSfilter = "Hbb"
+    IFSfilter = "Kbb"
     inputdir = "/data/osiris_data/HR_8799_*"
     # filename_filter = "/home/sda/jruffio/osiris_data/HR_8799_d/20150720/reduced_sky_Kbb/s*_Kbb_020.fits"
-    filename_filter = os.path.join(inputdir,"2017*/reduced_sky_jb/s*_"+IFSfilter+"_020.fits")
+    filename_filter = os.path.join(inputdir,"2015*/reduced_sky_jb/s*_"+IFSfilter+"_020.fits")
     # filename_filter = os.path.join(inputdir,"20101104/reduced_sky_jb/s*_Kbb_020.fits")
     # filename_filter = os.path.join(inputdir,"2013*/reduced_sky_jb/s*_Kbb_020.fits")
     print(filename_filter)
@@ -628,45 +628,15 @@ if 1:
     epoch_unique = np.unique(epoch_list)
     for filename,epoch in zip(filelist,epoch_list):
         print(os.path.join(os.path.dirname(filelist[np.where(epoch == epoch_list)][0]),"..","master_wvshifts_"+IFSfilter+".fits"))
-        print(cst_offset_list[np.where(epoch == epoch_list)])
-        hdulist = pyfits.HDUList()
-        hdulist.append(pyfits.PrimaryHDU(data=(master_wvshift+np.mean(cst_offset_list[np.where(epoch == epoch_list)]))*dwv))
-        try:
-            hdulist.writeto(os.path.join(os.path.dirname(filelist[np.where(epoch == epoch_list)][0]),"..","master_wvshifts_"+IFSfilter+".fits"), overwrite=True)
-        except TypeError:
-            hdulist.writeto(os.path.join(os.path.dirname(filelist[np.where(epoch == epoch_list)][0]),"..","master_wvshifts_"+IFSfilter+".fits"), clobber=True)
-        hdulist.close()
+        print(cst_offset_list[np.where(epoch == epoch_list)]*38.167938931297705)
+        print((cst_offset_list[np.where(epoch == epoch_list)]-cst_offset_list[np.where(epoch == epoch_list)])*38.167938931297705)
+        # hdulist = pyfits.HDUList()
+        # hdulist.append(pyfits.PrimaryHDU(data=(master_wvshift+np.mean(cst_offset_list[np.where(epoch == epoch_list)]))*dwv))
+        # try:
+        #     hdulist.writeto(os.path.join(os.path.dirname(filelist[np.where(epoch == epoch_list)][0]),"..","master_wvshifts_"+IFSfilter+".fits"), overwrite=True)
+        # except TypeError:
+        #     hdulist.writeto(os.path.join(os.path.dirname(filelist[np.where(epoch == epoch_list)][0]),"..","master_wvshifts_"+IFSfilter+".fits"), clobber=True)
+        # hdulist.close()
 
     plt.show()
 
-
-
-    # plt.subplot(1,4,1)
-    # plt.imshow(wvshift_arr_list[0]/dwv,interpolation="nearest")
-    # plt.clim([-0.5,0.5])
-    # plt.colorbar()
-    # plt.subplot(1,4,2)
-    # plt.imshow(wvshift_arr_list[1]/dwv,interpolation="nearest")
-    # plt.clim([-0.5,0.5])
-    # plt.colorbar()
-    # plt.subplot(1,4,3)
-    # plt.imshow(wvshift_arr_list[2]/dwv,interpolation="nearest")
-    # plt.clim([-0.5,0.5])
-    # plt.colorbar()
-    # plt.subplot(1,4,4)
-    # plt.imshow(wvshift_arr_list[3]/dwv,interpolation="nearest")
-    # plt.clim([-0.5,0.5])
-    # plt.colorbar()
-    # plt.show()
-    #
-    # exit()
-    # plt.plot(wvs,sky_HPF/np.nanstd(sky_HPF),label=os.path.basename(filename))
-    #
-    # plt.plot(skybg_wvs,skybg_spec/np.nanstd(skybg_spec))
-    # plt.legend()
-    #
-    # plt.figure(2)
-    # for ccf_arr,filename in zip(ccf_arr_list,filelist):
-    #     plt.plot(dwvs_CCF/dwv,ccf_arr,label=os.path.basename(filename))
-    # plt.legend()
-    plt.show()

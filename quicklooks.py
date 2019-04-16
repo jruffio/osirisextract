@@ -14,8 +14,8 @@ from copy import copy
 out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
 
 # planet = "b"
-planet = "c"
-# planet = "d"
+# planet = "c"
+planet = "d"
 
 # IFSfilter = "Kbb"
 # IFSfilter = "Hbb"
@@ -58,40 +58,40 @@ print(len(filelist_sorted)) #37
 # exit()
 new_list_data = []
 for filename in filelist_sorted:
-    if 1 or "Kbb" in list_data[filelist.index(filename)][ifs_filter_id] or \
+    if 0 or "Kbb" in list_data[filelist.index(filename)][ifs_filter_id] or \
        "Hbb" in list_data[filelist.index(filename)][ifs_filter_id]:
         if 1:#"20190324_HPF_only" in list_data[filelist.index(filename)][cen_filename_id]:
             new_list_data.append(list_data[filelist.index(filename)])
 list_data=new_list_data
 # print(new_list_data)
 # exit()
-valid_d_files = ["s150720_a091001_Kbb_020.fits",
-                 "s150720_a092001_Kbb_020.fits",
-                 "s150720_a093001_Kbb_020.fits",
-                 "s150720_a095001_Kbb_020.fits",
-                 "s150720_a096001_Kbb_020.fits",
-                 "s150720_a097001_Kbb_020.fits",
-                 "s150720_a098001_Kbb_020.fits",
-                 "s150720_a099001_Kbb_020.fits",
-                 "s150720_a100001_Kbb_020.fits",
-                 "s150722_a052001_Kbb_020.fits",
-                 "s150722_a054001_Kbb_020.fits",
-                 "s150723_a036001_Kbb_020.fits",
-                 "s150723_a037001_Kbb_020.fits",
-                 "s150723_a038001_Kbb_020.fits",
-                 ]
-if "d" in planet:
-    new_list_data = []
-    for k,item in enumerate(list_data):
-        for dfile in valid_d_files:
-            if dfile in item[filename_id]:
-                new_list_data.append(item)
-    list_data = new_list_data
+# valid_d_files = ["s150720_a091001_Kbb_020.fits",
+#                  "s150720_a092001_Kbb_020.fits",
+#                  "s150720_a093001_Kbb_020.fits",
+#                  "s150720_a095001_Kbb_020.fits",
+#                  "s150720_a096001_Kbb_020.fits",
+#                  "s150720_a097001_Kbb_020.fits",
+#                  "s150720_a098001_Kbb_020.fits",
+#                  "s150720_a099001_Kbb_020.fits",
+#                  "s150720_a100001_Kbb_020.fits",
+#                  "s150722_a052001_Kbb_020.fits",
+#                  "s150722_a054001_Kbb_020.fits",
+#                  "s150723_a036001_Kbb_020.fits",
+#                  "s150723_a037001_Kbb_020.fits",
+#                  "s150723_a038001_Kbb_020.fits",
+#                  ]
+# if "d" in planet:
+#     new_list_data = []
+#     for k,item in enumerate(list_data):
+#         for dfile in valid_d_files:
+#             if dfile in item[filename_id]:
+#                 new_list_data.append(item)
+#     list_data = new_list_data
 
 N_lines =  len(list_data)
 
 # plot 2D images
-if 0:
+if 1:
     # if IFSfilter=="Kbb": #Kbb 1965.0 0.25
     #     CRVAL1 = 1965.
     #     CDELT1 = 0.25
@@ -118,12 +118,15 @@ if 0:
         ax = ax_list[k]
 
         # reducfilename = os.path.join(os.path.dirname(item[filename_id]),"sherlock","20190309_HPF_only",os.path.basename(item[filename_id]).replace(".fits","_outputHPF_cutoff40_sherlock_v1_search.fits"))
-        reducfilename = item[cen_filename_id].replace("20190324_HPF_only","20190401_HPF_only")
+        # reducfilename = item[cen_filename_id].replace("20190324_HPF_only","20190401_HPF_only")
+        reducfilename = item[cen_filename_id]
         plt.sca(ax)
         plt.ylabel(os.path.basename(item[filename_id]).split("bb_")[0],fontsize=10)
         # if "20190324_HPF_only" not in reducfilename:
         #     continue
         print(k,item)
+        if "20190412" not in reducfilename:
+            continue
         # print(reducfilename)
         # reducfilename = item[cen_filename_id].replace("20190117_HPFonly","20190125_HPFonly").replace("sherlock_v0","sherlock_v1_search")
         # reducfilename = item[cen_filename_id].replace("20190117_HPFonly","20190125_HPFonly_cov").replace("sherlock_v0","sherlock_v1_search_empcov")
@@ -142,8 +145,8 @@ if 0:
         # rv_per_pix = 3e5*dwv/(init_wv+dwv*nl//2) # 38.167938931297705
 
         hdulist = pyfits.open(reducfilename)
-        cube_hd = hdulist[0].data[0,0,0,0:NplanetRV_hd,:,:]
-        cube = hdulist[0].data[0,0,0,NplanetRV_hd::,:,:]
+        cube_hd = hdulist[0].data[-1,0,0,0:NplanetRV_hd,:,:]
+        cube = hdulist[0].data[-1,0,0,NplanetRV_hd::,:,:]
 
         bary_rv = -float(item[bary_rv_id])/1000. # RV in km/s
         rv_star = -12.6#-12.6+-1.4km/s HR 8799 Rob and Simbad
@@ -200,9 +203,9 @@ if 0:
 
     # plt.show()
     # f.subplots_adjust(wspace=0,hspace=0)
-    print("Saving "+os.path.join(out_pngs,"HR8799"+planet+"_"+suffix+"_images.pdf"))
-    plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+suffix+"_images.png"),bbox_inches='tight')
-    plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+suffix+"_images.pdf"),bbox_inches='tight')
+    print("Saving "+os.path.join(out_pngs,"HR_8799_"+planet,"HR8799"+planet+"_"+suffix+"_images.pdf"))
+    plt.savefig(os.path.join(out_pngs,"HR_8799_"+planet,"HR8799"+planet+"_"+suffix+"_images.png"),bbox_inches='tight')
+    plt.savefig(os.path.join(out_pngs,"HR_8799_"+planet,"HR8799"+planet+"_"+suffix+"_images.pdf"),bbox_inches='tight')
     # print("Saving "+os.path.join(out_pngs,"HR8799"+planet+"_"+suffix+"_images_tentativedetec.pdf"))
     # plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+suffix+"_images_tentativedetec.pdf"),bbox_inches='tight')
     # plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+suffix+"_images_tentativedetec.png"),bbox_inches='tight')

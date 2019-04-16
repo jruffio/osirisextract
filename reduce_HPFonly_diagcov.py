@@ -260,6 +260,19 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
     tmpwhere = np.where(np.isfinite(badpix_np))
     chi2ref = 0#np.nansum((originalHPF_np[tmpwhere]/sigmas_imgs_np[tmpwhere])**2)
 
+
+    # import matplotlib.pyplot as plt
+    # cube_cp = copy(original_np)
+    # cube_cp[np.where(cube_cp < np.nanmedian(cube_cp,axis=(0,1))[None,None,:])] = np.nan
+    LPF_self_ref,HPF_self_ref = LPFvsHPF(np.nanmean(original_np,axis=(0,1)),cutoff)
+    self_line_spec = HPF_self_ref/LPF_self_ref
+    # plt.plot(np.nanmean(cube_cp,axis=(0,1)))
+    # plt.plot(LPF_self_ref)
+    # plt.plot(HPF_self_ref)
+    # plt.show()
+    # exit()
+
+
     for curr_k,curr_l,row,col in zip(curr_k_indices,curr_l_indices,row_indices,col_indices):
         # print("coucou3")
         if planet_search:
@@ -415,6 +428,7 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
 
                     new_line_list = kl_basis
 
+                new_line_list =np.concatenate([new_line_list,self_line_spec[None,:]])
 
                     # plt.plot(line_spec,label="line_spec")
                 for line_spec in new_line_list:
@@ -779,27 +793,27 @@ if __name__ == "__main__":
         # date = "161106"
         # date = "180722"
         planet = "c"
-        # date = "100715"
+        date = "100715"
         # date = "101028"
         # date = "101104"
         # date = "110723"
         # date = "110724"
         # date = "110725"
         # date = "130726"
-        date = "171103"
+        # date = "171103"
         # planet = "d"
         # date = "150720"
         # date = "150722"
         # date = "150723"
         # date = "150828"
-        # IFSfilter = "Kbb"
-        IFSfilter = "Hbb"
+        IFSfilter = "Kbb"
+        # IFSfilter = "Hbb"
         # IFSfilter = "Jbb" # "Kbb" or "Hbb"
         scale = "020"
         # scale = "035"
 
         inputDir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/"
-        outputdir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/20190412_HPF_only/"
+        outputdir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/20190415_HPF_only/"
         # outputdir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/20190305_HPF_only_noperscor/"
         # outputdir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/20190228_mol_temp/"
 
@@ -811,7 +825,7 @@ if __name__ == "__main__":
         filelist.sort()
         print(filelist)
         # exit()
-        filelist = [filelist[-4]]
+        # filelist = [filelist[0]]
         # print(os.path.join(inputDir,"s"+date+"*"+IFSfilter+"_020.fits"))
         # filelist = filelist[4:]
         # filelist = filelist[len(filelist)-3:len(filelist)-2]
@@ -932,8 +946,8 @@ if __name__ == "__main__":
         pairsub = "pairsub" in inputDir
 
         numbasis_list = [1]
-        if planet == "d" or (IFSfilter == "Hbb" and date == "171103"):
-            numbasis_list = [1,2,3]
+        # if planet == "d" or (IFSfilter == "Hbb" and date == "171103"):
+        #     numbasis_list = [1,2]#[1,2,3]
 
         padding = 5
         nan_mask_boxsize=3

@@ -404,7 +404,7 @@ if 0:
             new_list_data[seq_ind][xoffset_id] = dx
             new_list_data[seq_ind][yoffset_id] = dy
 
-if 1: # wavelength solution error
+if 0: # wavelength solution error
     try:
         wvsolerr_id = old_colnames.index("wv sol err")
     except:
@@ -529,7 +529,7 @@ if 1:
     # init_wv = CRVAL1/1000. # wv for first slice in mum
 
     suffix = "_outputHPF_cutoff40_sherlock_v1_search"
-    myfolder = "sherlock/20190409_HPF_only"
+    myfolder = "sherlock/20190412_HPF_only"
     for k,item in enumerate(old_list_data):
         filename = item[filename_id]
         print(filename)
@@ -588,6 +588,7 @@ if 1:
 
             logposterior = hdulist[0].data[0,0,9,0:NplanetRV_hd,ymax,xmax]
             posterior = np.exp(logposterior-np.nanmax(logposterior))
+
 
             new_list_data[k][kcen_id] = ymax
             new_list_data[k][lcen_id] = xmax
