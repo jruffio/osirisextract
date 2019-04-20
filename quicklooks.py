@@ -125,7 +125,7 @@ if 1:
         # if "20190324_HPF_only" not in reducfilename:
         #     continue
         print(k,item)
-        if "20190412" not in reducfilename:
+        if "20190416" not in reducfilename:
             continue
         # print(reducfilename)
         # reducfilename = item[cen_filename_id].replace("20190117_HPFonly","20190125_HPFonly").replace("sherlock_v0","sherlock_v1_search")

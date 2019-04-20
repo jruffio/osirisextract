@@ -491,7 +491,7 @@ if 1:
     IFSfilter = "Kbb"
     inputdir = "/data/osiris_data/HR_8799_*"
     # filename_filter = "/home/sda/jruffio/osiris_data/HR_8799_d/20150720/reduced_sky_Kbb/s*_Kbb_020.fits"
-    filename_filter = os.path.join(inputdir,"2015*/reduced_sky_jb/s*_"+IFSfilter+"_020.fits")
+    filename_filter = os.path.join(inputdir,"2010*/reduced_sky_jb/s*_"+IFSfilter+"_020.fits")
     # filename_filter = os.path.join(inputdir,"20101104/reduced_sky_jb/s*_Kbb_020.fits")
     # filename_filter = os.path.join(inputdir,"2013*/reduced_sky_jb/s*_Kbb_020.fits")
     print(filename_filter)
@@ -608,8 +608,10 @@ if 1:
 
         cst_offset_list.append(np.nanmean(diff))
         hdulist = pyfits.open(filename)
-        temp_list.append(float(hdulist[0].header["DTMP6"]))
-        print(filename,np.nanmean(diff),float(hdulist[0].header["DTMP6"]))
+        temp_list.append(float(hdulist[0].header["DTMP7"]))
+        print(filename,np.nanmean(diff),float(hdulist[0].header["DTMP7"]))
+        plt.figure(4)
+        plt.scatter(float(hdulist[0].header["DTMP7"]),np.nanmean(diff),label=filename)
 
 
     mymed = np.nanmedian(master_wvshift)
@@ -622,14 +624,21 @@ if 1:
     plt.clim([-10+mymed*38.167938931297705,10+mymed*38.167938931297705])
     plt.colorbar()
 
+    plt.figure(4)
+    plt.legend()
+
+    print("error",np.std(cst_offset_list)/std_factor[len(cst_offset_list)]*38,std_factor[len(cst_offset_list)])
+
     cst_offset_list = np.array(cst_offset_list)
     filelist = np.array(filelist)
     epoch_list = np.array([filename.split(os.path.sep)[4] for filename in filelist])
     epoch_unique = np.unique(epoch_list)
-    for filename,epoch in zip(filelist,epoch_list):
-        print(os.path.join(os.path.dirname(filelist[np.where(epoch == epoch_list)][0]),"..","master_wvshifts_"+IFSfilter+".fits"))
-        print(cst_offset_list[np.where(epoch == epoch_list)]*38.167938931297705)
-        print((cst_offset_list[np.where(epoch == epoch_list)]-cst_offset_list[np.where(epoch == epoch_list)])*38.167938931297705)
+    for filename,epoch,temp in zip(filelist,epoch_list,temp_list):
+        pass
+        # print(temp)
+        # print(os.path.join(os.path.dirname(filelist[np.where(epoch == epoch_list)][0]),"..","master_wvshifts_"+IFSfilter+".fits"))
+        # print(cst_offset_list[np.where(epoch == epoch_list)]*38.167938931297705)
+        # print((cst_offset_list[np.where(epoch == epoch_list)]-cst_offset_list[np.where(epoch == epoch_list)])*38.167938931297705)
         # hdulist = pyfits.HDUList()
         # hdulist.append(pyfits.PrimaryHDU(data=(master_wvshift+np.mean(cst_offset_list[np.where(epoch == epoch_list)]))*dwv))
         # try:

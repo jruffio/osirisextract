@@ -111,6 +111,37 @@ if 0: # add MJD-OBS
         prihdr0 = hdulist[0].header
         new_list_data[k][MJDOBS_id] = prihdr0["MJD-OBS"]
 
+if 0: # add Temperature
+    filename_id = new_colnames.index("filename")
+    try:
+        DTMP6_id = new_colnames.index("DTMP6")
+    except:
+        new_colnames.append("DTMP6")
+        new_list_data = [item+[np.nan,] for item in new_list_data]
+        DTMP6_id = new_colnames.index("DTMP6")
+
+    for k,item in enumerate(new_list_data):
+        hdulist = pyfits.open(item[filename_id])
+        prihdr0 = hdulist[0].header
+        new_list_data[k][DTMP6_id] = prihdr0["DTMP7"]
+
+if 1: # add exposure time
+    filename_id = new_colnames.index("filename")
+    try:
+        itime_id = new_colnames.index("itime")
+    except:
+        new_colnames.append("itime")
+        new_list_data = [item+[np.nan,] for item in new_list_data]
+        itime_id = new_colnames.index("itime")
+
+    for k,item in enumerate(new_list_data):
+        hdulist = pyfits.open(item[filename_id])
+        prihdr0 = hdulist[0].header
+        if prihdr0["MJD-OBS"]>57698:
+            new_list_data[k][itime_id] = float(prihdr0["ITIME"])/1000
+        else:
+            new_list_data[k][itime_id] = float(prihdr0["ITIME"])
+
 if 0: # add barycenter RV
     from barycorrpy import get_BC_vel
     filename_id = new_colnames.index("filename")
@@ -472,7 +503,7 @@ def get_err_from_posterior(x,posterior):
         rx = rf(1-0.6827)
     return x[argmax_post],(rx-lx)/2.,argmax_post
 
-if 1:
+if 0:
     from scipy.signal import correlate2d
     try:
         cen_filename_id = old_colnames.index("cen filename")
@@ -530,6 +561,7 @@ if 1:
 
     suffix = "_outputHPF_cutoff40_sherlock_v1_search"
     myfolder = "sherlock/20190412_HPF_only"
+    # myfolder = "sherlock/20190416_HPF_only"
     for k,item in enumerate(old_list_data):
         filename = item[filename_id]
         print(filename)

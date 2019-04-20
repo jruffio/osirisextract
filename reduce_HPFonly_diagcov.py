@@ -261,16 +261,16 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
     chi2ref = 0#np.nansum((originalHPF_np[tmpwhere]/sigmas_imgs_np[tmpwhere])**2)
 
 
-    # import matplotlib.pyplot as plt
-    # cube_cp = copy(original_np)
-    # cube_cp[np.where(cube_cp < np.nanmedian(cube_cp,axis=(0,1))[None,None,:])] = np.nan
-    LPF_self_ref,HPF_self_ref = LPFvsHPF(np.nanmean(original_np,axis=(0,1)),cutoff)
-    self_line_spec = HPF_self_ref/LPF_self_ref
-    # plt.plot(np.nanmean(cube_cp,axis=(0,1)))
-    # plt.plot(LPF_self_ref)
-    # plt.plot(HPF_self_ref)
-    # plt.show()
-    # exit()
+    # # import matplotlib.pyplot as plt
+    # # cube_cp = copy(original_np)
+    # # cube_cp[np.where(cube_cp < np.nanmedian(cube_cp,axis=(0,1))[None,None,:])] = np.nan
+    # LPF_self_ref,HPF_self_ref = LPFvsHPF(np.nanmean(original_np,axis=(0,1)),cutoff)
+    # self_line_spec = HPF_self_ref/LPF_self_ref
+    # # plt.plot(np.nanmean(cube_cp,axis=(0,1)))
+    # # plt.plot(LPF_self_ref)
+    # # plt.plot(HPF_self_ref)
+    # # plt.show()
+    # # exit()
 
 
     for curr_k,curr_l,row,col in zip(curr_k_indices,curr_l_indices,row_indices,col_indices):
@@ -428,7 +428,7 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
 
                     new_line_list = kl_basis
 
-                new_line_list =np.concatenate([new_line_list,self_line_spec[None,:]])
+                # new_line_list =np.concatenate([new_line_list,self_line_spec[None,:]])
 
                     # plt.plot(line_spec,label="line_spec")
                 for line_spec in new_line_list:
@@ -923,7 +923,7 @@ if __name__ == "__main__":
             use_wvsol_offsets = False
         use_R_calib = False
         mask_starline = False
-        model_persistence = True
+        model_persistence = False
         if "s101104_a014" in filename or "s101104_a016" in filename:
             mask_20101104_artifact = True
         else:
