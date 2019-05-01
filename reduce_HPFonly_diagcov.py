@@ -838,7 +838,8 @@ if __name__ == "__main__":
         plot_persistence = False
         # planet_model_string = "model"
         # planet_model_string = "CO"#"CO2 CO H2O CH4"
-        planet_model_string = "CO2 CO H2O CH4"
+        # planet_model_string = "CO2 CO H2O CH4 joint"
+        planet_model_string = "CO joint"
 
         osiris_data_dir = "/data/osiris_data"
         if "d" in planet:
@@ -942,6 +943,10 @@ if __name__ == "__main__":
                 if molecule in planet_model_string:
                     molecules_list.append(molecule)
                     planet_model_string = planet_model_string.replace(molecule,"")
+        if "joint" in planet_model_string:
+            joint_fit = True
+        else:
+            joint_fit = False
             # print(molecules_list)
             # exit(0)
         pairsub = "pairsub" in inputDir
@@ -1129,7 +1134,8 @@ if __name__ == "__main__":
                     # plt.plot(wvs,planet_spec_func(wvs))#,data[::100,1])
                     # plt.show()
                     # exit()
-                if len(molecules_list) >= 2:
+                if len(molecules_list) >= 2 or joint_fit:
+                    suffix = suffix+"_"+"joint"
                     # print("uh...")
                     # exit()
                     travis_spec_filename=os.path.join(planet_template_folder,
