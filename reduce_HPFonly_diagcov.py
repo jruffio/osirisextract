@@ -813,7 +813,7 @@ if __name__ == "__main__":
         # scale = "035"
 
         inputDir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/"
-        outputdir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/20190415_HPF_only/"
+        outputdir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/20190430_HPF_only/"
         # outputdir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/20190305_HPF_only_noperscor/"
         # outputdir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/20190228_mol_temp/"
 
@@ -836,8 +836,9 @@ if __name__ == "__main__":
         plot_transmissions = False
         plt_psfs = False
         plot_persistence = False
-        planet_model_string = "model"
+        # planet_model_string = "model"
         # planet_model_string = "CO"#"CO2 CO H2O CH4"
+        planet_model_string = "CO2 CO H2O CH4"
 
         osiris_data_dir = "/data/osiris_data"
         if "d" in planet:
@@ -1129,52 +1130,52 @@ if __name__ == "__main__":
                     # plt.show()
                     # exit()
                 if len(molecules_list) >= 2:
-                    print("uh...")
-                    exit()
-                    # travis_spec_filename=os.path.join(planet_template_folder,
-                    #                                   "HR8799"+planet+"_"+IFSfilter[0:1]+"_3Oct2018.save")
-                    # planet_template_filename=travis_spec_filename.replace(".save",
-                    #                                                       "_gaussconv_R{0}_{1}.csv".format(R,IFSfilter))
-                    #
-                    # if use_R_calib:
-                    #     travis_spectrum = scio.readsav(travis_spec_filename)
-                    #     ori_planet_spec = np.array(travis_spectrum["fmod"])
-                    #     ori_planet_convspec = np.array(travis_spectrum["fmods"])
-                    #     wmod = np.array(travis_spectrum["wmod"])/1.e4
-                    #     planet_spec_func = interp1d(oriplanet_spec_wvs,oriplanet_spec,bounds_error=False,fill_value=np.nan)
-                    #
-                    #     planet_partial_template_func_list.append(planet_spec_func)
-                    # else:
-                    #     if len(glob.glob(planet_template_filename)) == 0:
-                    #         travis_spectrum = scio.readsav(travis_spec_filename)
-                    #         ori_planet_spec = np.array(travis_spectrum["fmod"])
-                    #         ori_planet_convspec = np.array(travis_spectrum["fmods"])
-                    #         wmod = np.array(travis_spectrum["wmod"])/1.e4
-                    #         print("convolving: "+planet_template_filename)
-                    #         planet_convspec = convolve_spectrum(wmod,ori_planet_spec,R,specpool)
-                    #
-                    #         with open(planet_template_filename, 'w+') as csvfile:
-                    #             csvwriter = csv.writer(csvfile, delimiter=' ')
-                    #             csvwriter.writerows([["wvs","spectrum"]])
-                    #             csvwriter.writerows([[a,b] for a,b in zip(wmod,planet_convspec)])
-                    #
-                    #     with open(planet_template_filename, 'r') as csvfile:
-                    #         csv_reader = csv.reader(csvfile, delimiter=' ')
-                    #         list_starspec = list(csv_reader)
-                    #         oriplanet_spec_str_arr = np.array(list_starspec, dtype=np.str)
-                    #         col_names = oriplanet_spec_str_arr[0]
-                    #         oriplanet_spec = oriplanet_spec_str_arr[1::,1].astype(np.float)
-                    #         oriplanet_spec_wvs = oriplanet_spec_str_arr[1::,0].astype(np.float)
-                    #         where_IFSfilter = np.where((oriplanet_spec_wvs>wvs[0])*(oriplanet_spec_wvs<wvs[-1]))
-                    #         oriplanet_spec = oriplanet_spec/np.mean(oriplanet_spec[where_IFSfilter])
-                    #         continuum = LPFvsHPF(oriplanet_spec,cutoff)[0]
-                    #         continuum_func = interp1d(oriplanet_spec_wvs,continuum,bounds_error=False,fill_value=np.nan)
-                    #
-                    # # # continuum = np.nanmax(np.array([temp_func(oriplanet_spec_wvs) for temp_func in planet_partial_template_func_list]),axis=0)
-                    # # import matplotlib.pyplot as plt
-                    # # plt.plot(oriplanet_spec_wvs,continuum)#,data[::100,1])
-                    # # plt.show()
-                    # planet_partial_template_func_list.insert(0,interp1d(oriplanet_spec_wvs,continuum,bounds_error=False,fill_value=np.nan))
+                    # print("uh...")
+                    # exit()
+                    travis_spec_filename=os.path.join(planet_template_folder,
+                                                      "HR8799"+planet+"_"+IFSfilter[0:1]+"_3Oct2018.save")
+                    planet_template_filename=travis_spec_filename.replace(".save",
+                                                                          "_gaussconv_R{0}_{1}.csv".format(R,IFSfilter))
+
+                    if use_R_calib:
+                        travis_spectrum = scio.readsav(travis_spec_filename)
+                        ori_planet_spec = np.array(travis_spectrum["fmod"])
+                        ori_planet_convspec = np.array(travis_spectrum["fmods"])
+                        wmod = np.array(travis_spectrum["wmod"])/1.e4
+                        planet_spec_func = interp1d(oriplanet_spec_wvs,oriplanet_spec,bounds_error=False,fill_value=np.nan)
+
+                        planet_partial_template_func_list.append(planet_spec_func)
+                    else:
+                        if len(glob.glob(planet_template_filename)) == 0:
+                            travis_spectrum = scio.readsav(travis_spec_filename)
+                            ori_planet_spec = np.array(travis_spectrum["fmod"])
+                            ori_planet_convspec = np.array(travis_spectrum["fmods"])
+                            wmod = np.array(travis_spectrum["wmod"])/1.e4
+                            print("convolving: "+planet_template_filename)
+                            planet_convspec = convolve_spectrum(wmod,ori_planet_spec,R,specpool)
+
+                            with open(planet_template_filename, 'w+') as csvfile:
+                                csvwriter = csv.writer(csvfile, delimiter=' ')
+                                csvwriter.writerows([["wvs","spectrum"]])
+                                csvwriter.writerows([[a,b] for a,b in zip(wmod,planet_convspec)])
+
+                        with open(planet_template_filename, 'r') as csvfile:
+                            csv_reader = csv.reader(csvfile, delimiter=' ')
+                            list_starspec = list(csv_reader)
+                            oriplanet_spec_str_arr = np.array(list_starspec, dtype=np.str)
+                            col_names = oriplanet_spec_str_arr[0]
+                            oriplanet_spec = oriplanet_spec_str_arr[1::,1].astype(np.float)
+                            oriplanet_spec_wvs = oriplanet_spec_str_arr[1::,0].astype(np.float)
+                            where_IFSfilter = np.where((oriplanet_spec_wvs>wvs[0])*(oriplanet_spec_wvs<wvs[-1]))
+                            oriplanet_spec = oriplanet_spec/np.mean(oriplanet_spec[where_IFSfilter])
+                            continuum = LPFvsHPF(oriplanet_spec,cutoff)[0]
+                            continuum_func = interp1d(oriplanet_spec_wvs,continuum,bounds_error=False,fill_value=np.nan)
+
+                    # # continuum = np.nanmax(np.array([temp_func(oriplanet_spec_wvs) for temp_func in planet_partial_template_func_list]),axis=0)
+                    # import matplotlib.pyplot as plt
+                    # plt.plot(oriplanet_spec_wvs,continuum)#,data[::100,1])
+                    # plt.show()
+                    planet_partial_template_func_list.insert(0,interp1d(oriplanet_spec_wvs,continuum,bounds_error=False,fill_value=np.nan))
             else:
                 travis_spec_filename=os.path.join(planet_template_folder,
                                                   "HR8799"+planet+"_"+IFSfilter[0:1]+"_3Oct2018.save")
@@ -1633,7 +1634,8 @@ if __name__ == "__main__":
         originalLPF_imgs_shape = padimgs.shape
         originalLPF_imgs_np = _arraytonumpy(originalLPF_imgs, originalLPF_imgs_shape,dtype=dtype)
         originalLPF_imgs_np[:] = np.nan
-        nout = 10+3*4
+        nout = 10+3*(len(planet_model_func_table[0]))
+        # print(nout)
         nshifts = np.size(planetRV_array)
         if planet_search:
             output_maps = mp.Array(dtype, len(numbasis_list)*len(transmission_table)*nout*padny*padnx*nshifts)

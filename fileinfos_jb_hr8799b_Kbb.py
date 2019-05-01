@@ -125,7 +125,7 @@ if 0: # add Temperature
         prihdr0 = hdulist[0].header
         new_list_data[k][DTMP6_id] = prihdr0["DTMP7"]
 
-if 1: # add exposure time
+if 0: # add exposure time
     filename_id = new_colnames.index("filename")
     try:
         itime_id = new_colnames.index("itime")
@@ -503,7 +503,7 @@ def get_err_from_posterior(x,posterior):
         rx = rf(1-0.6827)
     return x[argmax_post],(rx-lx)/2.,argmax_post
 
-if 0:
+if 1:
     from scipy.signal import correlate2d
     try:
         cen_filename_id = old_colnames.index("cen filename")
@@ -560,8 +560,9 @@ if 0:
     # init_wv = CRVAL1/1000. # wv for first slice in mum
 
     suffix = "_outputHPF_cutoff40_sherlock_v1_search"
-    myfolder = "sherlock/20190412_HPF_only"
+    # myfolder = "sherlock/20190412_HPF_only"
     # myfolder = "sherlock/20190416_HPF_only"
+    myfolder = "sherlock/20190416_no_persis_corr"
     for k,item in enumerate(old_list_data):
         filename = item[filename_id]
         print(filename)

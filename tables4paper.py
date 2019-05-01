@@ -4,6 +4,7 @@ import csv
 import os
 import glob
 import numpy as np
+import astropy.io.fits as pyfits
 
 
 for planet_id,planet in enumerate(["b","c","d"]):
@@ -45,6 +46,7 @@ for planet_id,planet in enumerate(["b","c","d"]):
     ifs_fitler_list = np.array([item[ifs_filter_id] for item in list_data])
     snr_list = np.array([float(item[snr_id]) if item[snr_id] != "nan" else 0  for item in list_data])
     itime_list = np.array([float(item[itime_id]) if item[itime_id] != "nan" else 0  for item in list_data])
+    wvsolerr_list = np.array([item[wvsolerr_id] if item[wvsolerr_id] != "nan" else ""  for item in list_data])
 
     # print("\\hline")
     # for myfilter in ["Jbb","Hbb","Kbb"]:
@@ -61,12 +63,50 @@ for planet_id,planet in enumerate(["b","c","d"]):
             mynotes = ""
         first_date = True
         for myfilter in ["Jbb","Hbb","Kbb"]:
+            if myfilter=="Kbb": #Kbb 1965.0 0.25
+                CRVAL1 = 1965.
+                CDELT1 = 0.25
+                nl=1665
+                R=4000
+            elif myfilter=="Hbb": #Hbb 1651 1473.0 0.2
+                CRVAL1 = 1473.
+                CDELT1 = 0.2
+                nl=1651
+                R=4000
+            elif myfilter=="Jbb": #Hbb 1651 1473.0 0.2
+                CRVAL1 = 1180.
+                CDELT1 = 0.15
+                nl=1574
+                R0=4000
+            init_wv = CRVAL1/1000.
+            dwv = CDELT1/1000.
+            wvs=np.arange(init_wv,init_wv+dwv*nl-1e-6,dwv)
+            print(wvs[0],(wvs[-1]-wvs[0])/40,dwv)
+            exit()
+            dprv = 3e5*dwv/(init_wv+dwv*nl//2)
+
             formated_date =  date[0:4]+"-"+date[4:6]+"-"+date[6:8]
             where_data = np.where((date == date_list)*(myfilter==ifs_fitler_list))
+
             if np.size(where_data[0]) != 0:
+                # print("/data/osiris_data/HR_8799_"+planet+"/"+date+"/reduced_sky_jb/s"+date[2::]+"*"+myfilter+"*[0-9][0-9][0-9].fits")
+                sky_filelist = glob.glob("/data/osiris_data/HR_8799_"+planet+"/"+date+"/reduced_sky_jb/s"+date[2::]+"*"+myfilter+"*[0-9][0-9][0-9]_OHccf_Rfixed_dwv.fits")
+                if len(sky_filelist)==0:
+                    Nskies = ""
+                    avgoffset = ""
+                else:
+                    Nskies = len(sky_filelist)
+                    for filename_dwv in sky_filelist:
+                        hdulist = pyfits.open(filename_dwv)
+                        dwv_map = hdulist[0].data
+                        dwv_map[np.where(np.abs(dwv_map)>0.9)] = np.nan
+                        avgoffset = np.nanmedian(dwv_map)*dprv
+                        avgoffset = "{0:0.1f}".format(avgoffset)
+                    # print(Nskies,avgoffset,dprv)
+                    # exit()
                 if first_date:
-                    print("{0} & {1} & {2} & {3} & {4:0.1f} & {5}  \\\\ ".format("",formated_date,myfilter,np.size(where_data[0]),np.sum(itime_list[where_data[0]])/3600,mynotes) )
+                    print("{0} & {1} & {2} & {3} & {4:0.1f} & {5} & {6} & {7} & {8}  \\\\ ".format("",formated_date,myfilter,np.size(where_data[0]),np.sum(itime_list[where_data[0]])/3600,Nskies,avgoffset,wvsolerr_list[where_data[0][0]],mynotes) )
                     first_date = False
                 else:
-                    print("{0} & {1} & {2} & {3} & {4:0.1f} & {5}  \\\\ ".format("","",myfilter,np.size(where_data[0]),np.sum(itime_list[where_data[0]])/3600,mynotes) )
+                    print("{0} & {1} & {2} & {3} & {4:0.1f} & {5} & {6} & {7} & {8}  \\\\ ".format("","",myfilter,np.size(where_data[0]),np.sum(itime_list[where_data[0]])/3600,Nskies,avgoffset,wvsolerr_list[where_data[0][0]],mynotes) )
         # print("\\cline{2-6}")

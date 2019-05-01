@@ -51,7 +51,7 @@ if __name__ == "__main__":
     # OSIRISDATA = "/scratch/groups/bmacint/osiris_data/"
     OSIRISDATA = "/data/osiris_data/"
     if 1:
-        IFSfilter = "Hbb"#"Jbb"#"Hbb"#"Kbb"
+        IFSfilter = "Kbb"#"Jbb"#"Hbb"#"Kbb"
         # planet = "b"
         planet = "c"
         # planet = "d"
@@ -72,7 +72,7 @@ if __name__ == "__main__":
                 date_list = ["20101028","20101104","20110724","20110725","20171103"] # Hbb
             elif "Jbb" in IFSfilter:
                 date_list = ["20130726","20131029", "20131030", "20131031"] #Jbb
-            date_list = [date_list[-1],]
+            date_list = [date_list[0],]
             # date_list = ["20101104"] #Hbb
         elif "d" in planet:
             if "Kbb" in IFSfilter:
@@ -738,7 +738,7 @@ if __name__ == "__main__":
 
 
     # ao off: get repaired spec for ref star fits
-    if 1 or run_all:
+    if 0 or run_all:
         filename_filter = "*/ao_off_s*"+IFSfilter+"*[0-9][0-9][0-9].fits"
 
         ref_spec_list = []
@@ -878,7 +878,7 @@ if __name__ == "__main__":
             # hdulist.close()
 
     # Calculate transmission
-    if 1 or run_all:
+    if run_all:
         import csv
         from PyAstronomy import pyasl
         from scipy.interpolate import interp1d
@@ -986,7 +986,7 @@ if __name__ == "__main__":
         specpool.close()
 
     # Plot transmission
-    if 1 or run_all:
+    if 0 or run_all:
         filename_filter = "*/*"+IFSfilter+"*[0-9][0-9][0-9]*"+"_cutoff20_transmission.fits"
 
         for date in date_list:
@@ -1023,6 +1023,173 @@ if __name__ == "__main__":
                 plt.close(1)
             except:
                 pass
+
+    # Plot supersampled PSF
+    if 0:
+        if IFSfilter=="Kbb": #Kbb 1965.0 0.25
+            CRVAL1 = 1965.
+            CDELT1 = 0.25
+            nl=1665
+            R=4000
+        elif IFSfilter=="Hbb": #Hbb 1651 1473.0 0.2
+            CRVAL1 = 1473.
+            CDELT1 = 0.2
+            nl=1651
+            R=4000
+        elif IFSfilter=="Jbb": #Hbb 1651 1473.0 0.2
+            CRVAL1 = 1180.
+            CDELT1 = 0.15
+            nl=1574
+            R0=4000
+        init_wv = CRVAL1/1000.
+        dwv = CDELT1/1000.
+        wvs=np.arange(init_wv,init_wv+dwv*nl-1e-6,dwv)
+        dprv = 3e5*dwv/(init_wv+dwv*nl//2)
+
+        date = date_list[0]
+        with pyfits.open(os.path.join(OSIRISDATA,foldername,date,"reduced_telluric_jb",date+"_"+IFSfilter+"_hdpsfs_v2.fits")) as hdulist:
+            psfs_refstar_arr = hdulist[0].data
+        with pyfits.open(glob.glob(os.path.join(OSIRISDATA,foldername,date,"reduced_telluric_jb",date+"_"+IFSfilter+"_hdpsfs_xy_v2.fits"))[0]) as hdulist:
+            hdpsfs_xy = hdulist[0].data
+            hdpsfs_x,hdpsfs_y = hdpsfs_xy
+
+        fontsize=12
+        f,axes = plt.subplots(2,2,sharex="col",sharey="row",figsize=(4,4))
+        for k,l in enumerate(np.arange(0,psfs_refstar_arr.shape[0],500)):
+            plt.sca(axes[int(k//2)][k%2])
+            plt.imshow(psfs_refstar_arr[l,:,:],origin="lower",extent=[hdpsfs_x[0,0],hdpsfs_x[-1,-1],hdpsfs_y[0,0],hdpsfs_y[-1,-1]])
+            plt.gca().text(-5,5,"${0:.2f}\,\mu$m".format(wvs[l]),ha="left",va="bottom",rotation=0,size=fontsize,color="white")
+            plt.tick_params(axis="x",labelsize=fontsize)
+            plt.tick_params(axis="y",labelsize=fontsize)
+        plt.sca(axes[1][0])
+        plt.xlabel("x (pix)",fontsize=fontsize)
+        plt.ylabel("y (pix)",fontsize=fontsize)
+        plt.subplots_adjust(wspace=0,hspace=0)
+
+        if 1:
+            out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
+            print("Saving "+os.path.join(out_pngs,"hdpsf.pdf"))
+            plt.savefig(os.path.join(out_pngs,"hdpsf.pdf"),bbox_inches='tight')
+            plt.savefig(os.path.join(out_pngs,"hdpsf.png"),bbox_inches='tight')
+        plt.show()
+        exit()
+
+    # Plot transmission for paper
+    if 0:
+        plt.figure(1,figsize=(7,4))
+        fontsize=12
+
+        import csv
+        from PyAstronomy import pyasl
+        from scipy.interpolate import interp1d
+        numthreads=28
+        specpool = mp.Pool(processes=numthreads)
+
+        cutoff = 20
+
+        fileinfos_refstars_filename = os.path.join(OSIRISDATA,"fileinfos_refstars_jb.csv")
+        with open(fileinfos_refstars_filename, 'r') as csvfile:
+            csv_reader = csv.reader(csvfile, delimiter=';')
+            refstarsinfo_list_table = list(csv_reader)
+            refstarsinfo_colnames = refstarsinfo_list_table[0]
+            refstarsinfo_list_data = refstarsinfo_list_table[1::]
+        refstarsinfo_filename_id = refstarsinfo_colnames.index("filename")
+        refstarsinfo_filelist = [os.path.basename(item[refstarsinfo_filename_id]) for item in refstarsinfo_list_data]
+
+        for date in date_list:
+            filelist=[]
+            filename_filter = "ao_off_s*"+IFSfilter+"*020_spec_v2.fits"
+            filelist.extend(glob.glob(os.path.join(OSIRISDATA,foldername,date,"reduced_telluric_jb","HD_210501",filename_filter)))
+            filename_filter = "s*"+IFSfilter+"*020_psfs_repaired_spec_v2.fits"
+            filelist.extend(glob.glob(os.path.join(OSIRISDATA,foldername,date,"reduced_telluric_jb","HD_210501",filename_filter)))
+
+
+            for specid,spec_filename in enumerate(filelist):
+                print(spec_filename)
+                with pyfits.open(spec_filename) as hdulist:
+                    wvs = hdulist[0].data[0,:]
+                    spec = hdulist[0].data[1,:]/np.nanmean(hdulist[0].data[1,:])
+
+
+                for fileid,refstarsinfo_file in enumerate(refstarsinfo_filelist):
+                    if os.path.basename(refstarsinfo_file).replace(".fits","") in spec_filename:
+                        fileitem = refstarsinfo_list_data[fileid]
+                        break
+
+                type_id = refstarsinfo_colnames.index("type")
+                rv_simbad_id = refstarsinfo_colnames.index("RV Simbad")
+                vsini_fixed_id = refstarsinfo_colnames.index("vsini fixed")
+                starname_id = refstarsinfo_colnames.index("star name")
+
+                refstar_RV = float(fileitem[rv_simbad_id])
+                vsini_fixed = float(fileitem[vsini_fixed_id])
+                ref_star_type = fileitem[type_id]
+                refstar_name = fileitem[starname_id]
+
+                phoenix_folder = os.path.join(OSIRISDATA,"phoenix")
+                phoenix_wv_filename = os.path.join(phoenix_folder,"WAVE_PHOENIX-ACES-AGSS-COND-2011.fits")
+                with pyfits.open(phoenix_wv_filename) as hdulist:
+                    phoenix_wvs = hdulist[0].data/1.e4
+                crop_phoenix = np.where((phoenix_wvs>wvs[0]-(wvs[-1]-wvs[0])/2)*(phoenix_wvs<wvs[-1]+(wvs[-1]-wvs[0])/2))
+                phoenix_wvs = phoenix_wvs[crop_phoenix]
+                try:
+                    phoenix_model_refstar_filename = glob.glob(os.path.join(phoenix_folder,refstar_name+"*.fits"))[0]
+                except:
+                    phoenix_model_refstar_filename = glob.glob(os.path.join(phoenix_folder,ref_star_type+"*.fits"))[0]
+                phoenix_refstar_filename=phoenix_model_refstar_filename.replace(".fits","_gaussconv_R{0}_{1}.csv".format(R0,IFSfilter))
+                print(phoenix_refstar_filename)
+                if len(glob.glob(phoenix_refstar_filename)) == 0:
+                    with pyfits.open(phoenix_model_refstar_filename) as hdulist:
+                        phoenix_refstar = hdulist[0].data[crop_phoenix]
+                    print("convolving: "+phoenix_model_refstar_filename)
+
+                    phoenix_refstar_conv = convolve_spectrum(phoenix_wvs,phoenix_refstar,R0,specpool)
+
+                    with open(phoenix_refstar_filename, 'w+') as csvfile:
+                        csvwriter = csv.writer(csvfile, delimiter=' ')
+                        csvwriter.writerows([["wvs","spectrum"]])
+                        csvwriter.writerows([[a,b] for a,b in zip(phoenix_wvs,phoenix_refstar_conv)])
+
+                with open(phoenix_refstar_filename, 'r') as csvfile:
+                    csv_reader = csv.reader(csvfile, delimiter=' ')
+                    list_starspec = list(csv_reader)
+                    refstarpho_spec_str_arr = np.array(list_starspec, dtype=np.str)
+                    col_names = refstarpho_spec_str_arr[0]
+                    refstarpho_spec = refstarpho_spec_str_arr[1::,1].astype(np.float)
+                    refstarpho_spec_wvs = refstarpho_spec_str_arr[1::,0].astype(np.float)
+                    where_IFSfilter = np.where((refstarpho_spec_wvs>wvs[0])*(refstarpho_spec_wvs<wvs[-1]))
+                    refstarpho_spec = refstarpho_spec/np.mean(refstarpho_spec[where_IFSfilter])
+                    refstarpho_spec_func = interp1d(refstarpho_spec_wvs,refstarpho_spec,bounds_error=False,fill_value=np.nan)
+
+
+                c_kms = 299792.458
+                refstarpho_spec = refstarpho_spec_func(wvs*(1-refstar_RV/c_kms))
+                broadened_refstarpho = pyasl.rotBroad(wvs, refstarpho_spec, 0.5, vsini_fixed_id)
+
+                transmission_model = spec/broadened_refstarpho
+                transmission_model = transmission_model/np.nanmean(transmission_model)
+
+                if specid ==0: #["#ff9900","#0099cc","#6600ff"]
+                    plt.plot(wvs,spec/np.nanmean(spec)+2+specid*0.3+0.2,linestyle="-",label="Reference star",color="#ff9900")
+                    plt.plot(wvs,broadened_refstarpho/np.nanmean(broadened_refstarpho)+1+0.2,color="black",linestyle="-",label="Stellar model")
+                    plt.plot(wvs,transmission_model/np.nanmean(transmission_model)+specid*0.3,linestyle="-",label="Transmission",color="#0099cc")
+                else:
+                    plt.plot(wvs,spec/np.nanmean(spec)+2+specid*0.3+0.2,linestyle="-",color="#ff9900")
+                    plt.plot(wvs,transmission_model/np.nanmean(transmission_model)+specid*0.3,linestyle="-",color="#0099cc")
+            plt.legend(loc="lower right",frameon=True,fontsize=fontsize)
+            plt.tick_params(axis="x",labelsize=fontsize)
+            plt.tick_params(axis="8",labelsize=fontsize)
+            plt.xlabel("$\lambda (\mu\mathrm{m})$",fontsize=fontsize)
+            plt.ylabel("$\propto$ ADU",fontsize=fontsize)
+
+            if 1:
+                out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
+                print("Saving "+os.path.join(out_pngs,"transmission.pdf"))
+                plt.savefig(os.path.join(out_pngs,"transmission.pdf"),bbox_inches='tight')
+                plt.savefig(os.path.join(out_pngs,"transmission.png"),bbox_inches='tight')
+            plt.show()
+            exit()
+
 
     # for tmp in range(5):
     #     # Calculate transmission

@@ -165,14 +165,14 @@ if 0: # add filename
         exit()
     else:
         sequence_list = [["/data/osiris_data/HR_8799_d/20130727/reduced_jb/s130727_a057001_Kbb_020.fits",1,0,0],
-                        ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a091001_Kbb_020.fits",2,0,0],
-                        ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a092001_Kbb_020.fits",2,1,0],
-                        ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a093001_Kbb_020.fits",2,2,0],
+                        ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a091001_Kbb_020.fits",2,0,1],
+                        ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a092001_Kbb_020.fits",2,1,1],
+                        ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a093001_Kbb_020.fits",2,2,1],
                         ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a094001_Kbb_020.fits",2,3,0],
-                        ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a095001_Kbb_020.fits",2,4,0],
-                        ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a096001_Kbb_020.fits",2,5,0],
-                        ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a097001_Kbb_020.fits",2,6,0],
-                        ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a098001_Kbb_020.fits",2,7,0],
+                        ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a095001_Kbb_020.fits",2,4,1],
+                        ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a096001_Kbb_020.fits",2,5,1],
+                        ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a097001_Kbb_020.fits",2,6,1],
+                        ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a098001_Kbb_020.fits",2,7,1],
                         ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a099001_Kbb_020.fits",2,8,0],
                         ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a100001_Kbb_020.fits",2,9,0],
                         ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a107001_Kbb_020.fits",3,0,0],
@@ -198,11 +198,11 @@ if 0: # add filename
                         ["/data/osiris_data/HR_8799_d/20150723/reduced_jb/s150723_a033001_Kbb_020.fits",6,0,0],
                         ["/data/osiris_data/HR_8799_d/20150723/reduced_jb/s150723_a034001_Kbb_020.fits",6,1,0],
                         ["/data/osiris_data/HR_8799_d/20150723/reduced_jb/s150723_a035001_Kbb_020.fits",6,2,0],
-                        ["/data/osiris_data/HR_8799_d/20150723/reduced_jb/s150723_a036001_Kbb_020.fits",6,3,0],
-                        ["/data/osiris_data/HR_8799_d/20150723/reduced_jb/s150723_a037001_Kbb_020.fits",6,4,0],
-                        ["/data/osiris_data/HR_8799_d/20150723/reduced_jb/s150723_a038001_Kbb_020.fits",6,5,0],
+                        ["/data/osiris_data/HR_8799_d/20150723/reduced_jb/s150723_a036001_Kbb_020.fits",6,3,1],
+                        ["/data/osiris_data/HR_8799_d/20150723/reduced_jb/s150723_a037001_Kbb_020.fits",6,4,1],
+                        ["/data/osiris_data/HR_8799_d/20150723/reduced_jb/s150723_a038001_Kbb_020.fits",6,5,1],
                         ["/data/osiris_data/HR_8799_d/20150723/reduced_jb/s150723_a039001_Kbb_020.fits",6,6,0],
-                        ["/data/osiris_data/HR_8799_d/20150723/reduced_jb/s150723_a040001_Kbb_020.fits",6,7,0],
+                        ["/data/osiris_data/HR_8799_d/20150723/reduced_jb/s150723_a040001_Kbb_020.fits",6,7,1],
                         ["/data/osiris_data/HR_8799_d/20150723/reduced_jb/s150723_a041001_Kbb_020.fits",6,8,0],
                         ["/data/osiris_data/HR_8799_d/20150723/reduced_jb/s150723_a049001_Kbb_020.fits",7,0,0],
                         ["/data/osiris_data/HR_8799_d/20150723/reduced_jb/s150723_a050001_Kbb_020.fits",7,1,0],
@@ -465,8 +465,9 @@ if 0:
     # init_wv = CRVAL1/1000. # wv for first slice in mum
 
     suffix = "_outputHPF_cutoff40_sherlock_v1_search"
-    myfolder = "sherlock/20190412_HPF_only"
+    # myfolder = "sherlock/20190412_HPF_only"
     # myfolder = "sherlock/20190416_HPF_only"
+    myfolder = "sherlock/20190416_no_persis_corr"
     for k,item in enumerate(old_list_data):
         filename = item[filename_id]
         print(filename)

@@ -562,8 +562,9 @@ if 1:
 
     suffix = "_outputHPF_cutoff40_sherlock_v1_search"
     # myfolder = "sherlock/20190401_HPF_only"
-    myfolder = "sherlock/20190412_HPF_only"
+    # myfolder = "sherlock/20190412_HPF_only"
     # myfolder = "sherlock/20190416_HPF_only"
+    myfolder = "sherlock/20190416_no_persis_corr"
     for k,item in enumerate(old_list_data):
         filename = item[filename_id]
         print(filename)
@@ -648,13 +649,12 @@ if 1:
             new_list_data[k][cen_filename_id] = np.nan
             new_list_data[k][snr_id] = np.nan
 
-
 print("NEW")
 for item in new_list_data:
     print(item)
 print(new_colnames)
 
-# exit()
+exit()
 
 
 #Save NEW file

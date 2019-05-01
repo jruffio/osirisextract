@@ -202,7 +202,8 @@ if 1:
     # inputdir = "/data/osiris_data/HR_8799_b"
     # filelist = glob.glob(os.path.join(inputdir,"201007/reduced_sky_jb/s*_Kbb_020.fits"))
     inputdir = "/data/osiris_data/HR_8799_*"
-    filelist = glob.glob(os.path.join(inputdir,"2018*/reduced_sky_jb/s*_"+IFSfilter+"_[0-9][0-9][0-9].fits"))
+    out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
+    filelist = glob.glob(os.path.join(inputdir,"2010*/reduced_sky_jb/s*_"+IFSfilter+"_[0-9][0-9][0-9].fits"))
     print(filelist)
     # exit()
 
@@ -219,6 +220,7 @@ if 1:
     init_wv = CRVAL1/1000.
     dwv = CDELT1/1000.
     wvs=np.arange(init_wv,init_wv+dwv*nl-1e-6,dwv)
+    dprv = 3e5*dwv/(init_wv+dwv*nl//2)
 
     cutoff = 40
     medwindowsize=200
@@ -232,12 +234,12 @@ if 1:
     debug = False
     numthreads = 28
     suffix="_Rfixed"
-if 0:
+if 1:
     # lambdas_air = lambdas_vac/(1+2.735182e-4+131.4182/lambdas_vac**2+2.76249e8/lambdas_vac**4)
     if 1:
         skybg_spec_list = []
         skybg_wvs_list = []
-        skyem_filelist = glob.glob("/data/osiris_data/sky_emission/mk_skybg_zm_*_ph.dat")[::3]
+        skyem_filelist = glob.glob("/data/osiris_data/sky_emission/mk_skybg_zm_10_10_ph.dat")[0:1]
         for filename in skyem_filelist:#filename = "/home/sda/jruffio/osiris_data/sky_emission/mk_skybg_zm_10_10_ph.dat"
             print(filename)
             skybg_arr=np.loadtxt(filename)
@@ -320,8 +322,37 @@ if 0:
             #     print("Finished rm edge chunk {0}".format(chunk_index))
             #     rmedge_task.wait()
 
-        if 0:
-            tpool.close()
+        if 1:
+            original_np = _arraytonumpy(original_imgs, original_imgs_shape,dtype=dtype)
+            badpix_np = _arraytonumpy(badpix_imgs, badpix_imgs_shape,dtype=dtype)
+            output_ccf_np = _arraytonumpy(output_ccf, output_ccf_shape,dtype=dtype)
+
+            badpix_np[0:medwindowsize//2,:,:] = np.nan
+            # # badpix_np[(badpix_imgs_shape[0]-medwindowsize//2)::,:,:] = np.nan
+            badpix_np[np.where(wvs>2.25)[0],:,:] = np.nan
+
+            my_output_ccf = np.zeros((np.size(skybg_spec_list),np.size(dwvs_CCF),3))
+            myhpfvec_list = []
+            for k,(skybg_wvs,skybg_spec) in enumerate(zip(skybg_wvs_list,skybg_spec_list)):
+                skybg_spec = convolve_spectrum(skybg_wvs,skybg_spec,R)
+                hd_spec_func = interp1d(skybg_wvs,skybg_spec/np.nanstd(skybg_spec),bounds_error=False,fill_value=0)
+
+                for myid,(row_index,m) in enumerate(zip([10,20,30],[10,10,10])):
+                    print(myid)
+                    myvec = original_np[:,row_index,m]
+                    myvec_bad_pix = badpix_np[:,row_index,m]
+                    sky_LPF,sky_HPF = LPFvsHPF_median(myvec,medwindowsize)
+                    where_badpix = np.where(np.isnan(myvec_bad_pix))
+                    myvec[where_badpix] = sky_LPF[where_badpix]
+                    sky_LPF,sky_HPF = LPFvsHPF_median(myvec,medwindowsize)
+                    sky_HPF[where_badpix] = np.nan
+                    where_validpix = np.where(np.isfinite(myvec_bad_pix))
+                    myhpfvec_list.append(sky_HPF)
+                    for n,dwvccf in enumerate(dwvs_CCF):
+                        hd_spec = hd_spec_func(wvs-dwvccf)
+                        hd_spec_LPF,hd_spec_HPF = LPFvsHPF_median(hd_spec,cutoff)
+                        my_output_ccf[k,n,myid]=np.nansum(sky_HPF*hd_spec_HPF)**2/np.nansum(hd_spec_HPF[where_validpix]**2)
+
             # skycube[np.where(np.isnan(badpix_imgs_np))] = np.nan
             myvec = np.nanmean(skycube,axis=(1,2))
             # myvec = skycube[:,16,7]
@@ -331,45 +362,77 @@ if 0:
             myvec[where_badpix] = sky_LPF[where_badpix]
             sky_LPF,sky_HPF = LPFvsHPF_median(myvec,medwindowsize)
             sky_HPF[where_badpix] = np.nan
-            plt.figure(1)
-            plt.plot(wvs,myvec,label="sky spec")
-            plt.plot(wvs,sky_HPF,label="sky HPF")
-            plt.plot(wvs,sky_LPF,label="sky LPF")
-            # plt.subplot(1,3,1)
-            # plt.plot(dwvs_CCF/dwv,CCF(dwvs_CCF,wvs,sky_HPF/np.nanstd(sky_HPF),skybg_wvs,skybg_spec/np.nanstd(skybg_spec)))
-            # plt.subplot(1,3,2)
-            plt.plot(skybg_wvs,skybg_spec/np.nanstd(skybg_spec)*np.nanstd(sky_HPF),label="emission spec")
-            # for skybg_spec in skybg_spec_list:
-            #     plt.plot(skybg_wvs,skybg_spec/np.nanstd(skybg_spec),label="transmission spec")
-            plt.legend()
-            # plt.subplot(1,3,3)
-            # plt.plot(sky_HPF)
-            # plt.figure(2)
-            # plt.subplot(1,3,1)
-            # plt.imshow(skycube[321,:,:],interpolation="nearest")
-            # plt.subplot(1,3,2)
-            # original_imgs_np[np.where(np.isnan(badpix_imgs_np))] = np.nan
-            # plt.imshow(original_imgs_np[321,:,:])
-            # plt.subplot(1,3,3)
-            # plt.imshow(original_imgs_np[325,:,:])
 
-
+            fontsize = 12
+            plt.figure(1,figsize=(7,5))
+            plt.subplot(2,1,1)
+            plt.plot(wvs,myvec,label="Combined",color="#ff9900")
+            plt.plot(wvs,sky_LPF,label="Combined LPF",color="#6600ff",linestyle=":")
+            plt.plot(wvs,sky_HPF,label="Combined HPF",color="#0099cc",linestyle="--")
             skybg_spec = convolve_spectrum(skybg_wvs,skybg_spec,R)
             hd_spec_func = interp1d(skybg_wvs,skybg_spec/np.nanstd(skybg_spec),bounds_error=False,fill_value=0)
+            hd_spec = hd_spec_func(wvs-0)
+            hd_spec_LPF,hd_spec_HPF = LPFvsHPF_median(hd_spec,cutoff)
             where_validpix = np.where(np.isfinite(myvec_bad_pix))
-            output_ccf_np=np.zeros(dwvs_CCF.shape)
-            for n,dwv in enumerate(dwvs_CCF):
-                hd_spec = hd_spec_func(wvs-dwv)
-                hd_spec_LPF,hd_spec_HPF = LPFvsHPF_median(hd_spec,cutoff)
-                output_ccf_np[n]=np.nansum(sky_HPF*hd_spec_HPF)**2/np.nansum(hd_spec_HPF[where_validpix]**2)
-            plt.figure(3)
-            plt.subplot(1,2,1)
-            plt.plot(dwvs_CCF,output_ccf_np)
-            plt.subplot(1,2,2)
-            plt.plot(dwvs_CCF/dwv,output_ccf_np)
+            plt.plot(wvs,hd_spec_HPF*np.nansum(sky_HPF*hd_spec_HPF)**2/np.nansum(hd_spec_HPF[where_validpix]**2),label="Sky model",color="black")
+            plt.legend(loc="upper center",frameon=True,fontsize=fontsize)#
+            plt.xlim([1.99,2.25])
+            plt.tick_params(axis="x",labelsize=fontsize)
+            # plt.xlabel("$\lambda (\mu\mathrm{m})$",fontsize=fontsize)
+            plt.ylabel("$\propto$ ADU",fontsize=fontsize)
+            plt.tick_params(axis="y",which="both",labelleft=False,bottom=False,top=False)
 
+            plt.subplot(2,1,2)
+            color_list = ["#ff9900","#0099cc","#6600ff"]
+            linestyle_list = ["-","--",":"]
+            for myid,color,linestyle in zip(np.arange(3),color_list[::-1],linestyle_list[::-1]):
+                plt.plot(wvs,myhpfvec_list[myid],label="Sample {0} HPF".format(myid),color=color,linestyle=linestyle)
+            plt.legend(loc="upper center",frameon=True,fontsize=fontsize)
+            plt.tick_params(axis="x",labelsize=fontsize)
+            plt.xlabel("$\lambda (\mu\mathrm{m})$",fontsize=fontsize)
+            plt.ylabel("$\propto$ ADU",fontsize=fontsize)
+            plt.tick_params(axis="y",which="both",labelleft=False,bottom=False,top=False)
+            plt.xlim([1.99,2.25])
+
+            if 1:
+                print("Saving "+os.path.join(out_pngs,"sky_emission.pdf"))
+                plt.savefig(os.path.join(out_pngs,"sky_emission.pdf"),bbox_inches='tight')
+                plt.savefig(os.path.join(out_pngs,"sky_emission.png"),bbox_inches='tight')
+
+            plt.figure(2,figsize=(4,5))
+            for myid,color,linestyle in zip(np.arange(3),color_list[::-1],linestyle_list[::-1]):
+                myargmax = np.argmax(my_output_ccf[0,:,myid])
+                plt.plot(dwvs_CCF/dwv,my_output_ccf[0,:,myid]/np.max(my_output_ccf[0,:,myid]),label="Sample {0}".format(myid),color=color,linestyle=linestyle,linewidth=2)
+                plt.plot([dwvs_CCF[myargmax]/dwv,dwvs_CCF[myargmax]/dwv],[0,1],color=color)
+                plt.gca().text(dwvs_CCF[myargmax]/dwv-0.02,0.05+0.25*myid,"{0:.2f} pix \n {1:.2f} $\AA$ \n {2:.2f} km/s".format(dwvs_CCF[myargmax]/dwv,dwvs_CCF[myargmax]*10000.,dwvs_CCF[myargmax]/dwv*dprv),ha="right",va="bottom",rotation=0,size=fontsize,color=color)
+            plt.tick_params(axis="y",labelsize=fontsize)
+            plt.tick_params(axis="x",labelsize=fontsize)
+            plt.ylabel("CCF",fontsize=fontsize)
+            plt.xlabel("Pixel",fontsize=fontsize)
+            plt.xlim([-1,1])
+            plt.ylim([0,1.1])
+
+            if 1:
+                print("Saving "+os.path.join(out_pngs,"sky_emission_CCF.pdf"))
+                plt.savefig(os.path.join(out_pngs,"sky_emission_CCF.pdf"),bbox_inches='tight')
+                plt.savefig(os.path.join(out_pngs,"sky_emission_CCF.png"),bbox_inches='tight')
+            #
+            # skybg_spec = convolve_spectrum(skybg_wvs,skybg_spec,R)
+            # hd_spec_func = interp1d(skybg_wvs,skybg_spec/np.nanstd(skybg_spec),bounds_error=False,fill_value=0)
+            # where_validpix = np.where(np.isfinite(myvec_bad_pix))
+            # output_ccf_np=np.zeros(dwvs_CCF.shape)
+            # for n,dwv in enumerate(dwvs_CCF):
+            #     hd_spec = hd_spec_func(wvs-dwv)
+            #     hd_spec_LPF,hd_spec_HPF = LPFvsHPF_median(hd_spec,cutoff)
+            #     output_ccf_np[n]=np.nansum(sky_HPF*hd_spec_HPF)**2/np.nansum(hd_spec_HPF[where_validpix]**2)
+            # plt.figure(3)
+            # plt.subplot(1,2,1)
+            # plt.plot(dwvs_CCF,output_ccf_np)
+            # plt.subplot(1,2,2)
+            # plt.plot(dwvs_CCF/dwv,output_ccf_np)
+
+            tpool.close()
             plt.show()
-
         # ccf_arr_list.append(CCF(dwvs_CCF,wvs,sky_HPF/np.nanstd(sky_HPF),skybg_wvs,skybg_spec/np.nanstd(skybg_spec)))
 
         if 1:
@@ -470,7 +533,7 @@ if 0:
 #     exit()
 
 
-if 1:
+if 0:
     std_factor = np.zeros(20)
     for k in np.arange(2,20):
         a = np.random.randn(1000,k)
@@ -579,8 +642,8 @@ if 1:
         plt.subplot(3,len(filelist_R),k+1+len(filelist_R))
         diff = dwv_map-master_wvshift
         diff[np.where(np.abs(diff-np.nanmedian(diff))>thresh)] = np.nan
-        plt.title("{0:.2f} || {1:.2f}".format(np.nanmedian(diff)*38.167938931297705,
-                                      np.nanstd(diff)/std_factor[len(filelist_R)]*38.167938931297705),fontsize=7)
+        plt.title("{0:.2f} || {1:.2f}".format(np.nanmedian(diff)*dprv,
+                                      np.nanstd(diff)/std_factor[len(filelist_R)]*dprv),fontsize=7)
         plt.imshow(diff,interpolation="nearest",origin="lower")
         # mymed = np.nanmedian((dwv_map-master_wvshift)[np.where((dwv_map>-1)*(dwv_map<1))])
         plt.clim([-0.25+mymed,0.25+mymed])
@@ -602,7 +665,7 @@ if 1:
         plt.subplot(2,len(filelist_R),k+1+len(filelist_R))
         plt.hist(diff[np.where(np.isfinite(diff))],bins=100,range=[-1,1])
         plt.title("{0:.3f} // {1:.3f} // {2:.3f}".format(np.nanstd(diff)/std_factor[len(filelist_R)],
-                                                         np.nanstd(diff)/std_factor[len(filelist_R)]*38.167938931297705,
+                                                         np.nanstd(diff)/std_factor[len(filelist_R)]*dprv,
                                                          np.nanstd(dwv_map)*std_factor[len(filelist_R)]),fontsize=8)
         plt.xlim([-0.5,1])
 
@@ -620,14 +683,14 @@ if 1:
     plt.imshow(master_wvshift,interpolation="nearest",origin="lower")
     plt.clim([-0.25+mymed,0.25+mymed])
     plt.subplot(1,2,2)
-    plt.imshow(master_wvshift*38.167938931297705,interpolation="nearest",origin="lower")
-    plt.clim([-10+mymed*38.167938931297705,10+mymed*38.167938931297705])
+    plt.imshow(master_wvshift*dprv,interpolation="nearest",origin="lower")
+    plt.clim([-10+mymed*dprv,10+mymed*dprv])
     plt.colorbar()
 
     plt.figure(4)
     plt.legend()
 
-    print("error",np.std(cst_offset_list)/std_factor[len(cst_offset_list)]*38,std_factor[len(cst_offset_list)])
+    print("error",np.std(cst_offset_list)/std_factor[len(cst_offset_list)]*dprv,std_factor[len(cst_offset_list)])
 
     cst_offset_list = np.array(cst_offset_list)
     filelist = np.array(filelist)
@@ -649,3 +712,63 @@ if 1:
 
     plt.show()
 
+if 0: # plot master sky calibrations
+    fontsize=12
+    k = 0
+    f,axes = plt.subplots(1,10,sharex="col",sharey="row",figsize=(12,4))
+    for year in np.arange(2009,2019,1):
+        for ifsfilter in ["Kbb","Hbb"]:
+            if ifsfilter=="Kbb": #Kbb 1965.0 0.25
+                CRVAL1 = 1965.
+                CDELT1 = 0.25
+                nl=1665
+                R=4000
+            elif ifsfilter=="Hbb": #Hbb 1651 1473.0 0.2
+                CRVAL1 = 1473.
+                CDELT1 = 0.2
+                nl=1651
+                R=4000
+            elif ifsfilter=="Jbb": #Hbb 1651 1473.0 0.2
+                CRVAL1 = 1180.
+                CDELT1 = 0.15
+                nl=1574
+                R0=4000
+            init_wv = CRVAL1/1000.
+            dwv = CDELT1/1000.
+            wvs=np.arange(init_wv,init_wv+dwv*nl-1e-6,dwv)
+            dprv = 3e5*dwv/(init_wv+dwv*nl//2)
+
+            filename = glob.glob("/data/osiris_data/HR_8799_*/{0}*/master_wvshifts_{1}.fits".format(year,ifsfilter))
+            if len(filename) >= 1:
+                filename = filename[0]
+            else:
+                continue
+            print(filename)
+            hdulist = pyfits.open(filename)
+            master_dwv = return_64x19(hdulist[0].data)
+            master_dwv[np.where(np.abs(master_dwv)>0.9)] = np.nan
+            master_dwv -= np.nanmedian(master_dwv)
+
+            k+=1
+            # plt.subplot(1,10,k)
+            plt.sca(axes[k-1])
+            img = plt.imshow(master_dwv/dwv*dprv,interpolation="nearest",origin="lower")
+            plt.clim([-5,5])
+            plt.gca().text(0,64,"{0} {1}".format(year,ifsfilter),ha="left",va="bottom",rotation=0,size=fontsize)
+            if k == 1:
+                plt.xlabel("x (pix)",fontsize=fontsize)
+                plt.ylabel("y (pix)",fontsize=fontsize)
+            else:
+                plt.tick_params(axis="x",labelbottom=False)
+            if k ==10:
+                cax = plt.axes([0.91,0.11,0.024,0.77])
+                cbar = plt.colorbar(cax=cax)
+                cbar.ax.set_ylabel("RV offset (km/s)",fontsize=fontsize)
+    plt.subplots_adjust(wspace=0,hspace=0)
+
+
+    if 1:
+        print("Saving "+os.path.join(out_pngs,"master_wavcal.pdf"))
+        plt.savefig(os.path.join(out_pngs,"master_wavcal.pdf"),bbox_inches='tight')
+        plt.savefig(os.path.join(out_pngs,"master_wavcal.png"),bbox_inches='tight')
+    plt.show()

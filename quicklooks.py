@@ -20,9 +20,9 @@ planet = "d"
 # IFSfilter = "Kbb"
 # IFSfilter = "Hbb"
 # IFSfilter = "all"
-# suffix = "KbbHbb"
-suffix = "all"
-
+suffix = "KbbHbb"
+# suffix = "all"
+fontsize = 12
 fileinfos_filename = "/data/osiris_data/HR_8799_"+planet+"/fileinfos_Kbb_jb.csv"
 
 #read file
@@ -91,7 +91,7 @@ list_data=new_list_data
 N_lines =  len(list_data)
 
 # plot 2D images
-if 1:
+if 0:
     # if IFSfilter=="Kbb": #Kbb 1965.0 0.25
     #     CRVAL1 = 1965.
     #     CDELT1 = 0.25
@@ -106,7 +106,7 @@ if 1:
     # init_wv = CRVAL1/1000. # wv for first slice in mum
 
     seqref = -1
-    f,ax_list = plt.subplots(N_lines//15+1,15,sharey="row",sharex="col",figsize=(15*0.6*2,2*2.25*(N_lines//15+1)))
+    f,ax_list = plt.subplots(N_lines//15+1,15,sharey="row",sharex="col",figsize=(12,12./15.*64./19.*(N_lines//15+1)))#figsize=(12,8)
     try:
         ax_list = [myax for rowax in ax_list for myax in rowax ]
     except:
@@ -121,7 +121,7 @@ if 1:
         # reducfilename = item[cen_filename_id].replace("20190324_HPF_only","20190401_HPF_only")
         reducfilename = item[cen_filename_id]
         plt.sca(ax)
-        plt.ylabel(os.path.basename(item[filename_id]).split("bb_")[0],fontsize=10)
+        # plt.ylabel(os.path.basename(item[filename_id]).split("bb_")[0],fontsize=10)
         # if "20190324_HPF_only" not in reducfilename:
         #     continue
         print(k,item)
@@ -170,12 +170,14 @@ if 1:
             plt.clim([0,np.max([np.nanstd(cube_hd)*10,30])])
             plt.xticks([0,10])
 
+
         if int(item[status_id]) == 1:
-            color = "cyan"
+            color = "white"
         elif int(item[status_id]) == 2:
             color = "grey"
         else:
-            color = "orange"
+            color = "grey"
+        plt.gca().text(3,10,os.path.basename(item[filename_id]).split("bb_")[0],ha="left",va="bottom",rotation=90,size=fontsize/3*2,color=color)
         try:
             circle = plt.Circle((lcen,kcen),5,color=color, fill=False)
             ax.add_artist(circle)
@@ -190,19 +192,31 @@ if 1:
         sequence = float(item[sequence_id])
         print(seqref,sequence)
         if seqref == sequence:
-            arrow = plt.arrow(lcenref,kcenref,xoffset,yoffset,color="red")
+            arrow = plt.arrow(lcenref,kcenref,xoffset-xoffset0,yoffset-yoffset0,color="#ff9900",linestyle =":",alpha=0.5)
             ax.add_artist(arrow)
-        else:
+            circle = plt.Circle((xoffset-xoffset0+lcenref,kcenref+yoffset-yoffset0),1,color="#ff9900", fill=False)
+            ax.add_artist(circle)
+        elif int(item[status_id]) >= 1:
+            xoffset0 = xoffset
+            yoffset0 = yoffset
             lcenref = lcen
             kcenref = kcen
             seqref = sequence
-            circle = plt.Circle((xoffset+lcenref,kcenref+yoffset),3,color="red", fill=False)
+            circle = plt.Circle((lcenref,kcenref),3,color="#ff9900", fill=False)
             ax.add_artist(circle)
-        circle = plt.Circle((xoffset+lcenref,kcenref+yoffset),1,color="red", fill=False)
-        ax.add_artist(circle)
+            circle = plt.Circle((lcenref,kcenref),1,color="#ff9900", fill=False)
+            ax.add_artist(circle)
+        else:
+            xoffset0 = 0
+            yoffset0 = 0
 
+    for ax in ax_list:
+        plt.sca(ax)
+        plt.tick_params(axis="x",which="both",bottom=False,top=False,labelbottom=False)
+        plt.tick_params(axis="y",which="both",left=False,right=False,labelleft=False)
+
+    f.subplots_adjust(wspace=0,hspace=0)
     # plt.show()
-    # f.subplots_adjust(wspace=0,hspace=0)
     print("Saving "+os.path.join(out_pngs,"HR_8799_"+planet,"HR8799"+planet+"_"+suffix+"_images.pdf"))
     plt.savefig(os.path.join(out_pngs,"HR_8799_"+planet,"HR8799"+planet+"_"+suffix+"_images.png"),bbox_inches='tight')
     plt.savefig(os.path.join(out_pngs,"HR_8799_"+planet,"HR8799"+planet+"_"+suffix+"_images.pdf"),bbox_inches='tight')
@@ -212,11 +226,21 @@ if 1:
     exit()
 
 # plot CCF
-if 0:
-    molecule_list = ["_H2O"]#["","_CH4","_CO","_CO2","_H2O"]
-    molecule_str_list = ["H2O"]#["Atmospheric model","CH4","CO","CO2","H2O"]
-    molecule_list = ["","_CH4","_CO","_CO2","_H2O"]
-    molecule_str_list = ["Atmospheric model","CH4","CO","CO2","H2O"]
+if 1:
+    # molecule_list = ["_H2O"]#["","_CH4","_CO","_CO2","_H2O"]
+    # molecule_str_list = ["H2O"]#["Atmospheric model","CH4","CO","CO2","H2O"]
+    # molecule_list = ["","_CH4","_CO","_CO2","_H2O"]
+    # molecule_str_list = ["Atmospheric model","CH4","CO","CO2","H2O"]
+    # molecule_list = [""]
+    # molecule_str_list = ["Atmospheric model"]
+    # molecule_list = ["_CO"]
+    # molecule_str_list = ["CO"]
+    # molecule_list = ["_CO2"]
+    # molecule_str_list = ["CO2"]
+    # molecule_list = ["_CH4"]
+    # molecule_str_list = ["CH4"]
+    molecule_list = ["_CH4","_CO","_CO2"]
+    molecule_str_list = ["CH4","CO","CO2"]
     for molecule,molecule_str in zip(molecule_list,molecule_str_list):
     # molecule = ""
     # molecule_str="Atmospheric model"
@@ -262,7 +286,7 @@ if 0:
                 reducfilename = item[cen_filename_id].replace("search","search"+molecule)
                 # reducfilename = item[cen_filename_id].replace("20190117_HPFonly","20190125_HPFonly").replace("sherlock_v0","sherlock_v1_search")
                 # reducfilename = item[cen_filename_id].replace("20190117_HPFonly","20190125_HPFonly_cov").replace("sherlock_v0","sherlock_v1_search_empcov")
-
+                # print(len(glob.glob(reducfilename.replace(".fits","_planetRV.fits"))) == 0,reducfilename.replace(".fits","_planetRV.fits"))
                 if len(glob.glob(reducfilename.replace(".fits","_planetRV.fits"))) == 0:
                     continue
                 hdulist = pyfits.open(reducfilename.replace(".fits","_planetRV.fits"))
@@ -277,6 +301,11 @@ if 0:
                 cube_hd = hdulist[0].data[0,0,0,0:NplanetRV_hd,:,:]
                 cube = hdulist[0].data[0,0,0,NplanetRV_hd::,:,:]
                 _,ny,nx = cube.shape
+
+                # print(cube_hd.shape)
+                # plt.imshow(cube_hd[100,:,:])
+                # plt.show()
+                # exit()
 
                 bary_rv = -float(item[bary_rv_id])/1000. # RV in km/s
                 rv_star = -12.6#-12.6+-1.4km/s HR 8799 Rob and Simbad
