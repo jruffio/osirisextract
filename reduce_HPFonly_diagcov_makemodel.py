@@ -565,15 +565,29 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
                                 hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_planetwvs.fits")), clobber=True)
                             hdulist.close()
                             hdulist = pyfits.HDUList()
+                            hdulist.append(pyfits.PrimaryHDU(data=np.ravel(nospec_planet_model)[where_finite_data[0]]))
+                            try:
+                                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_PSF.fits")), overwrite=True)
+                            except TypeError:
+                                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_PSF.fits")), clobber=True)
+                            hdulist.close()
+                            hdulist = pyfits.HDUList()
                             print("H1",np.isnan((np.ravel(nospec_planet_model)*tr4planet(ravelwvs))[where_finite_data[0]]))
                             planet_model = (np.ravel(nospec_planet_model)*tr4planet(ravelwvs))[where_finite_data[0]]
                             planet_model = planet_model/np.nansum(planet_model)*hr8799_flux*1e-5
                             # planet_model = planet_model/sigmas_vec
                             hdulist.append(pyfits.PrimaryHDU(data=planet_model))
                             try:
-                                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_PSF_transmission.fits")), overwrite=True)
+                                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_PSF_transmission_norma.fits")), overwrite=True)
                             except TypeError:
-                                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_PSF_transmission.fits")), clobber=True)
+                                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_PSF_transmission_norma.fits")), clobber=True)
+                            hdulist.close()
+                            hdulist = pyfits.HDUList()
+                            hdulist.append(pyfits.PrimaryHDU(data=tr4planet(ravelwvs)[where_finite_data[0]]))
+                            try:
+                                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_transmission.fits")), overwrite=True)
+                            except TypeError:
+                                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_transmission.fits")), clobber=True)
                             hdulist.close()
                             hdulist = pyfits.HDUList()
                             hdulist.append(pyfits.PrimaryHDU(data=sigmas_vec))
