@@ -362,7 +362,7 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
         # plt.plot(sigmas_vec,label="sig")
         # print(ravelHPFdata.shape)
         # exit()
-        ravelHPFdata = ravelHPFdata/sigmas_vec
+        ravelHPFdata = ravelHPFdata#/sigmas_vec
         # plt.plot(ravelHPFdata,label="HPF/sig")
         # plt.show()
         logdet_Sigma = np.sum(2*np.log(sigmas_vec))
@@ -554,9 +554,22 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
                             except TypeError:
                                 hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_datawvs.fits")), clobber=True)
                             hdulist.close()
+                            wvs4planet_model = wvs*(1-(planetRV_array[plrv_id])/c_kms) \
+                                                       -np.nanmean(data_wvsol_offsets)
+                            ravelwvs = np.tile(wvs4planet_model,(2*w+1)**2)
+                            hdulist = pyfits.HDUList()
+                            hdulist.append(pyfits.PrimaryHDU(data=ravelwvs[where_finite_data[0]]))
+                            try:
+                                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_planetwvs.fits")), overwrite=True)
+                            except TypeError:
+                                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_planetwvs.fits")), clobber=True)
+                            hdulist.close()
                             hdulist = pyfits.HDUList()
                             print("H1",np.isnan((np.ravel(nospec_planet_model)*tr4planet(ravelwvs))[where_finite_data[0]]))
-                            hdulist.append(pyfits.PrimaryHDU(data=(np.ravel(nospec_planet_model)*tr4planet(ravelwvs))[where_finite_data[0]]))
+                            planet_model = (np.ravel(nospec_planet_model)*tr4planet(ravelwvs))[where_finite_data[0]]
+                            planet_model = planet_model/np.nansum(planet_model)*hr8799_flux*1e-5
+                            # planet_model = planet_model/sigmas_vec
+                            hdulist.append(pyfits.PrimaryHDU(data=planet_model))
                             try:
                                 hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_PSF_transmission.fits")), overwrite=True)
                             except TypeError:
@@ -858,7 +871,7 @@ if __name__ == "__main__":
         # scale = "035"
 
         inputDir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/"
-        outputdir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/20190504_model/"
+        outputdir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/20190508_model/"
         # outputdir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/20190305_HPF_only_noperscor/"
         # outputdir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/20190228_mol_temp/"
 
