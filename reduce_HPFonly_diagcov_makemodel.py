@@ -1230,7 +1230,7 @@ if __name__ == "__main__":
             lcen_id = colnames.index("lcen")
             rvcen_id = colnames.index("RVcen")
             status_id = colnames.index("status")
-            plcen_k,plcen_l = float(fileitem[kcen_id]),float(fileitem[lcen_id])
+            plcen_k,plcen_l = float(fileitem[kcen_id])+5,float(fileitem[lcen_id])
             print(fileitem[status_id])
             if int(fileitem[status_id]) !=1:
                 exit()
