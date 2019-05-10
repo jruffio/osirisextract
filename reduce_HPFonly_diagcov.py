@@ -68,7 +68,7 @@ def _arraytonumpy(shared_array, shape=None, dtype=None):
     return numpy_array
 
 def _tpool_init(original_imgs,sigmas_imgs,badpix_imgs,originalLPF_imgs,originalHPF_imgs, original_imgs_shape, output_maps, output_maps_shape,
-                wvs_imgs,psfs_stamps,psfs_stamps_shape,_outres,_outres_shape,_outautocorrres,_outautocorrres_shape,persistence_imgs,_out1dfit,_out1dfit_shape):
+                wvs_imgs,psfs_stamps,psfs_stamps_shape,_outres,_outres_shape,_outautocorrres,_outautocorrres_shape,persistence_imgs,_out1dfit,_out1dfit_shape,_estispec,_estispec_shape):
     """
     Initializer function for the thread pool that initializes various shared variables. Main things to note that all
     except the shapes are shared arrays (mp.Array).
@@ -76,7 +76,7 @@ def _tpool_init(original_imgs,sigmas_imgs,badpix_imgs,originalLPF_imgs,originalH
     Args:
     """
     global original,sigmas,badpix,originalLPF,originalHPF, original_shape, output, output_shape, lambdas, img_center, \
-        psfs, psfs_shape, Npixproc, Npixtot,outres,outres_shape,outautocorrres,outautocorrres_shape,persistence,out1dfit,out1dfit_shape
+        psfs, psfs_shape, Npixproc, Npixtot,outres,outres_shape,outautocorrres,outautocorrres_shape,persistence,out1dfit,out1dfit_shape,estispec,estispec_shape
     # original images from files to read and align&scale. Shape of (N,y,x)
     original = original_imgs
     sigmas = sigmas_imgs
@@ -92,8 +92,10 @@ def _tpool_init(original_imgs,sigmas_imgs,badpix_imgs,originalLPF_imgs,originalH
     outautocorrres = _outautocorrres
     outautocorrres_shape = _outautocorrres_shape
     out1dfit_shape = _out1dfit_shape
+    estispec_shape = _estispec_shape
 
     out1dfit = _out1dfit
+    estispec = _estispec
     persistence = persistence_imgs
 
     # parameters for each image (PA, wavelegnth, image center, image number)
@@ -106,7 +108,7 @@ def _tpool_init(original_imgs,sigmas_imgs,badpix_imgs,originalLPF_imgs,originalH
 
 def _remove_bad_pixels_z(col_index,nan_mask_boxsize,dtype,window_size=50,threshold=7.):
     global original,sigmas,badpix,originalLPF,originalHPF, original_shape, output, output_shape, lambdas, img_center, \
-        psfs, psfs_shape, Npixproc, Npixtot,outres,outres_shape,outautocorrres,outautocorrres_shape,persistence,out1dfit,out1dfit_shape
+        psfs, psfs_shape, Npixproc, Npixtot,outres,outres_shape,outautocorrres,outautocorrres_shape,persistence,out1dfit,out1dfit_shape,estispec,estispec_shape
     original_np = _arraytonumpy(original, original_shape,dtype=dtype)
     ny,nx,nz = original_shape
     tmpcube = copy(original_np[:,col_index,:])
@@ -136,7 +138,7 @@ def _remove_bad_pixels_z(col_index,nan_mask_boxsize,dtype,window_size=50,thresho
 
 def _HPF_z(col_index,cutoff,dtype):
     global original,sigmas,badpix,originalLPF,originalHPF, original_shape, output, output_shape, lambdas, img_center, \
-        psfs, psfs_shape, Npixproc, Npixtot,outres,outres_shape,outautocorrres,outautocorrres_shape,persistence,out1dfit,out1dfit_shape
+        psfs, psfs_shape, Npixproc, Npixtot,outres,outres_shape,outautocorrres,outautocorrres_shape,persistence,out1dfit,out1dfit_shape,estispec,estispec_shape
     original_np = _arraytonumpy(original, original_shape,dtype=dtype)
     originalLPF_np = _arraytonumpy(originalLPF, original_shape,dtype=dtype)
     originalHPF_np = _arraytonumpy(originalHPF, original_shape,dtype=dtype)
@@ -166,7 +168,7 @@ def _HPF_z(col_index,cutoff,dtype):
 
 def _remove_edges(wvs_indices,nan_mask_boxsize,dtype):
     global original,sigmas,badpix,originalLPF,originalHPF, original_shape, output, output_shape, lambdas, img_center, \
-        psfs, psfs_shape, Npixproc, Npixtot,outres,outres_shape,outautocorrres,outautocorrres_shape,persistence,out1dfit,out1dfit_shape
+        psfs, psfs_shape, Npixproc, Npixtot,outres,outres_shape,outautocorrres,outautocorrres_shape,persistence,out1dfit,out1dfit_shape,estispec,estispec_shape
     badpix_np = _arraytonumpy(badpix, original_shape,dtype=dtype)
     for k in wvs_indices:
         tmp = np.ones(badpix_np.shape[0:2])#badpix_np[:,:,k]
@@ -180,7 +182,7 @@ def _remove_edges(wvs_indices,nan_mask_boxsize,dtype):
 
 def _remove_bad_pixels_xy(wvs_indices,dtype):
     global original,sigmas,badpix,originalLPF,originalHPF, original_shape, output, output_shape, lambdas, img_center, \
-        psfs, psfs_shape, Npixproc, Npixtot,outres,outres_shape,outautocorrres,outautocorrres_shape,persistence,out1dfit,out1dfit_shape
+        psfs, psfs_shape, Npixproc, Npixtot,outres,outres_shape,outautocorrres,outautocorrres_shape,persistence,out1dfit,out1dfit_shape,estispec,estispec_shape
     original_np = _arraytonumpy(original, original_shape,dtype=dtype)
     badpix_np = _arraytonumpy(badpix, original_shape,dtype=dtype)
     for k in wvs_indices:
@@ -242,7 +244,7 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
                             wvs,planetRV_array,dtype,cutoff,planet_search,centroid_guess,
                             R_list,numbasis_list,wvsol_offsets,R_calib_arr=None,model_persistence=False):
     global original,sigmas,badpix,originalLPF,originalHPF, original_shape, output, output_shape, lambdas, img_center, \
-        psfs, psfs_shape, Npixproc, Npixtot,outres,outres_shape,outautocorrres,outautocorrres_shape,persistence,out1dfit,out1dfit_shape
+        psfs, psfs_shape, Npixproc, Npixtot,outres,outres_shape,outautocorrres,outautocorrres_shape,persistence,out1dfit,out1dfit_shape,estispec,estispec_shape
     original_np = _arraytonumpy(original, original_shape,dtype=dtype)
     sigmas_np = _arraytonumpy(sigmas, original_shape,dtype=dtype)
     originalLPF_np = _arraytonumpy(originalLPF, original_shape,dtype=dtype)
@@ -255,6 +257,7 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
     padny,padnx,padnz = original_shape
     persistence_np = _arraytonumpy(persistence, original_shape,dtype=dtype)
     out1dfit_np = _arraytonumpy(out1dfit, out1dfit_shape,dtype=dtype)
+    estispec_np = _arraytonumpy(estispec, estispec_shape,dtype=dtype)
     # print("coucou2")
 
     tmpwhere = np.where(np.isfinite(badpix_np))
@@ -430,6 +433,17 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
 
                 # new_line_list =np.concatenate([new_line_list,self_line_spec[None,:]])
 
+                # import matplotlib.pyplot as plt
+                # HPFdata[np.where(np.isnan(data_badpix))] = np.nan
+                # LPFdata[np.where(np.isnan(data_badpix))] = np.nan
+                # plt.subplot(3,1,1)
+                # plt.plot(np.nansum(HPFdata,axis=(0,1)))
+                # plt.subplot(3,1,2)
+                # plt.plot(np.nansum(LPFdata,axis=(0,1))*new_line_list[0])
+                # plt.subplot(3,1,3)
+                # plt.plot(np.nansum(data_sigmas,axis=(0,1)))
+                # plt.show()
+
                     # plt.plot(line_spec,label="line_spec")
                 for line_spec in new_line_list:
                     bkg_model = np.zeros((2*w+1,2*w+1,2*w+1,2*w+1,data_nz))
@@ -464,9 +478,35 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
 
 
 
+                #planet spec extraction
+                if 1:
+                    where_finite_data_cube = np.where(np.isfinite(data_badpix))
+                    where_finite_bad_cube = np.where(np.isnan(data_badpix))
+                    HPFmodel_H0_4spec = np.reshape(bkg_model,((2*w+1)**2,(2*w+1)**2*data_nz)).transpose()[where_finite_data[0],:]
+                    where_valid_parameters = np.where(np.sum(np.abs(HPFmodel_H0_4spec),axis=0)!=0)
+                    HPFmodel_H0_4spec = HPFmodel_H0_4spec[:,where_valid_parameters[0]]
+                    ravelHPFdata_4spec  = np.ravel(HPFdata)[where_finite_data]
+                    HPFmodel_H0_4spec[np.where(np.isnan(HPFmodel_H0_4spec))]=0
+
+                    HPFparas_H0,HPFchi2_H0,rank,s = np.linalg.lstsq(HPFmodel_H0_4spec/sigmas_vec[:,None],ravelHPFdata_4spec/sigmas_vec,rcond=None)
+                    # print(HPFparas_H0)
+
+                    data_model_H0 = np.dot(HPFmodel_H0_4spec,HPFparas_H0)
+                    ravelresiduals_H0 = ravelHPFdata_4spec-data_model_H0
+
+                    canvas = np.zeros((5,5,nl))+np.nan
+                    canvas[where_finite_data_cube] = ravelresiduals_H0
+                    PSF = copy(nospec_planet_model)
+                    PSF[where_finite_bad_cube] = np.nan
+                    estispec_np[0,row,col,:] = np.nanmean(wvs[None,None,:]-data_wvsol_offsets[:,:,None],axis=(0,1))
+                    estispec_np[1,row,col,:] = np.nansum(canvas*PSF,axis=(0,1))/np.nansum(PSF,axis=(0,1))/tr4planet(wvs)
+
+                    # import matplotlib.pyplot as plt
+                    # plt.plot(estispec_np[0,row,col,:],estispec_np[1,row,col,:])
+                    # plt.show()
     
                 HPFmodel_H0 = HPFmodel_H0[where_finite_data[0],:]/sigmas_vec[:,None]
-    
+
                 noplrv_id = np.argmin(np.abs(planetRV_array))
                 for plrv_id in range(np.size(planetRV_array)):
                     # print("coucou6")
@@ -813,7 +853,7 @@ if __name__ == "__main__":
         # scale = "035"
 
         inputDir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/"
-        outputdir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/20190430_HPF_only/"
+        outputdir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/20190510_estispec/"
         # outputdir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/20190305_HPF_only_noperscor/"
         # outputdir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/20190228_mol_temp/"
 
@@ -1051,9 +1091,11 @@ if __name__ == "__main__":
             if debug_paras:
                 planetRV_array = np.array([hr8799_bary_rv-10,])
                 dl_grid,dk_grid = np.array([[0]]),np.array([[0]])
-                # plcen_k,plcen_l = float(fileitem[kcen_id]),float(fileitem[lcen_id])
+                kcen_id = colnames.index("kcen")
+                lcen_id = colnames.index("lcen")
+                plcen_k,plcen_l = float(fileitem[kcen_id]),float(fileitem[lcen_id])
                 # plcen_k,plcen_l = 32-10,-35.79802955665025+46.8
-                plcen_k,plcen_l = 26,6#44,8
+                # plcen_k,plcen_l = 26,6#44,8
             else:
                 planetRV_array = np.arange(-3*dprv,3*dprv,dprv/100)
                 dl_grid,dk_grid = np.meshgrid(np.linspace(-1.,1.,2*20+1),np.linspace(-1.,1.,2*20+1))
@@ -1660,6 +1702,14 @@ if __name__ == "__main__":
         out1dfit_np = _arraytonumpy(out1dfit,out1dfit_shape,dtype=dtype)
         out1dfit_np[:] = np.nan
         if planet_search:
+            estispec = mp.Array(dtype, 2*padny*padnx*padimgs.shape[-1])
+            estispec_shape = (2,padny,padnx,padimgs.shape[-1])
+        else:
+            estispec = mp.Array(dtype, 2*dl_grid.shape[0]*dl_grid.shape[1]*padimgs.shape[-1])
+            estispec_shape = (2,dl_grid.shape[0],dl_grid.shape[1],padimgs.shape[-1])
+        estispec_np = _arraytonumpy(estispec,estispec_shape,dtype=dtype)
+        estispec_np[:] = np.nan
+        if planet_search:
             outres = mp.Array(dtype, len(numbasis_list)*len(transmission_table)*6*padny*padnx*padimgs.shape[-1])
             outres_shape = (len(numbasis_list),len(transmission_table),6,padimgs.shape[-1],padny,padnx)
         else:
@@ -1686,7 +1736,7 @@ if __name__ == "__main__":
         ##############################
         tpool = mp.Pool(processes=numthreads, initializer=_tpool_init,
                         initargs=(original_imgs,sigmas_imgs,badpix_imgs,originalLPF_imgs,originalHPF_imgs, original_imgs_shape, output_maps,
-                                  output_maps_shape,wvs_imgs,psfs_stamps, psfs_stamps_shape,outres,outres_shape,outautocorrres,outautocorrres_shape,persistence_imgs,out1dfit,out1dfit_shape),
+                                  output_maps_shape,wvs_imgs,psfs_stamps, psfs_stamps_shape,outres,outres_shape,outautocorrres,outautocorrres_shape,persistence_imgs,out1dfit,out1dfit_shape,estispec,estispec_shape),
                         maxtasksperchild=50)
 
 
@@ -1914,7 +1964,7 @@ if __name__ == "__main__":
             tpool.close()
             _tpool_init(original_imgs,sigmas_imgs,badpix_imgs,originalLPF_imgs,originalHPF_imgs, original_imgs_shape, output_maps,
                         output_maps_shape,wvs_imgs,psfs_stamps, psfs_stamps_shape,outres,outres_shape,outautocorrres,
-                        outautocorrres_shape,persistence_imgs,out1dfit,out1dfit_shape)
+                        outautocorrres_shape,persistence_imgs,out1dfit,out1dfit_shape,estispec,estispec_shape)
             _process_pixels_onlyHPF(plcen_k_valid_pix[::-1],plcen_l_valid_pix[::-1],row_valid_pix[::-1],col_valid_pix[::-1],
                                     normalized_psfs_func_list,
                                     transmission_table,
@@ -2013,6 +2063,16 @@ if __name__ == "__main__":
             hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_output"+suffix+"_out1dfit.fits")), overwrite=True)
         except TypeError:
             hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_output"+suffix+"_out1dfit.fits")), clobber=True)
+        hdulist.close()
+        hdulist = pyfits.HDUList()
+        if planet_search:
+            hdulist.append(pyfits.PrimaryHDU(data=np.moveaxis(estispec_np,len(estispec_shape)-1,len(estispec_shape)-3)[:,:,padding:(padny-padding),padding:(padnx-padding)]))
+        else:
+            hdulist.append(pyfits.PrimaryHDU(data=np.moveaxis(estispec_np,len(estispec_shape)-1,len(estispec_shape)-3)))
+        try:
+            hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_output"+suffix+"_estispec.fits")), overwrite=True)
+        except TypeError:
+            hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_output"+suffix+"_estispec.fits")), clobber=True)
         hdulist.close()
 
         if not planet_search:
