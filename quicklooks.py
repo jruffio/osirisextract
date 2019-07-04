@@ -14,8 +14,8 @@ from copy import copy
 out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
 
 # planet = "b"
-# planet = "c"
-planet = "d"
+planet = "c"
+# planet = "d"
 
 # IFSfilter = "Kbb"
 # IFSfilter = "Hbb"
@@ -91,7 +91,7 @@ list_data=new_list_data
 N_lines =  len(list_data)
 
 # plot 2D images
-if 0:
+if 1:
     # if IFSfilter=="Kbb": #Kbb 1965.0 0.25
     #     CRVAL1 = 1965.
     #     CDELT1 = 0.25
@@ -106,7 +106,8 @@ if 0:
     # init_wv = CRVAL1/1000. # wv for first slice in mum
 
     seqref = -1
-    f,ax_list = plt.subplots(N_lines//15+1,15,sharey="row",sharex="col",figsize=(12,12./15.*64./19.*(N_lines//15+1)))#figsize=(12,8)
+    Ninarow = 20
+    f,ax_list = plt.subplots(N_lines//Ninarow+1,Ninarow,sharey="row",sharex="col",figsize=(12,12./Ninarow*64./19.*(N_lines//Ninarow+1)))#figsize=(12,8)
     try:
         ax_list = [myax for rowax in ax_list for myax in rowax ]
     except:
@@ -173,13 +174,16 @@ if 0:
 
         if int(item[status_id]) == 1:
             color = "white"
+            circlelinestyle = "-"
         elif int(item[status_id]) == 2:
             color = "grey"
+            circlelinestyle = "--"
         else:
             color = "grey"
-        plt.gca().text(3,10,os.path.basename(item[filename_id]).split("bb_")[0],ha="left",va="bottom",rotation=90,size=fontsize/3*2,color=color)
+            circlelinestyle = "--"
+        # plt.gca().text(3,10,os.path.basename(item[filename_id]).split("bb_")[0],ha="left",va="bottom",rotation=90,size=fontsize/3*2,color=color)
         try:
-            circle = plt.Circle((lcen,kcen),5,color=color, fill=False)
+            circle = plt.Circle((lcen,kcen),5,color=color, fill=False,linestyle=circlelinestyle)
             ax.add_artist(circle)
             # print(hdulist[0].data[0,0,11,zcen,kcen,lcen])
         except:
@@ -192,10 +196,10 @@ if 0:
         sequence = float(item[sequence_id])
         print(seqref,sequence)
         if seqref == sequence:
-            arrow = plt.arrow(lcenref,kcenref,xoffset-xoffset0,yoffset-yoffset0,color="#ff9900",linestyle =":",alpha=0.5)
-            ax.add_artist(arrow)
+            # arrow = plt.arrow(lcenref,kcenref,xoffset-xoffset0,yoffset-yoffset0,color="#ff9900",linestyle =":",alpha=0.5)
+            # ax.add_artist(arrow)
             circle = plt.Circle((xoffset-xoffset0+lcenref,kcenref+yoffset-yoffset0),1,color="#ff9900", fill=False)
-            ax.add_artist(circle)
+            # ax.add_artist(circle)
         elif int(item[status_id]) >= 1:
             xoffset0 = xoffset
             yoffset0 = yoffset
@@ -203,9 +207,9 @@ if 0:
             kcenref = kcen
             seqref = sequence
             circle = plt.Circle((lcenref,kcenref),3,color="#ff9900", fill=False)
-            ax.add_artist(circle)
+            # ax.add_artist(circle)
             circle = plt.Circle((lcenref,kcenref),1,color="#ff9900", fill=False)
-            ax.add_artist(circle)
+            # ax.add_artist(circle)
         else:
             xoffset0 = 0
             yoffset0 = 0
@@ -214,6 +218,10 @@ if 0:
         plt.sca(ax)
         plt.tick_params(axis="x",which="both",bottom=False,top=False,labelbottom=False)
         plt.tick_params(axis="y",which="both",left=False,right=False,labelleft=False)
+        plt.gca().spines["right"].set_visible(False)
+        plt.gca().spines["left"].set_visible(False)
+        plt.gca().spines["top"].set_visible(False)
+        plt.gca().spines["bottom"].set_visible(False)
 
     f.subplots_adjust(wspace=0,hspace=0)
     # plt.show()
@@ -226,7 +234,7 @@ if 0:
     exit()
 
 # plot CCF
-if 1:
+if 0:
     # molecule_list = ["_H2O"]#["","_CH4","_CO","_CO2","_H2O"]
     # molecule_str_list = ["H2O"]#["Atmospheric model","CH4","CO","CO2","H2O"]
     # molecule_list = ["","_CH4","_CO","_CO2","_H2O"]
@@ -440,7 +448,7 @@ if 1:
     exit()
 
 # plot RVs
-if 1:
+if 0:
     rv_star = -12.6#-12.6+-1.4km/s HR 8799 Rob and Simbad
     bary_star_list = np.array([-float(item[bary_rv_id])/1000+rv_star for item in list_data])
     mjdobs_list = np.array([float(item[mjdobs_id]) for item in list_data])

@@ -853,7 +853,7 @@ if __name__ == "__main__":
         # scale = "035"
 
         inputDir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/"
-        outputdir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/20190510_estispec/"
+        outputdir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/20190520_LPF/"
         # outputdir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/20190305_HPF_only_noperscor/"
         # outputdir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/20190228_mol_temp/"
 
@@ -876,10 +876,10 @@ if __name__ == "__main__":
         plot_transmissions = False
         plt_psfs = False
         plot_persistence = False
-        # planet_model_string = "model"
+        planet_model_string = "model"
         # planet_model_string = "CO"#"CO2 CO H2O CH4"
         # planet_model_string = "CO2 CO H2O CH4 joint"
-        planet_model_string = "CO joint"
+        # planet_model_string = "CO joint"
 
         osiris_data_dir = "/data/osiris_data"
         if "d" in planet:
@@ -1927,6 +1927,141 @@ if __name__ == "__main__":
         # plt.legend()
         # tpool.close()
         # plt.show()
+
+        if 0:
+            out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
+            import matplotlib.pyplot as plt
+            print(original_imgs_np.shape)
+            fontsize = 12
+            plt.figure(1,figsize=(12,3))
+            ax1 = plt.gca()
+            plt.figure(2,figsize=(12,3))
+            ax2 = plt.gca()
+            for myk in np.arange(25,35):
+                for myl in np.arange(7,9):
+                    myvec = copy(original_imgs_np[myk,myl,:])
+                    myvec_cp = copy(myvec)/transmission4planet_list[0](wvs)
+                    print(np.nanmax(myvec_cp))
+                    plt.sca(ax1)
+                    plt.plot(wvs,myvec_cp,color="grey",alpha = 0.2)
+                    wherenans = np.where(np.isnan(myvec_cp))
+                    for k in wherenans[0]:
+                        myvec_cp[k] = np.nanmedian(myvec_cp[np.max([0,k-10]):np.min([np.size(myvec_cp),k+10])])
+
+                    fftmyvec = np.fft.fft(np.concatenate([myvec_cp,myvec_cp[::-1]],axis=0))
+                    fftmyvec = np.fft.fft(np.concatenate([myvec_cp,myvec_cp[::-1]],axis=0))
+                    LPF_fftmyvec = copy(fftmyvec)
+                    LPF_fftmyvec[cutoff:(2*np.size(myvec_cp)-cutoff+1)] = 0
+                    LPF_myvec = np.real(np.fft.ifft(LPF_fftmyvec))[0:np.size(myvec_cp)]
+                    HPF_myvec = myvec_cp - LPF_myvec
+                    HPF_myvec[wherenans] = np.nan
+                    plt.sca(ax2)
+                    plt.plot(wvs,HPF_myvec,color="grey",alpha = 0.2)
+            plt.sca(ax1)
+            plt.plot(wvs,myvec,color="grey",alpha = 0.2,label="Noise sample")
+            plt.sca(ax2)
+            plt.plot(wvs,HPF_myvec,color="grey",alpha = 0.2,label="Noise sample")
+
+            myvec_cp = planet_partial_template_func_list[0](wvs)
+            plt.sca(ax1)
+            plt.plot(wvs,myvec_cp/np.max(myvec_cp)*0.4,color="#ff9900",label="HR 8799 c model")
+            fftmyvec = np.fft.fft(np.concatenate([myvec_cp,myvec_cp[::-1]],axis=0))
+            LPF_fftmyvec = copy(fftmyvec)
+            LPF_fftmyvec[cutoff:(2*np.size(myvec_cp)-cutoff+1)] = 0
+            LPF_myvec = np.real(np.fft.ifft(LPF_fftmyvec))[0:np.size(myvec_cp)]
+            HPF_myvec = myvec_cp - LPF_myvec
+            plt.sca(ax2)
+            plt.plot(wvs,HPF_myvec/np.max(myvec_cp)*0.4,color="#ff9900",label="HR 8799 c model")
+
+            plt.sca(ax1)
+            plt.ylim([0,0.5])
+            plt.legend(loc="upper right",frameon=True,fontsize=fontsize)
+            plt.xlabel(r"$\lambda$ ($\mu$m)",fontsize=fontsize)
+            plt.gca().tick_params(axis='x', labelsize=fontsize)
+            plt.gca().tick_params(axis='y', labelsize=fontsize)
+            # plt.tick_params(axis="y",which="both",labelleft=False,right=False,left=False)
+            # plt.gca().spines["right"].set_visible(False)
+            # plt.gca().spines["left"].set_visible(False)
+            # plt.gca().spines["top"].set_visible(False)
+            plt.tight_layout()
+            print("Saving "+os.path.join(out_pngs,"speckles.png"))
+            plt.savefig(os.path.join(out_pngs,"speckles.png"),bbox_inches='tight')
+            plt.savefig(os.path.join(out_pngs,"speckles.pdf"),bbox_inches='tight')
+
+            plt.sca(ax2)
+            plt.ylim([-0.2,0.2])
+            plt.legend(loc="upper right",frameon=True,fontsize=fontsize)
+            plt.xlabel(r"$\lambda$ ($\mu$m)",fontsize=fontsize)
+            plt.gca().tick_params(axis='x', labelsize=fontsize)
+            plt.gca().tick_params(axis='y', labelsize=fontsize)
+            plt.tight_layout()
+            print("Saving "+os.path.join(out_pngs,"speckles_HPF.png"))
+            plt.savefig(os.path.join(out_pngs,"speckles_HPF.png"),bbox_inches='tight')
+            plt.savefig(os.path.join(out_pngs,"speckles_HPF.pdf"),bbox_inches='tight')
+
+            plt.figure(3,figsize=(12,3))
+            fftx = 2*(wvs[-1]-wvs[0])/np.arange(padnz)
+            plt.fill_betweenx([0,1e5],[100,100],[fftx[40],fftx[40]],color="#0099cc",alpha=0.2,label="High-pass filtered")
+            for myk in np.arange(25,35):
+                for myl in np.arange(7,9):
+                    myvec = original_imgs_np[myk,myl,:]
+                    myvec_cp = copy(myvec)/transmission4planet_list[0](wvs)
+                    #handling nans:
+                    wherenans = np.where(np.isnan(myvec_cp))
+                    for k in wherenans[0]:
+                        myvec_cp[k] = np.nanmedian(myvec_cp[np.max([0,k-10]):np.min([np.size(myvec_cp),k+10])])
+
+                    fftmyvec = np.fft.fft(np.concatenate([myvec_cp,myvec_cp[::-1]],axis=0))
+                    # LPF_fftmyvec = copy(fftmyvec)
+                    # LPF_fftmyvec[cutoff:(2*np.size(myvec_cp)-cutoff+1)] = 0
+                    # LPF_fftmyvec[:] = 0
+                    # LPF_fftmyvec[cutoff] = 1
+                    # LPF_myvec = np.real(np.fft.ifft(LPF_fftmyvec))[0:np.size(myvec_cp)]
+                    # HPF_myvec = myvec_cp - LPF_myvec
+
+                    plt.plot(fftx,np.abs(fftmyvec)[0:np.size(myvec_cp)],color="grey",alpha = 0.2)
+            plt.plot(fftx,np.abs(fftmyvec)[0:np.size(myvec_cp)],color="grey",alpha = 0.2,label="Noise sample")
+
+            myplvec = planet_partial_template_func_list[0](wvs)
+            fftmyvec = np.fft.fft(np.concatenate([myvec_cp,myvec_cp[::-1]],axis=0))
+            plt.plot(fftx,np.abs(fftmyvec)[0:np.size(myvec_cp)],color="#ff9900",label="HR 8799 c model")
+            # plt.xlim([0.100,0.416])
+            plt.legend(loc="upper right",frameon=True,fontsize=fontsize)
+            plt.xlim([np.min(fftx),1])
+            plt.ylim([1e-1,1e3])
+            plt.xscale("log")
+            plt.yscale("log")
+            plt.xlabel(r"Period ($\mu$m)",fontsize=fontsize)
+            plt.ylabel(r"Power spectrum",fontsize=fontsize)
+            plt.gca().tick_params(axis='x', labelsize=fontsize)
+            plt.gca().tick_params(axis='y', labelsize=fontsize)
+            plt.gca().invert_xaxis()
+            plt.tight_layout()
+            print("Saving "+os.path.join(out_pngs,"speckles_fft.png"))
+            plt.savefig(os.path.join(out_pngs,"speckles_fft.png"),bbox_inches='tight')
+            plt.savefig(os.path.join(out_pngs,"speckles_fft.pdf"),bbox_inches='tight')
+            plt.show()
+            exit()
+
+        if 0:
+            if not os.path.exists(os.path.join(outputdir)):
+                os.makedirs(os.path.join(outputdir))
+            hdulist = pyfits.HDUList()
+            hdulist.append(pyfits.PrimaryHDU(data=np.moveaxis(originalLPF_imgs_np,len(originalLPF_imgs_np.shape)-1,len(originalLPF_imgs_np.shape)-3)[:,padding:(padny-padding),padding:(padnx-padding)],header=prihdr))
+            try:
+                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_output"+suffix+"_LPF.fits")), overwrite=True)
+            except TypeError:
+                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_output"+suffix+"_LPF.fits")), clobber=True)
+            hdulist.close()
+            hdulist = pyfits.HDUList()
+            hdulist.append(pyfits.PrimaryHDU(data=np.moveaxis(badpix_imgs_np,len(badpix_imgs_np.shape)-1,len(badpix_imgs_np.shape)-3)[:,padding:(padny-padding),padding:(padnx-padding)],header=prihdr))
+            try:
+                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_output"+suffix+"_LPF_badpix.fits")), overwrite=True)
+            except TypeError:
+                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_output"+suffix+"_LPF_badpix.fits")), clobber=True)
+            hdulist.close()
+            continue
+
 
         ##############################
         ## Define tasks

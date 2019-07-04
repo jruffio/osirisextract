@@ -233,7 +233,7 @@ if 1:
     eb1 = plt.errorbar(c_indices[where_c_Kbbbad],c_good_rv_list[where_all_c][where_c_Kbbbad]-c_bary_star_list[where_all_c][where_c_Kbbbad],
                  yerr=np.sqrt(c_rvsig_list[where_all_c][where_c_Kbbbad]**2+c_wvsolerr_list[where_all_c][where_c_Kbbbad]**2),fmt="x",color="grey")
     eb1[-1][0].set_linestyle(":")
-    plt.plot(c_indices[where_c_Kbb],c_good_rv_list[where_all_c][where_c_Kbb]-c_bary_star_list[where_all_c][where_c_Kbb],"x",color="#ff9900",label="Kbb")
+    plt.plot(c_indices[where_c_Kbb],c_good_rv_list[where_all_c][where_c_Kbb]-c_bary_star_list[where_all_c][where_c_Kbb],"x",color="#ff9900",label="K-band")
 
     plt.errorbar(c_indices[where_c_Hbb],c_good_rv_list[where_all_c][where_c_Hbb]-c_bary_star_list[where_all_c][where_c_Hbb],
                  yerr=np.sqrt(c_rvsig_list[where_all_c][where_c_Hbb]**2+c_wvsolerr_list[where_all_c][where_c_Hbb]**2),fmt="none",color="#cc6600")
@@ -242,7 +242,7 @@ if 1:
     eb1 = plt.errorbar(c_indices[where_c_Hbbbad],c_good_rv_list[where_all_c][where_c_Hbbbad]-c_bary_star_list[where_all_c][where_c_Hbbbad],
                  yerr=np.sqrt(c_rvsig_list[where_all_c][where_c_Hbbbad]**2+c_wvsolerr_list[where_all_c][where_c_Hbbbad]**2),fmt="o",color="grey")
     eb1[-1][0].set_linestyle(":")
-    plt.plot(c_indices[where_c_Hbb],c_good_rv_list[where_all_c][where_c_Hbb]-c_bary_star_list[where_all_c][where_c_Hbb],"o",color="#ff9900",label="Hbb")
+    plt.plot(c_indices[where_c_Hbb],c_good_rv_list[where_all_c][where_c_Hbb]-c_bary_star_list[where_all_c][where_c_Hbb],"o",color="#ff9900",label="H-band")
     plt.fill_between([0,np.size(where_all_c[0])],c_combined_avg-c_combined_sig,c_combined_avg+c_combined_sig,alpha=0.2,color="#cc3300")
     plt.fill_between([0,np.size(where_all_c[0])],rv_star-1.4,rv_star+1.4,alpha=0.3,color="grey",label="HR 8799 RV")
     plt.ylim([-40,30])
@@ -276,7 +276,7 @@ if 1:
     eb1 = plt.errorbar(b_indices[where_b_Kbbbad],b_good_rv_list[where_all_b][where_b_Kbbbad]-b_bary_star_list[where_all_b][where_b_Kbbbad],
                  yerr=np.sqrt(b_rvsig_list[where_all_b][where_b_Kbbbad]**2+b_wvsolerr_list[where_all_b][where_b_Kbbbad]**2),fmt="x",color="grey")
     eb1[-1][0].set_linestyle(":")
-    plt.plot(b_indices[where_b_Kbb],b_good_rv_list[where_all_b][where_b_Kbb]-b_bary_star_list[where_all_b][where_b_Kbb],"x",color="#0099cc",label="Kbb")
+    plt.plot(b_indices[where_b_Kbb],b_good_rv_list[where_all_b][where_b_Kbb]-b_bary_star_list[where_all_b][where_b_Kbb],"x",color="#0099cc",label="K-band")
 
     plt.errorbar(b_indices[where_b_Hbb],b_good_rv_list[where_all_b][where_b_Hbb]-b_bary_star_list[where_all_b][where_b_Hbb],
                  yerr=np.sqrt(b_rvsig_list[where_all_b][where_b_Hbb]**2+b_wvsolerr_list[where_all_b][where_b_Hbb]**2),fmt="none",color="#006699")
@@ -285,7 +285,7 @@ if 1:
     eb1 = plt.errorbar(b_indices[where_b_Hbbbad],b_good_rv_list[where_all_b][where_b_Hbbbad]-b_bary_star_list[where_all_b][where_b_Hbbbad],
                  yerr=np.sqrt(b_rvsig_list[where_all_b][where_b_Hbbbad]**2+b_wvsolerr_list[where_all_b][where_b_Hbbbad]**2),fmt="o",color="grey")
     eb1[-1][0].set_linestyle(":")
-    plt.plot(b_indices[where_b_Hbb],b_good_rv_list[where_all_b][where_b_Hbb]-b_bary_star_list[where_all_b][where_b_Hbb],"o",color="#0099cc",label="Hbb")
+    plt.plot(b_indices[where_b_Hbb],b_good_rv_list[where_all_b][where_b_Hbb]-b_bary_star_list[where_all_b][where_b_Hbb],"o",color="#0099cc",label="H-band")
 
     plt.fill_between([0,np.size(where_all_b[0])],b_combined_avg-b_combined_sig,b_combined_avg+b_combined_sig,alpha=0.2,color="#003366")
     plt.fill_between([0,np.size(where_all_b[0])],rv_star-1.4,rv_star+1.4,alpha=0.3,color="grey",label="HR 8799 RV")
@@ -404,11 +404,47 @@ if 1:
 
     # b_combined_avg_list,b_combined_sig_list
     b_combined_avg_nonans_list = b_combined_avg_list[np.where(np.isfinite(b_combined_avg_list))]
+    b_combined_sig_nonans_list = b_combined_sig_list[np.where(np.isfinite(b_combined_avg_list))]
+    # b_combined_sig_nonans_list = np.zeros(b_combined_sig_nonans_list.shape)
+    print(b_combined_avg_nonans_list)
+    print(b_combined_sig_nonans_list)
+    sig2_list = np.linspace(0.2,5,2000)
+    dsig2 = sig2_list[1]-sig2_list[0]
+    alpha_list = np.linspace(b_pessimistic_weighted_mean-10,b_pessimistic_weighted_mean+10,10000)
+    dalpha = alpha_list[1]-alpha_list[0]
+    sig2_grid,alpha_grid = np.meshgrid(sig2_list,alpha_list)
+    print(sig2_grid.shape)
+    print("coucou")
+    sig2_post = 1/np.sqrt((2*np.pi)**(np.size(b_combined_sig_nonans_list))*np.prod(b_combined_sig_nonans_list[None,None,:]**2+sig2_grid[:,:,None]**2,axis=2))*\
+                np.exp(-0.5*np.sum((b_combined_avg_nonans_list[None,None,:]-alpha_grid[:,:,None])**2/(b_combined_sig_nonans_list[None,None,:]**2+sig2_grid[:,:,None]**2),axis=2))
+                # *1/sig2_list**2
+    alpha_post = 1/np.sqrt((2*np.pi)**(np.size(b_combined_sig_nonans_list))*np.prod(b_combined_sig_nonans_list[None,:]**2,axis=1))*\
+                np.exp(-0.5*np.sum((b_combined_avg_nonans_list[None,:]-alpha_list[:,None])**2/(b_combined_sig_nonans_list[None,:]**2),axis=1))
+    print(sig2_post.shape)
+    # plt.figure(12)
+    # plt.imshow(sig2_post)
+    # plt.show()
+    new_b_pessimistic_posterior  = np.sum(sig2_post,axis=1)
+    new_b_pessimistic_posterior = new_b_pessimistic_posterior/np.max(new_b_pessimistic_posterior)
+    new_b_pessimistic_posterior_f = interp1d(alpha_list,new_b_pessimistic_posterior,bounds_error=False,fill_value=0)
+    print("P(d|H1)",np.sum(sig2_post)*dsig2*dalpha)
+    print("P(d|H2)",np.sum(alpha_post)*dalpha)
+    print("P(d|H1)/P(d|H2)",np.sum(sig2_post)*dsig2*dalpha/(np.sum(alpha_post)*dalpha))
+    print("P(d|H0)",1/np.sqrt((2*np.pi)**(np.size(b_combined_sig_nonans_list))*np.prod(b_combined_sig_nonans_list[None,:]**2))*\
+                np.exp(-0.5*np.sum((b_combined_avg_nonans_list[None,:]-b_pessimistic_weighted_mean)**2/(b_combined_sig_nonans_list[None,:]**2),axis=1)))
+    # plt.figure(10)
+    # plt.imshow(sig2_post,extent=[sig2_list[0],sig2_list[-1],alpha_list[0],alpha_list[-1]])
+    # plt.figure(11)
+    # plt.errorbar(np.arange(np.size(b_combined_avg_nonans_list)),b_combined_avg_nonans_list-b_pessimistic_weighted_mean,yerr=b_combined_sig_nonans_list,ecolor="red")
+    # plt.show()
+    # print()
+    # exit()
     out = np.zeros(1000)
     for k in range(np.size(out)):
         out[k] = np.mean(np.random.choice(b_combined_avg_nonans_list,size=np.size(b_combined_avg_nonans_list),replace=True))
     bootstrap_std = np.std(out)
-    # print(bootstrap_std)
+    print("bootstrap_std",bootstrap_std)
+    # exit()
     # print(np.std(b_combined_avg_nonans_list))
     # exit()
     # b_pessimistic_posterior,bin_edges = np.histogram(out,bins=200,range=[-20,0])
@@ -496,6 +532,8 @@ if 1:
         b_chi2 = np.sum(((b_good_rv_list[where_esti_b]-b_bary_star_list[where_esti_b]-b_combined_avg)/np.sqrt(b_rvsig_list[where_esti_b]**2+b_wvsolerr_list[where_esti_b]**2))**2)
         b_N_data = np.size(b_good_rv_list[where_esti_b])
 
+        print("coucou",c_chi2/c_N_data,b_chi2/b_N_data)
+
 
         c_optimistic_posterior_func = interp1d(final_planetRV_hd,c_optimistic_posterior,bounds_error=False,fill_value=0)
         b_optimistic_posterior_func = interp1d(final_planetRV_hd,b_optimistic_posterior,bounds_error=False,fill_value=0)
@@ -549,6 +587,8 @@ if 1:
         b_combined_avg_pess,b_combined_sig_pess,_ = get_err_from_posterior(final_planetRV_hd,b_pessimistic_posterior)
         c_combined_avg_pess,c_combined_sig_pess,_ = get_err_from_posterior(final_planetRV_hd,c_pessimistic_posterior)
 
+        print("coucou",c_chi2,b_chi2)
+
     unique_strdate = np.unique(np.concatenate([c_uniquedate_list,b_uniquedate_list]))
     unique_strdate = unique_strdate[np.where(unique_strdate!="")]
 
@@ -556,23 +596,39 @@ if 1:
     plt.subplot(3,1,1)
     plt.fill_betweenx([0,np.size(unique_date)],rv_star-1.4,rv_star+1.4,alpha=0.2,color="grey",label="HR 8799 RV")
 
+    print("bonjour",c_combined_avg_list,c_combined_sig_list,c_uniquedate_list,c_N_data_list)
+    print("Planet & Date & RV & N cubes \\\\")
+    for a,b,c,d in zip(c_combined_avg_list,c_combined_sig_list,c_uniquedate_list,c_N_data_list):
+        if np.isnan(a):
+            continue
+        formated_date =  c[0:4]+"-"+c[4:6]+"-"+c[6:8]
+        print("& {0} & ${1:.1f} \\pm {2:.1f}$ & {3} \\\\".format(formated_date,a,b,int(d)))
     plt.errorbar(c_combined_avg_list,np.arange(np.size(unique_date)),xerr=c_combined_sig_list,fmt="none",color="#ff9900")
     plt.plot(c_combined_avg_list,np.arange(np.size(unique_date)),"x",color="#ff9900",label="c (# exposures)")
     wherenotnans = np.where(np.isfinite(c_combined_avg_list))
     for y,(x,date,num) in enumerate(zip(c_combined_avg_list,c_uniquedate_list,c_N_data_list)):
-        if x == np.nan or (x< (-16)):
+        if np.isnan(x) or (x< (-16)):
             continue
-        plt.gca().text(x,y,"{0}".format(num),ha="center",va="bottom",rotation=0,size=fontsize,color="#cc3300")
+        plt.gca().text(x,y,"{0}".format(num),ha="center",va="bottom",rotation=0,size=fontsize,color="#cc3300",alpha=1)
     # print(unique_strdate)
     plt.plot([c_combined_avg-c_combined_sig,c_combined_avg-c_combined_sig],[0,np.size(unique_date)],linestyle="--",linewidth=2,color="#cc6600",alpha=0.4)
     plt.plot([c_combined_avg,c_combined_avg],[0,np.size(unique_date)],linestyle="-",linewidth=2,color="#cc3300",alpha=0.4)
     plt.plot([c_combined_avg+c_combined_sig,c_combined_avg+c_combined_sig],[0,np.size(unique_date)],linestyle="--",linewidth=2,color="#cc6600",alpha=0.4)
+    # plt.gca().text(c_combined_avg-0.25,np.size(unique_date)+0.5,"${0:.1f}\pm {1:.1f}$ km/s".format(c_combined_avg,c_combined_sig),ha="center",va="bottom",rotation=0,size=fontsize,color="#cc3300")
+    # plt.gca().text(c_combined_avg_pess+0.05,0.7,"$\pm {1:.1f}$ km/s".format(c_combined_avg_pess,c_combined_sig_pess),ha="left",va="top",rotation=90,size=fontsize,color="#cc3300",alpha=0.5)
 
     b_N_data_list = np.array(b_N_data_list)
     # where_solid = np.where((b_N_data_list>2)*(unique_strdate != "20180722"))
     # where_dash  = np.where(((b_N_data_list<=2)+(unique_strdate == "20180722")))
     where_solid = np.where((b_N_data_list>=0))
     where_dash  = np.where(((b_N_data_list<0)))
+    print("bonjour",b_combined_avg_list,b_combined_sig_list)
+    print("Planet & Date & RV  & N cubes \\\\")
+    for a,b,c,d in zip(b_combined_avg_list,b_combined_sig_list,b_uniquedate_list,b_N_data_list):
+        if np.isnan(a):
+            continue
+        formated_date =  c[0:4]+"-"+c[4:6]+"-"+c[6:8]
+        print("& {0} & ${1:.1f} \\pm {2:.1f}$ & {3} \\\\".format(formated_date,a,b,int(d)))
     plt.errorbar(b_combined_avg_list[where_solid],np.arange(np.size(unique_date))[where_solid],xerr=b_combined_sig_list[where_solid],fmt="none",color="#0099cc")
     plt.plot(b_combined_avg_list[where_solid],np.arange(np.size(unique_date))[where_solid],"x",color="#0099cc",label="b (# exposures)")
     eb1 = plt.errorbar(b_combined_avg_list[where_dash],np.arange(np.size(unique_date))[where_dash],xerr=b_combined_sig_list[where_dash],fmt="none",color="#0099cc")
@@ -580,15 +636,17 @@ if 1:
     plt.plot(b_combined_avg_list[where_dash],np.arange(np.size(unique_date))[where_dash],"x",color="#0099cc")
     wherenotnans = np.where(np.isfinite(b_combined_avg_list))
     for y,(x,date,num) in enumerate(zip(b_combined_avg_list,unique_strdate,b_N_data_list)):
-        if x == np.nan:
+        if np.isnan(x):
             continue
         if date == "20180722":
-            plt.gca().text(x,y,"{0} (35 mas scale)".format(num),ha="center",va="bottom",rotation=0,size=fontsize,color="#003366")
+            plt.gca().text(x,y,"{0} (35 mas scale)".format(num),ha="center",va="bottom",rotation=0,size=fontsize,color="#003366",alpha=1)
         else:
-            plt.gca().text(x,y,"{0}".format(num),ha="center",va="bottom",rotation=0,size=fontsize,color="#003366")
+            plt.gca().text(x,y,"{0}".format(num),ha="center",va="bottom",rotation=0,size=fontsize,color="#003366",alpha=1)
     plt.plot([b_combined_avg-b_combined_sig,b_combined_avg-b_combined_sig],[0,np.size(unique_date)],linestyle=":",linewidth=2,color="#006699",alpha=0.4)
     plt.plot([b_combined_avg,b_combined_avg],[0,np.size(unique_date)],linestyle="-.",linewidth=2,color="#003366",alpha=0.4)
     plt.plot([b_combined_avg+b_combined_sig,b_combined_avg+b_combined_sig],[0,np.size(unique_date)],linestyle=":",linewidth=2,color="#006699",alpha=0.4)
+    # plt.gca().text(b_combined_avg+0.25,np.size(unique_date)+0.5,"${0:.1f}\pm {1:.1f}$ km/s".format(b_combined_avg,b_combined_sig),ha="center",va="bottom",rotation=0,size=fontsize,color="#003366")
+    # plt.gca().text(b_combined_avg_pess+0.05,0.7,"$\pm {1:.1f}$ km/s".format(b_combined_avg_pess,b_combined_sig_pess),ha="left",va="top",rotation=90,size=fontsize,color="#003366",alpha=0.5)
 
     plt.xlim([rv_star-4,rv_star+12])
     # plt.ylim([0,1.1])
@@ -618,23 +676,26 @@ if 1:
     # plt.fill_betweenx([0,10],c_combined_avg-c_combined_sig,c_combined_avg+c_combined_sig,alpha=1,color="#cc3300")
     # plt.fill_betweenx([0,10],b_combined_avg-b_combined_sig,b_combined_avg+b_combined_sig,alpha=1,color="#003366")
     # plt.hist(c_good_rv_list[where_c]-c_bary_star_list[where_c], range=[-20,20],bins=20,histtype="bar",alpha=0.5,color="#ff9900",label="c: RV histogram")
-    plt.plot([c_combined_avg,c_combined_avg],[0,10],linestyle="-",linewidth=2,color="#cc3300",label="c: Best estimate")
-    plt.plot([c_combined_avg-c_combined_sig,c_combined_avg-c_combined_sig],[0,10],linestyle="--",linewidth=2,color="#cc6600",label="c: $1\sigma$ error")
-    plt.gca().text(c_combined_avg,0.7,"${0:.1f}\pm {1:.1f}$ km/s".format(c_combined_avg,c_combined_sig),ha="right",va="top",rotation=90,size=fontsize,color="#cc3300")
-    plt.gca().text(c_combined_avg_pess+0.05,0.7,"$\pm {1:.1f}$ km/s".format(c_combined_avg_pess,c_combined_sig_pess),ha="left",va="top",rotation=90,size=fontsize,color="#cc3300",alpha=0.5)
-    plt.plot([c_combined_avg+c_combined_sig,c_combined_avg+c_combined_sig],[0,10],linestyle="--",linewidth=2,color="#cc6600")
-    plt.plot(final_planetRV_hd,c_posterior,linestyle="-",linewidth=3,color="#ff9900",label="c: posterior")
-    plt.fill_between(final_planetRV_hd,c_posterior,c_pessimistic_posterior,linestyle="-",linewidth=3,color="#ff9900",alpha=0.3,label="c: Inflated posterior (bootstrap)")
+    # plt.plot([c_combined_avg,c_combined_avg],[0,10],linestyle="-",linewidth=2,color="#cc3300",label="c: Best estimate")
+    # plt.plot([c_combined_avg-c_combined_sig,c_combined_avg-c_combined_sig],[0,10],linestyle="--",linewidth=2,color="#cc6600",label="c: $1\sigma$ error")
+    # plt.plot([c_combined_avg+c_combined_sig,c_combined_avg+c_combined_sig],[0,10],linestyle="--",linewidth=2,color="#cc6600")
+    # plt.gca().text(c_combined_avg,0.7,"${0:.1f}\pm {1:.1f}$ km/s".format(c_combined_avg,c_combined_sig),ha="right",va="top",rotation=90,size=fontsize,color="#cc3300")
+    # plt.gca().text(c_combined_avg_pess+0.05,0.7,"$\pm {1:.1f}$ km/s".format(c_combined_avg_pess,c_combined_sig_pess),ha="left",va="top",rotation=90,size=fontsize,color="#cc3300",alpha=0.5)
+    plt.gca().text(c_combined_avg+0.25,1,"${0:.1f}\pm {1:.1f}$ km/s".format(c_combined_avg,c_combined_sig),ha="center",va="bottom",rotation=0,size=fontsize,color="#cc3300")
+    plt.plot(final_planetRV_hd,c_posterior,linestyle="-",linewidth=3,color="#ff9900",label="c: Posterior")
+    # plt.fill_between(final_planetRV_hd,c_posterior,c_pessimistic_posterior,linestyle="-",linewidth=3,color="#ff9900",alpha=0.3,label="c: With bootstrap")
     # plt.plot(final_planetRV_hd,np.exp(-0.5*(final_planetRV_hd-c_combined_avg)**2/c_combined_sig**2),linestyle="--",linewidth=3,color="black",label="c: posterior")
 
     # plt.hist(b_good_rv_list[where_b]-b_bary_star_list[where_b], range=[-20,20],bins=20,histtype="bar",alpha=0.5,color="#0099cc",label="b: RV histogram")
-    plt.plot([b_combined_avg,b_combined_avg],[0,10],linestyle="-.",linewidth=2,color="#003366",label="b: Best estimate")
-    plt.plot([b_combined_avg-b_combined_sig,b_combined_avg-b_combined_sig],[0,10],linestyle=":",linewidth=2,color="#006699",label="b: $1\sigma$ error")
-    plt.gca().text(b_combined_avg,0.7,"${0:.1f}\pm {1:.1f}$ km/s".format(b_combined_avg,b_combined_sig),ha="right",va="top",rotation=90,size=fontsize,color="#003366")
-    plt.gca().text(b_combined_avg_pess+0.05,0.7,"$\pm {1:.1f}$ km/s".format(b_combined_avg_pess,b_combined_sig_pess),ha="left",va="top",rotation=90,size=fontsize,color="#003366",alpha=0.5)
-    plt.plot([b_combined_avg+b_combined_sig,b_combined_avg+b_combined_sig],[0,10],linestyle=":",linewidth=2,color="#006699")
-    plt.plot(final_planetRV_hd,b_posterior,linestyle="-",linewidth=3,color="#0099cc",label="b: posterior")
-    plt.fill_between(final_planetRV_hd,b_posterior,b_pessimistic_posterior,linestyle="-",linewidth=3,color="#0099cc",alpha=0.3,label="b: Inflated posterior (bootstrap)")
+    # plt.plot([b_combined_avg,b_combined_avg],[0,10],linestyle="-.",linewidth=2,color="#003366",label="b: Best estimate")
+    # plt.plot([b_combined_avg-b_combined_sig,b_combined_avg-b_combined_sig],[0,10],linestyle=":",linewidth=2,color="#006699",label="b: $1\sigma$ error")
+    # plt.plot([b_combined_avg+b_combined_sig,b_combined_avg+b_combined_sig],[0,10],linestyle=":",linewidth=2,color="#006699")
+    # plt.gca().text(b_combined_avg,0.7,"${0:.1f}\pm {1:.1f}$ km/s".format(b_combined_avg,b_combined_sig),ha="right",va="top",rotation=90,size=fontsize,color="#003366")
+    # plt.gca().text(b_combined_avg_pess+0.05,0.7,"$\pm {1:.1f}$ km/s".format(b_combined_avg_pess,b_combined_sig_pess),ha="left",va="top",rotation=90,size=fontsize,color="#003366",alpha=0.5)
+    plt.gca().text(b_combined_avg-0.7,1,"${0:.1f}\pm {1:.1f}$ km/s".format(b_combined_avg,b_combined_sig),ha="left",va="bottom",rotation=0,size=fontsize,color="#003366")
+    plt.plot(final_planetRV_hd,b_posterior,linestyle="-",linewidth=3,color="#0099cc",label="b: Posterior")
+    # plt.fill_between(final_planetRV_hd,b_posterior,b_pessimistic_posterior,linestyle="-",linewidth=3,color="#0099cc",alpha=0.3,label="b: With bootstrap")
+    # plt.fill_between(final_planetRV_hd,b_posterior,new_b_pessimistic_posterior_f(final_planetRV_hd),linestyle="-",linewidth=3,color="#0099cc",alpha=0.3,label="b: joint sig2 fit")
     # plt.plot(final_planetRV_hd,np.exp(-0.5*(final_planetRV_hd-b_combined_avg)**2/b_combined_sig**2),linestyle="--",linewidth=3,color="black",label="b: posterior")
     
     plt.xlim([rv_star-4,rv_star+12])
@@ -647,8 +708,8 @@ if 1:
     plt.gca().spines["top"].set_visible(False)
     plt.gca().spines["left"].set_position(("data",rv_star))
     handles, labels = plt.gca().get_legend_handles_labels()
-    new_handles = handles[0:3]+[handles[6]]+handles[3:6]+[handles[7]]
-    new_labels = labels[0:3]+[labels[6]]+labels[3:6]+[labels[7]]
+    new_handles = handles#handles[0:3]+[handles[6]]+handles[3:6]+[handles[7]]
+    new_labels = labels#labels[0:3]+[labels[6]]+labels[3:6]+[labels[7]]
     # print(handles)
     # print(labels)
     # exit()
@@ -665,7 +726,7 @@ if 1:
     dRV_hist = dRV_hist/np.max(dRV_hist)
     bin_center = (bin_edges[1::]+bin_edges[0:np.size(bin_edges)-1])/2
     dRV_posterior = interp1d(bin_center,dRV_hist,bounds_error=False,fill_value=0)(final_planetRV_hd)
-    plt.plot(final_planetRV_hd,dRV_posterior,linestyle=":",linewidth=2,color="grey",label="Imaging posterior (stable orbits)") #9966ff
+    plt.plot(final_planetRV_hd,dRV_posterior,linestyle=":",linewidth=2,color="grey",label="Imaging (coplanar & stable prior)") #9966ff
     plt.fill_between(final_planetRV_hd,
                      dRV_posterior*0,
                      dRV_posterior,alpha=0.2,color="grey")
@@ -678,13 +739,14 @@ if 1:
     deltaRV_pess,deltaRV_sig_pess,_ = get_err_from_posterior(final_planetRV_hd,delta_pessimistic_posterior)
     confidence_interval = (1-np.cumsum(delta_posterior)[np.argmin(np.abs(final_planetRV_hd))]/np.sum(delta_posterior))
     # plt.plot(final_planetRV_hd,np.cumsum(delta_posterior)/np.max(np.cumsum(delta_posterior)),linestyle="-",linewidth=3,color="#6600ff",label="b: posterior") #9966ff
-    plt.plot([deltaRV,deltaRV],[0,10],linestyle="-",linewidth=2,color="#660066",label="Best estimate")
-    plt.plot([deltaRV-deltaRV_sig,deltaRV-deltaRV_sig],[0,10],linestyle="--",linewidth=2,color="#9966ff",label="$1\sigma$ error")
-    plt.gca().text(deltaRV,0.7,"${0:.1f}\pm {1:.1f}$ km/s".format(deltaRV,deltaRV_sig),ha="right",va="top",rotation=90,size=fontsize,color="#660066")
-    plt.gca().text(deltaRV_pess+0.05,0.7,"$\pm {1:.1f}$ km/s".format(deltaRV_pess,deltaRV_sig_pess),ha="left",va="top",rotation=90,size=fontsize,color="#660066",alpha=0.5)
-    plt.plot([deltaRV+deltaRV_sig,deltaRV+deltaRV_sig],[0,10],linestyle="--",linewidth=2,color="#9966ff")
-    plt.plot(final_planetRV_hd,delta_posterior,linestyle="-",linewidth=3,color="#6600ff",label="posterior") #9966ff 
-    plt.fill_between(final_planetRV_hd,delta_posterior,delta_pessimistic_posterior,linestyle="-",linewidth=3,color="#6600ff",alpha=0.3,label="Inflated posterior ") #9966ff
+    # plt.plot([deltaRV,deltaRV],[0,10],linestyle="-",linewidth=2,color="#660066",label="Best estimate")
+    # plt.plot([deltaRV-deltaRV_sig,deltaRV-deltaRV_sig],[0,10],linestyle="--",linewidth=2,color="#9966ff",label="$1\sigma$ error")
+    # plt.plot([deltaRV+deltaRV_sig,deltaRV+deltaRV_sig],[0,10],linestyle="--",linewidth=2,color="#9966ff")
+    # plt.gca().text(deltaRV,0.7,"${0:.1f}\pm {1:.1f}$ km/s".format(deltaRV,deltaRV_sig),ha="right",va="top",rotation=90,size=fontsize,color="#660066")
+    # plt.gca().text(deltaRV_pess+0.05,0.7,"$\pm {1:.1f}$ km/s".format(deltaRV_pess,deltaRV_sig_pess),ha="left",va="top",rotation=90,size=fontsize,color="#660066",alpha=0.5)
+    plt.gca().text(deltaRV-0.6,1.0,"${0:.1f}\pm {1:.1f}$ km/s".format(deltaRV,deltaRV_sig),ha="left",va="bottom",rotation=0,size=fontsize,color="#660066")
+    plt.plot(final_planetRV_hd,delta_posterior,linestyle="-",linewidth=3,color="#6600ff",label="Posterior") #9966ff
+    # plt.fill_between(final_planetRV_hd,delta_posterior,delta_pessimistic_posterior,linestyle="-",linewidth=3,color="#6600ff",alpha=0.3,label="With bootstrap") #9966ff
     # plt.fill_between(final_planetRV_hd[np.where(final_planetRV_hd>0)],
     #                  np.zeros(np.size(final_planetRV_hd[np.where(final_planetRV_hd>0)])),
     #                  (delta_posterior/np.max(delta_posterior))[np.where(final_planetRV_hd>0)],alpha=0.2,color="#9966ff")

@@ -1025,7 +1025,7 @@ if __name__ == "__main__":
                 pass
 
     # Plot supersampled PSF
-    if 0:
+    if 1:
         if IFSfilter=="Kbb": #Kbb 1965.0 0.25
             CRVAL1 = 1965.
             CDELT1 = 0.25
@@ -1058,7 +1058,7 @@ if __name__ == "__main__":
         for k,l in enumerate(np.arange(0,psfs_refstar_arr.shape[0],500)):
             plt.sca(axes[int(k//2)][k%2])
             plt.imshow(psfs_refstar_arr[l,:,:],origin="lower",extent=[hdpsfs_x[0,0],hdpsfs_x[-1,-1],hdpsfs_y[0,0],hdpsfs_y[-1,-1]])
-            plt.gca().text(-5,5,"${0:.2f}\,\mu$m".format(wvs[l]),ha="left",va="bottom",rotation=0,size=fontsize,color="white")
+            # plt.gca().text(-5,5,"${0:.2f}\,\mu$m".format(wvs[l]),ha="left",va="bottom",rotation=0,size=fontsize,color="white")
             plt.tick_params(axis="x",labelsize=fontsize)
             plt.tick_params(axis="y",labelsize=fontsize)
         plt.sca(axes[1][0])
