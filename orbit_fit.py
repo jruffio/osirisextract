@@ -4,6 +4,7 @@ import numpy as np
 import os
 import sys
 import multiprocessing as mp
+import astropy.io.fits as pyfits
 from astropy.time import Time
 if len(sys.argv) == 1:
     import orbitize
@@ -13,22 +14,22 @@ if len(sys.argv) == 1:
 
     osiris_data_dir = "/data/osiris_data"
     astrometry_DATADIR = os.path.join(osiris_data_dir,"astrometry")
-    uservs = True
-    # planet = "d"
-    planet = "bc"
+    uservs = False
+    planet = "e"
+    # planet = "bc"
     if uservs and (planet == "b" or planet =="c" or planet == "bc"):
         filename = "{0}/HR8799{1}_rvs.csv".format(astrometry_DATADIR,planet)
     else:
         filename = "{0}/HR8799{1}.csv".format(astrometry_DATADIR,planet)
     # MCMC parameters
     num_temps = 20
-    num_walkers = 100
-    total_orbits = 10000 # number of steps x number of walkers (at lowest temperature)
-    burn_steps = 100 # steps to burn in per walker
+    num_walkers = 30
+    total_orbits = 1000 # number of steps x number of walkers (at lowest temperature)
+    burn_steps = 0 # steps to burn in per walker
     thin = 2 # only save every 2nd step
     num_threads = mp.cpu_count() # or a different number if you prefer
     # suffix = "test2"
-    suffix = "testjoint2"
+    suffix = "sherlock"
 else:
     import matplotlib
     matplotlib.use("Agg")
@@ -61,7 +62,8 @@ else:
     sysrv=0
     sysrv_err=0
 
-print(sysrv,sysrv_err)
+# print(rv_str,sysrv,sysrv_err)
+# exit()
 
 try:
     import mkl
@@ -88,6 +90,16 @@ if 1:
     my_driver.system.angle_upperlim = 2.*np.pi
 
     my_driver.sampler.run_sampler(total_orbits, burn_steps=burn_steps, thin=thin)
+
+
+    hdulist = pyfits.HDUList()
+    print(my_driver.sampler.chain.shape)
+    hdulist.append(pyfits.PrimaryHDU(data=my_driver.sampler.chain))
+    try:
+        hdulist.writeto(os.path.join(out_pngs,"HR_8799_"+planet,'chain_{0}_{1}_{2}.hdf5'.format(rv_str,planet,suffix)), overwrite=True)
+    except TypeError:
+        hdulist.writeto(os.path.join(out_pngs,"HR_8799_"+planet,'chain_{0}_{1}_{2}.hdf5'.format(rv_str,planet,suffix)), clobber=True)
+    hdulist.close()
 
     hdf5_filename=os.path.join(out_pngs,"HR_8799_"+planet,'posterior_{0}_{1}_{2}.hdf5'.format(rv_str,planet,suffix))
     # To avoid weird behaviours, delete saved file if it already exists from a previous run of this notebook
@@ -143,49 +155,60 @@ else:
     loaded_results = results.Results() # Create blank results object for loading
     loaded_results.load_results(hdf5_filename)
 
+    with pyfits.open(os.path.join(out_pngs,"HR_8799_"+planet,'chain_{0}_{1}_{2}.hdf5'.format(rv_str,planet,suffix))) as hdulist:
+        chains = hdulist[0].data
+        print(chains.shape)
+
     # print(loaded_results.post.shape)
     # # exit()
     # # param_list = ["sma1","ecc1","inc1","aop1","pan1","epp1"]
-    # # param_list = ["sma1","ecc1","inc1","aop1","pan1","epp1","plx","mtot"]
+    # param_list = ["sma1","ecc1","inc1","aop1","pan1","epp1","plx","mtot"]
     # # param_list = ["sma1","ecc1","inc1","aop1","pan1","epp1","plx","sysrv","mtot"]
-    # param_list = ["sma1","ecc1","inc1","aop1","pan1","epp1","sma2","ecc2","inc2","aop2","pan2","epp2","plx","sysrv","mtot"]
-    # loaded_results.post = loaded_results.post[:,:]
+    # # param_list = ["sma1","ecc1","inc1","aop1","pan1","epp1","sma2","ecc2","inc2","aop2","pan2","epp2","plx","mtot"]
+    # # param_list = ["sma1","ecc1","inc1","aop1","pan1","epp1","sma2","ecc2","inc2","aop2","pan2","epp2","plx","sysrv","mtot"]
+    # loaded_results.post = loaded_results.post[::10,:]
     # corner_plot_fig = loaded_results.plot_corner(param_list=param_list)
     # corner_plot_fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,"corner_plot_{0}_{1}_{2}.png".format(rv_str,planet,suffix)))
+    # exit()
+
+    fig = loaded_results.plot_orbits(
+        object_to_plot = 1, # Plot orbits for the first (and only, in this case) companion
+        num_orbits_to_plot= 100, # Will plot 100 randomly selected orbits of this companion
+        start_mjd=data_table['epoch'][0], # Minimum MJD for colorbar (here we choose first data epoch)
+        data_table=data_table,
+        cbar_param="sma2",
+        total_mass=system_mass,
+        parallax=plx
+    )
+    fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,'orbits_plot_{0}_{1}_{2}_obj1.png'.format(rv_str,planet,suffix))) # This is matplotlib.figure.Figure.savefig()
+    # fig = loaded_results.plot_orbits(
+    #     object_to_plot = 2, # Plot orbits for the first (and only, in this case) companion
+    #     num_orbits_to_plot= 100, # Will plot 100 randomly selected orbits of this companion
+    #     start_mjd=data_table['epoch'][0], # Minimum MJD for colorbar (here we choose first data epoch)
+    #     data_table=data_table,
+    #     cbar_param="sma2"
+    #     # total_mass=system_mass,
+    #     # parallax=plx
+    # )
+    # fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,'orbits_plot_{0}_{1}_{2}_obj2.png'.format(rv_str,planet,suffix))) # This is matplotlib.figure.Figure.savefig()
+
+    fig = loaded_results.plot_rvs(
+        object_to_plot = 1, # Plot orbits for the first (and only, in this case) companion
+        num_orbits_to_plot= 100, # Will plot 100 randomly selected orbits of this companion
+        start_mjd=data_table['epoch'][0], # Minimum MJD for colorbar (here we choose first data epoch)
+        data_table=data_table,
+        total_mass=system_mass,
+        parallax=plx
+    )
+    fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,'rv_plot_{0}_{1}_{2}_obj1.png'.format(rv_str,planet,suffix))) # This is matplotlib.figure.Figure.savefig()
+    # fig = loaded_results.plot_rvs(
+    #     object_to_plot = 2, # Plot orbits for the first (and only, in this case) companion
+    #     num_orbits_to_plot= 100, # Will plot 100 randomly selected orbits of this companion
+    #     start_mjd=data_table['epoch'][0], # Minimum MJD for colorbar (here we choose first data epoch)
+    #     data_table=data_table
+    # )
+    # fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,'rv_plot_{0}_{1}_{2}_obj2.png'.format(rv_str,planet,suffix))) # This is matplotlib.figure.Figure.savefig()
     # plt.show()
-
-    loaded_results.plot_orbits(
-        object_to_plot = 1, # Plot orbits for the first (and only, in this case) companion
-        num_orbits_to_plot= 100, # Will plot 100 randomly selected orbits of this companion
-        start_mjd=data_table['epoch'][0], # Minimum MJD for colorbar (here we choose first data epoch)
-        data_table=data_table,
-        cbar_param="sma2"
-        # total_mass=system_mass,
-        # parallax=plx
-    )
-    loaded_results.plot_orbits(
-        object_to_plot = 2, # Plot orbits for the first (and only, in this case) companion
-        num_orbits_to_plot= 100, # Will plot 100 randomly selected orbits of this companion
-        start_mjd=data_table['epoch'][0], # Minimum MJD for colorbar (here we choose first data epoch)
-        data_table=data_table,
-        cbar_param="sma2"
-        # total_mass=system_mass,
-        # parallax=plx
-    )
-
-    loaded_results.plot_rvs(
-        object_to_plot = 1, # Plot orbits for the first (and only, in this case) companion
-        num_orbits_to_plot= 100, # Will plot 100 randomly selected orbits of this companion
-        start_mjd=data_table['epoch'][0], # Minimum MJD for colorbar (here we choose first data epoch)
-        data_table=data_table
-    )
-    loaded_results.plot_rvs(
-        object_to_plot = 2, # Plot orbits for the first (and only, in this case) companion
-        num_orbits_to_plot= 100, # Will plot 100 randomly selected orbits of this companion
-        start_mjd=data_table['epoch'][0], # Minimum MJD for colorbar (here we choose first data epoch)
-        data_table=data_table
-    )
-    plt.show()
 
 
 
