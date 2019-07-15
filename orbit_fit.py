@@ -29,7 +29,9 @@ if len(sys.argv) == 1:
     thin = 2 # only save every 2nd step
     num_threads = mp.cpu_count() # or a different number if you prefer
     # suffix = "test2"
-    suffix = "sherlock"
+    # suffix = "sherlock"
+    suffix = "sherlock_ptemceefix_16_512_78125_50"
+
 else:
     import matplotlib
     matplotlib.use("Agg")
@@ -73,10 +75,10 @@ except:
 
 # system parameters
 num_secondary_bodies = len(planet)
-system_mass = 1.47 # [Msol]
-plx = 25.38 # [mas]
-mass_err = 0.3#0.3 # [Msol]
-plx_err = 0.7#0.7 # [mas]
+system_mass = 1.52#1.47 # [Msol]
+plx = 24.2175#25.38 # [mas]
+mass_err = 0.15#0.3 # [Msol]
+plx_err = 0.0881#0.7 # [mas]
 
 if 1:
     out_pngs = os.path.join(astrometry_DATADIR,"figures")
@@ -155,20 +157,22 @@ else:
     loaded_results = results.Results() # Create blank results object for loading
     loaded_results.load_results(hdf5_filename)
 
-    with pyfits.open(os.path.join(out_pngs,"HR_8799_"+planet,'chain_{0}_{1}_{2}.hdf5'.format(rv_str,planet,suffix))) as hdulist:
-        chains = hdulist[0].data
+    with pyfits.open(os.path.join(astrometry_DATADIR,"figures","HR_8799_"+planet,'chain_{0}_{1}_{2}.hdf5'.format(rv_str,planet,suffix))) as hdulist:
+        chains = hdulist[0].data[0,:,1000::,:]
         print(chains.shape)
 
-    # print(loaded_results.post.shape)
-    # # exit()
-    # # param_list = ["sma1","ecc1","inc1","aop1","pan1","epp1"]
-    # param_list = ["sma1","ecc1","inc1","aop1","pan1","epp1","plx","mtot"]
-    # # param_list = ["sma1","ecc1","inc1","aop1","pan1","epp1","plx","sysrv","mtot"]
-    # # param_list = ["sma1","ecc1","inc1","aop1","pan1","epp1","sma2","ecc2","inc2","aop2","pan2","epp2","plx","mtot"]
-    # # param_list = ["sma1","ecc1","inc1","aop1","pan1","epp1","sma2","ecc2","inc2","aop2","pan2","epp2","plx","sysrv","mtot"]
-    # loaded_results.post = loaded_results.post[::10,:]
-    # corner_plot_fig = loaded_results.plot_corner(param_list=param_list)
-    # corner_plot_fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,"corner_plot_{0}_{1}_{2}.png".format(rv_str,planet,suffix)))
+    print(chains.shape)
+    chains = np.reshape(chains,(chains.shape[0]*chains.shape[1],chains.shape[2]))
+    print(chains.shape)
+    # exit()
+    # param_list = ["sma1","ecc1","inc1","aop1","pan1","epp1"]
+    param_list = ["sma1","ecc1","inc1","aop1","pan1","epp1","plx","mtot"]
+    # param_list = ["sma1","ecc1","inc1","aop1","pan1","epp1","plx","sysrv","mtot"]
+    # param_list = ["sma1","ecc1","inc1","aop1","pan1","epp1","sma2","ecc2","inc2","aop2","pan2","epp2","plx","mtot"]
+    # param_list = ["sma1","ecc1","inc1","aop1","pan1","epp1","sma2","ecc2","inc2","aop2","pan2","epp2","plx","sysrv","mtot"]
+    loaded_results.post = chains#loaded_results.post[,:]
+    corner_plot_fig = loaded_results.plot_corner(param_list=param_list)
+    corner_plot_fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,"corner_plot_{0}_{1}_{2}.png".format(rv_str,planet,suffix)))
     # exit()
 
     fig = loaded_results.plot_orbits(
@@ -178,7 +182,8 @@ else:
         data_table=data_table,
         cbar_param="sma2",
         total_mass=system_mass,
-        parallax=plx
+        parallax=plx,
+        system_rv=sysrv
     )
     fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,'orbits_plot_{0}_{1}_{2}_obj1.png'.format(rv_str,planet,suffix))) # This is matplotlib.figure.Figure.savefig()
     # fig = loaded_results.plot_orbits(
@@ -198,7 +203,8 @@ else:
         start_mjd=data_table['epoch'][0], # Minimum MJD for colorbar (here we choose first data epoch)
         data_table=data_table,
         total_mass=system_mass,
-        parallax=plx
+        parallax=plx,
+        system_rv=sysrv
     )
     fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,'rv_plot_{0}_{1}_{2}_obj1.png'.format(rv_str,planet,suffix))) # This is matplotlib.figure.Figure.savefig()
     # fig = loaded_results.plot_rvs(
