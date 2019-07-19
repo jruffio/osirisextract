@@ -55,6 +55,7 @@ sysrv_err=1.4
 # print(rv_str,sysrv,sysrv_err)
 # exit()
 
+from orbitize import results
 try:
     import mkl
     mkl.set_num_threads(1)
@@ -67,9 +68,13 @@ system_mass = 1.47 # [Msol]
 plx = 25.38 # [mas]
 mass_err = 0.3#0.3 # [Msol]
 plx_err = 0.7#0.7 # [mas]
-# suffix = "test2"
+# suffix = "test4_coplanar"
+# suffix_norv = "test_joint_16_512_1000_2_False_coplanar"
+# suffix_withrvs = "test_joint_16_512_1000_2_True_coplanar"
+suffix_norv = "gpicruncher_joint_16_512_10000_2_False_coplanar"
+suffix_withrvs = "gpicruncher_joint_16_512_10000_2_True_coplanar"
 # suffix = "sherlock"
-suffix = "sherlock_ptemceefix_12_100_300000_50"
+# suffix = "sherlock_ptemceefix_12_100_300000_50"
 
 if 1:
     import matplotlib.pyplot as plt
@@ -78,30 +83,57 @@ if 1:
     data_table_withrvs = orbitize.read_input.read_file(filename)
     filename = "{0}/HR8799{1}.csv".format(astrometry_DATADIR,planet)
     data_table_norv = orbitize.read_input.read_file(filename)
+    if 0:
+        hdf5_filename=os.path.join(astrometry_DATADIR,"figures","HR_8799_"+planet,'posterior_{0}_{1}_{2}.hdf5'.format("withrvs",planet,suffix_withrvs))
+        print(hdf5_filename)
+        # print("/data/osiris_data/astrometry/figures/HR_8799_bc/posterior_withrvs_bc_test_joint_16_512_1000_2_True_coplanar.hdf5")
+        # exit()
+        loaded_results_withrvs = results.Results() # Create blank results object for loading
+        loaded_results_withrvs.load_results(hdf5_filename)
+        param_list = ["sma1","ecc1","inc1","aop1","pan1","epp1","sma2","ecc2","inc2","aop2","pan2","epp2","plx","sysrv","mtot"]
+        corner_plot_fig = loaded_results_withrvs.plot_corner(param_list=param_list)
+        corner_plot_fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,"corner_plot_withrvs_{0}_{1}.png".format(planet,suffix_withrvs)))
+        plt.show()
 
-    from orbitize import results
-    hdf5_filename=os.path.join(astrometry_DATADIR,"figures","HR_8799_"+planet,'posterior_{0}_{1}_{2}.hdf5'.format("norv",planet,suffix))
+
+    hdf5_filename=os.path.join(astrometry_DATADIR,"figures","HR_8799_"+planet,'posterior_{0}_{1}_{2}.hdf5'.format("norv",planet,suffix_norv))
     print(hdf5_filename)
     loaded_results_norv = results.Results() # Create blank results object for loading
     loaded_results_norv.load_results(hdf5_filename)
-    hdf5_filename=os.path.join(astrometry_DATADIR,"figures","HR_8799_"+planet,'posterior_{0}_{1}_{2}.hdf5'.format("withrvs",planet,suffix))
+    hdf5_filename=os.path.join(astrometry_DATADIR,"figures","HR_8799_"+planet,'posterior_{0}_{1}_{2}.hdf5'.format("withrvs",planet,suffix_withrvs))
     print(hdf5_filename)
     loaded_results_withrvs = results.Results() # Create blank results object for loading
     loaded_results_withrvs.load_results(hdf5_filename)
 
-    with pyfits.open(os.path.join(astrometry_DATADIR,"figures","HR_8799_"+planet,'chain_{0}_{1}_{2}.hdf5'.format("norv",planet,suffix))) as hdulist:
+    with pyfits.open(os.path.join(astrometry_DATADIR,"figures","HR_8799_"+planet,'chain_{0}_{1}_{2}.hdf5'.format("norv",planet,suffix_norv))) as hdulist:
         chains_norv = hdulist[0].data
+        if "coplanar" in suffix_norv:
+            chains_norv[:,:,:,2+6] = chains_norv[:,:,:,2]
+            chains_norv[:,:,:,4+6] = chains_norv[:,:,:,4]
         chains_norv = chains_norv[0,:,chains_norv.shape[2]//2::,:]
-        print(chains_norv.shape)
-    chains_norv = np.reshape(chains_norv,(chains_norv.shape[0]*chains_norv.shape[1],chains_norv.shape[2]))
+        # chains_norv = chains_norv[0,:,:,:]
+        # chains_norv = chains_norv[0,:,0:10,:]
+        # chains_norv = chains_norv[0,:,0:1,:]
     print(chains_norv.shape)
-    with pyfits.open(os.path.join(astrometry_DATADIR,"figures","HR_8799_"+planet,'chain_{0}_{1}_{2}.hdf5'.format("withrvs",planet,suffix))) as hdulist:
+    with pyfits.open(os.path.join(astrometry_DATADIR,"figures","HR_8799_"+planet,'chain_{0}_{1}_{2}.hdf5'.format("withrvs",planet,suffix_withrvs))) as hdulist:
         chains_withrvs = hdulist[0].data
+        if "coplanar" in suffix_withrvs:
+            chains_withrvs[:,:,:,2+6] = chains_withrvs[:,:,:,2]
+            chains_withrvs[:,:,:,4+6] = chains_withrvs[:,:,:,4]
         chains_withrvs = chains_withrvs[0,:,chains_withrvs.shape[2]//2::,:]
-        print(chains_withrvs.shape)
-    chains_withrvs = np.reshape(chains_withrvs,(chains_withrvs.shape[0]*chains_withrvs.shape[1],chains_withrvs.shape[2]))
+        # chains_withrvs = chains_withrvs[0,:,:,:]
+        # chains_withrvs = chains_withrvs[0,:,0:10,:]
+        # chains_withrvs = chains_withrvs[0,:,0:1,:]
     print(chains_withrvs.shape)
 
+    # plt.subplot(2,1,1)
+    # plt.plot(chains_norv[:,:,6].T,color="grey",alpha =0.1 )
+    # plt.subplot(2,1,2)
+    # plt.plot(chains_withrvs[:,:,6].T,color="grey",alpha =0.1 )
+    # plt.show()
+
+    chains_norv = np.reshape(chains_norv,(chains_norv.shape[0]*chains_norv.shape[1],chains_norv.shape[2]))
+    chains_withrvs = np.reshape(chains_withrvs,(chains_withrvs.shape[0]*chains_withrvs.shape[1],chains_withrvs.shape[2]))
 
     loaded_results_norv.post = chains_norv
     loaded_results_withrvs.post = chains_withrvs
@@ -110,12 +142,13 @@ if 1:
     post_withrvs = loaded_results_withrvs.post
 
 
-    # param_list = ["sma1","ecc1","inc1","aop1","pan1","epp1","sma2","ecc2","inc2","aop2","pan2","epp2","plx","mtot"]
-    # corner_plot_fig = loaded_results_norv.plot_corner(param_list=param_list)
-    # corner_plot_fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,"corner_plot_norv_{0}_{1}.png".format(planet,suffix)))
-    # param_list = ["sma1","ecc1","inc1","aop1","pan1","epp1","sma2","ecc2","inc2","aop2","pan2","epp2","plx","sysrv","mtot"]
-    # corner_plot_fig = loaded_results_withrvs.plot_corner(param_list=param_list)
-    # corner_plot_fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,"corner_plot_withrvs_{0}_{1}.png".format(planet,suffix)))
+    param_list = ["sma1","ecc1","inc1","aop1","pan1","epp1","sma2","ecc2","inc2","aop2","pan2","epp2","plx","mtot"]
+    corner_plot_fig = loaded_results_norv.plot_corner(param_list=param_list)
+    corner_plot_fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,"corner_plot_norv_{0}_{1}.png".format(planet,suffix_norv)))
+    param_list = ["sma1","ecc1","inc1","aop1","pan1","epp1","sma2","ecc2","inc2","aop2","pan2","epp2","plx","sysrv","mtot"]
+    corner_plot_fig = loaded_results_withrvs.plot_corner(param_list=param_list)
+    corner_plot_fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,"corner_plot_withrvs_{0}_{1}.png".format(planet,suffix_withrvs)))
+    # exit()
     fig = loaded_results_norv.plot_orbits(
         object_to_plot = 1, # Plot orbits for the first (and only, in this case) companion
         num_orbits_to_plot= 100, # Will plot 100 randomly selected orbits of this companion
@@ -126,7 +159,7 @@ if 1:
         parallax=plx,
         system_rv=sysrv
     )
-    fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,'orbits_plot_{0}_{1}_{2}_obj1.png'.format("norv",planet,suffix))) # This is matplotlib.figure.Figure.savefig()
+    fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,'orbits_plot_{0}_{1}_{2}_obj1.png'.format("norv",planet,suffix_norv))) # This is matplotlib.figure.Figure.savefig()
     fig = loaded_results_norv.plot_orbits(
         object_to_plot = 2, # Plot orbits for the first (and only, in this case) companion
         num_orbits_to_plot= 100, # Will plot 100 randomly selected orbits of this companion
@@ -137,7 +170,7 @@ if 1:
         parallax=plx,
         system_rv=sysrv
     )
-    fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,'orbits_plot_{0}_{1}_{2}_obj2.png'.format("norv",planet,suffix))) # This is matplotlib.figure.Figure.savefig()
+    fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,'orbits_plot_{0}_{1}_{2}_obj2.png'.format("norv",planet,suffix_norv))) # This is matplotlib.figure.Figure.savefig()
 
     fig = loaded_results_norv.plot_rvs(
         object_to_plot = 1, # Plot orbits for the first (and only, in this case) companion
@@ -148,7 +181,7 @@ if 1:
         parallax=plx,
         system_rv=sysrv
     )
-    fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,'rv_plot_{0}_{1}_{2}_obj1.png'.format("norv",planet,suffix))) # This is matplotlib.figure.Figure.savefig()
+    fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,'rv_plot_{0}_{1}_{2}_obj1.png'.format("norv",planet,suffix_norv))) # This is matplotlib.figure.Figure.savefig()
     fig = loaded_results_norv.plot_rvs(
         object_to_plot = 2, # Plot orbits for the first (and only, in this case) companion
         num_orbits_to_plot= 100, # Will plot 100 randomly selected orbits of this companion
@@ -156,7 +189,7 @@ if 1:
         data_table=data_table_norv,
         system_rv=sysrv
     )
-    fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,'rv_plot_{0}_{1}_{2}_obj2.png'.format("norv",planet,suffix))) # This is matplotlib.figure.Figure.savefig()
+    fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,'rv_plot_{0}_{1}_{2}_obj2.png'.format("norv",planet,suffix_norv))) # This is matplotlib.figure.Figure.savefig()
 
 
     fig = loaded_results_withrvs.plot_orbits(
@@ -169,7 +202,7 @@ if 1:
         parallax=plx,
         system_rv=sysrv
     )
-    fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,'orbits_plot_{0}_{1}_{2}_obj1.png'.format("withrvs",planet,suffix))) # This is matplotlib.figure.Figure.savefig()
+    fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,'orbits_plot_{0}_{1}_{2}_obj1.png'.format("withrvs",planet,suffix_withrvs))) # This is matplotlib.figure.Figure.savefig()
     fig = loaded_results_withrvs.plot_orbits(
         object_to_plot = 2, # Plot orbits for the first (and only, in this case) companion
         num_orbits_to_plot= 100, # Will plot 100 randomly selected orbits of this companion
@@ -180,7 +213,7 @@ if 1:
         parallax=plx,
         system_rv=sysrv
     )
-    fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,'orbits_plot_{0}_{1}_{2}_obj2.png'.format("withrvs",planet,suffix))) # This is matplotlib.figure.Figure.savefig()
+    fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,'orbits_plot_{0}_{1}_{2}_obj2.png'.format("withrvs",planet,suffix_withrvs))) # This is matplotlib.figure.Figure.savefig()
 
     fig = loaded_results_withrvs.plot_rvs(
         object_to_plot = 1, # Plot orbits for the first (and only, in this case) companion
@@ -191,7 +224,7 @@ if 1:
         parallax=plx,
         system_rv=sysrv
     )
-    fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,'rv_plot_{0}_{1}_{2}_obj1.png'.format("withrvs",planet,suffix))) # This is matplotlib.figure.Figure.savefig()
+    fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,'rv_plot_{0}_{1}_{2}_obj1.png'.format("withrvs",planet,suffix_withrvs))) # This is matplotlib.figure.Figure.savefig()
     fig = loaded_results_withrvs.plot_rvs(
         object_to_plot = 2, # Plot orbits for the first (and only, in this case) companion
         num_orbits_to_plot= 100, # Will plot 100 randomly selected orbits of this companion
@@ -199,20 +232,10 @@ if 1:
         data_table=data_table_withrvs,
         system_rv=sysrv
     )
-    fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,'rv_plot_{0}_{1}_{2}_obj2.png'.format("withrvs",planet,suffix))) # This is matplotlib.figure.Figure.savefig()
+    fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,'rv_plot_{0}_{1}_{2}_obj2.png'.format("withrvs",planet,suffix_withrvs))) # This is matplotlib.figure.Figure.savefig()
     # plt.show()
     exit()
 
-    # N_walkers = 100
-    # chain_size = 2000
-    # print(post_norv.shape)
-    # post_norv = np.reshape(post_norv,(N_walkers,chain_size,post_norv.shape[1]))
-    #
-    # plt.subplot(2,1,1)
-    # plt.plot(post_norv[:,:,4].T)
-    # plt.subplot(2,1,2)
-    # plt.plot(post_norv[:,:,4+6].T)
-    # plt.show()
 
     Ome_bounds = [0,360]
     inc_bounds = [0,180]

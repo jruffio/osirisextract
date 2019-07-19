@@ -9,6 +9,30 @@ import glob
 import os
 import astropy.io.fits as pyfits
 
+
+if 1:
+    inputdir = "/data/osiris_data/51_Eri_b/"
+    science_filelist = glob.glob(os.path.join(inputdir,"20171103/raw_science_Kbb/s*.fits"))
+    hdulist_science = pyfits.open(science_filelist[-1])
+    filelist = glob.glob(os.path.join(inputdir,"20171103/long_darks/s*8100[0-9].fits"))
+    hdulisti = pyfits.open(filelist[-1])
+    darkf = hdulisti[0].data
+    hdulistf = pyfits.open(filelist[0])
+    darki = hdulistf[0].data
+    print(darki.shape)
+    print(filelist)
+
+    hdulist2save = pyfits.HDUList()
+    hdulist2save.append(pyfits.PrimaryHDU(data=darki-darkf,header=hdulist_science[0].header))
+    hdulist2save.append(pyfits.PrimaryHDU(data=hdulisti[1].data,header=hdulist_science[1].header))
+    hdulist2save.append(pyfits.PrimaryHDU(data=hdulisti[2].data,header=hdulist_science[2].header))
+    try:
+        hdulist2save.writeto(filelist[0].replace(".fits","_test.fits"), overwrite=True)
+    except TypeError:
+        hdulist2save.writeto(filelist[0].replace(".fits","_test.fits"), clobber=True)
+    hdulist2save.close()
+exit()
+
 if 0:
     inputdir = "/data/osiris_data/HR_8799_b"
 
@@ -25,7 +49,7 @@ if 0:
 
 
 
-if 1:
+if 0:
     # 20100715 => np.roll(hdulist[0].data,1328,axis=1)
     inputdir = "/data/osiris_data/HR_8799_b"
     filelist = glob.glob(os.path.join(inputdir,"2009*/dark_900/s*.fits"))

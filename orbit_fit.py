@@ -7,38 +7,29 @@ import multiprocessing as mp
 import astropy.io.fits as pyfits
 from astropy.time import Time
 if len(sys.argv) == 1:
-    import orbitize
-    import orbitize.driver
-    import orbitize
-    from orbitize import driver
-
     osiris_data_dir = "/data/osiris_data"
     astrometry_DATADIR = os.path.join(osiris_data_dir,"astrometry")
     uservs = False
-    planet = "e"
+    planet = "b"
     # planet = "bc"
     if uservs and (planet == "b" or planet =="c" or planet == "bc"):
         filename = "{0}/HR8799{1}_rvs.csv".format(astrometry_DATADIR,planet)
     else:
         filename = "{0}/HR8799{1}.csv".format(astrometry_DATADIR,planet)
     # MCMC parameters
-    num_temps = 20
-    num_walkers = 30
-    total_orbits = 1000 # number of steps x number of walkers (at lowest temperature)
+    num_temps = 16
+    num_walkers = 100
+    total_orbits = 100*15 # number of steps x number of walkers (at lowest temperature)
     burn_steps = 0 # steps to burn in per walker
     thin = 2 # only save every 2nd step
-    num_threads = mp.cpu_count() # or a different number if you prefer
-    # suffix = "test2"
+    num_threads = 1#mp.cpu_count() # or a different number if you prefer
+    suffix = "test_joint_Jason"
     # suffix = "sherlock"
-    suffix = "sherlock_ptemceefix_16_512_78125_50"
-
+    # suffix = "sherlock_ptemceefix_16_512_78125_50"
+    suffix = suffix+"_{0}_{1}_{2}_{3}_{4}".format(num_temps,num_walkers,total_orbits//num_walkers,thin,uservs)
 else:
     import matplotlib
     matplotlib.use("Agg")
-    import orbitize
-    import orbitize.driver
-    import orbitize
-    from orbitize import driver
 
     osiris_data_dir = sys.argv[1]
     astrometry_DATADIR = os.path.join(osiris_data_dir,"astrometry")
@@ -53,7 +44,26 @@ else:
     num_threads = int(sys.argv[9]) # or a different number if you prefer
     suffix = sys.argv[10]
 #     sbatch --partition=hns,owners,iric --qos=normal --time=2-00:00:00 --mem=20G --output=/scratch/groups/bmacint/osiris_data/astrometry/logs/20190703_203155_orbit_fit_HR8799b.csv --error=/scratch/groups/bmacint/osiris_data/astrometry/logs/20190703_203155_orbit_fit_HR8799b.csv --nodes=1 --ntasks-per-node=10 --mail-type=END,FAIL,BEGIN --mail-user=jruffio@stanford.edu --wrap="
-#  nice -n 15 /home/anaconda3/bin/python3 /home/sda/jruffio/pyOSIRIS/osirisextract/orbit_fit.py /data/osiris_data/ /data/osiris_data/astrometry/HR8799b.csv b 20 100 20000 100 2 10 sherlock
+# nice -n 15 /home/anaconda3/bin/python3 /home/sda/jruffio/pyOSIRIS/osirisextract/orbit_fit.py /data/osiris_data /data/osiris_data/astrometry/HR8799bc_rvs.csv bc 16 512 51200 0 2 16 test2_joint_16_512_100_2_True
+# nice -n 16 /home/anaconda3/bin/python3 /home/sda/jruffio/pyOSIRIS/osirisextract/orbit_fit.py /data/osiris_data /data/osiris_data/astrometry/HR8799bc.csv bc 16 512 51200 0 2 16 test2_joint_16_512_100_2_False
+# nice -n 15 /home/anaconda3/bin/python3 /home/sda/jruffio/pyOSIRIS/osirisextract/orbit_fit.py /data/osiris_data /data/osiris_data/astrometry/HR8799bc_rvs.csv bc 16 512 5120000 0 2 16 gpicruncher_joint_16_512_10000_2_True
+# nice -n 16 /home/anaconda3/bin/python3 /home/sda/jruffio/pyOSIRIS/osirisextract/orbit_fit.py /data/osiris_data /data/osiris_data/astrometry/HR8799bc.csv bc 16 512 5120000 0 2 16 gpicruncher_joint_16_512_10000_2_False
+
+import orbitize
+from orbitize import priors, sampler
+from orbitize import driver
+
+print("{0} {1} {2} {3} {4} {5} {6} {7} {8} {9}".format(osiris_data_dir,
+                                                       filename,
+                                                       planet,
+                                                       num_temps,
+                                                       num_walkers,
+                                                       total_orbits,
+                                                       burn_steps,
+                                                       thin,
+                                                       num_threads,
+                                                       suffix))
+# exit()
 
 if "_rvs" in filename:
     rv_str = "withrvs"
@@ -75,10 +85,15 @@ except:
 
 # system parameters
 num_secondary_bodies = len(planet)
-system_mass = 1.52#1.47 # [Msol]
+system_mass = 1.52#1.47 # [Msol] (Jason)
 plx = 24.2175#25.38 # [mas]
-mass_err = 0.15#0.3 # [Msol]
+mass_err = 0.15#0.3 # [Msol] (Jason)
 plx_err = 0.0881#0.7 # [mas]
+
+if "Jason" in suffix:
+    plx = 24.76#Jason
+    plx_err = 0.64#Jason
+print(plx,plx_err)
 
 if 1:
     out_pngs = os.path.join(astrometry_DATADIR,"figures")
@@ -90,20 +105,107 @@ if 1:
 
     # force unrestricted longitude of ascending node
     my_driver.system.angle_upperlim = 2.*np.pi
+    if "bc" in planet:
+        my_driver.system.coplanar = True
+
+    if my_driver.system.coplanar and len(planet) >=2:
+        suffix = suffix + "_coplanar"
+        fake_inc_prior = priors.GaussianPrior(-2, 0.01,no_negatives=False)
+        fake_lan_prior = priors.GaussianPrior(-3, 0.01,no_negatives=False)
+        my_driver.system.sys_priors[2+6] = fake_inc_prior
+        my_driver.system.sys_priors[4+6] = fake_lan_prior
+        print(my_driver.system.param_idx)
+        print(my_driver.system.param_idx['inc2'])
+        print(my_driver.system.param_idx['pan2'])
+
+    if len(planet) == 1:
+        my_driver.system.sys_priors[0] = priors.JeffreysPrior(1, 1e2)
+    if len(planet) == 2:
+        my_driver.system.sys_priors[0] = priors.JeffreysPrior(1, 1e2)
+        my_driver.system.sys_priors[6] = priors.JeffreysPrior(1, 1e2)
+    my_driver.sampler = sampler.MCMC(my_driver.system, num_temps=num_temps, num_walkers=num_walkers, num_threads=num_threads, like='chi2_lnlike', custom_lnlike=None)
+
+
+    if planet == "bc":
+        tmpplanet = "d"
+        # with pyfits.open(os.path.join(astrometry_DATADIR,"figures","HR_8799_"+tmpplanet,'chain_norv_'+tmpplanet+'_sherlock_ptemceefix_16_512_78125_50.hdf5')) as hdulist:
+        #     chainspos_b = hdulist[0].data[:,:,-1,:]
+        # print(chainspos_b.shape)
+        # tmpplanet = "e"
+        # with pyfits.open(os.path.join(astrometry_DATADIR,"figures","HR_8799_"+tmpplanet,'chain_norv_'+tmpplanet+'_sherlock_ptemceefix_16_512_78125_50.hdf5')) as hdulist:
+        #     chainspos_c = hdulist[0].data[:,:,-1,:]
+
+        # change init points
+        tmpplanet = "b"
+        with pyfits.open(os.path.join(astrometry_DATADIR,"figures","HR_8799_"+tmpplanet,'chain_norv_'+tmpplanet+'_sherlock_ptemceefix_16_512_78125_50.hdf5')) as hdulist:
+            chainspos_b = hdulist[0].data[:,:,-1,:]
+        print(chainspos_b.shape)
+        tmpplanet = "c"
+        with pyfits.open(os.path.join(astrometry_DATADIR,"figures","HR_8799_"+tmpplanet,'chain_norv_'+tmpplanet+'_sherlock_ptemceefix_16_512_78125_50.hdf5')) as hdulist:
+            chainspos_c = hdulist[0].data[:,:,-1,:]
+        # import matplotlib.pyplot as plt
+        # plt.scatter(np.ravel(chainspos_b[:,:,4]),np.ravel(chainspos_c[:,:,4]),s=5)
+        plxpos = np.concatenate([chainspos_b[:,:,6],chainspos_c[:,:,6]],axis=1)
+        mtotpos = np.concatenate([chainspos_b[:,:,7],chainspos_c[:,:,7]],axis=1)
+        # lan_b = np.concatenate([chainspos_b[:,:,4],chainspos_b[:,:,4]],axis=1)
+        # lan_c = np.concatenate([chainspos_c[:,:,4],chainspos_c[:,:,4]],axis=1)
+        chainspos_b = np.tile(chainspos_b,(1,2,1))
+        chainspos_c = np.tile(chainspos_c,(1,2,1))
+        print(chainspos_c.shape)
+        print(my_driver.sampler.curr_pos.shape)
+        #HR 8799 b
+        my_driver.sampler.curr_pos[:,:,0:6] = np.copy(chainspos_b[0:num_temps,0:num_walkers,0:6])
+        #HR 8799 c
+        my_driver.sampler.curr_pos[:,:,6:12] = np.copy(chainspos_c[0:num_temps,0:num_walkers,0:6])
+        #plx
+        my_driver.sampler.curr_pos[:,:,12] = np.copy(plxpos[0:num_temps,0:num_walkers])
+        if "_rvs" in filename:
+            #sysrv
+            # my_driver.sampler.curr_pos[:,:,13] = np.11
+            # mtot
+            my_driver.sampler.curr_pos[:,:,14] = np.copy(mtotpos[0:num_temps,0:num_walkers])
+        else:
+            my_driver.sampler.curr_pos[:,:,13] = np.copy(mtotpos[0:num_temps,0:num_walkers])
+
+        # my_driver.sampler.curr_pos[:,:,4] = np.random.uniform(0,2*np.pi,size=(num_temps,num_walkers))
+        # my_driver.sampler.curr_pos[:,:,4+6] = np.random.uniform(0,2*np.pi,size=(num_temps,num_walkers))
+        my_driver.sampler.curr_pos[:,:,2+6] = np.reshape(fake_inc_prior.draw_samples(np.size(my_driver.sampler.curr_pos[:,:,2+6])),(num_temps,num_walkers))
+        my_driver.sampler.curr_pos[:,:,4+6] = np.reshape(fake_lan_prior.draw_samples(np.size(my_driver.sampler.curr_pos[:,:,4+6])),(num_temps,num_walkers))
+        # exit()
+
+
+    # plt.figure(2)
+    # plt.scatter(np.ravel(my_driver.sampler.curr_pos[:,:,4]),np.ravel(my_driver.sampler.curr_pos[:,:,4+6]))
+    my_driver.sampler.save_intermediate = os.path.join(out_pngs,"HR_8799_"+planet,'chain_{0}_{1}_{2}.fits'.format(rv_str,planet,suffix))
+
+    # with pyfits.open(os.path.join(astrometry_DATADIR,"figures","HR_8799_"+planet,'chain_{0}_{1}_{2}_5steps.fits'.format(rv_str,planet,suffix))) as hdulist:
+    #     chains = hdulist[0].data
+    #     print(chains.shape)
+    #     print(chains[0,0,:,0])
+    #     exit()
 
     my_driver.sampler.run_sampler(total_orbits, burn_steps=burn_steps, thin=thin)
 
+    if my_driver.system.coplanar and len(planet) >=2:
+        my_driver.sampler.chain[:,:,:,2+6] = my_driver.sampler.chain[:,:,:,2]
+        my_driver.sampler.chain[:,:,:,4+6] = my_driver.sampler.chain[:,:,:,4]
+        my_driver.sampler.results.post[:,2+6] = my_driver.sampler.results.post[:,2]
+        my_driver.sampler.results.post[:,4+6] = my_driver.sampler.results.post[:,4]
+
+    # plt.figure(3)
+    # plt.scatter(np.ravel(my_driver.sampler.curr_pos[:,:,4]),np.ravel(my_driver.sampler.curr_pos[:,:,4+6]))
+    # plt.show()
 
     hdulist = pyfits.HDUList()
     print(my_driver.sampler.chain.shape)
     hdulist.append(pyfits.PrimaryHDU(data=my_driver.sampler.chain))
     try:
-        hdulist.writeto(os.path.join(out_pngs,"HR_8799_"+planet,'chain_{0}_{1}_{2}.hdf5'.format(rv_str,planet,suffix)), overwrite=True)
+        hdulist.writeto(os.path.join(out_pngs,"HR_8799_"+planet,'chain_{0}_{1}_{2}.fits'.format(rv_str,planet,suffix)), overwrite=True)
     except TypeError:
-        hdulist.writeto(os.path.join(out_pngs,"HR_8799_"+planet,'chain_{0}_{1}_{2}.hdf5'.format(rv_str,planet,suffix)), clobber=True)
+        hdulist.writeto(os.path.join(out_pngs,"HR_8799_"+planet,'chain_{0}_{1}_{2}.fits'.format(rv_str,planet,suffix)), clobber=True)
     hdulist.close()
 
-    hdf5_filename=os.path.join(out_pngs,"HR_8799_"+planet,'posterior_{0}_{1}_{2}.hdf5'.format(rv_str,planet,suffix))
+    hdf5_filename=os.path.join(out_pngs,"HR_8799_"+planet,'posterior_{0}_{1}_{2}.fits'.format(rv_str,planet,suffix))
     # To avoid weird behaviours, delete saved file if it already exists from a previous run of this notebook
     if os.path.isfile(hdf5_filename):
         os.remove(hdf5_filename)
@@ -139,6 +241,28 @@ if 1:
     # print("coucou")
 else:
     import matplotlib.pyplot as plt
+
+    osiris_data_dir = "/data/osiris_data"
+    astrometry_DATADIR = os.path.join(osiris_data_dir,"astrometry")
+    uservs = False
+    planet = "b"
+    # planet = "bc"
+    if uservs and (planet == "b" or planet =="c" or planet == "bc"):
+        filename = "{0}/HR8799{1}_rvs.csv".format(astrometry_DATADIR,planet)
+    else:
+        filename = "{0}/HR8799{1}.csv".format(astrometry_DATADIR,planet)
+    # MCMC parameters
+    num_temps = 16
+    num_walkers = 512
+    total_orbits = 512*78125 # number of steps x number of walkers (at lowest temperature)
+    burn_steps = 0 # steps to burn in per walker
+    thin = 50 # only save every 2nd step
+    # suffix = "test_joint"
+    # suffix = "sherlock"
+    suffix = "sherlock_ptemceefix"
+    suffix = suffix+"_{0}_{1}_{2}_{3}".format(num_temps,num_walkers,total_orbits//num_walkers,thin)
+    # suffix = suffix+"_{0}_{1}_{2}_{3}_{4}".format(num_temps,num_walkers,total_orbits//num_walkers,thin,uservs)
+
     out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
     data_table = orbitize.read_input.read_file(filename)
     print(data_table)
@@ -159,21 +283,26 @@ else:
 
     with pyfits.open(os.path.join(astrometry_DATADIR,"figures","HR_8799_"+planet,'chain_{0}_{1}_{2}.hdf5'.format(rv_str,planet,suffix))) as hdulist:
         chains = hdulist[0].data[0,:,1000::,:]
-        print(chains.shape)
 
     print(chains.shape)
     chains = np.reshape(chains,(chains.shape[0]*chains.shape[1],chains.shape[2]))
     print(chains.shape)
+    chains_a = chains[:,0]
+    where_lt90 = np.where(chains_a<100)
+    chains = chains[where_lt90[0],:]
+    print(chains.shape)
     # exit()
     # param_list = ["sma1","ecc1","inc1","aop1","pan1","epp1"]
-    param_list = ["sma1","ecc1","inc1","aop1","pan1","epp1","plx","mtot"]
+    # param_list = ["sma1","ecc1","inc1","aop1","pan1","epp1","plx","mtot"]
+    param_list = ["sma1","pan1"]
+    # param_list = ["sma1","ecc1"]
     # param_list = ["sma1","ecc1","inc1","aop1","pan1","epp1","plx","sysrv","mtot"]
     # param_list = ["sma1","ecc1","inc1","aop1","pan1","epp1","sma2","ecc2","inc2","aop2","pan2","epp2","plx","mtot"]
     # param_list = ["sma1","ecc1","inc1","aop1","pan1","epp1","sma2","ecc2","inc2","aop2","pan2","epp2","plx","sysrv","mtot"]
     loaded_results.post = chains#loaded_results.post[,:]
     corner_plot_fig = loaded_results.plot_corner(param_list=param_list)
     corner_plot_fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,"corner_plot_{0}_{1}_{2}.png".format(rv_str,planet,suffix)))
-    # exit()
+    exit()
 
     fig = loaded_results.plot_orbits(
         object_to_plot = 1, # Plot orbits for the first (and only, in this case) companion
