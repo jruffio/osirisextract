@@ -10,8 +10,8 @@ if len(sys.argv) == 1:
     osiris_data_dir = "/data/osiris_data"
     astrometry_DATADIR = os.path.join(osiris_data_dir,"astrometry")
     uservs = False
-    planet = "b"
-    # planet = "bc"
+    # planet = "b"
+    planet = "bc"
     if uservs and (planet == "b" or planet =="c" or planet == "bc"):
         filename = "{0}/HR8799{1}_rvs.csv".format(astrometry_DATADIR,planet)
     else:
@@ -19,11 +19,11 @@ if len(sys.argv) == 1:
     # MCMC parameters
     num_temps = 16
     num_walkers = 100
-    total_orbits = 100*15 # number of steps x number of walkers (at lowest temperature)
+    total_orbits = 100*5 # number of steps x number of walkers (at lowest temperature)
     burn_steps = 0 # steps to burn in per walker
     thin = 2 # only save every 2nd step
     num_threads = 1#mp.cpu_count() # or a different number if you prefer
-    suffix = "test_joint_Jason"
+    suffix = "test_joint_newprior"
     # suffix = "sherlock"
     # suffix = "sherlock_ptemceefix_16_512_78125_50"
     suffix = suffix+"_{0}_{1}_{2}_{3}_{4}".format(num_temps,num_walkers,total_orbits//num_walkers,thin,uservs)
@@ -110,10 +110,12 @@ if 1:
 
     if my_driver.system.coplanar and len(planet) >=2:
         suffix = suffix + "_coplanar"
-        fake_inc_prior = priors.GaussianPrior(-2, 0.01,no_negatives=False)
-        fake_lan_prior = priors.GaussianPrior(-3, 0.01,no_negatives=False)
-        my_driver.system.sys_priors[2+6] = fake_inc_prior
-        my_driver.system.sys_priors[4+6] = fake_lan_prior
+        # fake_inc_prior = priors.GaussianPrior(-2, 0.01,no_negatives=False)
+        # fake_lan_prior = priors.GaussianPrior(-3, 0.01,no_negatives=False)
+        # my_driver.system.sys_priors[2+6] = fake_inc_prior
+        # my_driver.system.sys_priors[4+6] = fake_lan_prior
+        my_driver.system.sys_priors[2+6] = -2
+        my_driver.system.sys_priors[4+6] = -3
         print(my_driver.system.param_idx)
         print(my_driver.system.param_idx['inc2'])
         print(my_driver.system.param_idx['pan2'])
@@ -125,51 +127,68 @@ if 1:
 
 
     if planet == "bc":
-        tmpplanet = "d"
+        if "_rvs" in filename:
+            suffix4init = "sherlock_16_1024_200000_50_True_coplanar"
+            select_indices = [0,1,2,3,4,5,6,7,9,11,12,13,14]
+        else:
+            suffix4init = "sherlock_16_1024_200000_50_False_coplanar"
+            select_indices = [0,1,2,3,4,5,6,7,9,11,12,13]
+        with pyfits.open(os.path.join(astrometry_DATADIR,"figures","HR_8799_"+planet,'chain_{0}_{1}_{2}.fits'.format(rv_str,planet,suffix4init))) as hdulist:
+            chains4init = hdulist[0].data
+            print(chains4init.shape)
+            chains4init = chains4init[:,:,-1,select_indices]
+        print(chains4init.shape)
+        print(my_driver.sampler.curr_pos.shape)
+        print(select_indices)
+        #HR 8799 b
+        my_driver.sampler.curr_pos[:,:,:] = np.copy(chains4init[0:num_temps,0:num_walkers,:])
+
+        # tmpplanet = "d"
+        # # with pyfits.open(os.path.join(astrometry_DATADIR,"figures","HR_8799_"+tmpplanet,'chain_norv_'+tmpplanet+'_sherlock_ptemceefix_16_512_78125_50.hdf5')) as hdulist:
+        # #     chainspos_b = hdulist[0].data[:,:,-1,:]
+        # # print(chainspos_b.shape)
+        # # tmpplanet = "e"
+        # # with pyfits.open(os.path.join(astrometry_DATADIR,"figures","HR_8799_"+tmpplanet,'chain_norv_'+tmpplanet+'_sherlock_ptemceefix_16_512_78125_50.hdf5')) as hdulist:
+        # #     chainspos_c = hdulist[0].data[:,:,-1,:]
+        #
+        # # change init points
+        # tmpplanet = "b"
         # with pyfits.open(os.path.join(astrometry_DATADIR,"figures","HR_8799_"+tmpplanet,'chain_norv_'+tmpplanet+'_sherlock_ptemceefix_16_512_78125_50.hdf5')) as hdulist:
         #     chainspos_b = hdulist[0].data[:,:,-1,:]
         # print(chainspos_b.shape)
-        # tmpplanet = "e"
+        # tmpplanet = "c"
         # with pyfits.open(os.path.join(astrometry_DATADIR,"figures","HR_8799_"+tmpplanet,'chain_norv_'+tmpplanet+'_sherlock_ptemceefix_16_512_78125_50.hdf5')) as hdulist:
         #     chainspos_c = hdulist[0].data[:,:,-1,:]
-
-        # change init points
-        tmpplanet = "b"
-        with pyfits.open(os.path.join(astrometry_DATADIR,"figures","HR_8799_"+tmpplanet,'chain_norv_'+tmpplanet+'_sherlock_ptemceefix_16_512_78125_50.hdf5')) as hdulist:
-            chainspos_b = hdulist[0].data[:,:,-1,:]
-        print(chainspos_b.shape)
-        tmpplanet = "c"
-        with pyfits.open(os.path.join(astrometry_DATADIR,"figures","HR_8799_"+tmpplanet,'chain_norv_'+tmpplanet+'_sherlock_ptemceefix_16_512_78125_50.hdf5')) as hdulist:
-            chainspos_c = hdulist[0].data[:,:,-1,:]
-        # import matplotlib.pyplot as plt
-        # plt.scatter(np.ravel(chainspos_b[:,:,4]),np.ravel(chainspos_c[:,:,4]),s=5)
-        plxpos = np.concatenate([chainspos_b[:,:,6],chainspos_c[:,:,6]],axis=1)
-        mtotpos = np.concatenate([chainspos_b[:,:,7],chainspos_c[:,:,7]],axis=1)
-        # lan_b = np.concatenate([chainspos_b[:,:,4],chainspos_b[:,:,4]],axis=1)
-        # lan_c = np.concatenate([chainspos_c[:,:,4],chainspos_c[:,:,4]],axis=1)
-        chainspos_b = np.tile(chainspos_b,(1,2,1))
-        chainspos_c = np.tile(chainspos_c,(1,2,1))
-        print(chainspos_c.shape)
-        print(my_driver.sampler.curr_pos.shape)
-        #HR 8799 b
-        my_driver.sampler.curr_pos[:,:,0:6] = np.copy(chainspos_b[0:num_temps,0:num_walkers,0:6])
-        #HR 8799 c
-        my_driver.sampler.curr_pos[:,:,6:12] = np.copy(chainspos_c[0:num_temps,0:num_walkers,0:6])
-        #plx
-        my_driver.sampler.curr_pos[:,:,12] = np.copy(plxpos[0:num_temps,0:num_walkers])
-        if "_rvs" in filename:
-            #sysrv
-            # my_driver.sampler.curr_pos[:,:,13] = np.11
-            # mtot
-            my_driver.sampler.curr_pos[:,:,14] = np.copy(mtotpos[0:num_temps,0:num_walkers])
-        else:
-            my_driver.sampler.curr_pos[:,:,13] = np.copy(mtotpos[0:num_temps,0:num_walkers])
-
-        # my_driver.sampler.curr_pos[:,:,4] = np.random.uniform(0,2*np.pi,size=(num_temps,num_walkers))
-        # my_driver.sampler.curr_pos[:,:,4+6] = np.random.uniform(0,2*np.pi,size=(num_temps,num_walkers))
-        my_driver.sampler.curr_pos[:,:,2+6] = np.reshape(fake_inc_prior.draw_samples(np.size(my_driver.sampler.curr_pos[:,:,2+6])),(num_temps,num_walkers))
-        my_driver.sampler.curr_pos[:,:,4+6] = np.reshape(fake_lan_prior.draw_samples(np.size(my_driver.sampler.curr_pos[:,:,4+6])),(num_temps,num_walkers))
-        # exit()
+        # # import matplotlib.pyplot as plt
+        # # plt.scatter(np.ravel(chainspos_b[:,:,4]),np.ravel(chainspos_c[:,:,4]),s=5)
+        # plxpos = np.concatenate([chainspos_b[:,:,6],chainspos_c[:,:,6]],axis=1)
+        # mtotpos = np.concatenate([chainspos_b[:,:,7],chainspos_c[:,:,7]],axis=1)
+        # # lan_b = np.concatenate([chainspos_b[:,:,4],chainspos_b[:,:,4]],axis=1)
+        # # lan_c = np.concatenate([chainspos_c[:,:,4],chainspos_c[:,:,4]],axis=1)
+        # chainspos_b = np.tile(chainspos_b,(1,2,1))
+        # chainspos_c = np.tile(chainspos_c,(1,2,1))
+        # print(chainspos_c.shape)
+        # print(my_driver.sampler.curr_pos.shape)
+        #
+        # #HR 8799 b
+        # my_driver.sampler.curr_pos[:,:,0:6] = np.copy(chainspos_b[0:num_temps,0:num_walkers,0:6])
+        # #HR 8799 c
+        # my_driver.sampler.curr_pos[:,:,6:12] = np.copy(chainspos_c[0:num_temps,0:num_walkers,0:6])
+        # #plx
+        # my_driver.sampler.curr_pos[:,:,12] = np.copy(plxpos[0:num_temps,0:num_walkers])
+        # if "_rvs" in filename:
+        #     #sysrv
+        #     # my_driver.sampler.curr_pos[:,:,13] = np.11
+        #     # mtot
+        #     my_driver.sampler.curr_pos[:,:,14] = np.copy(mtotpos[0:num_temps,0:num_walkers])
+        # else:
+        #     my_driver.sampler.curr_pos[:,:,13] = np.copy(mtotpos[0:num_temps,0:num_walkers])
+        #
+        # # my_driver.sampler.curr_pos[:,:,4] = np.random.uniform(0,2*np.pi,size=(num_temps,num_walkers))
+        # # my_driver.sampler.curr_pos[:,:,4+6] = np.random.uniform(0,2*np.pi,size=(num_temps,num_walkers))
+        # my_driver.sampler.curr_pos[:,:,2+6] = np.reshape(fake_inc_prior.draw_samples(np.size(my_driver.sampler.curr_pos[:,:,2+6])),(num_temps,num_walkers))
+        # my_driver.sampler.curr_pos[:,:,4+6] = np.reshape(fake_lan_prior.draw_samples(np.size(my_driver.sampler.curr_pos[:,:,4+6])),(num_temps,num_walkers))
+        # # exit()
 
 
     # plt.figure(2)
