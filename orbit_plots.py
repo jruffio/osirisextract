@@ -93,6 +93,10 @@ plx_err = 0.7#0.7 # [mas]
 # suffix_withrvs = "gpicruncher_joint_16_512_10000_2_True_coplanar"
 suffix_norv = "sherlock_16_1024_200000_50_False_coplanar"
 suffix_withrvs = "sherlock_16_1024_200000_50_True_coplanar"
+suffix_norv = "sherlock_2ndrun_16_1024_250000_50_False_coplanar"
+suffix_withrvs = "test_fixomegabug_16_100_5_2_True_coplanar"
+suffix_norv = "test_fixomegabug_16_100_5_2_False_coplanar"
+# suffix_norv = "sherlock_2ndrun_2_1024_1250000_100_False_coplanar"
 # suffix = "sherlock"
 # suffix = "sherlock_ptemceefix_12_100_300000_50"
 
@@ -128,19 +132,28 @@ if 1:
     loaded_results_withrvs = results.Results() # Create blank results object for loading
     loaded_results_withrvs.load_results(hdf5_filename)
 
+
     with pyfits.open(os.path.join(astrometry_DATADIR,"figures","HR_8799_"+planet,'chain_{0}_{1}_{2}.fits'.format("norv",planet,suffix_norv))) as hdulist:
-        chains_norv = hdulist[0].data
+        myshape = hdulist[0].data.shape
+        chains_norv = np.zeros((myshape[0],myshape[1],myshape[2],myshape[3]+2))
+        chains_norv[:,:,:,0:(2+6)] = hdulist[0].data[:,:,:,0:(2+6)]
+        chains_norv[:,:,:,3+6] = hdulist[0].data[:,:,:,2+6]
+        chains_norv[:,:,:,(5+6)::] = hdulist[0].data[:,:,:,(3+6)::]
         if "coplanar" in suffix_norv:
             chains_norv[:,:,:,2+6] = chains_norv[:,:,:,2]
             chains_norv[:,:,:,4+6] = chains_norv[:,:,:,4]
         print(chains_norv.shape)
-        chains_norv = chains_norv[0,:,3*chains_norv.shape[2]//4::,:]
-        # chains_norv = chains_norv[0,:,:,:]
+        # chains_norv = chains_norv[0,:,3*chains_norv.shape[2]//4::,:]
+        chains_norv = chains_norv[0,:,:,:]
         # chains_norv = chains_norv[0,:,0:10,:]
         # chains_norv = chains_norv[0,:,0:1,:]
     print(chains_norv.shape)
     with pyfits.open(os.path.join(astrometry_DATADIR,"figures","HR_8799_"+planet,'chain_{0}_{1}_{2}.fits'.format("withrvs",planet,suffix_withrvs))) as hdulist:
-        chains_withrvs = hdulist[0].data
+        myshape = hdulist[0].data.shape
+        chains_withrvs = np.zeros((myshape[0],myshape[1],myshape[2],myshape[3]+2))
+        chains_withrvs[:,:,:,0:(2+6)] = hdulist[0].data[:,:,:,0:(2+6)]
+        chains_withrvs[:,:,:,3+6] = hdulist[0].data[:,:,:,2+6]
+        chains_withrvs[:,:,:,(5+6)::] = hdulist[0].data[:,:,:,(3+6)::]
         if "coplanar" in suffix_withrvs:
             chains_withrvs[:,:,:,2+6] = chains_withrvs[:,:,:,2]
             chains_withrvs[:,:,:,4+6] = chains_withrvs[:,:,:,4]
@@ -152,10 +165,18 @@ if 1:
     print(chains_withrvs.shape)
     # exit()
 
+    # plt.figure(1)
     # plt.subplot(2,1,1)
-    # plt.plot(chains_norv[:,:,6].T,color="grey",alpha =0.1 )
+    # plt.plot(chains_norv[::10,::1,4].T,color="grey",alpha =0.1 )
     # plt.subplot(2,1,2)
-    # plt.plot(chains_withrvs[:,:,6].T,color="grey",alpha =0.1 )
+    # plt.plot(chains_withrvs[::10,::1,4].T,color="grey",alpha =0.1 )
+    #
+    # plt.figure(2)
+    # for k in np.arange(0,chains_norv.shape[0],50):
+    #     print(k)
+    #     chain = chains_norv[k,:,4] - np.mean(chains_norv[k,:,4])
+    #     mycorr = np.correlate(chain,chain,mode="full")
+    #     plt.plot(mycorr)
     # plt.show()
 
     chains_norv = np.reshape(chains_norv,(chains_norv.shape[0]*chains_norv.shape[1],chains_norv.shape[2]))
@@ -167,7 +188,7 @@ if 1:
     post_norv = loaded_results_norv.post
     post_withrvs = loaded_results_withrvs.post
 
-    if 0:
+    if 1:
         param_list = ["sma1","ecc1","inc1","aop1","pan1","epp1","sma2","ecc2","inc2","aop2","pan2","epp2","plx","mtot"]
         corner_plot_fig = loaded_results_norv.plot_corner(param_list=param_list)
         corner_plot_fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,"corner_plot_norv_{0}_{1}.png".format(planet,suffix_norv)))
