@@ -13,6 +13,7 @@ print("coucou")
 
 OSIRISDATA = "/scratch/groups/bmacint/osiris_data/"
 # foldername = "HR_8799_b"
+N=0
 for foldername in ["HR_8799_b","HR_8799_c","HR_8799_d"]:
     year = "*"
     #year = "20100715"
@@ -25,9 +26,9 @@ for foldername in ["HR_8799_b","HR_8799_c","HR_8799_d"]:
     for filenamefilter in ["s*Kbb*.fits","s*Hbb*.fits"]:
         #filenamefilter = "s101104_a03*001_Hbb_020.fits"
         planet_search = 1 # If True, pixel resolution entire FOV, otherwise centroid
-        debug_paras = 0 # If True, fast reduction
-        # planet_model_string = "'CO'"#"'model'"#"'CO'"#"'CO2'"#H20#CH4#"'model'"
-        # for planet_model_string in ["'CO'","'CO2'","'H20'","'CH4'"]:
+        debug_paras = 1 # If True, fast reduction
+        # planet_model_string = "'CO'"#"'model'"#"'CO'"#"'CO2'"#H2O#CH4#"'model'"
+        #for planet_model_string in ["'joint'"]:#["'CO'","'CO2'","'H2O'","'CH4'"]:
         for planet_model_string in ["'model'"]:
             filelist = glob.glob(os.path.join(OSIRISDATA,foldername,year,reductionname,filenamefilter))
             filelist.sort()
@@ -41,6 +42,7 @@ for foldername in ["HR_8799_b","HR_8799_c","HR_8799_d"]:
                 # script = "~/OSIRIS/20180909_2ndorderpoly_parallelized_osiris.py"
                 # script = "~/OSIRIS/osirisextract/parallelized_osiris.py"
                 script = "~/OSIRIS/osirisextract/reduce_HPFonly_diagcov.py"
+                #script =  "~/OSIRIS/osirisextract/reduce_HPFonly_diagcov_makemodel.py"
                 #script = "~/OSIRIS/osirisextract/classic_CCF.py"
 
                 logdir = os.path.join(inputdir,"sherlock","logs")
@@ -50,8 +52,8 @@ for foldername in ["HR_8799_b","HR_8799_c","HR_8799_d"]:
                 outfile = os.path.join(logdir,now+os.path.basename(script).replace(".py","")+"_"+os.path.basename(filename).replace(".fits","{0}.out".format(planet_search)))
                 errfile = os.path.join(logdir,now+os.path.basename(script).replace(".py","")+"_"+os.path.basename(filename).replace(".fits","{0}.err".format(planet_search)))
 
-                outputdir = os.path.join(inputdir,"sherlock","20190414_HPF_only")
-                if 1 and len(glob.glob(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_outputHPF_cutoff40_sherlock_v1_search.fits")))) >= 1:
+                outputdir = os.path.join(inputdir,"sherlock","20190510_spec_esti")
+                if 0 and len(glob.glob(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_outputHPF_cutoff40_sherlock_v1_search.fits")))) >= 1:
                     #print("skip"+filename)
                     continue
                 #print(filename)
@@ -60,7 +62,8 @@ for foldername in ["HR_8799_b","HR_8799_c","HR_8799_d"]:
                 bsub_str= 'sbatch --partition=hns,owners,iric --qos=normal --time=0-15:00:00 --mem=20G --output='+outfile+' --error='+errfile+' --nodes=1 --ntasks-per-node='+str(numthreads)+' --mail-type=END,FAIL,BEGIN --mail-user=jruffio@stanford.edu --wrap="python3 ' + script
                 params = ' {0} {1} {2} {3} {4} {5} {6} {7}"'.format(OSIRISDATA,inputdir,outputdir,filename,numthreads,planet_search,planet_model_string,debug_paras)
 
-                print(bsub_str+params)
+                N+=1
+                print(N,bsub_str+params)
                 #exit()
                 bsub_out = os.popen(bsub_str + params).read()
                 print(bsub_out)
