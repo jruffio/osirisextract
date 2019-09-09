@@ -220,7 +220,7 @@ def LPFvsHPF(myvec,cutoff):
     LPF_myvec = np.real(np.fft.ifft(LPF_fftmyvec))[0:np.size(myvec_cp)]
     HPF_myvec = myvec_cp - LPF_myvec
 
-    LPF_myvec[wherenans] = np.nan
+    LPF_myvec[wherenans] = np.nancutoff
     HPF_myvec[wherenans] = np.nan
     return LPF_myvec,HPF_myvec
 
@@ -593,25 +593,27 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
                         data_model = np.dot(HPFmodel,HPFparas)
                         data_model_H0 = np.dot(HPFmodel_H0,HPFparas_H0)
                         deltachi2 = 0#chi2ref-np.sum(ravelHPFdata**2)
-                        ravelresiduals = data_model-ravelHPFdata
-                        ravelresiduals_H0 = data_model_H0-ravelHPFdata
+                        ravelresiduals = ravelHPFdata-data_model
+                        ravelresiduals_H0 = ravelHPFdata-data_model_H0
                         HPFchi2 = np.nansum((ravelresiduals)**2)
                         HPFchi2_H0 = np.nansum((ravelresiduals_H0)**2)
 
 
-                        # import matplotlib.pyplot as plt
-                        # print(HPFchi2,HPFchi2_H0)
-                        # plt.figure(1)
-                        # print(HPFmodel_H0.shape)
-                        # plt.plot(ravelHPFdata,label="data")
-                        # for k in range(HPFmodel.shape[1]):
-                        #     plt.plot(HPFmodel[:,k],label="{0}".format(k),alpha=0.5)
-                        # plt.legend()
-                        # plt.figure(2)
-                        # plt.plot(ravelresiduals_H0,label="res H0")
-                        # plt.plot(ravelresiduals,label="res")
-                        # plt.legend()
-                        # plt.show()
+                        import matplotlib.pyplot as plt
+                        print(HPFchi2,HPFchi2_H0)
+                        plt.figure(1)
+                        print(HPFmodel_H0.shape)
+                        plt.plot(HPFmodel[:,0],label="data")
+                        plt.show()
+                        plt.plot(ravelHPFdata,label="data")
+                        for k in range(HPFmodel.shape[1]):
+                            plt.plot(HPFparas[k]*HPFmodel[:,k],label="{0}".format(k),alpha=0.5)
+                        plt.legend()
+                        plt.figure(2)
+                        plt.plot(-ravelresiduals_H0,label="res H0")
+                        plt.plot(-ravelresiduals,label="res")
+                        plt.legend()
+                        plt.show()
 
                         if plrv_id == noplrv_id:
                             canvas_model = np.zeros((2*w+1,2*w+1,data_nz))
@@ -820,7 +822,7 @@ if __name__ == "__main__":
     ##############################
     print(len(sys.argv))
     if len(sys.argv) == 1:
-        # planet = "b"
+        # planet = "HR_8799_b"
         # date = "090722"
         # date = "090730"
         # date = "090903"
@@ -832,7 +834,7 @@ if __name__ == "__main__":
         # date = "130727"
         # date = "161106"
         # date = "180722"
-        planet = "c"
+        planet = "HR_8799_c"
         date = "100715"
         # date = "101028"
         # date = "101104"
@@ -841,24 +843,27 @@ if __name__ == "__main__":
         # date = "110725"
         # date = "130726"
         # date = "171103"
-        # planet = "d"
+        # planet = "HR_8799_d"
         # date = "150720"
         # date = "150722"
         # date = "150723"
         # date = "150828"
+        # planet = "51_Eri_b"
+        # date = "171103"
         IFSfilter = "Kbb"
         # IFSfilter = "Hbb"
         # IFSfilter = "Jbb" # "Kbb" or "Hbb"
         scale = "020"
         # scale = "035"
 
-        inputDir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/"
-        outputdir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/20190520_LPF/"
-        # outputdir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/20190305_HPF_only_noperscor/"
-        # outputdir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb/20190228_mol_temp/"
+        inputDir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/"
+        # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190520_LPF/"
+        outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190722_HPF/"
+        # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190305_HPF_only_noperscor/"
+        # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190228_mol_temp/"
 
-        # inputDir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb_pairsub/"
-        # outputdir = "/data/osiris_data/HR_8799_"+planet+"/20"+date+"/reduced_jb_pairsub/20190228_HPF_only/"
+        # inputDir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb_pairsub/"
+        # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb_pairsub/20190228_HPF_only/"
 
         print(os.path.join(inputDir,"s"+date+"*"+IFSfilter+"_"+scale+".fits"))
         filelist = glob.glob(os.path.join(inputDir,"s"+date+"*"+IFSfilter+"_"+scale+".fits"))
@@ -882,8 +887,6 @@ if __name__ == "__main__":
         # planet_model_string = "CO joint"
 
         osiris_data_dir = "/data/osiris_data"
-        if "d" in planet:
-            planet = "c" # for selection of the templates
     else:
         osiris_data_dir = sys.argv[1]
         inputDir = sys.argv[2]
@@ -897,12 +900,6 @@ if __name__ == "__main__":
         filelist = [filename]
         IFSfilter = filename.split("_")[-2]
         date = os.path.basename(filename).split("_")[0].replace("s","")
-        if "HR_8799_b" in filename:
-            planet = "b"
-        if "HR_8799_c" in filename:
-            planet = "c"
-        if "HR_8799_d" in filename:
-            planet = "c"
 
         plot_transmissions = False
         plt_psfs = False
@@ -911,6 +908,55 @@ if __name__ == "__main__":
         #CO CH4 CO2 H2O
         #nice -n 15 /home/anaconda3/bin/python ./reduce_HPFonly_diagcov.py /data/osiris_data /data/osiris_data/HR_8799_b/20180722/reduced_jb/ /data/osiris_data/HR_8799_b/20180722/reduced_jb/20190326_HPF_only_sherlock_test/ /data/osiris_data/HR_8799_b/20180722/reduced_jb/s180722_a033002_Kbb_035.fits 20 1 'CO' 1
 
+    phoenix_folder = os.path.join(osiris_data_dir,"phoenix")
+    planet_template_folder = os.path.join(osiris_data_dir,"planets_templates")
+    molecular_template_folder = os.path.join(osiris_data_dir,"molecular_templates")
+    sky_transmission_folder = os.path.join(osiris_data_dir,"sky_transmission")
+    ref_star_folder = os.path.join(os.path.dirname(filelist[0]),"..","reduced_telluric_jb")
+    fileinfos_filename = os.path.join(inputDir,"..","..","fileinfos_Kbb_jb.csv")
+    fileinfos_refstars_filename = os.path.join(osiris_data_dir,"fileinfos_refstars_jb.csv")
+
+    if "HR_8799_b" in filelist[0]:
+        travis_spec_filename=os.path.join(planet_template_folder,
+                                      "HR8799b_"+IFSfilter[0:1]+"_3Oct2018.save")
+    if "HR_8799_c" in filelist[0]:
+        travis_spec_filename=os.path.join(planet_template_folder,
+                                      "HR8799c_"+IFSfilter[0:1]+"_3Oct2018.save")
+    if "HR_8799_d" in filelist[0]:
+        travis_spec_filename=os.path.join(planet_template_folder,
+                                      "HR8799c_"+IFSfilter[0:1]+"_3Oct2018.save")
+    if "HR_8799" in filelist[0]:
+        phoenix_model_host_filename = glob.glob(os.path.join(phoenix_folder,"HR_8799"+"*.fits"))[0]
+        if IFSfilter == "Jbb":
+            host_mag = 5.383
+        elif IFSfilter == "Hbb":
+            host_mag = 5.280
+        elif IFSfilter == "Kbb":
+            host_mag = 5.240
+        else:
+            raise("IFS filter name unknown")
+        host_type = "F0"
+        host_rv = -12.6 #+-1.4
+        host_limbdark = 0.5
+        host_vsini = 49 # true = 49
+    if "51_Eri_b" in filelist[0]:
+        phoenix_model_host_filename = glob.glob(os.path.join(phoenix_folder,"51_Eri"+"*.fits"))[0]
+        travis_spec_filename=os.path.join(planet_template_folder,
+                                      "51Eri_b_highres_template.save")
+        if IFSfilter == "Jbb":
+            host_mag = 4.744
+        elif IFSfilter == "Hbb":
+            host_mag = 4.770
+        elif IFSfilter == "Kbb":
+            host_mag = 4.537
+        else:
+            raise("IFS filter name unknown")
+        host_type = "F0"
+        host_rv = 12.6 #+-0.3
+        host_limbdark = 0.5
+        host_vsini = 80
+        
+        
 
     for filename in filelist:
         print("Processing "+filename)
@@ -954,7 +1000,7 @@ if __name__ == "__main__":
             R0=4000
         dwv = CDELT1/1000.
 
-        debug = False
+        debug = True
         if debug:
             planet_search = False
         model_based_sky_trans = False
@@ -1006,18 +1052,6 @@ if __name__ == "__main__":
         else:
             suffix = "HPF_cutoff{0}_sherlock_v1".format(cutoff)
 
-        if IFSfilter == "Jbb":
-            hr8799_mag = 5.383
-        elif IFSfilter == "Hbb":
-            hr8799_mag = 5.280
-        elif IFSfilter == "Kbb":
-            hr8799_mag = 5.240
-        else:
-            raise("IFS filter name unknown")
-        hr8799_type = "F0"
-        hr8799_rv = -12.6 #+-1.4
-        hr8799_limbdark = 0.5
-        hr8799_vsini = 49 # true = 49
         c_kms = 299792.458
         dprv = 3e5*dwv/(init_wv+dwv*nz//2) # 38.167938931297705
         
@@ -1025,14 +1059,6 @@ if __name__ == "__main__":
         ## Dependent parameters
         ##############################
         specpool = mp.Pool(processes=numthreads)
-
-        phoenix_folder = os.path.join(osiris_data_dir,"phoenix")
-        planet_template_folder = os.path.join(osiris_data_dir,"planets_templates")
-        molecular_template_folder = os.path.join(osiris_data_dir,"molecular_templates")
-        sky_transmission_folder = os.path.join(osiris_data_dir,"sky_transmission")
-        ref_star_folder = os.path.join(os.path.dirname(filename),"..","reduced_telluric_jb")
-        fileinfos_filename = os.path.join(inputDir,"..","..","fileinfos_Kbb_jb.csv")
-        fileinfos_refstars_filename = os.path.join(osiris_data_dir,"fileinfos_refstars_jb.csv")
 
         if use_R_calib:
             R_list = [0]
@@ -1070,16 +1096,16 @@ if __name__ == "__main__":
             print(colname+": "+it)
 
         baryrv_id = colnames.index("barycenter rv")
-        hr8799_bary_rv = -float(fileitem[baryrv_id])/1000
-        # print(hr8799_bary_rv)
+        host_bary_rv = -float(fileitem[baryrv_id])/1000
+        # print(host_bary_rv)
         # exit()
 
         if planet_search:
             suffix = suffix+"_search"
             if debug_paras:
-                planetRV_array = np.array([hr8799_bary_rv-10])
+                planetRV_array = np.array([host_bary_rv+host_rv])
                 # planetRV_array = np.array([0,19,38,47])
-                # print(hr8799_bary_rv-10)
+                # print(host_bary_rv-10)
                 # exit()
                 # planetRV_array = np.concatenate([np.arange(-2*dprv,2*dprv,dprv/10)])
             else:
@@ -1089,12 +1115,12 @@ if __name__ == "__main__":
             suffix = suffix+"_centroid"
 
             if debug_paras:
-                planetRV_array = np.array([hr8799_bary_rv-10,])
+                planetRV_array = np.array([host_bary_rv+host_rv,])
                 dl_grid,dk_grid = np.array([[0]]),np.array([[0]])
-                kcen_id = colnames.index("kcen")
-                lcen_id = colnames.index("lcen")
-                plcen_k,plcen_l = float(fileitem[kcen_id]),float(fileitem[lcen_id])
-                # plcen_k,plcen_l = 32-10,-35.79802955665025+46.8
+                # kcen_id = colnames.index("kcen")
+                # lcen_id = colnames.index("lcen")
+                # plcen_k,plcen_l = float(fileitem[kcen_id]),float(fileitem[lcen_id])
+                plcen_k,plcen_l = 32-10,-35.79802955665025+46.8
                 # plcen_k,plcen_l = 26,6#44,8
             else:
                 planetRV_array = np.arange(-3*dprv,3*dprv,dprv/100)
@@ -1180,8 +1206,6 @@ if __name__ == "__main__":
                     suffix = suffix+"_"+"joint"
                     # print("uh...")
                     # exit()
-                    travis_spec_filename=os.path.join(planet_template_folder,
-                                                      "HR8799"+planet+"_"+IFSfilter[0:1]+"_3Oct2018.save")
                     planet_template_filename=travis_spec_filename.replace(".save",
                                                                           "_gaussconv_R{0}_{1}.csv".format(R,IFSfilter))
 
@@ -1196,9 +1220,13 @@ if __name__ == "__main__":
                     else:
                         if len(glob.glob(planet_template_filename)) == 0:
                             travis_spectrum = scio.readsav(travis_spec_filename)
-                            ori_planet_spec = np.array(travis_spectrum["fmod"])
-                            ori_planet_convspec = np.array(travis_spectrum["fmods"])
-                            wmod = np.array(travis_spectrum["wmod"])/1.e4
+                            if "HR8799" in os.path.basename(travis_spec_filename):
+                                ori_planet_spec = np.array(travis_spectrum["fmod"])
+                                ori_planet_convspec = np.array(travis_spectrum["fmods"])
+                                wmod = np.array(travis_spectrum["wmod"])/1.e4
+                            elif "51Eri" in os.path.basename(travis_spec_filename):
+                                ori_planet_spec = np.array(travis_spectrum["flux"])
+                                wmod = np.array(travis_spectrum["wave"])
                             print("convolving: "+planet_template_filename)
                             planet_convspec = convolve_spectrum(wmod,ori_planet_spec,R,specpool)
 
@@ -1225,8 +1253,6 @@ if __name__ == "__main__":
                     # plt.show()
                     planet_partial_template_func_list.insert(0,interp1d(oriplanet_spec_wvs,continuum,bounds_error=False,fill_value=np.nan))
             else:
-                travis_spec_filename=os.path.join(planet_template_folder,
-                                                  "HR8799"+planet+"_"+IFSfilter[0:1]+"_3Oct2018.save")
                 planet_template_filename=travis_spec_filename.replace(".save",
                                                                       "_gaussconv_R{0}_{1}.csv".format(R,IFSfilter))
 
@@ -1241,9 +1267,13 @@ if __name__ == "__main__":
                 else:
                     if len(glob.glob(planet_template_filename)) == 0:
                         travis_spectrum = scio.readsav(travis_spec_filename)
-                        ori_planet_spec = np.array(travis_spectrum["fmod"])
-                        ori_planet_convspec = np.array(travis_spectrum["fmods"])
-                        wmod = np.array(travis_spectrum["wmod"])/1.e4
+                        if "HR8799" in os.path.basename(travis_spec_filename):
+                            ori_planet_spec = np.array(travis_spectrum["fmod"])
+                            ori_planet_convspec = np.array(travis_spectrum["fmods"])
+                            wmod = np.array(travis_spectrum["wmod"])/1.e4
+                        elif "51Eri" in os.path.basename(travis_spec_filename):
+                            ori_planet_spec = np.array(travis_spectrum["flux"])
+                            wmod = np.array(travis_spectrum["wave"])
                         print("convolving: "+planet_template_filename)
                         planet_convspec = convolve_spectrum(wmod,ori_planet_spec,R,specpool)
 
@@ -1267,6 +1297,11 @@ if __name__ == "__main__":
                         # plt.show()
                         planet_partial_template_func_list.append(planet_spec_func)
             planet_model_func_table.append(planet_partial_template_func_list)
+
+        # import matplotlib.pyplot as plt
+        # plt.plot(wvs,planet_model_func_table[0][0](wvs*(1-(-1*38)/c_kms)))
+        # plt.plot(wmod,ori_planet_spec)
+        # plt.show()
 
         # import matplotlib.pyplot as plt
         # tmp = planet_model_func_table[0][0](wvs*(1-(-1*38)/c_kms))
@@ -1480,30 +1515,29 @@ if __name__ == "__main__":
             transmission_table.append(transmission_func_list)
 
             ##############################
-            ## HR 8799 phoenix model
+            ## host star phoenix model
             ##############################
 
-            phoenix_model_HR8799_filename = glob.glob(os.path.join(phoenix_folder,"HR_8799"+"*.fits"))[0]
-            phoenix_HR8799_filename=phoenix_model_HR8799_filename.replace(".fits","_gaussconv_R{0}_{1}.csv".format(R,IFSfilter))
+            phoenix_host_filename=phoenix_model_host_filename.replace(".fits","_gaussconv_R{0}_{1}.csv".format(R,IFSfilter))
             if use_R_calib:
-                with pyfits.open(phoenix_model_HR8799_filename) as hdulist:
+                with pyfits.open(phoenix_model_host_filename) as hdulist:
                     phoenix_HR8799 = hdulist[0].data[crop_phoenix]
                 where_IFSfilter = np.where((phoenix_wvs>wvs[0])*(phoenix_wvs<wvs[-1]))
                 phoenix_HR8799 = phoenix_HR8799/np.mean(phoenix_HR8799[where_IFSfilter])
                 HR8799pho_spec_func = interp1d(phoenix_wvs,phoenix_HR8799,bounds_error=False,fill_value=np.nan)
             else:
-                if len(glob.glob(phoenix_HR8799_filename)) == 0:
-                    with pyfits.open(phoenix_model_HR8799_filename) as hdulist:
+                if len(glob.glob(phoenix_host_filename)) == 0:
+                    with pyfits.open(phoenix_model_host_filename) as hdulist:
                         phoenix_HR8799 = hdulist[0].data[crop_phoenix]
-                    print("convolving: "+phoenix_model_HR8799_filename)
+                    print("convolving: "+phoenix_model_host_filename)
                     phoenix_HR8799_conv = convolve_spectrum(phoenix_wvs,phoenix_HR8799,R,specpool)
 
-                    with open(phoenix_HR8799_filename, 'w+') as csvfile:
+                    with open(phoenix_host_filename, 'w+') as csvfile:
                         csvwriter = csv.writer(csvfile, delimiter=' ')
                         csvwriter.writerows([["wvs","spectrum"]])
                         csvwriter.writerows([[a,b] for a,b in zip(phoenix_wvs,phoenix_HR8799_conv)])
 
-                with open(phoenix_HR8799_filename, 'r') as csvfile:
+                with open(phoenix_host_filename, 'r') as csvfile:
                     csv_reader = csv.reader(csvfile, delimiter=' ')
                     list_starspec = list(csv_reader)
                     HR8799pho_spec_str_arr = np.array(list_starspec, dtype=np.str)
@@ -1521,12 +1555,12 @@ if __name__ == "__main__":
                 wvs4broadening = np.arange(HR8799pho_spec_wvs[0],HR8799pho_spec_wvs[-1],
                                            np.median(HR8799pho_spec_wvs[1::] - HR8799pho_spec_wvs[0:np.size(HR8799pho_spec_wvs)-1])*50)
                 # plt.plot(wvs4broadening,HR8799pho_spec_func(wvs4broadening),label="sampling")
-                broadened_HR8799pho_spec = pyasl.rotBroad(wvs4broadening, HR8799pho_spec_func(wvs4broadening), hr8799_limbdark, hr8799_vsini)
+                broadened_HR8799pho_spec = pyasl.rotBroad(wvs4broadening, HR8799pho_spec_func(wvs4broadening), host_limbdark, host_vsini)
                 # plt.plot(wvs4broadening,broadened_HR8799pho_spec,label="broad")
                 # plt.legend()
                 # plt.show()
 
-                HR8799pho_spec_func = interp1d(wvs4broadening/(1-(hr8799_rv+hr8799_bary_rv)/c_kms),broadened_HR8799pho_spec,bounds_error=False,fill_value=np.nan)
+                HR8799pho_spec_func = interp1d(wvs4broadening/(1-(host_rv+host_bary_rv)/c_kms),broadened_HR8799pho_spec,bounds_error=False,fill_value=np.nan)
 
                 # #remove
                 # import matplotlib.pyplot as plt
@@ -1562,7 +1596,7 @@ if __name__ == "__main__":
             with pyfits.open(psfs_rep4flux_filename) as hdulist:
                 psfs_repaired = hdulist[0].data
                 bbflux = np.nansum(psfs_repaired)
-            hr8799_flux_list.append(bbflux* 10**(-1./2.5*(hr8799_mag-refstar_mag)))
+            hr8799_flux_list.append(bbflux* 10**(-1./2.5*(host_mag-refstar_mag)))
 
         hr8799_flux = np.mean(hr8799_flux_list)
 
@@ -1928,7 +1962,7 @@ if __name__ == "__main__":
         # tpool.close()
         # plt.show()
 
-        if 0:
+        if 1: #"JBhere"
             out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
             import matplotlib.pyplot as plt
             print(original_imgs_np.shape)
@@ -1940,7 +1974,7 @@ if __name__ == "__main__":
             for myk in np.arange(25,35):
                 for myl in np.arange(7,9):
                     myvec = copy(original_imgs_np[myk,myl,:])
-                    myvec_cp = copy(myvec)/transmission4planet_list[0](wvs)
+                    myvec_cp = copy(myvec)#/transmission4planet_list[0](wvs)
                     print(np.nanmax(myvec_cp))
                     plt.sca(ax1)
                     plt.plot(wvs,myvec_cp,color="grey",alpha = 0.2)
@@ -1962,20 +1996,28 @@ if __name__ == "__main__":
             plt.sca(ax2)
             plt.plot(wvs,HPF_myvec,color="grey",alpha = 0.2,label="Noise sample")
 
-            myvec_cp = planet_partial_template_func_list[0](wvs)
+            myvec_cp = planet_partial_template_func_list[0](wvs)*transmission4planet_list[0](wvs)
+            # plt.figure(3)
+            # plt.plot(planet_partial_template_func_list[0](wvs))
+            # plt.figure(4)
+            # plt.plot(transmission4planet_list[0](wvs))
+            # plt.show()
             plt.sca(ax1)
-            plt.plot(wvs,myvec_cp/np.max(myvec_cp)*0.4,color="#ff9900",label="HR 8799 c model")
+            plt.plot(wvs,myvec_cp/np.nanmax(myvec_cp)*0.4,color="#ff9900",alpha=0.75,label="HR 8799 c model")
+            wherenans = np.where(np.isnan(myvec_cp))
+            for k in wherenans[0]:
+                myvec_cp[k] = np.nanmedian(myvec_cp[np.max([0,k-10]):np.min([np.size(myvec_cp),k+10])])
             fftmyvec = np.fft.fft(np.concatenate([myvec_cp,myvec_cp[::-1]],axis=0))
             LPF_fftmyvec = copy(fftmyvec)
             LPF_fftmyvec[cutoff:(2*np.size(myvec_cp)-cutoff+1)] = 0
             LPF_myvec = np.real(np.fft.ifft(LPF_fftmyvec))[0:np.size(myvec_cp)]
             HPF_myvec = myvec_cp - LPF_myvec
             plt.sca(ax2)
-            plt.plot(wvs,HPF_myvec/np.max(myvec_cp)*0.4,color="#ff9900",label="HR 8799 c model")
+            plt.plot(wvs,HPF_myvec/np.max(myvec_cp)*0.4,color="#ff9900",alpha=0.75,label="HR 8799 c model")
 
             plt.sca(ax1)
             plt.ylim([0,0.5])
-            plt.legend(loc="upper right",frameon=True,fontsize=fontsize)
+            plt.legend(loc="upper right",frameon=True,fontsize=fontsize,ncol=3)
             plt.xlabel(r"$\lambda$ ($\mu$m)",fontsize=fontsize)
             plt.gca().tick_params(axis='x', labelsize=fontsize)
             plt.gca().tick_params(axis='y', labelsize=fontsize)
@@ -1984,28 +2026,28 @@ if __name__ == "__main__":
             # plt.gca().spines["left"].set_visible(False)
             # plt.gca().spines["top"].set_visible(False)
             plt.tight_layout()
-            print("Saving "+os.path.join(out_pngs,"speckles.png"))
-            plt.savefig(os.path.join(out_pngs,"speckles.png"),bbox_inches='tight')
-            plt.savefig(os.path.join(out_pngs,"speckles.pdf"),bbox_inches='tight')
+            print("Saving "+os.path.join(out_pngs,"speckles_uncorr.png"))
+            plt.savefig(os.path.join(out_pngs,"speckles_uncorr.png"),bbox_inches='tight')
+            plt.savefig(os.path.join(out_pngs,"speckles_uncorr.pdf"),bbox_inches='tight')
 
             plt.sca(ax2)
             plt.ylim([-0.2,0.2])
-            plt.legend(loc="upper right",frameon=True,fontsize=fontsize)
+            plt.legend(loc="upper right",frameon=True,fontsize=fontsize,ncol=3)
             plt.xlabel(r"$\lambda$ ($\mu$m)",fontsize=fontsize)
             plt.gca().tick_params(axis='x', labelsize=fontsize)
             plt.gca().tick_params(axis='y', labelsize=fontsize)
             plt.tight_layout()
-            print("Saving "+os.path.join(out_pngs,"speckles_HPF.png"))
-            plt.savefig(os.path.join(out_pngs,"speckles_HPF.png"),bbox_inches='tight')
-            plt.savefig(os.path.join(out_pngs,"speckles_HPF.pdf"),bbox_inches='tight')
+            print("Saving "+os.path.join(out_pngs,"speckles_HPF_uncorr.png"))
+            plt.savefig(os.path.join(out_pngs,"speckles_HPF_uncorr.png"),bbox_inches='tight')
+            plt.savefig(os.path.join(out_pngs,"speckles_HPF_uncorr.pdf"),bbox_inches='tight')
 
             plt.figure(3,figsize=(12,3))
             fftx = 2*(wvs[-1]-wvs[0])/np.arange(padnz)
-            plt.fill_betweenx([0,1e5],[100,100],[fftx[40],fftx[40]],color="#0099cc",alpha=0.2,label="High-pass filtered")
+            plt.fill_betweenx([0,1e5],[100,100],[fftx[40],fftx[40]],color="#0099cc",alpha=0.2,label="Filtered out")
             for myk in np.arange(25,35):
                 for myl in np.arange(7,9):
                     myvec = original_imgs_np[myk,myl,:]
-                    myvec_cp = copy(myvec)/transmission4planet_list[0](wvs)
+                    myvec_cp = copy(myvec)#/transmission4planet_list[0](wvs)
                     #handling nans:
                     wherenans = np.where(np.isnan(myvec_cp))
                     for k in wherenans[0]:
@@ -2022,11 +2064,14 @@ if __name__ == "__main__":
                     plt.plot(fftx,np.abs(fftmyvec)[0:np.size(myvec_cp)],color="grey",alpha = 0.2)
             plt.plot(fftx,np.abs(fftmyvec)[0:np.size(myvec_cp)],color="grey",alpha = 0.2,label="Noise sample")
 
-            myplvec = planet_partial_template_func_list[0](wvs)
-            fftmyvec = np.fft.fft(np.concatenate([myvec_cp,myvec_cp[::-1]],axis=0))
-            plt.plot(fftx,np.abs(fftmyvec)[0:np.size(myvec_cp)],color="#ff9900",label="HR 8799 c model")
+            myplvec = planet_partial_template_func_list[0](wvs)*transmission4planet_list[0](wvs)
+            wherenans = np.where(np.isnan(myplvec))
+            for k in wherenans[0]:
+                myplvec[k] = np.nanmedian(myplvec[np.max([0,k-10]):np.min([np.size(myplvec),k+10])])
+            fftmyvec = np.fft.fft(np.concatenate([myplvec,myplvec[::-1]],axis=0))
+            plt.plot(fftx,np.abs(fftmyvec)[0:np.size(myplvec)],color="#ff9900",alpha=0.75,label="HR 8799 c model")
             # plt.xlim([0.100,0.416])
-            plt.legend(loc="upper right",frameon=True,fontsize=fontsize)
+            plt.legend(loc="upper right",frameon=True,fontsize=fontsize,ncol=3)
             plt.xlim([np.min(fftx),1])
             plt.ylim([1e-1,1e3])
             plt.xscale("log")
@@ -2037,9 +2082,9 @@ if __name__ == "__main__":
             plt.gca().tick_params(axis='y', labelsize=fontsize)
             plt.gca().invert_xaxis()
             plt.tight_layout()
-            print("Saving "+os.path.join(out_pngs,"speckles_fft.png"))
-            plt.savefig(os.path.join(out_pngs,"speckles_fft.png"),bbox_inches='tight')
-            plt.savefig(os.path.join(out_pngs,"speckles_fft.pdf"),bbox_inches='tight')
+            print("Saving "+os.path.join(out_pngs,"speckles_fft_uncorr.png"))
+            plt.savefig(os.path.join(out_pngs,"speckles_fft_uncorr.png"),bbox_inches='tight')
+            plt.savefig(os.path.join(out_pngs,"speckles_fft_uncorr.pdf"),bbox_inches='tight')
             plt.show()
             exit()
 

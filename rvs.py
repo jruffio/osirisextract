@@ -609,7 +609,7 @@ if 1:
     for y,(x,date,num) in enumerate(zip(c_combined_avg_list,c_uniquedate_list,c_N_data_list)):
         if np.isnan(x) or (x< (-16)):
             continue
-        plt.gca().text(x,y,"{0}".format(num),ha="center",va="bottom",rotation=0,size=fontsize,color="#cc3300",alpha=1)
+        plt.gca().text(x,y,"{0}".format(int(num)),ha="center",va="bottom",rotation=0,size=fontsize,color="#cc3300",alpha=1)
     # print(unique_strdate)
     plt.plot([c_combined_avg-c_combined_sig,c_combined_avg-c_combined_sig],[0,np.size(unique_date)],linestyle="--",linewidth=2,color="#cc6600",alpha=0.4)
     plt.plot([c_combined_avg,c_combined_avg],[0,np.size(unique_date)],linestyle="-",linewidth=2,color="#cc3300",alpha=0.4)
@@ -639,9 +639,9 @@ if 1:
         if np.isnan(x):
             continue
         if date == "20180722":
-            plt.gca().text(x,y,"{0} (35 mas scale)".format(num),ha="center",va="bottom",rotation=0,size=fontsize,color="#003366",alpha=1)
+            plt.gca().text(x,y,"{0} (35 mas scale)".format(int(num)),ha="center",va="bottom",rotation=0,size=fontsize,color="#003366",alpha=1)
         else:
-            plt.gca().text(x,y,"{0}".format(num),ha="center",va="bottom",rotation=0,size=fontsize,color="#003366",alpha=1)
+            plt.gca().text(x,y,"{0}".format(int(num)),ha="center",va="bottom",rotation=0,size=fontsize,color="#003366",alpha=1)
     plt.plot([b_combined_avg-b_combined_sig,b_combined_avg-b_combined_sig],[0,np.size(unique_date)],linestyle=":",linewidth=2,color="#006699",alpha=0.4)
     plt.plot([b_combined_avg,b_combined_avg],[0,np.size(unique_date)],linestyle="-.",linewidth=2,color="#003366",alpha=0.4)
     plt.plot([b_combined_avg+b_combined_sig,b_combined_avg+b_combined_sig],[0,np.size(unique_date)],linestyle=":",linewidth=2,color="#006699",alpha=0.4)
@@ -726,10 +726,26 @@ if 1:
     dRV_hist = dRV_hist/np.max(dRV_hist)
     bin_center = (bin_edges[1::]+bin_edges[0:np.size(bin_edges)-1])/2
     dRV_posterior = interp1d(bin_center,dRV_hist,bounds_error=False,fill_value=0)(final_planetRV_hd)
-    plt.plot(final_planetRV_hd,dRV_posterior,linestyle=":",linewidth=2,color="grey",label="Imaging (coplanar & stable prior)") #9966ff
+    # plt.plot(final_planetRV_hd,dRV_posterior,linestyle="-",linewidth=1,color="black") #9966ff
     plt.fill_between(final_planetRV_hd,
                      dRV_posterior*0,
-                     dRV_posterior,alpha=0.2,color="grey")
+                     dRV_posterior,alpha=0.2,color="grey",label="Wang 2018 (Astrometry; bcde coplanar & stable)")
+
+
+    astrometry_DATADIR = os.path.join("/data/osiris_data","astrometry")
+    userv = "includingrvdata"
+    with pyfits.open(os.path.join(astrometry_DATADIR,"figures","HR_8799_bc",'rvs_diffbc_55392_{0}.fits'.format(userv))) as hdulist:
+        diffrvs = hdulist[0].data
+    diffrvs_post,xedges = np.histogram(diffrvs,bins=10*5,range=[-5,5])
+    x_centers = [(x1+x2)/2. for x1,x2 in zip(xedges[0:len(xedges)-1],xedges[1:len(xedges)])]
+    plt.plot(x_centers,diffrvs_post/np.max(diffrvs_post),linestyle="--",linewidth=1,color="#6600ff",label="Orbit fit (Astrometry & RV; bc coplanar)") #9966ff
+    userv = "norvdata"
+    with pyfits.open(os.path.join(astrometry_DATADIR,"figures","HR_8799_bc",'rvs_diffbc_55392_{0}.fits'.format(userv))) as hdulist:
+        diffrvs = hdulist[0].data
+        diffrvs = np.concatenate([diffrvs,-diffrvs])
+    diffrvs_post,xedges = np.histogram(diffrvs,bins=10*5,range=[-5,5])
+    x_centers = [(x1+x2)/2. for x1,x2 in zip(xedges[0:len(xedges)-1],xedges[1:len(xedges)])]
+    plt.plot(x_centers,diffrvs_post/np.max(diffrvs_post),linestyle=":",linewidth=1,color="black",label="Orbit fit (Astrometry; bc coplanar)") #9966ff
 
     delta_posterior = np.correlate(b_posterior,c_posterior,mode="same")
     delta_posterior = delta_posterior/np.max(delta_posterior)
@@ -744,8 +760,8 @@ if 1:
     # plt.plot([deltaRV+deltaRV_sig,deltaRV+deltaRV_sig],[0,10],linestyle="--",linewidth=2,color="#9966ff")
     # plt.gca().text(deltaRV,0.7,"${0:.1f}\pm {1:.1f}$ km/s".format(deltaRV,deltaRV_sig),ha="right",va="top",rotation=90,size=fontsize,color="#660066")
     # plt.gca().text(deltaRV_pess+0.05,0.7,"$\pm {1:.1f}$ km/s".format(deltaRV_pess,deltaRV_sig_pess),ha="left",va="top",rotation=90,size=fontsize,color="#660066",alpha=0.5)
-    plt.gca().text(deltaRV-0.6,1.0,"${0:.1f}\pm {1:.1f}$ km/s".format(deltaRV,deltaRV_sig),ha="left",va="bottom",rotation=0,size=fontsize,color="#660066")
-    plt.plot(final_planetRV_hd,delta_posterior,linestyle="-",linewidth=3,color="#6600ff",label="Posterior") #9966ff
+    plt.gca().text(deltaRV-1,1.0,"${0:.1f}\pm {1:.1f}$ km/s".format(deltaRV,deltaRV_sig),ha="left",va="bottom",rotation=0,size=fontsize,color="#660066")
+    plt.plot(final_planetRV_hd,delta_posterior,linestyle="-",linewidth=3,color="#6600ff",label="Data only (RV)") #9966ff
     # plt.fill_between(final_planetRV_hd,delta_posterior,delta_pessimistic_posterior,linestyle="-",linewidth=3,color="#6600ff",alpha=0.3,label="With bootstrap") #9966ff
     # plt.fill_between(final_planetRV_hd[np.where(final_planetRV_hd>0)],
     #                  np.zeros(np.size(final_planetRV_hd[np.where(final_planetRV_hd>0)])),

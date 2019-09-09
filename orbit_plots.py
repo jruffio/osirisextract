@@ -83,26 +83,70 @@ fontsize = 12
 # system parameters
 num_secondary_bodies = len(planet)
 system_mass = 1.47 # [Msol]
-plx = 25.38 # [mas]
+plx = None#25.38 # [mas]
 mass_err = 0.3#0.3 # [Msol]
-plx_err = 0.7#0.7 # [mas]
+plx_err = None#0.7#0.7 # [mas]
 # suffix = "test4_coplanar"
 # suffix_norv = "test_joint_16_512_1000_2_False_coplanar"
 # suffix_withrvs = "test_joint_16_512_1000_2_True_coplanar"
 # suffix_norv = "gpicruncher_joint_16_512_10000_2_False_coplanar"
 # suffix_withrvs = "gpicruncher_joint_16_512_10000_2_True_coplanar"
-suffix_norv = "sherlock_16_1024_200000_50_False_coplanar"
-suffix_withrvs = "sherlock_16_1024_200000_50_True_coplanar"
-suffix_norv = "sherlock_2ndrun_16_1024_250000_50_False_coplanar"
-suffix_withrvs = "test_fixomegabug_16_100_5_2_True_coplanar"
-suffix_norv = "test_fixomegabug_16_100_5_2_False_coplanar"
+# suffix_norv = "sherlock_16_1024_200000_50_False_coplanar"
+# suffix_withrvs = "sherlock_16_1024_200000_50_True_coplanar"
+# suffix_norv = "sherlock_2ndrun_16_1024_250000_50_False_coplanar"
 # suffix_norv = "sherlock_2ndrun_2_1024_1250000_100_False_coplanar"
 # suffix = "sherlock"
 # suffix = "sherlock_ptemceefix_12_100_300000_50"
+suffix_withrvs = "sherlock_restrictOme_16_1024_200000_50_True_coplanar"
+suffix_norv = "sherlock_restrictOme_16_1024_200000_50_False_coplanar"
+# suffix_withrvs = "sherlock_restrictOme_notcoplanar_16_1024_200000_50_True"
+# suffix_norv = "sherlock_restrictOme_notcoplanar_16_1024_200000_50_False"
 
 
+
+from scipy.interpolate import interp1d
+def get_err_from_posterior(x,posterior):
+    ind = np.argsort(posterior)
+    cum_posterior = np.zeros(np.shape(posterior))
+    cum_posterior[ind] = np.cumsum(posterior[ind])
+    cum_posterior = cum_posterior/np.max(cum_posterior)
+    argmax_post = np.argmax(cum_posterior)
+    # import matplotlib.pyplot as plt
+    # plt.plot(x,cum_posterior)
+    # plt.plot(x,posterior/np.nanmax(posterior))
+    # plt.show()
+    if len(x[0:argmax_post]) < 2:
+        lx = np.nan
+    else:
+        lf = interp1d(cum_posterior[0:argmax_post],x[0:argmax_post],bounds_error=False,fill_value=np.nan)
+        lx = lf(1-0.6827)
+    if len(x[argmax_post::]) < 2:
+        rx = np.nan
+    else:
+        rf = interp1d(cum_posterior[argmax_post::],x[argmax_post::],bounds_error=False,fill_value=np.nan)
+        rx = rf(1-0.6827)
+    return x[argmax_post],lx,rx,lx-x[argmax_post],rx-x[argmax_post],argmax_post
+    # return x[argmax_post],(rx-lx)/2.,argmax_post
+
+
+def get_upperlim_from_posterior(x,posterior):
+    cum_posterior = np.cumsum(posterior)
+    cum_posterior = cum_posterior/np.max(cum_posterior)
+    # import matplotlib.pyplot as plt
+    # plt.plot(x,cum_posterior)
+    # plt.plot(x,posterior/np.nanmax(posterior))
+    # plt.show()
+    lf = interp1d(cum_posterior,x,bounds_error=False,fill_value=np.nan)
+    upplim = lf(0.6827)
+    return upplim
 
 if 1:
+    # mu = 5
+    # x = np.linspace(-7+mu,7+mu,1400)
+    # post = np.exp(-0.5*(x-mu)**2/1.5**2)
+    # print(get_err_from_posterior(x,post))
+    # exit()
+
     import matplotlib.pyplot as plt
     filename = "{0}/HR8799{1}_rvs.csv".format(astrometry_DATADIR,planet)
     data_table_withrvs = orbitize.read_input.read_file(filename)
@@ -123,6 +167,8 @@ if 1:
 
     suffix_norv2 = "test_joint_16_512_1000_2_False_coplanar"
     suffix_withrvs2 = "test_joint_16_512_1000_2_True_coplanar"
+    # suffix_norv2 = "test_fixomegabug_notcoplanar_16_100_100_2_False"
+    # suffix_withrvs2 = "test_fixomegabug_notcoplanar_16_100_100_2_True"
     hdf5_filename=os.path.join(astrometry_DATADIR,"figures","HR_8799_"+planet,'posterior_{0}_{1}_{2}.hdf5'.format("norv",planet,suffix_norv2))
     print(hdf5_filename)
     loaded_results_norv = results.Results() # Create blank results object for loading
@@ -135,48 +181,189 @@ if 1:
 
     with pyfits.open(os.path.join(astrometry_DATADIR,"figures","HR_8799_"+planet,'chain_{0}_{1}_{2}.fits'.format("norv",planet,suffix_norv))) as hdulist:
         myshape = hdulist[0].data.shape
-        chains_norv = np.zeros((myshape[0],myshape[1],myshape[2],myshape[3]+2))
-        chains_norv[:,:,:,0:(2+6)] = hdulist[0].data[:,:,:,0:(2+6)]
-        chains_norv[:,:,:,3+6] = hdulist[0].data[:,:,:,2+6]
-        chains_norv[:,:,:,(5+6)::] = hdulist[0].data[:,:,:,(3+6)::]
-        if "coplanar" in suffix_norv:
+        print(myshape)
+        if myshape[3] == 14:
+            chains_norv = hdulist[0].data
+        else:
+            chains_norv = np.zeros((myshape[0],myshape[1],myshape[2],14))
+            chains_norv[:,:,:,0:(2+6)] = hdulist[0].data[:,:,:,0:(2+6)]
+            chains_norv[:,:,:,3+6] = hdulist[0].data[:,:,:,2+6]
+            chains_norv[:,:,:,(5+6)::] = hdulist[0].data[:,:,:,(3+6)::]
+        if 0:
+            choose = np.random.randint(0, high=chains_norv.shape[2], size=chains_norv.shape[2]//2)
+            chains_norv[:,:,choose,4] -= np.pi
+            chains_norv[:,:,choose,4] = np.mod(chains_norv[:,:,choose,4],2*np.pi)
+            chains_norv[:,:,choose,3] -= np.pi
+            chains_norv[:,:,choose,3+6] -= np.pi
+            chains_norv[:,:,choose,3] = np.mod(chains_norv[:,:,choose,3],2*np.pi)
+            chains_norv[:,:,choose,3+6] = np.mod(chains_norv[:,:,choose,3+6],2*np.pi)
+        if not (myshape[3] == 14):
             chains_norv[:,:,:,2+6] = chains_norv[:,:,:,2]
             chains_norv[:,:,:,4+6] = chains_norv[:,:,:,4]
         print(chains_norv.shape)
-        # chains_norv = chains_norv[0,:,3*chains_norv.shape[2]//4::,:]
-        chains_norv = chains_norv[0,:,:,:]
+        chains_norv = chains_norv[0,:,2*chains_norv.shape[2]//4::,:]
+        # chains_norv = chains_norv[0,:,:,:]
         # chains_norv = chains_norv[0,:,0:10,:]
         # chains_norv = chains_norv[0,:,0:1,:]
     print(chains_norv.shape)
     with pyfits.open(os.path.join(astrometry_DATADIR,"figures","HR_8799_"+planet,'chain_{0}_{1}_{2}.fits'.format("withrvs",planet,suffix_withrvs))) as hdulist:
         myshape = hdulist[0].data.shape
-        chains_withrvs = np.zeros((myshape[0],myshape[1],myshape[2],myshape[3]+2))
-        chains_withrvs[:,:,:,0:(2+6)] = hdulist[0].data[:,:,:,0:(2+6)]
-        chains_withrvs[:,:,:,3+6] = hdulist[0].data[:,:,:,2+6]
-        chains_withrvs[:,:,:,(5+6)::] = hdulist[0].data[:,:,:,(3+6)::]
-        if "coplanar" in suffix_withrvs:
+        print(myshape)
+        if myshape[3] == 15:
+            chains_withrvs = hdulist[0].data
+        else:
+            chains_withrvs = np.zeros((myshape[0],myshape[1],myshape[2],myshape[3]+2))
+            chains_withrvs[:,:,:,0:(2+6)] = hdulist[0].data[:,:,:,0:(2+6)]
+            chains_withrvs[:,:,:,3+6] = hdulist[0].data[:,:,:,2+6]
+            chains_withrvs[:,:,:,(5+6)::] = hdulist[0].data[:,:,:,(3+6)::]
+        if not (myshape[3] == 15):
             chains_withrvs[:,:,:,2+6] = chains_withrvs[:,:,:,2]
             chains_withrvs[:,:,:,4+6] = chains_withrvs[:,:,:,4]
         print(chains_withrvs.shape)
-        chains_withrvs = chains_withrvs[0,:,3*chains_withrvs.shape[2]//4::,:]
+        chains_withrvs = chains_withrvs[0,:,2*chains_withrvs.shape[2]//4::,:]
         # chains_withrvs = chains_withrvs[0,:,:,:]
         # chains_withrvs = chains_withrvs[0,:,0:10,:]
         # chains_withrvs = chains_withrvs[0,:,0:1,:]
     print(chains_withrvs.shape)
     # exit()
 
+    sysrv_chain = np.ravel(chains_withrvs[:,:,-2])
+    ome_chain = np.ravel(chains_withrvs[:,:,4])
+    inc_chain = np.ravel(chains_withrvs[:,:,2])
+
+    #mutual inclination with disk
+    i_herschel = 26
+    ierr_herschel =3
+    Omega_herschel =62
+    Omegaerr_herschel =3
+    # SMA+ALMA
+    # i=32.8+5.6-9.6
+    # Omega = 35.6+9.4-10.1
+    i_alma = 32.8
+    ierr_alma =(5.6+9.6)/2
+    Omega_alma =35.6
+    Omegaerr_alma =(9.4+10.1)/2
+    # i_alma = 20.8
+    # ierr_alma =0.01
+    # Omega_alma =89
+    # Omegaerr_alma =0.01
+
+    plt.figure(10)
+
+    mean = [i_herschel,Omega_herschel]
+    cov=np.diag([ierr_herschel**2,Omegaerr_herschel**2])
+    iOme_samples = np.deg2rad(np.random.multivariate_normal(mean,cov,size=np.size(inc_chain)))
+    idisk,Omedisk = iOme_samples[:,0],iOme_samples[:,1]
+    im_samples = np.rad2deg(np.arccos(np.cos(inc_chain)*np.cos(idisk) + np.sin(inc_chain)*np.sin(idisk)*np.cos(ome_chain-Omedisk)))
+    im_post,xedges = np.histogram(im_samples,bins=100,range=[np.min(im_samples),np.max(im_samples)])
+    x_centers = [(x1+x2)/2. for x1,x2 in zip(xedges[0:len(xedges)-1],xedges[1:len(xedges)])]
+    im_mod, _,_,im_merr, im_perr,_ = get_err_from_posterior(x_centers,im_post)
+    print("herschel",im_mod,im_merr, im_perr)
+    plt.plot(x_centers,im_post/np.max(im_post),label="herschel")
+
+    mean = [i_alma,Omega_alma]
+    cov=np.diag([ierr_alma**2,Omegaerr_alma**2])
+    iOme_samples = np.deg2rad(np.random.multivariate_normal(mean,cov,size=np.size(inc_chain)))
+    idisk,Omedisk = iOme_samples[:,0],iOme_samples[:,1]
+    im_samples = np.rad2deg(np.arccos(np.cos(inc_chain)*np.cos(idisk) + np.sin(inc_chain)*np.sin(idisk)*np.cos(ome_chain-Omedisk)))
+    im_post,xedges = np.histogram(im_samples,bins=100,range=[np.min(im_samples),np.max(im_samples)])
+    x_centers = [(x1+x2)/2. for x1,x2 in zip(xedges[0:len(xedges)-1],xedges[1:len(xedges)])]
+    im_mod, _,_,im_merr, im_perr,_ = get_err_from_posterior(x_centers,im_post)
+    print("SMA_ALMA",im_mod,im_merr, im_perr)
+    plt.plot(x_centers,im_post/np.max(im_post),label="SMA_ALMA")
+
+    plt.legend()
+    plt.xlabel("Mutual Inclination")
+    plt.ylabel("PDF")
+    plt.show()
+
+
+
+    inc_post,xedges = np.histogram(np.rad2deg(inc_chain),bins=2*60,range=[0,60])
+    x_centers = [(x1+x2)/2. for x1,x2 in zip(xedges[0:len(xedges)-1],xedges[1:len(xedges)])]
+    inc_mod, _,_,inc_merr, inc_perr,_ = get_err_from_posterior(x_centers,inc_post)
+
+    ome_post,xedges = np.histogram(np.rad2deg(ome_chain),bins=2*180,range=[0,180])
+    x_centers = [(x1+x2)/2. for x1,x2 in zip(xedges[0:len(xedges)-1],xedges[1:len(xedges)])]
+    ome_mod, _,_,ome_merr, ome_perr,_ = get_err_from_posterior(x_centers,ome_post)
+
+    sysrv_post,xedges = np.histogram(sysrv_chain,bins=10*20,range=[-20,0])
+    x_centers = [(x1+x2)/2. for x1,x2 in zip(xedges[0:len(xedges)-1],xedges[1:len(xedges)])]
+    sysrv_mod, _,_,sysrv_merr, sysrv_perr,_ = get_err_from_posterior(x_centers,sysrv_post)
+    print("inclination: {0},{1},{2}".format(inc_mod,inc_merr,inc_perr))
+    print("Omega: {0},{1},{2}".format(ome_mod,ome_merr,ome_perr))
+    print("sysrv: {0},{1},{2}".format(sysrv_mod,sysrv_merr,sysrv_perr))
+    # exit()
+
+    post,xedges = np.histogram(np.ravel(chains_withrvs[:,:,0]),bins=200,range=[np.min(chains_withrvs[:,:,0]),np.max(chains_withrvs[:,:,0])])
+    x_centers = [(x1+x2)/2. for x1,x2 in zip(xedges[0:len(xedges)-1],xedges[1:len(xedges)])]
+    mod, _,_,merr, perr,_ = get_err_from_posterior(x_centers,post)
+    print("a_b : {0},{1},{2}".format(mod,merr,perr))
+    post,xedges = np.histogram(np.ravel(chains_withrvs[:,:,1]),bins=2*60,range=[np.min(chains_withrvs[:,:,1]),np.max(chains_withrvs[:,:,1])])
+    x_centers = [(x1+x2)/2. for x1,x2 in zip(xedges[0:len(xedges)-1],xedges[1:len(xedges)])]
+    upplim = get_upperlim_from_posterior(x_centers,post)
+    print("e_b : uplim={0}".format(upplim))
+    tmp = np.rad2deg(np.ravel(chains_withrvs[:,:,3]))
+    post,xedges = np.histogram(tmp,bins=2*60,range=[np.min(tmp),np.max(tmp)])
+    x_centers = [(x1+x2)/2. for x1,x2 in zip(xedges[0:len(xedges)-1],xedges[1:len(xedges)])]
+    mod, _,_,merr, perr,_ = get_err_from_posterior(x_centers,post)
+    print("omega_b : {0},{1},{2}".format(mod,merr,perr))
+    post,xedges = np.histogram(np.ravel(chains_withrvs[:,:,5]),bins=2*60,range=[np.min(chains_withrvs[:,:,5]),np.max(chains_withrvs[:,:,5])])
+    x_centers = [(x1+x2)/2. for x1,x2 in zip(xedges[0:len(xedges)-1],xedges[1:len(xedges)])]
+    mod, _,_,merr, perr,_ = get_err_from_posterior(x_centers,post)
+    print("tau_b : {0},{1},{2}".format(mod,merr,perr))
+
+    post,xedges = np.histogram(np.ravel(chains_withrvs[:,:,0+6]),bins=2*60,range=[np.min(chains_withrvs[:,:,0+6]),np.max(chains_withrvs[:,:,0+6])])
+    x_centers = [(x1+x2)/2. for x1,x2 in zip(xedges[0:len(xedges)-1],xedges[1:len(xedges)])]
+    mod, _,_,merr, perr,_ = get_err_from_posterior(x_centers,post)
+    print("a_c : {0},{1},{2}".format(mod,merr,perr))
+    post,xedges = np.histogram(np.ravel(chains_withrvs[:,:,1+6]),bins=2*60,range=[np.min(chains_withrvs[:,:,1+6]),np.max(chains_withrvs[:,:,1+6])])
+    x_centers = [(x1+x2)/2. for x1,x2 in zip(xedges[0:len(xedges)-1],xedges[1:len(xedges)])]
+    upplim = get_upperlim_from_posterior(x_centers,post)
+    print("e_c : uplim={0}".format(upplim))
+    tmp = np.rad2deg(np.ravel(chains_withrvs[:,:,3+6]))
+    post,xedges = np.histogram(tmp,bins=2*60,range=[np.min(tmp),np.max(tmp)])
+    x_centers = [(x1+x2)/2. for x1,x2 in zip(xedges[0:len(xedges)-1],xedges[1:len(xedges)])]
+    mod, _,_,merr, perr,_ = get_err_from_posterior(x_centers,post)
+    print("omega_c : {0},{1},{2}".format(mod,merr,perr))
+    post,xedges = np.histogram(np.ravel(chains_withrvs[:,:,5+6]),bins=2*60,range=[np.min(chains_withrvs[:,:,5+6]),np.max(chains_withrvs[:,:,5+6])])
+    x_centers = [(x1+x2)/2. for x1,x2 in zip(xedges[0:len(xedges)-1],xedges[1:len(xedges)])]
+    mod, _,_,merr, perr,_ = get_err_from_posterior(x_centers,post)
+    print("tau_c : {0},{1},{2}".format(mod,merr,perr))
+
+    post,xedges = np.histogram(np.ravel(chains_withrvs[:,:,-3]),bins=2*60,range=[np.min(chains_withrvs[:,:,-3]),np.max(chains_withrvs[:,:,-3])])
+    x_centers = [(x1+x2)/2. for x1,x2 in zip(xedges[0:len(xedges)-1],xedges[1:len(xedges)])]
+    mod, _,_,merr, perr,_ = get_err_from_posterior(x_centers,post)
+    print("plx : {0},{1},{2}".format(mod,merr,perr))
+    post,xedges = np.histogram(np.ravel(chains_withrvs[:,:,-1]),bins=2*60,range=[np.min(chains_withrvs[:,:,-1]),np.max(chains_withrvs[:,:,-1])])
+    x_centers = [(x1+x2)/2. for x1,x2 in zip(xedges[0:len(xedges)-1],xedges[1:len(xedges)])]
+    mod, _,_,merr, perr,_ = get_err_from_posterior(x_centers,post)
+    print("mtot : {0},{1},{2}".format(mod,merr,perr))
+    exit()
+
     # plt.figure(1)
     # plt.subplot(2,1,1)
-    # plt.plot(chains_norv[::10,::1,4].T,color="grey",alpha =0.1 )
+    # plt.plot(chains_norv[::100,::1,4].T,color="grey",alpha =0.1 )
     # plt.subplot(2,1,2)
-    # plt.plot(chains_withrvs[::10,::1,4].T,color="grey",alpha =0.1 )
-    #
+    # plt.plot(chains_withrvs[::100,::1,4].T,color="grey",alpha =0.1 )
+    # plt.show()
+    # #
+    # all_mycorr = []
     # plt.figure(2)
     # for k in np.arange(0,chains_norv.shape[0],50):
     #     print(k)
     #     chain = chains_norv[k,:,4] - np.mean(chains_norv[k,:,4])
     #     mycorr = np.correlate(chain,chain,mode="full")
-    #     plt.plot(mycorr)
+    #     mycorr = mycorr/np.max(mycorr)
+    #     all_mycorr.append(mycorr)
+    #     plt.plot(mycorr,alpha=0.1)
+    #     # l = chains_norv.shape[1]
+    #     # # print(l)
+    #     # print(mycorr[l-1:l+1],np.sum(mycorr[l-1:l+1]))
+    #     # print(np.sum(mycorr[l-l//2:l+l//2]))
+    #
+    # plt.plot(np.mean(all_mycorr,axis=0),alpha=1,linewidth = 3)
+    # # print(np.sum(all_mycorr)/len(all_mycorr))
     # plt.show()
 
     chains_norv = np.reshape(chains_norv,(chains_norv.shape[0]*chains_norv.shape[1],chains_norv.shape[2]))
@@ -187,6 +374,103 @@ if 1:
 
     post_norv = loaded_results_norv.post
     post_withrvs = loaded_results_withrvs.post
+
+    if 0:
+        num_orbits_to_plot = 10000
+        num_secondary_bodies = len(planet)
+        system_mass = 1.52#1.47 # [Msol] (Jason)
+        plx = 24.2175#25.38 # [mas]
+        mass_err = 0.15#0.3 # [Msol] (Jason)
+        plx_err = 0.0881#0.7 # [mas]
+        sysrv=-12.6
+        sysrv_err=1.4
+        from orbitize import priors, sampler
+        out_pngs = os.path.join(astrometry_DATADIR,"figures")
+        filename = "{0}/HR8799bc_rvs_4RVcalc.csv".format(astrometry_DATADIR)
+        # userv = "includingrvdata"
+        userv = "norvdata"
+        if userv == "includingrvdata":
+            restrict_angle_ranges = True
+            choose = np.random.randint(0, high=chains_withrvs.shape[0], size=num_orbits_to_plot)
+            chains = chains_withrvs[choose,:].T
+        else:
+            restrict_angle_ranges = False
+            choose = np.random.randint(0, high=chains_norv.shape[0], size=num_orbits_to_plot)
+            chains = chains_norv[choose,:].T
+        my_driver = driver.Driver(
+            filename, 'MCMC', num_secondary_bodies, system_mass, plx, mass_err=mass_err, plx_err=plx_err,
+            sysrv=sysrv,sysrv_err=sysrv_err,
+            mcmc_kwargs={'num_temps': num_temps, 'num_walkers': num_walkers, 'num_threads': num_threads},system_kwargs = {"restrict_angle_ranges":restrict_angle_ranges},
+        )
+        if "bc" in planet:
+            my_driver.system.coplanar = True
+        if my_driver.system.coplanar and len(planet) >=2:
+            my_driver.system.sys_priors[2+6] = -2
+            my_driver.system.sys_priors[4+6] = -3
+        if len(planet) == 1:
+            my_driver.system.sys_priors[0] = priors.JeffreysPrior(1, 1e2)
+
+        print(chains.shape)
+
+        print(my_driver.system.data_table)
+        # my_driver.system.data_table = my_driver.system.data_table[0:1]
+
+        out_model = my_driver.system.compute_model(chains)
+        print(out_model)
+        print(out_model.shape)
+        inclination = chains[4,:]
+        rvs_b =  out_model[0,0,:]
+        rvs_c =  out_model[1,0,:]
+        diffrvs =  rvs_b-rvs_c
+
+        # plt.scatter(inclination,diffrvs)
+        # inclvsdiffrvs,xedges,yedges = np.histogram2d(inclination,diffrvs,bins=[50,100],range=[[0,np.pi],[-5,5]])
+        # inclvsdiffrvs = inclvsdiffrvs.T
+        # x_centers = [(x1+x2)/2. for x1,x2 in zip(xedges[0:len(xedges)-1],xedges[1:len(xedges)])]
+        # y_centers = [(y1+y2)/2. for y1,y2 in zip(yedges[0:len(yedges)-1],yedges[1:len(yedges)])]
+        # levels = [0.6827,0.9545]
+        # ravel_H = np.ravel(inclvsdiffrvs)
+        # ind = np.argsort(ravel_H)
+        # cum_ravel_H = np.zeros(np.shape(ravel_H))
+        # cum_ravel_H[ind] = np.cumsum(ravel_H[ind])
+        # cum_H = 1-np.reshape(cum_ravel_H/np.nanmax(cum_ravel_H),np.shape(inclvsdiffrvs))
+        # image = copy(inclvsdiffrvs)
+        # image[np.where(cum_H>0.9545)] = np.nan
+        # xx,yy = np.meshgrid(x_centers,y_centers)
+        # CS = plt.contour(xx,yy,cum_H,levels = levels,linestyles=["-","--"],linewidths=[2],colors=("black",),zorder=15,label="With RVs")
+        # plt.show()
+
+        hdulist = pyfits.HDUList()
+        hdulist.append(pyfits.PrimaryHDU(data=rvs_b))
+        try:
+            hdulist.writeto(os.path.join(out_pngs,"HR_8799_"+planet,'rvs_b_55392_{0}.fits'.format(userv)), overwrite=True)
+        except TypeError:
+            hdulist.writeto(os.path.join(out_pngs,"HR_8799_"+planet,'rvs_b_55392_{0}.fits'.format(suffix)), clobber=True)
+        hdulist.close()
+        hdulist = pyfits.HDUList()
+        hdulist.append(pyfits.PrimaryHDU(data=rvs_c))
+        try:
+            hdulist.writeto(os.path.join(out_pngs,"HR_8799_"+planet,'rvs_c_55392_{0}.fits'.format(userv)), overwrite=True)
+        except TypeError:
+            hdulist.writeto(os.path.join(out_pngs,"HR_8799_"+planet,'rvs_c_55392_{0}.fits'.format(suffix)), clobber=True)
+        hdulist.close()
+        hdulist = pyfits.HDUList()
+        hdulist.append(pyfits.PrimaryHDU(data=diffrvs))
+        try:
+            hdulist.writeto(os.path.join(out_pngs,"HR_8799_"+planet,'rvs_diffbc_55392_{0}.fits'.format(userv)), overwrite=True)
+        except TypeError:
+            hdulist.writeto(os.path.join(out_pngs,"HR_8799_"+planet,'rvs_diffbc_55392_{0}.fits'.format(suffix)), clobber=True)
+        hdulist.close()
+
+        diffrvs_post,xedges = np.histogram(diffrvs,bins=20*10,range=[-10,10])
+        x_centers = [(x1+x2)/2. for x1,x2 in zip(xedges[0:len(xedges)-1],xedges[1:len(xedges)])]
+        # drv_mod, _,_,drv_merr, drv_perr,_ = get_err_from_posterior(x_centers,diffrvs_post)
+
+        plt.plot(x_centers,diffrvs_post)
+        plt.show()
+        exit()
+
+
 
     if 1:
         param_list = ["sma1","ecc1","inc1","aop1","pan1","epp1","sma2","ecc2","inc2","aop2","pan2","epp2","plx","mtot"]
@@ -290,8 +574,8 @@ if 1:
 
         cmaps = ["cool","hot"]
         colors=["#006699","#ff9900","#6600ff","grey"]
-        inc_Ome_norv_b,xedges,yedges = np.histogram2d(np.rad2deg(post_norv[:,4]),np.rad2deg(post_norv[:,2]),bins=[40,20],range=[Ome_bounds,inc_bounds])
-        inc_Ome_withrvs_b,xedges,yedges = np.histogram2d(np.rad2deg(post_withrvs[:,4]),np.rad2deg(post_withrvs[:,2]),bins=[40,20],range=[Ome_bounds,inc_bounds])
+        inc_Ome_norv_b,xedges,yedges = np.histogram2d(np.rad2deg(np.concatenate([post_norv[:,4],post_norv[:,4]+np.pi])),np.rad2deg(np.concatenate([post_norv[:,2],post_norv[:,2]])),bins=[360/4,45//2],range=[Ome_bounds,inc_bounds])
+        inc_Ome_withrvs_b,xedges,yedges = np.histogram2d(np.rad2deg(post_withrvs[:,4]),np.rad2deg(post_withrvs[:,2]),bins=[360/4,45//2],range=[Ome_bounds,inc_bounds])
         # inc_Ome_norv_c,xedges,yedges = np.histogram2d(np.rad2deg(post_norv[:,4+6]),np.rad2deg(post_norv[:,2+6]),bins=[40,20],range=[Ome_bounds,inc_bounds])
         # inc_Ome_withrvs_c,xedges,yedges = np.histogram2d(np.rad2deg(post_withrvs[:,4+6]),np.rad2deg(post_withrvs[:,2+6]),bins=[40,20],range=[Ome_bounds,inc_bounds])
         inc_Ome_norv_b = inc_Ome_norv_b.T
@@ -363,10 +647,10 @@ if 1:
 
         cmaps = ["cool","hot"]
         colors=["#006699","#ff9900","#6600ff","grey"]
-        inc_Ome_norv_b,xedges,yedges = np.histogram2d(post_norv[:,0],post_norv[:,1],bins=[40,20],range=[sma_bounds,ecc_bounds])
-        inc_Ome_withrvs_b,xedges,yedges = np.histogram2d(post_withrvs[:,0],post_withrvs[:,1],bins=[40,20],range=[sma_bounds,ecc_bounds])
-        inc_Ome_norv_c,xedges,yedges = np.histogram2d(post_norv[:,0+6],post_norv[:,1+6],bins=[40,20],range=[sma_bounds,ecc_bounds])
-        inc_Ome_withrvs_c,xedges,yedges = np.histogram2d(post_withrvs[:,0+6],post_withrvs[:,1+6],bins=[40,20],range=[sma_bounds,ecc_bounds])
+        inc_Ome_norv_b,xedges,yedges = np.histogram2d(post_norv[:,0],post_norv[:,1],bins=[50*2,4*10],range=[sma_bounds,ecc_bounds])
+        inc_Ome_withrvs_b,xedges,yedges = np.histogram2d(post_withrvs[:,0],post_withrvs[:,1],bins=[50*2,4*10],range=[sma_bounds,ecc_bounds])
+        inc_Ome_norv_c,xedges,yedges = np.histogram2d(post_norv[:,0+6],post_norv[:,1+6],bins=[50*2,4*10],range=[sma_bounds,ecc_bounds])
+        inc_Ome_withrvs_c,xedges,yedges = np.histogram2d(post_withrvs[:,0+6],post_withrvs[:,1+6],bins=[50*2,4*10],range=[sma_bounds,ecc_bounds])
         inc_Ome_norv_b = inc_Ome_norv_b.T
         inc_Ome_withrvs_b = inc_Ome_withrvs_b.T
         inc_Ome_norv_c = inc_Ome_norv_c.T
@@ -472,7 +756,7 @@ if 1:
         fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,'sma_vs_ecc.png'),bbox_inches='tight') # This is matplotlib.figure.Figure.savefig()
         plt.show()
 
-    if 0:
+    if 1:
         # Create figure for orbit plots
         fig = plt.figure(figsize=(12,5.5))
         post = post_withrvs
@@ -644,12 +928,15 @@ if 1:
                 else:
                     adjustable_param='box'
                 ax0.set_aspect('equal', adjustable=adjustable_param)
-                ax0.set_xlabel('$\Delta$RA (mas)')
-                ax0.set_ylabel('$\Delta$Dec (mas)')
-                ax0.locator_params(axis='x', nbins=6)
-                ax0.locator_params(axis='y', nbins=6)
+                ax0.set_xlabel('$\Delta$RA (mas)',fontsize=fontsize)
+                ax0.set_ylabel('$\Delta$Dec (mas)',fontsize=fontsize)
+                ax0.tick_params(axis='x', labelsize=fontsize)
+                ax0.tick_params(axis='y', labelsize=fontsize)
+                plt.sca(ax0)
                 plt.xlim([-2000,2000])
                 plt.ylim([-2000,2000])
+                plt.xticks([2000,1000,0,-1000,-2000])
+                plt.yticks([-2000,-1000,0,1000,2000])
 
                 if data_table is not None:
                     plt.errorbar(data_table["quant1"][radec_indices],data_table["quant2"][radec_indices],
@@ -674,10 +961,13 @@ if 1:
                 # add colorbar
                 if object_to_plot == 1:
                     cbar_ax = fig.add_axes([0.47, 0.10, 0.015, 0.4]) # xpos, ypos, width, height, in fraction of figure size
-                    cbar = mpl.colorbar.ColorbarBase(cbar_ax, cmap=cmap, norm=norm_yr, orientation='vertical', label="b: "+cbar_param)
+                    cbar = mpl.colorbar.ColorbarBase(cbar_ax, cmap=cmap, norm=norm_yr, orientation='vertical')
+                    cbar.set_label("b: "+cbar_param,fontsize=fontsize)
                 if object_to_plot == 2:
                     cbar_ax = fig.add_axes([0.47, 0.5, 0.015, 0.4]) # xpos, ypos, width, height, in fraction of figure size
-                    cbar = mpl.colorbar.ColorbarBase(cbar_ax, cmap=cmap, norm=norm_yr, orientation='vertical', label="c: "+cbar_param)
+                    cbar = mpl.colorbar.ColorbarBase(cbar_ax, cmap=cmap, norm=norm_yr, orientation='vertical')
+                    cbar.set_label("c: "+cbar_param,fontsize=fontsize)
+                cbar.ax.tick_params(labelsize=fontsize)
 
 
                 plt.sca(ax1)
@@ -723,13 +1013,6 @@ if 1:
                     ax3.add_collection(lc)
                 plt.xlim([start_yr,sep_pa_end_year])
 
-                ax1.locator_params(axis='x', nbins=6)
-                ax1.locator_params(axis='y', nbins=3)
-                ax2.locator_params(axis='x', nbins=6)
-                ax2.locator_params(axis='y', nbins=3)
-                ax3.locator_params(axis='x', nbins=6)
-                ax3.locator_params(axis='y', nbins=5)
-
 
                 if data_table is not None:
                     plt.sca(ax1)
@@ -755,47 +1038,97 @@ if 1:
                     dec_list = data_table["quant2"][radec_indices]
                     ra_err_list = data_table["quant1_err"][radec_indices]
                     dec_err_list = data_table["quant2_err"][radec_indices]
-                    sep_list,pa_list = orbitize.system.radec2seppa(ra_list,dec_list)
-                    sep_err_list = np.zeros(ra_list.shape)
-                    pa_err_list = np.zeros(ra_list.shape)
+                    # sep_list,pa_list = orbitize.system.radec2seppa(ra_list,dec_list)
+                    sep_merr_list = np.zeros(ra_list.shape)
+                    pa_merr_list = np.zeros(ra_list.shape)
+                    sep_perr_list = np.zeros(ra_list.shape)
+                    pa_perr_list = np.zeros(ra_list.shape)
+                    sep_list = np.zeros(ra_list.shape)
+                    pa_list = np.zeros(ra_list.shape)
                     for myid,(ra,dec,ra_err,dec_err) in enumerate(zip(ra_list,dec_list,ra_err_list,dec_err_list)):
                         mean = [ra,dec]
                         cov=np.diag([ra_err**2,dec_err**2])
-                        radec_samples = np.random.multivariate_normal(mean,cov,size=200)
+                        radec_samples = np.random.multivariate_normal(mean,cov,size=1000)
                         sep_samples,pa_samples = orbitize.system.radec2seppa(radec_samples[:,0],radec_samples[:,1])
-                        sep_err_list[myid] = np.std(sep_samples)
-                        pa_err_list[myid] = np.std(pa_samples)
+                        seppost,xedges = np.histogram(sep_samples,bins=25,range=[np.min(sep_samples),np.max(sep_samples)])
+                        x_centers = [(x1+x2)/2. for x1,x2 in zip(xedges[0:len(xedges)-1],xedges[1:len(xedges)])]
+                        sep_mod, _,_,sep_merr, sep_perr,_ = get_err_from_posterior(x_centers,seppost)
+                        # plt.figure(10)
+                        # plt.subplot(1,2,1)
+                        # plt.plot(x_centers,seppost)
+                        # print(np.min(sep_samples),np.max(sep_samples))
+                        # print(sep_mod,sep_merr, sep_perr,np.std(sep_samples))
+                        papost,xedges = np.histogram(pa_samples,bins=25,range=[np.min(pa_samples),np.max(pa_samples)])
+                        x_centers = [(x1+x2)/2. for x1,x2 in zip(xedges[0:len(xedges)-1],xedges[1:len(xedges)])]
+                        pa_mod, _,_,pa_merr, pa_perr,_ = get_err_from_posterior(x_centers,papost)
+                        # plt.subplot(1,2,2)
+                        # plt.plot(x_centers,papost)
+                        # print(np.min(papost),np.max(papost))
+                        # print(pa_mod,pa_merr, pa_perr,np.std(pa_samples))
+                        # plt.show()
+                        # exit()
+                        sep_merr_list[myid] = sep_merr
+                        pa_merr_list[myid] = pa_merr
+                        sep_perr_list[myid] = sep_perr
+                        pa_perr_list[myid] = pa_perr
+                        sep_list[myid] = sep_mod
+                        pa_list[myid] = pa_mod
 
                     plt.sca(ax1)
                     plt.errorbar(Time(data_table["epoch"][radec_indices],format='mjd').decimalyear,
                                  sep_list,
-                                 yerr=sep_err_list,fmt="x",color=pl_color,linestyle="",zorder=10)
+                                 yerr=[-sep_merr_list,sep_perr_list],fmt="x",color=pl_color,linestyle="",zorder=10)
                     plt.sca(ax2)
                     plt.errorbar(Time(data_table["epoch"][radec_indices],format='mjd').decimalyear,
                                  pa_list,
-                                 yerr=pa_err_list,fmt="x",color=pl_color,linestyle="",zorder=10)
+                                 yerr=[-pa_merr_list,pa_perr_list],fmt="x",color=pl_color,linestyle="",zorder=10)
 
         plt.sca(ax11)
         plt.ylim([1700,1730])
-        ax11.set_ylabel('$\\rho_b$ (mas)')
+        ax11.set_ylabel('$\\rho_b$ (mas)',fontsize=fontsize)
+        plt.yticks([1700,1710,1720,1730])
+        ax11.tick_params(axis='x', labelsize=fontsize)
+        ax11.tick_params(axis='y', labelsize=fontsize)
+
         plt.sca(ax12)
         plt.ylim([930,970])
-        ax12.set_ylabel('$\\rho_c$ (mas)')
+        ax12.set_ylabel('$\\rho_c$ (mas)',fontsize=fontsize)
+        plt.yticks([930,950,970])
+        ax12.yaxis.tick_right()
+        ax12.yaxis.set_label_position("right")
+        ax12.tick_params(axis='x', labelsize=fontsize)
+        ax12.tick_params(axis='y', labelsize=fontsize)
+
         plt.sca(ax21)
         plt.ylim([55,70])
-        ax21.set_ylabel('PA$_b$ (deg)')
+        ax21.set_ylabel('PA$_b$ (deg)',fontsize=fontsize)
+        plt.yticks([55,65,75])
+        ax21.tick_params(axis='x', labelsize=fontsize)
+        ax21.tick_params(axis='y', labelsize=fontsize)
+
         plt.sca(ax22)
         plt.ylim([300,340])
-        ax22.set_ylabel('PA$_c$ (deg)')
+        ax22.set_ylabel('PA$_c$ (deg)',fontsize=fontsize)
+        plt.yticks([300,320,340])
+        ax22.yaxis.tick_right()
+        ax22.yaxis.set_label_position("right")
+        ax22.tick_params(axis='x', labelsize=fontsize)
+        ax22.tick_params(axis='y', labelsize=fontsize)
+
         plt.sca(ax3)
         plt.ylim([-20,0])
-        # plot sep/PA zoom-in panels
-        ax3.set_ylabel('RV (km/s)')
-        ax3.set_xlabel('Epoch (yr)')
+        plt.yticks([-20,-15,-10,-5,0])
+        ax3.set_ylabel('RV (km/s)',fontsize=fontsize)
+        ax3.set_xlabel('Epoch (yr)',fontsize=fontsize)
+        ax3.tick_params(axis='x', labelsize=fontsize)
+        ax3.tick_params(axis='y', labelsize=fontsize)
 
         fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,'orbits_bc_withrvs.pdf')) # This is matplotlib.figure.Figure.savefig()
         fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,'orbits_bc_withrvs.png')) # This is matplotlib.figure.Figure.savefig()
         plt.show()
+
+
+    # exit()
     # print(loaded_results.post.shape)
     # # exit()
     # # param_list = ["sma1","ecc1","inc1","aop1","pan1","epp1"]

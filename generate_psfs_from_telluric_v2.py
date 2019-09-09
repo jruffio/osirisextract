@@ -52,12 +52,13 @@ if __name__ == "__main__":
     OSIRISDATA = "/data/osiris_data/"
     if 1:
         IFSfilter = "Kbb"#"Jbb"#"Hbb"#"Kbb"
-        # planet = "b"
-        planet = "c"
-        # planet = "d"
+        # planet = "HR_8799_b"
+        # planet = "HR_8799_c"
+        # planet = "HR_8799_d"
+        planet = "51_Eri_b"
         # extra_filter = "a013001"
         extra_filter = ""
-        if "b" in planet:#/data/osiris_data/HR_8799_b/20161107/reduced_telluric_jb/HD_210501/s161107_a032002_Kbb_020.fits
+        if "HR_8799_b" in planet:#/data/osiris_data/HR_8799_b/20161107/reduced_telluric_jb/HD_210501/s161107_a032002_Kbb_020.fits
             if "Kbb" in IFSfilter:
                 date_list = ["20090722","20100711","20100712","20130725","20130726","20130727","20161106","20161107","20161108","20180722"] # Kbb
             elif "Hbb" in IFSfilter:
@@ -65,7 +66,7 @@ if __name__ == "__main__":
             elif "Jbb" in IFSfilter:
                 date_list = ["20091111","20130726", "20130727","20161106","20161107","20161108","20180722"] #Jbb
             date_list = [date_list[-1],]
-        elif "c" in planet:
+        elif "HR_8799_c" in planet:
             if "Kbb" in IFSfilter:
                 date_list = ["20100715","20101104","20110723","20110724","20110725","20130726","20171103"] #Kbb
             elif "Hbb" in IFSfilter:
@@ -74,11 +75,15 @@ if __name__ == "__main__":
                 date_list = ["20130726","20131029", "20131030", "20131031"] #Jbb
             date_list = [date_list[0],]
             # date_list = ["20101104"] #Hbb
-        elif "d" in planet:
+        elif "HR_8799_d" in planet:
             if "Kbb" in IFSfilter:
                 date_list = ["20130727","20150720","20150722","20150723","20150828"] #Kbb
             # date_list = [date_list[0],]
-        foldername = "HR_8799_"+planet
+        elif "51_Eri_b" in planet:
+            if "Kbb" in IFSfilter:
+                date_list = ["20171103"] #Kbb
+            # date_list = [date_list[0],]
+        foldername = planet
 
 
     if IFSfilter=="Kbb": #Kbb 1965.0 0.25
@@ -156,6 +161,8 @@ if __name__ == "__main__":
                         output_maps_shape = None
                         out1dfit = None
                         out1dfit_shape = None
+                        estispec = None
+                        estispec_shape = None
                         outres = None
                         outres_shape = None
                         outautocorrres = None
@@ -170,7 +177,7 @@ if __name__ == "__main__":
                         numthreads=28
                         tpool = mp.Pool(processes=numthreads, initializer=_tpool_init,
                                         initargs=(original_imgs,sigmas_imgs,badpix_imgs,originalLPF_imgs,originalHPF_imgs, original_imgs_shape, output_maps,
-                                                  output_maps_shape,wvs_imgs,psfs_stamps, psfs_stamps_shape,outres,outres_shape,outautocorrres,outautocorrres_shape,persistence_imgs,out1dfit,out1dfit_shape),
+                                                  output_maps_shape,wvs_imgs,psfs_stamps, psfs_stamps_shape,outres,outres_shape,outautocorrres,outautocorrres_shape,persistence_imgs,out1dfit,out1dfit_shape,estispec,estispec_shape),
                                         maxtasksperchild=50)
 
                         chunk_size = nz//(3*numthreads)
@@ -312,6 +319,7 @@ if __name__ == "__main__":
                 except TypeError:
                     hdulist.writeto(refstar_filename.replace(".fits","_psfs_centers_v2.fits"), clobber=True)
                 hdulist.close()
+
 
     # Plot centers
     if run_all:
@@ -640,7 +648,7 @@ if __name__ == "__main__":
         return 1e-4*np.sum(delta[np.where(delta>0)]**2) + np.sum(delta[np.where(delta<0)]**2)
 
     # ao on (good psfs): get repaired spec for ref star fits #1
-    if 0 or run_all:
+    if 1 or run_all:
         filename_filter = "*/s*"+extra_filter+"*"+IFSfilter+"*[0-9][0-9][0-9].fits"
 
         ref_spec_list = []
@@ -696,7 +704,7 @@ if __name__ == "__main__":
                 hdulist.close()
 
     # Plot fluxes
-    if 0 or run_all:
+    if 1 or run_all:
         filename_filter = "*/s*"+IFSfilter+"*[0-9][0-9][0-9]_psfs_v2.fits"
 
         for date in date_list:
@@ -728,8 +736,8 @@ if __name__ == "__main__":
                 plt.subplot(2,1,2)
                 plt.legend(loc="upper left",bbox_to_anchor=(1.0,1.0))
                 print("Saving "+os.path.join(OSIRISDATA,foldername,date,"reduced_telluric_jb",date+"_"+IFSfilter+"_psfs_flux_ql.png"))
-                plt.savefig(os.path.join(OSIRISDATA,foldername,date,"reduced_telluric_jb",date+"_"+IFSfilter+"_psfs_flux_ql.png"),bbox_inches='tight')
                 # plt.show()
+                plt.savefig(os.path.join(OSIRISDATA,foldername,date,"reduced_telluric_jb",date+"_"+IFSfilter+"_psfs_flux_ql.png"),bbox_inches='tight')
             try:
                 plt.close(1)
             except:
@@ -878,7 +886,7 @@ if __name__ == "__main__":
             # hdulist.close()
 
     # Calculate transmission
-    if run_all:
+    if 1 or run_all:
         import csv
         from PyAstronomy import pyasl
         from scipy.interpolate import interp1d
@@ -986,7 +994,7 @@ if __name__ == "__main__":
         specpool.close()
 
     # Plot transmission
-    if 0 or run_all:
+    if 1 or run_all:
         filename_filter = "*/*"+IFSfilter+"*[0-9][0-9][0-9]*"+"_cutoff20_transmission.fits"
 
         for date in date_list:
@@ -1025,7 +1033,7 @@ if __name__ == "__main__":
                 pass
 
     # Plot supersampled PSF
-    if 1:
+    if 0:
         if IFSfilter=="Kbb": #Kbb 1965.0 0.25
             CRVAL1 = 1965.
             CDELT1 = 0.25

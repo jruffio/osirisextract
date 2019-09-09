@@ -374,9 +374,12 @@ if 1:
             hd_spec = hd_spec_func(wvs-0)
             hd_spec_LPF,hd_spec_HPF = LPFvsHPF_median(hd_spec,cutoff)
             where_validpix = np.where(np.isfinite(myvec_bad_pix))
-            plt.plot(wvs,hd_spec_HPF*np.nansum(sky_HPF*hd_spec_HPF)**2/np.nansum(hd_spec_HPF[where_validpix]**2),label="Sky model",color="black")
-            plt.legend(loc="upper center",frameon=True,fontsize=fontsize)#
-            plt.xlim([1.99,2.25])
+            plt.plot(wvs,hd_spec_HPF*np.nansum(sky_HPF*hd_spec_HPF)/np.nansum(hd_spec_HPF[where_validpix]**2),label="Sky model",color="black")
+            plt.legend(loc="upper center",frameon=True,fontsize=fontsize)#,ncol=4)#
+            if IFSfilter == "Kbb":
+                plt.xlim([1.99,2.25])
+            elif IFSfilter == "Hbb":
+                plt.xlim([1.47,1.8])
             plt.tick_params(axis="x",labelsize=fontsize)
             # plt.xlabel("$\lambda (\mu\mathrm{m})$",fontsize=fontsize)
             plt.ylabel("$\propto$ ADU",fontsize=fontsize)
@@ -387,17 +390,20 @@ if 1:
             linestyle_list = ["-","--",":"]
             for myid,color,linestyle in zip(np.arange(3),color_list[::-1],linestyle_list[::-1]):
                 plt.plot(wvs,myhpfvec_list[myid],label="Sample {0} HPF".format(myid),color=color,linestyle=linestyle)
-            plt.legend(loc="upper center",frameon=True,fontsize=fontsize)
+            plt.legend(loc="upper center",frameon=True,fontsize=fontsize)#,ncol=3)
             plt.tick_params(axis="x",labelsize=fontsize)
             plt.xlabel("$\lambda (\mu\mathrm{m})$",fontsize=fontsize)
             plt.ylabel("$\propto$ ADU",fontsize=fontsize)
             plt.tick_params(axis="y",which="both",labelleft=False,bottom=False,top=False)
-            plt.xlim([1.99,2.25])
+            if IFSfilter == "Kbb":
+                plt.xlim([1.99,2.25])
+            elif IFSfilter == "Hbb":
+                plt.xlim([1.47,1.8])
 
             if 1:
-                print("Saving "+os.path.join(out_pngs,"sky_emission.pdf"))
-                plt.savefig(os.path.join(out_pngs,"sky_emission.pdf"),bbox_inches='tight')
-                plt.savefig(os.path.join(out_pngs,"sky_emission.png"),bbox_inches='tight')
+                print("Saving "+os.path.join(out_pngs,"sky_emission_"+IFSfilter+".pdf"))
+                plt.savefig(os.path.join(out_pngs,"sky_emission_"+IFSfilter+".pdf"),bbox_inches='tight')
+                plt.savefig(os.path.join(out_pngs,"sky_emission_"+IFSfilter+".png"),bbox_inches='tight')
 
             plt.figure(2,figsize=(4,5))
             for myid,color,linestyle in zip(np.arange(3),color_list[::-1],linestyle_list[::-1]):
@@ -413,9 +419,9 @@ if 1:
             plt.ylim([0,1.1])
 
             if 1:
-                print("Saving "+os.path.join(out_pngs,"sky_emission_CCF.pdf"))
-                plt.savefig(os.path.join(out_pngs,"sky_emission_CCF.pdf"),bbox_inches='tight')
-                plt.savefig(os.path.join(out_pngs,"sky_emission_CCF.png"),bbox_inches='tight')
+                print("Saving "+os.path.join(out_pngs,"sky_emission_CCF_"+IFSfilter+".pdf"))
+                plt.savefig(os.path.join(out_pngs,"sky_emission_CCF_"+IFSfilter+".pdf"),bbox_inches='tight')
+                plt.savefig(os.path.join(out_pngs,"sky_emission_CCF_"+IFSfilter+".png"),bbox_inches='tight')
             #
             # skybg_spec = convolve_spectrum(skybg_wvs,skybg_spec,R)
             # hd_spec_func = interp1d(skybg_wvs,skybg_spec/np.nanstd(skybg_spec),bounds_error=False,fill_value=0)

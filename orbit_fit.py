@@ -9,7 +9,7 @@ from astropy.time import Time
 if len(sys.argv) == 1:
     osiris_data_dir = "/data/osiris_data"
     astrometry_DATADIR = os.path.join(osiris_data_dir,"astrometry")
-    uservs = True
+    uservs = False
     # planet = "b"
     planet = "bc"
     coplanar = False
@@ -20,7 +20,7 @@ if len(sys.argv) == 1:
     # MCMC parameters
     num_temps = 16
     num_walkers = 100
-    total_orbits = 100*5 # number of steps x number of walkers (at lowest temperature)
+    total_orbits = 100*100 # number of steps x number of walkers (at lowest temperature)
     burn_steps = 0 # steps to burn in per walker
     thin = 2 # only save every 2nd step
     num_threads = 1#mp.cpu_count() # or a different number if you prefer

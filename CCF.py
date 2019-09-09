@@ -162,7 +162,7 @@ if 0:
 
 
 # plot molecular templates
-if 0:
+if 1:
     osiris_data_dir = "/data/osiris_data"
     molecular_template_folder = os.path.join(osiris_data_dir,"molecular_templates")
     planet_template_folder = os.path.join(osiris_data_dir,"planets_templates")
@@ -219,7 +219,7 @@ if 0:
                 template_func_list.append(planet_spec_func)
                 template_name_list.append("model "+planet)
 
-        for molecule in ["CO","H2O","CH4"]:
+        for molecule in ["CO","H2O"]:#,"CH4"]:
         # for molecule in ["CH4"]:
             suffix = suffix+"_"+molecule
             print(molecule)
