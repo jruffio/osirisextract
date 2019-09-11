@@ -528,6 +528,9 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
                 HPFmodel_H0 = HPFmodel_H0[where_finite_data[0],:]/sigmas_vec[:,None]
 
                 noplrv_id = np.argmin(np.abs(planetRV_array))
+                # print(planetRV_array)
+                # print(np.size(planetRV_array))
+                # exit()
                 for plrv_id in range(np.size(planetRV_array)):
                     # print("coucou6")
                     # print(plrv_id)
@@ -690,6 +693,7 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
                             res_ccf = np.correlate(ravelresiduals,ravelresiduals,mode="same")
                             res_ccf_argmax = np.argmax(res_ccf)
                             outautocorrres_np[:,row,col] = res_ccf[(res_ccf_argmax-500):(res_ccf_argmax+500)]
+
     
                         Npixs_HPFdata = HPFmodel.shape[0]
                         minus2logL_HPF = Npixs_HPFdata*(1+np.log(HPFchi2/Npixs_HPFdata)+logdet_Sigma+np.log(2*np.pi))
@@ -738,6 +742,16 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
         # #remove
         # plt.legend()
         # plt.show()
+        #             print("jb here0")
+        #             exit()
+    #             print("jb here1")
+    #             exit()
+    #         print("jb here2")
+    #         exit()
+    #     print("jb here3")
+    #     exit()
+    # print("jb here4")
+    # exit()
     return
 
 def _task_convolve_spectrum(paras):
@@ -902,7 +916,7 @@ if __name__ == "__main__":
         # filelist = filelist[4:]
         # filelist = filelist[len(filelist)-3:len(filelist)-2]
 
-        res_numbasis = 1
+        res_numbasis = +4
         numthreads = 28
         planet_search = True
         debug_paras = True
@@ -960,11 +974,14 @@ if __name__ == "__main__":
         planet_search = copy(planet_search0)
         planet_model_string = copy(planet_model_string0)
         if res_it == 0:
+            # continue
             debug_paras = True
             res_numbasis = 0
         else:
             debug_paras = copy(debug_paras0)
             res_numbasis = copy(res_numbasis0)
+        # print(res_numbasis)
+        # exit()
         filelist = copy(filelist0)
         IFSfilter = copy(IFSfilter0)
         date = copy(date0)
@@ -2126,6 +2143,7 @@ if __name__ == "__main__":
 
                         plt.plot(fftx,np.abs(fftmyvec)[0:np.size(myvec_cp)],color="grey",alpha = 0.2)
                 plt.plot(fftx,np.abs(fftmyvec)[0:np.size(myvec_cp)],color="grey",alpha = 0.2,label="Noise sample")
+                plt.plot(fftx,np.abs(fftmyvec)[0:np.size(myvec_cp)],color="grey",alpha = 0.2,label="Noise sample")
 
                 myplvec = planet_partial_template_func_list[0](wvs)*transmission4planet_list[0](wvs)
                 wherenans = np.where(np.isnan(myplvec))
@@ -2176,7 +2194,9 @@ if __name__ == "__main__":
             if res_numbasis <= -1:
                 # s171103_a023002_Hbb_020_outputHPF_cutoff40_sherlock_v1_search_res
                 # res_filename = os.path.join(outputdir,os.path.basename(filename).replace(".fits","_output"+ressuffix+"_res.fits"))
-                res_filelist = glob.glob(os.path.join(outputdir,os.path.basename(filename).split("_")[0]+"*_output"+ressuffix+"_res.fits"))
+                res_filelist = glob.glob(os.path.join(outputdir,os.path.basename(filename).split("_")[0]+"*"+os.path.basename(filename).split("_")[2]+"*_output"+ressuffix+"_res.fits"))
+                print(os.path.join(outputdir,os.path.basename(filename).split("_")[0]+"*"+os.path.basename(filename).split("_")[2]+"*_output"+ressuffix+"_res.fits"))
+                print(res_filelist)
                 # exit()
                 X_list = []
                 for res_filename in res_filelist:
@@ -2184,7 +2204,6 @@ if __name__ == "__main__":
                         res4model = hdulist[0].data[0,0,2,:,:,:]/hdulist[0].data[0,0,5,:,:,:]
                         X = np.reshape(res4model,(res4model.shape[0],res4model.shape[1]*res4model.shape[2])).T
                         X_list.append(X)
-                X_list.append(X)
                 X = np.concatenate(X_list)
 
             if res_numbasis >= 1:
@@ -2263,7 +2282,9 @@ if __name__ == "__main__":
             ## Process
             ##############################
             if debug:
-                # print("coucou1")
+                print("coucou1")
+                # print(planetRV_array)
+                # exit()
                 tpool.close()
                 _tpool_init(original_imgs,sigmas_imgs,badpix_imgs,originalLPF_imgs,originalHPF_imgs, original_imgs_shape, output_maps,
                             output_maps_shape,wvs_imgs,psfs_stamps, psfs_stamps_shape,outres,outres_shape,outautocorrres,
