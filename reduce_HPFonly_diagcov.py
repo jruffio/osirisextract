@@ -220,7 +220,7 @@ def LPFvsHPF(myvec,cutoff):
     LPF_myvec = np.real(np.fft.ifft(LPF_fftmyvec))[0:np.size(myvec_cp)]
     HPF_myvec = myvec_cp - LPF_myvec
 
-    LPF_myvec[wherenans] = np.nancutoff
+    LPF_myvec[wherenans] = np.nan
     HPF_myvec[wherenans] = np.nan
     return LPF_myvec,HPF_myvec
 

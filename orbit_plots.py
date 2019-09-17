@@ -231,51 +231,52 @@ if 1:
     ome_chain = np.ravel(chains_withrvs[:,:,4])
     inc_chain = np.ravel(chains_withrvs[:,:,2])
 
-    #mutual inclination with disk
-    i_herschel = 26
-    ierr_herschel =3
-    Omega_herschel =62
-    Omegaerr_herschel =3
-    # SMA+ALMA
-    # i=32.8+5.6-9.6
-    # Omega = 35.6+9.4-10.1
-    i_alma = 32.8
-    ierr_alma =(5.6+9.6)/2
-    Omega_alma =35.6
-    Omegaerr_alma =(9.4+10.1)/2
-    # i_alma = 20.8
-    # ierr_alma =0.01
-    # Omega_alma =89
-    # Omegaerr_alma =0.01
+    if 0:
+        #mutual inclination with disk
+        i_herschel = 26
+        ierr_herschel =3
+        Omega_herschel =62
+        Omegaerr_herschel =3
+        # SMA+ALMA
+        # i=32.8+5.6-9.6
+        # Omega = 35.6+9.4-10.1
+        i_alma = 32.8
+        ierr_alma =(5.6+9.6)/2
+        Omega_alma =35.6
+        Omegaerr_alma =(9.4+10.1)/2
+        # i_alma = 20.8
+        # ierr_alma =0.01
+        # Omega_alma =89
+        # Omegaerr_alma =0.01
 
-    plt.figure(10)
+        plt.figure(10)
 
-    mean = [i_herschel,Omega_herschel]
-    cov=np.diag([ierr_herschel**2,Omegaerr_herschel**2])
-    iOme_samples = np.deg2rad(np.random.multivariate_normal(mean,cov,size=np.size(inc_chain)))
-    idisk,Omedisk = iOme_samples[:,0],iOme_samples[:,1]
-    im_samples = np.rad2deg(np.arccos(np.cos(inc_chain)*np.cos(idisk) + np.sin(inc_chain)*np.sin(idisk)*np.cos(ome_chain-Omedisk)))
-    im_post,xedges = np.histogram(im_samples,bins=100,range=[np.min(im_samples),np.max(im_samples)])
-    x_centers = [(x1+x2)/2. for x1,x2 in zip(xedges[0:len(xedges)-1],xedges[1:len(xedges)])]
-    im_mod, _,_,im_merr, im_perr,_ = get_err_from_posterior(x_centers,im_post)
-    print("herschel",im_mod,im_merr, im_perr)
-    plt.plot(x_centers,im_post/np.max(im_post),label="herschel")
+        mean = [i_herschel,Omega_herschel]
+        cov=np.diag([ierr_herschel**2,Omegaerr_herschel**2])
+        iOme_samples = np.deg2rad(np.random.multivariate_normal(mean,cov,size=np.size(inc_chain)))
+        idisk,Omedisk = iOme_samples[:,0],iOme_samples[:,1]
+        im_samples = np.rad2deg(np.arccos(np.cos(inc_chain)*np.cos(idisk) + np.sin(inc_chain)*np.sin(idisk)*np.cos(ome_chain-Omedisk)))
+        im_post,xedges = np.histogram(im_samples,bins=100,range=[np.min(im_samples),np.max(im_samples)])
+        x_centers = [(x1+x2)/2. for x1,x2 in zip(xedges[0:len(xedges)-1],xedges[1:len(xedges)])]
+        im_mod, _,_,im_merr, im_perr,_ = get_err_from_posterior(x_centers,im_post)
+        print("herschel",im_mod,im_merr, im_perr)
+        plt.plot(x_centers,im_post/np.max(im_post),label="herschel")
 
-    mean = [i_alma,Omega_alma]
-    cov=np.diag([ierr_alma**2,Omegaerr_alma**2])
-    iOme_samples = np.deg2rad(np.random.multivariate_normal(mean,cov,size=np.size(inc_chain)))
-    idisk,Omedisk = iOme_samples[:,0],iOme_samples[:,1]
-    im_samples = np.rad2deg(np.arccos(np.cos(inc_chain)*np.cos(idisk) + np.sin(inc_chain)*np.sin(idisk)*np.cos(ome_chain-Omedisk)))
-    im_post,xedges = np.histogram(im_samples,bins=100,range=[np.min(im_samples),np.max(im_samples)])
-    x_centers = [(x1+x2)/2. for x1,x2 in zip(xedges[0:len(xedges)-1],xedges[1:len(xedges)])]
-    im_mod, _,_,im_merr, im_perr,_ = get_err_from_posterior(x_centers,im_post)
-    print("SMA_ALMA",im_mod,im_merr, im_perr)
-    plt.plot(x_centers,im_post/np.max(im_post),label="SMA_ALMA")
+        mean = [i_alma,Omega_alma]
+        cov=np.diag([ierr_alma**2,Omegaerr_alma**2])
+        iOme_samples = np.deg2rad(np.random.multivariate_normal(mean,cov,size=np.size(inc_chain)))
+        idisk,Omedisk = iOme_samples[:,0],iOme_samples[:,1]
+        im_samples = np.rad2deg(np.arccos(np.cos(inc_chain)*np.cos(idisk) + np.sin(inc_chain)*np.sin(idisk)*np.cos(ome_chain-Omedisk)))
+        im_post,xedges = np.histogram(im_samples,bins=100,range=[np.min(im_samples),np.max(im_samples)])
+        x_centers = [(x1+x2)/2. for x1,x2 in zip(xedges[0:len(xedges)-1],xedges[1:len(xedges)])]
+        im_mod, _,_,im_merr, im_perr,_ = get_err_from_posterior(x_centers,im_post)
+        print("SMA_ALMA",im_mod,im_merr, im_perr)
+        plt.plot(x_centers,im_post/np.max(im_post),label="SMA_ALMA")
 
-    plt.legend()
-    plt.xlabel("Mutual Inclination")
-    plt.ylabel("PDF")
-    plt.show()
+        plt.legend()
+        plt.xlabel("Mutual Inclination")
+        plt.ylabel("PDF")
+        plt.show()
 
 
 
@@ -339,7 +340,7 @@ if 1:
     x_centers = [(x1+x2)/2. for x1,x2 in zip(xedges[0:len(xedges)-1],xedges[1:len(xedges)])]
     mod, _,_,merr, perr,_ = get_err_from_posterior(x_centers,post)
     print("mtot : {0},{1},{2}".format(mod,merr,perr))
-    exit()
+    # exit()
 
     # plt.figure(1)
     # plt.subplot(2,1,1)
@@ -375,7 +376,7 @@ if 1:
     post_norv = loaded_results_norv.post
     post_withrvs = loaded_results_withrvs.post
 
-    if 0:
+    if 1:
         num_orbits_to_plot = 10000
         num_secondary_bodies = len(planet)
         system_mass = 1.52#1.47 # [Msol] (Jason)
@@ -418,49 +419,61 @@ if 1:
         out_model = my_driver.system.compute_model(chains)
         print(out_model)
         print(out_model.shape)
-        inclination = chains[4,:]
+        inclination = np.rad2deg(chains[2,:])
+        Omega = np.rad2deg(chains[4,:])
         rvs_b =  out_model[0,0,:]
         rvs_c =  out_model[1,0,:]
         diffrvs =  rvs_b-rvs_c
 
-        # plt.scatter(inclination,diffrvs)
+        plt.scatter(inclination,diffrvs)
         # inclvsdiffrvs,xedges,yedges = np.histogram2d(inclination,diffrvs,bins=[50,100],range=[[0,np.pi],[-5,5]])
-        # inclvsdiffrvs = inclvsdiffrvs.T
-        # x_centers = [(x1+x2)/2. for x1,x2 in zip(xedges[0:len(xedges)-1],xedges[1:len(xedges)])]
-        # y_centers = [(y1+y2)/2. for y1,y2 in zip(yedges[0:len(yedges)-1],yedges[1:len(yedges)])]
-        # levels = [0.6827,0.9545]
-        # ravel_H = np.ravel(inclvsdiffrvs)
-        # ind = np.argsort(ravel_H)
-        # cum_ravel_H = np.zeros(np.shape(ravel_H))
-        # cum_ravel_H[ind] = np.cumsum(ravel_H[ind])
-        # cum_H = 1-np.reshape(cum_ravel_H/np.nanmax(cum_ravel_H),np.shape(inclvsdiffrvs))
-        # image = copy(inclvsdiffrvs)
-        # image[np.where(cum_H>0.9545)] = np.nan
-        # xx,yy = np.meshgrid(x_centers,y_centers)
-        # CS = plt.contour(xx,yy,cum_H,levels = levels,linestyles=["-","--"],linewidths=[2],colors=("black",),zorder=15,label="With RVs")
-        # plt.show()
+        inclvsdiffrvs,xedges,yedges = np.histogram2d(inclination,diffrvs,bins=[50,100],range=[[0,180],[-5,5]])
+        inclvsdiffrvs = inclvsdiffrvs.T
+        x_centers = [(x1+x2)/2. for x1,x2 in zip(xedges[0:len(xedges)-1],xedges[1:len(xedges)])]
+        y_centers = [(y1+y2)/2. for y1,y2 in zip(yedges[0:len(yedges)-1],yedges[1:len(yedges)])]
+        levels = [0.6827,0.9545]
+        ravel_H = np.ravel(inclvsdiffrvs)
+        ind = np.argsort(ravel_H)
+        cum_ravel_H = np.zeros(np.shape(ravel_H))
+        cum_ravel_H[ind] = np.cumsum(ravel_H[ind])
+        cum_H = 1-np.reshape(cum_ravel_H/np.nanmax(cum_ravel_H),np.shape(inclvsdiffrvs))
+        image = copy(inclvsdiffrvs)
+        image[np.where(cum_H>0.9545)] = np.nan
+        xx,yy = np.meshgrid(x_centers,y_centers)
+        CS = plt.contour(xx,yy,cum_H,levels = levels,linestyles=["-","--"],linewidths=[2],colors=("black",),zorder=15,label="With RVs")
+        # plt.xlabel("Inclination")
+        plt.xlabel("Omega")
+        plt.ylabel("rvb-rvc")
 
-        hdulist = pyfits.HDUList()
-        hdulist.append(pyfits.PrimaryHDU(data=rvs_b))
-        try:
-            hdulist.writeto(os.path.join(out_pngs,"HR_8799_"+planet,'rvs_b_55392_{0}.fits'.format(userv)), overwrite=True)
-        except TypeError:
-            hdulist.writeto(os.path.join(out_pngs,"HR_8799_"+planet,'rvs_b_55392_{0}.fits'.format(suffix)), clobber=True)
-        hdulist.close()
-        hdulist = pyfits.HDUList()
-        hdulist.append(pyfits.PrimaryHDU(data=rvs_c))
-        try:
-            hdulist.writeto(os.path.join(out_pngs,"HR_8799_"+planet,'rvs_c_55392_{0}.fits'.format(userv)), overwrite=True)
-        except TypeError:
-            hdulist.writeto(os.path.join(out_pngs,"HR_8799_"+planet,'rvs_c_55392_{0}.fits'.format(suffix)), clobber=True)
-        hdulist.close()
-        hdulist = pyfits.HDUList()
-        hdulist.append(pyfits.PrimaryHDU(data=diffrvs))
-        try:
-            hdulist.writeto(os.path.join(out_pngs,"HR_8799_"+planet,'rvs_diffbc_55392_{0}.fits'.format(userv)), overwrite=True)
-        except TypeError:
-            hdulist.writeto(os.path.join(out_pngs,"HR_8799_"+planet,'rvs_diffbc_55392_{0}.fits'.format(suffix)), clobber=True)
-        hdulist.close()
+        where0 = np.where(np.abs(diffrvs)<0.1)
+        plt.figure(3)
+        plt.scatter(Omega[where0],inclination[where0])
+        plt.xlabel("Omega")
+        plt.ylabel("Inclination")
+
+        plt.show()
+
+        # hdulist = pyfits.HDUList()
+        # hdulist.append(pyfits.PrimaryHDU(data=rvs_b))
+        # try:
+        #     hdulist.writeto(os.path.join(out_pngs,"HR_8799_"+planet,'rvs_b_55392_{0}.fits'.format(userv)), overwrite=True)
+        # except TypeError:
+        #     hdulist.writeto(os.path.join(out_pngs,"HR_8799_"+planet,'rvs_b_55392_{0}.fits'.format(suffix)), clobber=True)
+        # hdulist.close()
+        # hdulist = pyfits.HDUList()
+        # hdulist.append(pyfits.PrimaryHDU(data=rvs_c))
+        # try:
+        #     hdulist.writeto(os.path.join(out_pngs,"HR_8799_"+planet,'rvs_c_55392_{0}.fits'.format(userv)), overwrite=True)
+        # except TypeError:
+        #     hdulist.writeto(os.path.join(out_pngs,"HR_8799_"+planet,'rvs_c_55392_{0}.fits'.format(suffix)), clobber=True)
+        # hdulist.close()
+        # hdulist = pyfits.HDUList()
+        # hdulist.append(pyfits.PrimaryHDU(data=diffrvs))
+        # try:
+        #     hdulist.writeto(os.path.join(out_pngs,"HR_8799_"+planet,'rvs_diffbc_55392_{0}.fits'.format(userv)), overwrite=True)
+        # except TypeError:
+        #     hdulist.writeto(os.path.join(out_pngs,"HR_8799_"+planet,'rvs_diffbc_55392_{0}.fits'.format(suffix)), clobber=True)
+        # hdulist.close()
 
         diffrvs_post,xedges = np.histogram(diffrvs,bins=20*10,range=[-10,10])
         x_centers = [(x1+x2)/2. for x1,x2 in zip(xedges[0:len(xedges)-1],xedges[1:len(xedges)])]
@@ -472,7 +485,7 @@ if 1:
 
 
 
-    if 1:
+    if 0:
         param_list = ["sma1","ecc1","inc1","aop1","pan1","epp1","sma2","ecc2","inc2","aop2","pan2","epp2","plx","mtot"]
         corner_plot_fig = loaded_results_norv.plot_corner(param_list=param_list)
         corner_plot_fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,"corner_plot_norv_{0}_{1}.png".format(planet,suffix_norv)))

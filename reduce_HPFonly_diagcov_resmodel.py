@@ -2063,7 +2063,6 @@ if __name__ == "__main__":
                             myvec_cp[k] = np.nanmedian(myvec_cp[np.max([0,k-10]):np.min([np.size(myvec_cp),k+10])])
 
                         fftmyvec = np.fft.fft(np.concatenate([myvec_cp,myvec_cp[::-1]],axis=0))
-                        fftmyvec = np.fft.fft(np.concatenate([myvec_cp,myvec_cp[::-1]],axis=0))
                         LPF_fftmyvec = copy(fftmyvec)
                         LPF_fftmyvec[cutoff:(2*np.size(myvec_cp)-cutoff+1)] = 0
                         LPF_myvec = np.real(np.fft.ifft(LPF_fftmyvec))[0:np.size(myvec_cp)]
@@ -2143,7 +2142,6 @@ if __name__ == "__main__":
 
                         plt.plot(fftx,np.abs(fftmyvec)[0:np.size(myvec_cp)],color="grey",alpha = 0.2)
                 plt.plot(fftx,np.abs(fftmyvec)[0:np.size(myvec_cp)],color="grey",alpha = 0.2,label="Noise sample")
-                plt.plot(fftx,np.abs(fftmyvec)[0:np.size(myvec_cp)],color="grey",alpha = 0.2,label="Noise sample")
 
                 myplvec = planet_partial_template_func_list[0](wvs)*transmission4planet_list[0](wvs)
                 wherenans = np.where(np.isnan(myplvec))
@@ -2201,14 +2199,24 @@ if __name__ == "__main__":
                 X_list = []
                 for res_filename in res_filelist:
                     with pyfits.open(res_filename) as hdulist:
-                        res4model = hdulist[0].data[0,0,2,:,:,:]/hdulist[0].data[0,0,5,:,:,:]
+                        hpfres = hdulist[0].data[0,0,2,:,:,:]
+                        lpfres = hdulist[0].data[0,0,5,:,:,:]
+                        res4model = hpfres/lpfres
                         X = np.reshape(res4model,(res4model.shape[0],res4model.shape[1]*res4model.shape[2])).T
                         X_list.append(X)
                 X = np.concatenate(X_list)
 
             if res_numbasis >= 1:
-                res4model = originalHPF_imgs_np/originalLPF_imgs_np
-                X = np.reshape(res4model,(res4model.shape[0]*res4model.shape[1],res4model.shape[2]))
+                res_filelist = glob.glob(os.path.join(outputdir,os.path.basename(filename).replace(".fits","")+"*_output"+ressuffix+"_res.fits"))
+                res_filename = res_filelist[0]
+                X_list = []
+                with pyfits.open(res_filename) as hdulist:
+                    hpfres = hdulist[0].data[0,0,2,:,:,:]
+                    lpfres = hdulist[0].data[0,0,5,:,:,:]
+                res4model = hpfres/lpfres
+                X = np.reshape(res4model,(res4model.shape[0]*res4model.shape[1],res4model.shape[2])).T
+                # res4model = originalHPF_imgs_np/originalLPF_imgs_np
+                # X = np.reshape(res4model,(res4model.shape[0]*res4model.shape[1],res4model.shape[2]))
                 print(X.shape)
                 # exit()
 
@@ -2239,8 +2247,8 @@ if __name__ == "__main__":
 
                 # import matplotlib.pyplot as plt
                 # plt.plot(-res4model_kl[:,0]/np.nanstd(res4model_kl[:,0]),label="0")
-                # # plt.plot(-res4model_kl[:,1]/np.nanstd(res4model_kl[:,1]),label="1")
-                # # plt.plot(-res4model_kl[:,2]/np.nanstd(res4model_kl[:,2]),label="2")
+                # plt.plot(-res4model_kl[:,1]/np.nanstd(res4model_kl[:,1]),label="1")
+                # plt.plot(-res4model_kl[:,2]/np.nanstd(res4model_kl[:,2]),label="2")
                 # # plt.plot(res4model/np.nanstd(res4model),label="ref")
                 # plt.legend()
                 # plt.show()
