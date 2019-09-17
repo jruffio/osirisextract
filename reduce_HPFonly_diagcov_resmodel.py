@@ -916,7 +916,7 @@ if __name__ == "__main__":
         # filelist = filelist[4:]
         # filelist = filelist[len(filelist)-3:len(filelist)-2]
 
-        res_numbasis = +4
+        res_numbasis = +1
         numthreads = 28
         planet_search = True
         debug_paras = True
@@ -2214,7 +2214,7 @@ if __name__ == "__main__":
                     hpfres = hdulist[0].data[0,0,2,:,:,:]
                     lpfres = hdulist[0].data[0,0,5,:,:,:]
                 res4model = hpfres/lpfres
-                X = np.reshape(res4model,(res4model.shape[0]*res4model.shape[1],res4model.shape[2])).T
+                X = np.reshape(res4model,(res4model.shape[0],res4model.shape[1]*res4model.shape[2])).T
                 # res4model = originalHPF_imgs_np/originalLPF_imgs_np
                 # X = np.reshape(res4model,(res4model.shape[0]*res4model.shape[1],res4model.shape[2]))
                 print(X.shape)
@@ -2247,8 +2247,8 @@ if __name__ == "__main__":
 
                 # import matplotlib.pyplot as plt
                 # plt.plot(-res4model_kl[:,0]/np.nanstd(res4model_kl[:,0]),label="0")
-                # plt.plot(-res4model_kl[:,1]/np.nanstd(res4model_kl[:,1]),label="1")
-                # plt.plot(-res4model_kl[:,2]/np.nanstd(res4model_kl[:,2]),label="2")
+                # # plt.plot(-res4model_kl[:,1]/np.nanstd(res4model_kl[:,1]),label="1")
+                # # plt.plot(-res4model_kl[:,2]/np.nanstd(res4model_kl[:,2]),label="2")
                 # # plt.plot(res4model/np.nanstd(res4model),label="ref")
                 # plt.legend()
                 # plt.show()
@@ -2289,7 +2289,7 @@ if __name__ == "__main__":
             ##############################
             ## Process
             ##############################
-            if debug:
+            if 0 or debug:
                 print("coucou1")
                 # print(planetRV_array)
                 # exit()

@@ -66,13 +66,15 @@ if __name__ == "__main__":
                 lcen_id = colnames.index("lcen")
                 baryrv_id = colnames.index("barycenter rv")
 
-                for resnumbasis in np.array([0,1,3,10]):
+                for resnumbasis in np.array([2]):
                     for fileitem in list_data:
                         filename = fileitem[filename_id]
                         if resnumbasis == 0:
-                            data_filename = filename.replace("reduced_jb","reduced_jb/sherlock/20190911_resmodel").replace(".fits","_outputHPF_cutoff40_sherlock_v1_search_rescalc_estispec.fits")
+                            data_filename = filename.replace("reduced_jb","reduced_jb/sherlock/20190917_resmodel").replace(".fits","_outputHPF_cutoff40_sherlock_v1_search_rescalc_estispec.fits")
                         else:
-                            data_filename = filename.replace("reduced_jb","reduced_jb/sherlock/20190911_resmodel").replace(".fits","_outputHPF_cutoff40_sherlock_v1_search_resinmodel_kl{0}_estispec.fits".format(resnumbasis))
+                            data_filename = filename.replace("reduced_jb","reduced_jb/sherlock/20190917_resmodel").replace(".fits","_outputHPF_cutoff40_sherlock_v1_search_resinmodel_kl{0}_estispec.fits".format(resnumbasis))
+                        # print(glob.glob(data_filename))
+                        # exit()
                         if len(glob.glob(data_filename)) == 0:
                             continue
                         print(data_filename)
