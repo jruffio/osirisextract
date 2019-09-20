@@ -645,6 +645,10 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
                             canvas_model.shape = ((2*w+1)*(2*w+1)*data_nz,)
                             canvas_model[where_finite_data] = (data_model-HPFparas[0]*HPFmodel[:,0])*sigmas_vec
                             canvas_model.shape = (2*w+1,2*w+1,data_nz)
+                            canvas_model_H0 = np.zeros((2*w+1,2*w+1,data_nz))
+                            canvas_model_H0.shape = ((2*w+1)*(2*w+1)*data_nz,)
+                            canvas_model_H0[where_finite_data] = data_model_H0*sigmas_vec
+                            canvas_model_H0.shape = (2*w+1,2*w+1,data_nz)
                             canvas_planet = np.zeros((2*w+1,2*w+1,data_nz))
                             canvas_planet.shape = ((2*w+1)*(2*w+1)*data_nz,)
                             for plmod_id in range(len(planet_partial_template_func_list)):
@@ -668,11 +672,13 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
                             canvas_norma_res.shape = (2*w+1,2*w+1,data_nz)
     
                             final_template = np.nansum(canvas_model,axis=(0,1))
+                            final_template_H0 = np.nansum(canvas_model_H0,axis=(0,1))
                             final_HPFdata = np.nansum(canvas_HPFdata,axis=(0,1))
                             final_LPFdata = np.nansum(canvas_LPFdata,axis=(0,1))
                             final_sigmas = np.nansum(canvas_sigmas,axis=(0,1))
                             final_planet = np.nansum(canvas_planet,axis=(0,1))
                             final_res = final_HPFdata-final_template
+                            final_res_H0 = final_HPFdata-final_template_H0
                             final_norma_res = np.nansum(canvas_norma_res,axis=(0,1))
                             outres_np[numbasis_id,model_id,0,:,row,col] = final_HPFdata
                             outres_np[numbasis_id,model_id,1,:,row,col] = final_template
@@ -680,6 +686,7 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
                             outres_np[numbasis_id,model_id,3,:,row,col] = final_planet
                             outres_np[numbasis_id,model_id,4,:,row,col] = final_sigmas
                             outres_np[numbasis_id,model_id,5,:,row,col] = final_LPFdata
+                            outres_np[numbasis_id,model_id,6,:,row,col] = final_res_H0
 
                             # #remove
                             # import matplotlib.pyplot as plt
@@ -1824,11 +1831,11 @@ if __name__ == "__main__":
             estispec_np = _arraytonumpy(estispec,estispec_shape,dtype=dtype)
             estispec_np[:] = np.nan
             if planet_search:
-                outres = mp.Array(dtype, len(numbasis_list)*len(transmission_table)*6*padny*padnx*padimgs.shape[-1])
-                outres_shape = (len(numbasis_list),len(transmission_table),6,padimgs.shape[-1],padny,padnx)
+                outres = mp.Array(dtype, len(numbasis_list)*len(transmission_table)*7*padny*padnx*padimgs.shape[-1])
+                outres_shape = (len(numbasis_list),len(transmission_table),7,padimgs.shape[-1],padny,padnx)
             else:
-                outres = mp.Array(dtype, len(numbasis_list)*len(transmission_table)*6*dl_grid.shape[0]*dl_grid.shape[1]*padimgs.shape[-1])
-                outres_shape = (len(numbasis_list),len(transmission_table),6,padimgs.shape[-1],dl_grid.shape[0],dl_grid.shape[1])
+                outres = mp.Array(dtype, len(numbasis_list)*len(transmission_table)*7*dl_grid.shape[0]*dl_grid.shape[1]*padimgs.shape[-1])
+                outres_shape = (len(numbasis_list),len(transmission_table),7,padimgs.shape[-1],dl_grid.shape[0],dl_grid.shape[1])
             outres_np = _arraytonumpy(outres,outres_shape,dtype=dtype)
             outres_np[:] = np.nan
             if planet_search:
@@ -2199,7 +2206,8 @@ if __name__ == "__main__":
                 X_list = []
                 for res_filename in res_filelist:
                     with pyfits.open(res_filename) as hdulist:
-                        hpfres = hdulist[0].data[0,0,2,:,:,:]
+                        # hpfres = hdulist[0].data[0,0,2,:,:,:]
+                        hpfres = hdulist[0].data[0,0,6,:,:,:]
                         lpfres = hdulist[0].data[0,0,5,:,:,:]
                         res4model = hpfres/lpfres
                         X = np.reshape(res4model,(res4model.shape[0],res4model.shape[1]*res4model.shape[2])).T
@@ -2211,7 +2219,8 @@ if __name__ == "__main__":
                 res_filename = res_filelist[0]
                 X_list = []
                 with pyfits.open(res_filename) as hdulist:
-                    hpfres = hdulist[0].data[0,0,2,:,:,:]
+                    # hpfres = hdulist[0].data[0,0,2,:,:,:]
+                    hpfres = hdulist[0].data[0,0,6,:,:,:]
                     lpfres = hdulist[0].data[0,0,5,:,:,:]
                 res4model = hpfres/lpfres
                 X = np.reshape(res4model,(res4model.shape[0],res4model.shape[1]*res4model.shape[2])).T
