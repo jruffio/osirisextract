@@ -648,12 +648,19 @@ if 1:
     # plt.gca().text(b_combined_avg+0.25,np.size(unique_date)+0.5,"${0:.1f}\pm {1:.1f}$ km/s".format(b_combined_avg,b_combined_sig),ha="center",va="bottom",rotation=0,size=fontsize,color="#003366")
     # plt.gca().text(b_combined_avg_pess+0.05,0.7,"$\pm {1:.1f}$ km/s".format(b_combined_avg_pess,b_combined_sig_pess),ha="left",va="top",rotation=90,size=fontsize,color="#003366",alpha=0.5)
 
+    # er1 = plt.errorbar(-8.9,-1,xerr=2.5,color="#ff9900")
+    # er1[-1][0].set_linestyle("--")
+    # er2 = plt.errorbar(-10.9,-1.25,xerr=0.5,color="grey")
+    # er2[-1][0].set_linestyle("--")
+    # unique_strdate = np.insert(unique_strdate,0,"2016-17")
+
+
     plt.xlim([rv_star-4,rv_star+12])
     # plt.ylim([0,1.1])
     plt.xlabel("RV (km/s)",fontsize=fontsize)
     plt.tick_params(axis="x",labelsize=fontsize)
     plt.tick_params(axis="y",labelsize=fontsize)
-    plt.yticks(np.arange(np.size(unique_date)),unique_strdate)
+    plt.yticks(np.arange(0,np.size(unique_date)),unique_strdate)
     plt.gca().spines["right"].set_visible(False)
     plt.gca().spines["top"].set_visible(False)
     plt.gca().spines["left"].set_visible(False)

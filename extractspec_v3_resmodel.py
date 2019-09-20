@@ -66,7 +66,7 @@ if __name__ == "__main__":
                 lcen_id = colnames.index("lcen")
                 baryrv_id = colnames.index("barycenter rv")
 
-                for resnumbasis in np.array([2]):
+                for resnumbasis in np.array([0,1,5,9]):
                     for fileitem in list_data:
                         filename = fileitem[filename_id]
                         if resnumbasis == 0:
@@ -134,7 +134,7 @@ if __name__ == "__main__":
                 molecular_template_folder = os.path.join(osiris_data_dir,"molecular_templates")
                 mol_linestyle_list = ["-","-","-"]#["-","--",":"]
                 # for molid,(molecule,mol_linestyle) in enumerate(zip(["CO","H2O","CH4"],mol_linestyle_list)):
-                for molid,(molecule,mol_linestyle) in enumerate(zip(["CH4"],mol_linestyle_list)):
+                for molid,(molecule,mol_linestyle) in enumerate(zip(["CO","H2O"],mol_linestyle_list)):
                     print(molecule)
                     travis_mol_filename=os.path.join(molecular_template_folder,
                                                   "lte11-4.0_hr8799c_pgs=4d6_Kzz=1d8_gs=5um."+molecule+"only.7")
