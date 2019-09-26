@@ -66,17 +66,24 @@ if __name__ == "__main__":
                 lcen_id = colnames.index("lcen")
                 baryrv_id = colnames.index("barycenter rv")
 
-                for resnumbasis in np.array([0,1,5,9]):
-                    for fileitem in list_data:
+                for resnumbasis in np.array([0,1,5]):
+                    for fileitem in list_data[0:1]:
                         filename = fileitem[filename_id]
+                        # if resnumbasis == 0:
+                        #     data_filename = filename.replace("reduced_jb","reduced_jb/sherlock/20190920_resH0model_detec").replace(".fits","_outputHPF_cutoff40_sherlock_v1_search_rescalc_estispec.fits")
+                        # else:
+                        #     data_filename = filename.replace("reduced_jb","reduced_jb/sherlock/20190920_resH0model_detec").replace(".fits","_outputHPF_cutoff40_sherlock_v1_search_resinmodel_kl{0}_estispec.fits".format(resnumbasis))
                         if resnumbasis == 0:
-                            data_filename = filename.replace("reduced_jb","reduced_jb/sherlock/20190917_resmodel").replace(".fits","_outputHPF_cutoff40_sherlock_v1_search_rescalc_estispec.fits")
+                            data_filename = filename.replace("reduced_jb","reduced_jb/20190923_HPF_restest2").replace(".fits","_outputHPF_cutoff40_sherlock_v1_search_rescalc_estispec.fits")
                         else:
-                            data_filename = filename.replace("reduced_jb","reduced_jb/sherlock/20190917_resmodel").replace(".fits","_outputHPF_cutoff40_sherlock_v1_search_resinmodel_kl{0}_estispec.fits".format(resnumbasis))
+                            data_filename = filename.replace("reduced_jb","reduced_jb/20190923_HPF_restest2").replace(".fits","_outputHPF_cutoff40_sherlock_v1_search_resinmodel_kl{0}_estispec.fits".format(resnumbasis))
                         # print(glob.glob(data_filename))
                         # exit()
+                        if "20100715" not in data_filename:
+                            continue
                         if len(glob.glob(data_filename)) == 0:
                             continue
+
                         print(data_filename)
 
 
@@ -94,6 +101,7 @@ if __name__ == "__main__":
 
 
                         esti_spec_arr[:,:,plcen_k-5:plcen_k+5,plcen_l-5:plcen_l+5] = np.nan
+                        # esti_spec_arr[:,:,plcen_k-5:plcen_k+5,0:plcen_l] = np.nan
                         bias_myspec = np.nanmean(esti_spec_arr[1,:,:,:],axis=(1,2))
                         std_myspec = np.nanstd(esti_spec_arr[1,:,:,:],axis=(1,2))
 
@@ -125,39 +133,40 @@ if __name__ == "__main__":
                             final_spec_std[k]=np.nan
 
 
-                    plt.plot(bincenter,final_spec/np.nanstd(final_spec),linestyle="--",label="{0}: final_spec".format(resnumbasis))
-                    plt.plot(bincenter,final_spec_biascorr/np.nanstd(final_spec_biascorr),linestyle="-",label="{0} final_spec - bias".format(resnumbasis))
+                    # plt.plot(bincenter,final_spec/np.nanstd(final_spec),linestyle="--",label="{0}: final_spec".format(resnumbasis))
+                    # plt.plot(bincenter,final_spec_biascorr/np.nanstd(final_spec_biascorr),linestyle="-",label="{0} final_spec - bias".format(resnumbasis))
+                    plt.plot(final_spec/np.nanstd(final_spec)-final_spec_biascorr/np.nanstd(final_spec_biascorr),linestyle="--",label="{0}: bias".format(resnumbasis))
 
 
 
-                osiris_data_dir = "/data/osiris_data"
-                molecular_template_folder = os.path.join(osiris_data_dir,"molecular_templates")
-                mol_linestyle_list = ["-","-","-"]#["-","--",":"]
-                # for molid,(molecule,mol_linestyle) in enumerate(zip(["CO","H2O","CH4"],mol_linestyle_list)):
-                for molid,(molecule,mol_linestyle) in enumerate(zip(["CO","H2O"],mol_linestyle_list)):
-                    print(molecule)
-                    travis_mol_filename=os.path.join(molecular_template_folder,
-                                                  "lte11-4.0_hr8799c_pgs=4d6_Kzz=1d8_gs=5um."+molecule+"only.7")
-                    travis_mol_filename_D2E=os.path.join(molecular_template_folder,
-                                                  "lte11-4.0_hr8799c_pgs=4d6_Kzz=1d8_gs=5um."+molecule+"only.7_D2E")
-                    mol_template_filename=travis_mol_filename+"_gaussconv_R{0}_{1}.csv".format(R,IFSfilter)
-
-                    with open(mol_template_filename, 'r') as csvfile:
-                        csv_reader = csv.reader(csvfile, delimiter=' ')
-                        list_starspec = list(csv_reader)
-                        oriplanet_spec_str_arr = np.array(list_starspec, dtype=np.str)
-                        col_names = oriplanet_spec_str_arr[0]
-                        oriplanet_spec = oriplanet_spec_str_arr[1::3,1].astype(np.float)
-                        oriplanet_spec_wvs = oriplanet_spec_str_arr[1::3,0].astype(np.float)
-                        where_IFSfilter = np.where((oriplanet_spec_wvs>wvs[0])*(oriplanet_spec_wvs<wvs[-1]))
-                        oriplanet_spec = oriplanet_spec/np.mean(oriplanet_spec[where_IFSfilter])
-                        planet_spec_func = interp1d(oriplanet_spec_wvs,oriplanet_spec,bounds_error=False,fill_value=np.nan)
-
-                    molec_spec = planet_spec_func(bincenter)
-                    from reduce_HPFonly_diagcov import LPFvsHPF
-                    HPF_molec_spec = LPFvsHPF(molec_spec,cutoff)[1]
-
-                    plt.plot(bincenter,HPF_molec_spec/np.nanstd(HPF_molec_spec),color="black",linestyle="--",label=molecule)
+                # osiris_data_dir = "/data/osiris_data"
+                # molecular_template_folder = os.path.join(osiris_data_dir,"molecular_templates")
+                # mol_linestyle_list = ["-","-","-"]#["-","--",":"]
+                # # for molid,(molecule,mol_linestyle) in enumerate(zip(["CO","H2O","CH4"],mol_linestyle_list)):
+                # for molid,(molecule,mol_linestyle) in enumerate(zip(["CO","H2O"],mol_linestyle_list)):
+                #     print(molecule)
+                #     travis_mol_filename=os.path.join(molecular_template_folder,
+                #                                   "lte11-4.0_hr8799c_pgs=4d6_Kzz=1d8_gs=5um."+molecule+"only.7")
+                #     travis_mol_filename_D2E=os.path.join(molecular_template_folder,
+                #                                   "lte11-4.0_hr8799c_pgs=4d6_Kzz=1d8_gs=5um."+molecule+"only.7_D2E")
+                #     mol_template_filename=travis_mol_filename+"_gaussconv_R{0}_{1}.csv".format(R,IFSfilter)
+                #
+                #     with open(mol_template_filename, 'r') as csvfile:
+                #         csv_reader = csv.reader(csvfile, delimiter=' ')
+                #         list_starspec = list(csv_reader)
+                #         oriplanet_spec_str_arr = np.array(list_starspec, dtype=np.str)
+                #         col_names = oriplanet_spec_str_arr[0]
+                #         oriplanet_spec = oriplanet_spec_str_arr[1::3,1].astype(np.float)
+                #         oriplanet_spec_wvs = oriplanet_spec_str_arr[1::3,0].astype(np.float)
+                #         where_IFSfilter = np.where((oriplanet_spec_wvs>wvs[0])*(oriplanet_spec_wvs<wvs[-1]))
+                #         oriplanet_spec = oriplanet_spec/np.mean(oriplanet_spec[where_IFSfilter])
+                #         planet_spec_func = interp1d(oriplanet_spec_wvs,oriplanet_spec,bounds_error=False,fill_value=np.nan)
+                #
+                #     molec_spec = planet_spec_func(bincenter)
+                #     from reduce_HPFonly_diagcov import LPFvsHPF
+                #     HPF_molec_spec = LPFvsHPF(molec_spec,cutoff)[1]
+                #
+                #     plt.plot(bincenter,HPF_molec_spec/np.nanstd(HPF_molec_spec),color="black",linestyle="--",label=molecule)
 
                 plt.legend()
                 plt.show()
