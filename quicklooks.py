@@ -113,6 +113,7 @@ if 1:
     except:
         pass
 
+    resnumbasis = 9
     for k,item in enumerate(list_data):
         # if item[rvcen_id] == "nan":
         #     continue
@@ -126,12 +127,18 @@ if 1:
         # if "20190324_HPF_only" not in reducfilename:
         #     continue
         print(k,item)
-        if "20190416" not in reducfilename:
-            continue
+        # if "20190416" not in reducfilename:
+        #     continue
         # print(reducfilename)
         # reducfilename = item[cen_filename_id].replace("20190117_HPFonly","20190125_HPFonly").replace("sherlock_v0","sherlock_v1_search")
         # reducfilename = item[cen_filename_id].replace("20190117_HPFonly","20190125_HPFonly_cov").replace("sherlock_v0","sherlock_v1_search_empcov")
         # print(reducfilename)
+        # exit()
+
+        if resnumbasis == 0 :
+            reducfilename = reducfilename.replace("20190416_no_persis_corr","20190920_resH0model_detec").replace("_outputHPF_cutoff40_sherlock_v1_search","_outputHPF_cutoff40_sherlock_v1_search_rescalc")
+        else:
+            reducfilename = reducfilename.replace("20190416_no_persis_corr","20190920_resH0model_detec").replace("_outputHPF_cutoff40_sherlock_v1_search","_outputHPF_cutoff40_sherlock_v1_search_resinmodel_kl{0}".format(resnumbasis))
         # exit()
 
         try:
@@ -140,27 +147,37 @@ if 1:
             print("Not there")
             continue
         planetRV = hdulist[0].data
-        NplanetRV_hd = np.where((planetRV[1::]-planetRV[0:(np.size(planetRV)-1)]) < 0)[0][0]+1
-        planetRV_hd = hdulist[0].data[0:NplanetRV_hd]
-        planetRV = hdulist[0].data[NplanetRV_hd::]
-        # rv_per_pix = 3e5*dwv/(init_wv+dwv*nl//2) # 38.167938931297705
+        if np.size(planetRV) > 1:
+            NplanetRV_hd = np.where((planetRV[1::]-planetRV[0:(np.size(planetRV)-1)]) < 0)[0][0]+1
+            planetRV_hd = hdulist[0].data[0:NplanetRV_hd]
+            planetRV = hdulist[0].data[NplanetRV_hd::]
+            # rv_per_pix = 3e5*dwv/(init_wv+dwv*nl//2) # 38.167938931297705
 
-        hdulist = pyfits.open(reducfilename)
-        cube_hd = hdulist[0].data[-1,0,0,0:NplanetRV_hd,:,:]
-        cube = hdulist[0].data[-1,0,0,NplanetRV_hd::,:,:]
+            hdulist = pyfits.open(reducfilename)
+            cube_hd = hdulist[0].data[-1,0,0,0:NplanetRV_hd,:,:]
+            cube = hdulist[0].data[-1,0,0,NplanetRV_hd::,:,:]
 
-        bary_rv = -float(item[bary_rv_id])/1000. # RV in km/s
-        rv_star = -12.6#-12.6+-1.4km/s HR 8799 Rob and Simbad
+            bary_rv = -float(item[bary_rv_id])/1000. # RV in km/s
+            rv_star = -12.6#-12.6+-1.4km/s HR 8799 Rob and Simbad
 
-        try:
-            kcen = int(item[kcen_id])
-            lcen = int(item[lcen_id])
-            rvcen = float(item[rvcen_id])
-        except:
-            rvcen = bary_rv + rv_star
-        zcen = np.argmin(np.abs(planetRV_hd-rvcen))
-        image = copy(cube_hd[zcen,:,:])
-        delta_AIC = cube_hd[zcen,kcen,lcen]
+            try:
+                kcen = int(item[kcen_id])
+                lcen = int(item[lcen_id])
+                rvcen = float(item[rvcen_id])
+            except:
+                rvcen = bary_rv + rv_star
+            zcen = np.argmin(np.abs(planetRV_hd-rvcen))
+            image = copy(cube_hd[zcen,:,:])
+            delta_AIC = cube_hd[zcen,kcen,lcen]
+        else:
+            try:
+                kcen = int(item[kcen_id])
+                lcen = int(item[lcen_id])
+            except:
+                pass
+            hdulist = pyfits.open(reducfilename)
+            image = hdulist[0].data[-1,0,0,0,:,:]
+            delta_AIC = image[kcen,lcen]
 
         ny,nx = image.shape
         if 1:#delta_AIC>50:
@@ -168,7 +185,10 @@ if 1:
             # plt.clim([0,cube_hd[zcen,kcen,lcen]/2.0])
             # plt.clim([0,np.nanstd(cube_hd)*10])
             # plt.clim([0,30])
-            plt.clim([0,np.max([np.nanstd(cube_hd)*10,30])])
+            try:
+                plt.clim([0,np.max([np.nanstd(cube_hd)*10,30])])
+            except:
+                plt.clim([0,np.max([np.nanstd(image)*10,30])])
             plt.xticks([0,10])
 
 
@@ -225,9 +245,9 @@ if 1:
 
     f.subplots_adjust(wspace=0,hspace=0)
     # plt.show()
-    print("Saving "+os.path.join(out_pngs,"HR_8799_"+planet,"HR8799"+planet+"_"+suffix+"_images.pdf"))
-    plt.savefig(os.path.join(out_pngs,"HR_8799_"+planet,"HR8799"+planet+"_"+suffix+"_images.png"),bbox_inches='tight')
-    plt.savefig(os.path.join(out_pngs,"HR_8799_"+planet,"HR8799"+planet+"_"+suffix+"_images.pdf"),bbox_inches='tight')
+    print("Saving "+os.path.join(out_pngs,"HR_8799_"+planet,"HR8799"+planet+"_"+suffix+"_images_kl{0}.pdf".format(resnumbasis)))
+    plt.savefig(os.path.join(out_pngs,"HR_8799_"+planet,"HR8799"+planet+"_"+suffix+"_images_kl{0}.png".format(resnumbasis)),bbox_inches='tight')
+    plt.savefig(os.path.join(out_pngs,"HR_8799_"+planet,"HR8799"+planet+"_"+suffix+"_images_kl{0}.pdf".format(resnumbasis)),bbox_inches='tight')
     # print("Saving "+os.path.join(out_pngs,"HR8799"+planet+"_"+suffix+"_images_tentativedetec.pdf"))
     # plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+suffix+"_images_tentativedetec.pdf"),bbox_inches='tight')
     # plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+suffix+"_images_tentativedetec.png"),bbox_inches='tight')

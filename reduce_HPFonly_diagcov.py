@@ -599,21 +599,22 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
                         HPFchi2_H0 = np.nansum((ravelresiduals_H0)**2)
 
 
-                        import matplotlib.pyplot as plt
-                        print(HPFchi2,HPFchi2_H0)
-                        plt.figure(1)
-                        print(HPFmodel_H0.shape)
-                        plt.plot(HPFmodel[:,0],label="data")
-                        plt.show()
-                        plt.plot(ravelHPFdata,label="data")
-                        for k in range(HPFmodel.shape[1]):
-                            plt.plot(HPFparas[k]*HPFmodel[:,k],label="{0}".format(k),alpha=0.5)
-                        plt.legend()
-                        plt.figure(2)
-                        plt.plot(-ravelresiduals_H0,label="res H0")
-                        plt.plot(-ravelresiduals,label="res")
-                        plt.legend()
-                        plt.show()
+                        # import matplotlib.pyplot as plt
+                        # print(HPFchi2,HPFchi2_H0)
+                        # plt.figure(1)
+                        # print(HPFmodel.shape)
+                        # print(HPFmodel_H0.shape)
+                        # plt.plot(HPFmodel[:,0],label="data")
+                        # plt.show()
+                        # plt.plot(ravelHPFdata,label="data")
+                        # for k in range(HPFmodel.shape[1]):
+                        #     plt.plot(HPFparas[k]*HPFmodel[:,k],label="{0}".format(k),alpha=0.5)
+                        # plt.legend()
+                        # plt.figure(2)
+                        # plt.plot(-ravelresiduals_H0,label="res H0")
+                        # plt.plot(-ravelresiduals,label="res")
+                        # plt.legend()
+                        # plt.show()
 
                         if plrv_id == noplrv_id:
                             canvas_model = np.zeros((2*w+1,2*w+1,data_nz))
@@ -834,8 +835,8 @@ if __name__ == "__main__":
         # date = "130727"
         # date = "161106"
         # date = "180722"
-        planet = "HR_8799_c"
-        date = "100715"
+        # planet = "HR_8799_c"
+        # date = "100715"
         # date = "101028"
         # date = "101104"
         # date = "110723"
@@ -850,6 +851,8 @@ if __name__ == "__main__":
         # date = "150828"
         # planet = "51_Eri_b"
         # date = "171103"
+        planet = "kap_And"
+        date = "161108"
         IFSfilter = "Kbb"
         # IFSfilter = "Hbb"
         # IFSfilter = "Jbb" # "Kbb" or "Hbb"
@@ -858,7 +861,7 @@ if __name__ == "__main__":
 
         inputDir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190520_LPF/"
-        outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190722_HPF/"
+        outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190927_HPF/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190305_HPF_only_noperscor/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190228_mol_temp/"
 
@@ -955,6 +958,22 @@ if __name__ == "__main__":
         host_rv = 12.6 #+-0.3
         host_limbdark = 0.5
         host_vsini = 80
+    if "kap_And" in filelist[0]:
+        phoenix_model_host_filename = glob.glob(os.path.join(phoenix_folder,"kap_And"+"*.fits"))[0]
+        travis_spec_filename=os.path.join(planet_template_folder,
+                                      "KapAnd_lte19-3.50-0.0.AGSS09.Dusty.Kzz=0.0.PHOENIX-ACES-2019.7.save")
+        if IFSfilter == "Jbb":
+            host_mag = 4.29
+        elif IFSfilter == "Hbb":
+            host_mag = 4.31
+        elif IFSfilter == "Kbb":
+            host_mag = 4.34
+        else:
+            raise("IFS filter name unknown")
+        host_type = "A0"
+        host_rv = -12.7 #+-0.8
+        host_limbdark = 0.5
+        host_vsini = 150 #unknown
         
         
 
@@ -1000,7 +1019,7 @@ if __name__ == "__main__":
             R0=4000
         dwv = CDELT1/1000.
 
-        debug = True
+        debug = False
         if debug:
             planet_search = False
         model_based_sky_trans = False
@@ -1227,6 +1246,9 @@ if __name__ == "__main__":
                             elif "51Eri" in os.path.basename(travis_spec_filename):
                                 ori_planet_spec = np.array(travis_spectrum["flux"])
                                 wmod = np.array(travis_spectrum["wave"])
+                            elif "KapAnd" in os.path.basename(travis_spec_filename):
+                                ori_planet_spec = np.array(travis_spectrum["f"])
+                                wmod = np.array(travis_spectrum["w"])/1.e4
                             print("convolving: "+planet_template_filename)
                             planet_convspec = convolve_spectrum(wmod,ori_planet_spec,R,specpool)
 
@@ -1274,6 +1296,17 @@ if __name__ == "__main__":
                         elif "51Eri" in os.path.basename(travis_spec_filename):
                             ori_planet_spec = np.array(travis_spectrum["flux"])
                             wmod = np.array(travis_spectrum["wave"])
+                        elif "KapAnd" in os.path.basename(travis_spec_filename):
+                            ori_planet_spec = np.array(travis_spectrum["f"])
+                            wmod = np.array(travis_spectrum["w"])/1.e4
+                            # print(travis_spectrum)
+                            # import matplotlib.pyplot as plt
+                            # plt.figure(1)
+                            # plt.plot(travis_spectrum["w"]/1.e4,travis_spectrum["b"])
+                            # plt.figure(2)
+                            # plt.plot(travis_spectrum["w"]/1.e4,travis_spectrum["f"])
+                            # plt.show()
+                            # exit()
                         print("convolving: "+planet_template_filename)
                         planet_convspec = convolve_spectrum(wmod,ori_planet_spec,R,specpool)
 
@@ -1962,7 +1995,7 @@ if __name__ == "__main__":
         # tpool.close()
         # plt.show()
 
-        if 1: #"JBhere"
+        if 0: #"JBhere"
             out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
             import matplotlib.pyplot as plt
             print(original_imgs_np.shape)

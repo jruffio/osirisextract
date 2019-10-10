@@ -55,6 +55,7 @@ if 1: # add filename
     filenamefilter = "s*_a*_*_[0-9][0-9][0-9].fits"
     filelist = glob.glob(os.path.join("/data/osiris_data/HR_8799_*","*",reductionname,"*",filenamefilter))
     filelist.extend(glob.glob(os.path.join("/data/osiris_data/51_Eri_*","*",reductionname,"*",filenamefilter)))
+    filelist.extend(glob.glob(os.path.join("/data/osiris_data/kap_And","*",reductionname,"*",filenamefilter)))
     filelist.sort()
     for filename in filelist:
         if filename not in old_filelist:
@@ -236,7 +237,7 @@ if 1:
             new_list_data[k][Kmag_id] = 6.074
         elif refstar_name == "HIP_111538":
             new_list_data[k][rv_simbad_id] =  1.6
-            new_list_data[k][vsini_fixed_id] = np.nan
+            new_list_data[k][vsini_fixed_id] = 100#actually dunno np.nan
             new_list_data[k][type_id] = "A0"
             new_list_data[k][Jmag_id] = 9.393
             new_list_data[k][Hmag_id] = 9.431

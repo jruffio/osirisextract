@@ -55,7 +55,8 @@ if __name__ == "__main__":
         # planet = "HR_8799_b"
         # planet = "HR_8799_c"
         # planet = "HR_8799_d"
-        planet = "51_Eri_b"
+        # planet = "51_Eri_b"
+        planet = "kap_And"
         # extra_filter = "a013001"
         extra_filter = ""
         if "HR_8799_b" in planet:#/data/osiris_data/HR_8799_b/20161107/reduced_telluric_jb/HD_210501/s161107_a032002_Kbb_020.fits
@@ -82,6 +83,9 @@ if __name__ == "__main__":
         elif "51_Eri_b" in planet:
             if "Kbb" in IFSfilter:
                 date_list = ["20171103"] #Kbb
+        elif "kap_And" in planet:
+            if "Kbb" in IFSfilter:
+                date_list = ["20161106","20161107","20161108"] #Kbb
             # date_list = [date_list[0],]
         foldername = planet
 
@@ -104,7 +108,7 @@ if __name__ == "__main__":
 
     run_all = False
     # extract PSFs stamps and calculate centroids
-    if run_all:
+    if 0 or run_all:
         filename_filter = "*/s*"+extra_filter+"*"+IFSfilter+"*_[0-9][0-9][0-9].fits"
         psf_cube_size = 15
         for date in date_list:
@@ -322,7 +326,7 @@ if __name__ == "__main__":
 
 
     # Plot centers
-    if run_all:
+    if 0 or run_all:
         filename_filter = "*/s*"+IFSfilter+"*[0-9][0-9][0-9]_psfs_centers_v2.fits"
 
         for date in date_list:
@@ -346,7 +350,7 @@ if __name__ == "__main__":
                 pass
 
     # build psf model
-    if run_all:
+    if 0 or run_all:
         filename_filter = "*/s*"+extra_filter+"*"+IFSfilter+"*[0-9][0-9][0-9].fits"
         for date in date_list:
             print(date)
@@ -458,7 +462,7 @@ if __name__ == "__main__":
             hdulist.close()
 
     # Plot quicklooks reference stars
-    if run_all:
+    if 0 or run_all:
         filename_filter = "*/s*"+IFSfilter+"*[0-9][0-9][0-9]_psfs_v2.fits"
         for date in date_list:
             psfs_list = []
@@ -648,7 +652,7 @@ if __name__ == "__main__":
         return 1e-4*np.sum(delta[np.where(delta>0)]**2) + np.sum(delta[np.where(delta<0)]**2)
 
     # ao on (good psfs): get repaired spec for ref star fits #1
-    if 1 or run_all:
+    if 0 or run_all:
         filename_filter = "*/s*"+extra_filter+"*"+IFSfilter+"*[0-9][0-9][0-9].fits"
 
         ref_spec_list = []
@@ -704,7 +708,7 @@ if __name__ == "__main__":
                 hdulist.close()
 
     # Plot fluxes
-    if 1 or run_all:
+    if 0 or run_all:
         filename_filter = "*/s*"+IFSfilter+"*[0-9][0-9][0-9]_psfs_v2.fits"
 
         for date in date_list:
@@ -886,7 +890,7 @@ if __name__ == "__main__":
             # hdulist.close()
 
     # Calculate transmission
-    if 1 or run_all:
+    if 0 or run_all:
         import csv
         from PyAstronomy import pyasl
         from scipy.interpolate import interp1d
@@ -994,7 +998,7 @@ if __name__ == "__main__":
         specpool.close()
 
     # Plot transmission
-    if 1 or run_all:
+    if 0 or run_all:
         filename_filter = "*/*"+IFSfilter+"*[0-9][0-9][0-9]*"+"_cutoff20_transmission.fits"
 
         for date in date_list:

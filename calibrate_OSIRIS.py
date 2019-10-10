@@ -192,7 +192,11 @@ def _remove_edges(wvs_indices,nan_mask_boxsize,dtype):
 
 # nice -n 15 /home/anaconda3/bin/python ./calibrate_OSIRIS.py
 
+######
+## Step 1
+# run the cross correlation with the OH template
 if 1:
+    out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
     IFSfilter = "Kbb"
     # IFSfilter = "Hbb"
     # inputdir = "/data/osiris_data/HR_8799_d"
@@ -201,9 +205,10 @@ if 1:
     # filelist = glob.glob(os.path.join(inputdir,"20101104/reduced_sky_jb/s*_Kbb_020.fits"))
     # inputdir = "/data/osiris_data/HR_8799_b"
     # filelist = glob.glob(os.path.join(inputdir,"201007/reduced_sky_jb/s*_Kbb_020.fits"))
-    inputdir = "/data/osiris_data/HR_8799_*"
-    out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
-    filelist = glob.glob(os.path.join(inputdir,"2010*/reduced_sky_jb/s*_"+IFSfilter+"_[0-9][0-9][0-9].fits"))
+    # inputdir = "/data/osiris_data/HR_8799_*"
+    # filelist = glob.glob(os.path.join(inputdir,"2010*/reduced_sky_jb/s*_"+IFSfilter+"_[0-9][0-9][0-9].fits"))
+    inputdir = "/data/osiris_data/kap_And"
+    filelist = glob.glob(os.path.join(inputdir,"*/reduced_sky_jb/s*_"+IFSfilter+"_[0-9][0-9][0-9].fits"))
     print(filelist)
     # exit()
 
@@ -234,7 +239,7 @@ if 1:
     debug = False
     numthreads = 28
     suffix="_Rfixed"
-if 1:
+if 0:
     # lambdas_air = lambdas_vac/(1+2.735182e-4+131.4182/lambdas_vac**2+2.76249e8/lambdas_vac**4)
     if 1:
         skybg_spec_list = []
@@ -322,7 +327,8 @@ if 1:
             #     print("Finished rm edge chunk {0}".format(chunk_index))
             #     rmedge_task.wait()
 
-        if 1:
+        # Plotting section?????? Not sure I should comment it out
+        if 0:
             original_np = _arraytonumpy(original_imgs, original_imgs_shape,dtype=dtype)
             badpix_np = _arraytonumpy(badpix_imgs, badpix_imgs_shape,dtype=dtype)
             output_ccf_np = _arraytonumpy(output_ccf, output_ccf_shape,dtype=dtype)
@@ -538,8 +544,9 @@ if 1:
 #     plt.show()
 #     exit()
 
-
-if 0:
+#####################
+## Step 2
+if 1:
     std_factor = np.zeros(20)
     for k in np.arange(2,20):
         a = np.random.randn(1000,k)
@@ -558,22 +565,35 @@ if 0:
     #20110724 c = 20110725 c
     #20171103 c
     IFSfilter = "Kbb"
-    inputdir = "/data/osiris_data/HR_8799_*"
+    # inputdir = "/data/osiris_data/HR_8799_*"
+    filename_filter_list = []
+    # filename_filter = os.path.join(inputdir,"2010*/reduced_sky_jb/s*_"+IFSfilter+"_020.fits")
     # filename_filter = "/home/sda/jruffio/osiris_data/HR_8799_d/20150720/reduced_sky_Kbb/s*_Kbb_020.fits"
-    filename_filter = os.path.join(inputdir,"2010*/reduced_sky_jb/s*_"+IFSfilter+"_020.fits")
     # filename_filter = os.path.join(inputdir,"20101104/reduced_sky_jb/s*_Kbb_020.fits")
     # filename_filter = os.path.join(inputdir,"2013*/reduced_sky_jb/s*_Kbb_020.fits")
-    print(filename_filter)
+    inputdir = "/data/osiris_data/HR_8799_*"
+    filename_filter_list.append(os.path.join(inputdir,"2016*/reduced_sky_jb/s*_"+IFSfilter+"_020.fits"))
+    inputdir = "/data/osiris_data/kap_And"
+    filename_filter_list.append(os.path.join(inputdir,"2016*/reduced_sky_jb/s*_"+IFSfilter+"_020.fits"))
+    filelist
     # exit(0)
-    filelist = glob.glob(filename_filter)
+    filelist = []
+    filelist_out = []
+    filelist_R = []
+    filelist_dwv = []
+    filelist_model = []
+    for filename_filter in filename_filter_list:
+        filelist = filelist+glob.glob(filename_filter)
+        filelist_out = filelist_out+glob.glob(filename_filter.replace(".fits","_OHccf"+suffix+"_output.fits"))
+        filelist_R = filelist_R+glob.glob(filename_filter.replace(".fits","_OHccf"+suffix+"_R.fits"))
+        filelist_dwv = filelist_dwv+glob.glob(filename_filter.replace(".fits","_OHccf"+suffix+"_dwv.fits"))
+        filelist_model = filelist_model+glob.glob(filename_filter.replace(".fits","_OHccf"+suffix+"_model.fits"))
+
     filelist.sort()
-    filelist_out = glob.glob(filename_filter.replace(".fits","_OHccf"+suffix+"_output.fits"))
+    print(filelist)
     filelist_out.sort()
-    filelist_R = glob.glob(filename_filter.replace(".fits","_OHccf"+suffix+"_R.fits"))
     filelist_R.sort()
-    filelist_dwv = glob.glob(filename_filter.replace(".fits","_OHccf"+suffix+"_dwv.fits"))
     filelist_dwv.sort()
-    filelist_model = glob.glob(filename_filter.replace(".fits","_OHccf"+suffix+"_model.fits"))
     filelist_model.sort()
     print(filelist_out)
 
@@ -591,13 +611,14 @@ if 0:
         print([dwv_map.shape for dwv_map in dwv_map_list])
         master_wvshift = np.nanmedian(dwv_map_list,axis=0)
     master_wvshift -= np.nanmedian(master_wvshift)
-    hdulist = pyfits.HDUList()
-    hdulist.append(pyfits.PrimaryHDU(data=master_wvshift*dwv))
-    try:
-        hdulist.writeto(os.path.join("/data/osiris_data/","master_wvshifts_"+IFSfilter+".fits"), overwrite=True)
-    except TypeError:
-        hdulist.writeto(os.path.join("/data/osiris_data/","master_wvshifts_"+IFSfilter+".fits"), clobber=True)
-    hdulist.close()
+    # # saving
+    # hdulist = pyfits.HDUList()
+    # hdulist.append(pyfits.PrimaryHDU(data=master_wvshift*dwv))
+    # try:
+    #     hdulist.writeto(os.path.join("/data/osiris_data/","master_wvshifts_"+IFSfilter+".fits"), overwrite=True)
+    # except TypeError:
+    #     hdulist.writeto(os.path.join("/data/osiris_data/","master_wvshifts_"+IFSfilter+".fits"), clobber=True)
+    # hdulist.close()
 
     # for planet in ["b","c","d"]:
     #     inputdir = "/data/osiris_data/HR_8799_"+planet
@@ -702,19 +723,24 @@ if 0:
     filelist = np.array(filelist)
     epoch_list = np.array([filename.split(os.path.sep)[4] for filename in filelist])
     epoch_unique = np.unique(epoch_list)
+    # print(len(filelist))
+    # print(len(epoch_list))
+    # print(len(temp_list))
+    # print(len(cst_offset_list))
+    # exit()
     for filename,epoch,temp in zip(filelist,epoch_list,temp_list):
-        pass
-        # print(temp)
-        # print(os.path.join(os.path.dirname(filelist[np.where(epoch == epoch_list)][0]),"..","master_wvshifts_"+IFSfilter+".fits"))
-        # print(cst_offset_list[np.where(epoch == epoch_list)]*38.167938931297705)
-        # print((cst_offset_list[np.where(epoch == epoch_list)]-cst_offset_list[np.where(epoch == epoch_list)])*38.167938931297705)
-        # hdulist = pyfits.HDUList()
-        # hdulist.append(pyfits.PrimaryHDU(data=(master_wvshift+np.mean(cst_offset_list[np.where(epoch == epoch_list)]))*dwv))
-        # try:
-        #     hdulist.writeto(os.path.join(os.path.dirname(filelist[np.where(epoch == epoch_list)][0]),"..","master_wvshifts_"+IFSfilter+".fits"), overwrite=True)
-        # except TypeError:
-        #     hdulist.writeto(os.path.join(os.path.dirname(filelist[np.where(epoch == epoch_list)][0]),"..","master_wvshifts_"+IFSfilter+".fits"), clobber=True)
-        # hdulist.close()
+        # pass
+        print(os.path.join(os.path.dirname(filename),"..","master_wvshifts_"+IFSfilter+".fits"))
+        print(cst_offset_list[np.where(epoch == epoch_list)]*38.167938931297705)
+        print((cst_offset_list[np.where(epoch == epoch_list)]-cst_offset_list[np.where(epoch == epoch_list)])*38.167938931297705)
+        hdulist = pyfits.HDUList()
+        hdulist.append(pyfits.PrimaryHDU(data=(master_wvshift+np.mean(cst_offset_list[np.where(epoch == epoch_list)]))*dwv))
+        try:
+            hdulist.writeto(os.path.join(os.path.dirname(filename),"..","master_wvshifts_"+IFSfilter+".fits"), overwrite=True)
+        except TypeError:
+            hdulist.writeto(os.path.join(os.path.dirname(filename),"..","master_wvshifts_"+IFSfilter+".fits"), clobber=True)
+        print("saving " + os.path.join(os.path.dirname(filename),"..","master_wvshifts_"+IFSfilter+".fits"))
+        hdulist.close()
 
     plt.show()
 

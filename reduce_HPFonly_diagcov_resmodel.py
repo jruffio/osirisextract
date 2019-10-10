@@ -859,6 +859,8 @@ if __name__ == "__main__":
         # date = "150828"
         # planet = "51_Eri_b"
         # date = "171103"
+        planet = "kap_And"
+        date = "161106"
         IFSfilter = "Kbb"
         # IFSfilter = "Hbb"
         # IFSfilter = "Jbb" # "Kbb" or "Hbb"
@@ -1005,6 +1007,22 @@ if __name__ == "__main__":
             host_rv = 12.6 #+-0.3
             host_limbdark = 0.5
             host_vsini = 80
+        if "kap_And" in filelist[0]:
+            phoenix_model_host_filename = glob.glob(os.path.join(phoenix_folder,"kap_And"+"*.fits"))[0]
+            travis_spec_filename=os.path.join(planet_template_folder,
+                                          "KapAnd_lte19-3.50-0.0.AGSS09.Dusty.Kzz=0.0.PHOENIX-ACES-2019.7.save")
+            if IFSfilter == "Jbb":
+                host_mag = 4.29
+            elif IFSfilter == "Hbb":
+                host_mag = 4.31
+            elif IFSfilter == "Kbb":
+                host_mag = 4.34
+            else:
+                raise("IFS filter name unknown")
+            host_type = "A0"
+            host_rv = -12.7 #+-0.8
+            host_limbdark = 0.5
+            host_vsini = 150 #unknown
 
 
         for filename in filelist:
@@ -1277,6 +1295,9 @@ if __name__ == "__main__":
                                 elif "51Eri" in os.path.basename(travis_spec_filename):
                                     ori_planet_spec = np.array(travis_spectrum["flux"])
                                     wmod = np.array(travis_spectrum["wave"])
+                                elif "KapAnd" in os.path.basename(travis_spec_filename):
+                                    ori_planet_spec = np.array(travis_spectrum["f"])
+                                    wmod = np.array(travis_spectrum["w"])/1.e4
                                 print("convolving: "+planet_template_filename)
                                 planet_convspec = convolve_spectrum(wmod,ori_planet_spec,R,specpool)
 
@@ -1324,6 +1345,9 @@ if __name__ == "__main__":
                             elif "51Eri" in os.path.basename(travis_spec_filename):
                                 ori_planet_spec = np.array(travis_spectrum["flux"])
                                 wmod = np.array(travis_spectrum["wave"])
+                            elif "KapAnd" in os.path.basename(travis_spec_filename):
+                                ori_planet_spec = np.array(travis_spectrum["f"])
+                                wmod = np.array(travis_spectrum["w"])/1.e4
                             print("convolving: "+planet_template_filename)
                             planet_convspec = convolve_spectrum(wmod,ori_planet_spec,R,specpool)
 
