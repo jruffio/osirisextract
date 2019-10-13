@@ -13,9 +13,10 @@ from copy import copy
 
 out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
 
-# planet = "b"
-planet = "c"
-# planet = "d"
+# planet = "HR_8799_b"
+# planet = "HR_8799_c"
+# planet = "HR_8799_d"
+planet = "kap_And"
 
 # IFSfilter = "Kbb"
 # IFSfilter = "Hbb"
@@ -23,7 +24,8 @@ planet = "c"
 suffix = "KbbHbb"
 # suffix = "all"
 fontsize = 12
-fileinfos_filename = "/data/osiris_data/HR_8799_"+planet+"/fileinfos_Kbb_jb.csv"
+fileinfos_filename = "/data/osiris_data/"+planet+"/fileinfos_Kbb_jb.csv"
+
 
 #read file
 with open(fileinfos_filename, 'r') as csvfile:
@@ -113,7 +115,7 @@ if 1:
     except:
         pass
 
-    resnumbasis = 9
+    resnumbasis = 0
     for k,item in enumerate(list_data):
         # if item[rvcen_id] == "nan":
         #     continue
@@ -122,6 +124,8 @@ if 1:
         # reducfilename = os.path.join(os.path.dirname(item[filename_id]),"sherlock","20190309_HPF_only",os.path.basename(item[filename_id]).replace(".fits","_outputHPF_cutoff40_sherlock_v1_search.fits"))
         # reducfilename = item[cen_filename_id].replace("20190324_HPF_only","20190401_HPF_only")
         reducfilename = item[cen_filename_id]
+        # print(reducfilename)
+        # exit()
         plt.sca(ax)
         # plt.ylabel(os.path.basename(item[filename_id]).split("bb_")[0],fontsize=10)
         # if "20190324_HPF_only" not in reducfilename:
@@ -135,10 +139,11 @@ if 1:
         # print(reducfilename)
         # exit()
 
-        if resnumbasis == 0 :
-            reducfilename = reducfilename.replace("20190416_no_persis_corr","20190920_resH0model_detec").replace("_outputHPF_cutoff40_sherlock_v1_search","_outputHPF_cutoff40_sherlock_v1_search_rescalc")
-        else:
-            reducfilename = reducfilename.replace("20190416_no_persis_corr","20190920_resH0model_detec").replace("_outputHPF_cutoff40_sherlock_v1_search","_outputHPF_cutoff40_sherlock_v1_search_resinmodel_kl{0}".format(resnumbasis))
+        if "HR_8799" in planet:
+            if resnumbasis == 0 :
+                reducfilename = reducfilename.replace("20190416_no_persis_corr","20190920_resH0model_detec").replace("_outputHPF_cutoff40_sherlock_v1_search","_outputHPF_cutoff40_sherlock_v1_search_rescalc")
+            else:
+                reducfilename = reducfilename.replace("20190416_no_persis_corr","20190920_resH0model_detec").replace("_outputHPF_cutoff40_sherlock_v1_search","_outputHPF_cutoff40_sherlock_v1_search_resinmodel_kl{0}".format(resnumbasis))
         # exit()
 
         try:
@@ -201,7 +206,7 @@ if 1:
         else:
             color = "grey"
             circlelinestyle = "--"
-        # plt.gca().text(3,10,os.path.basename(item[filename_id]).split("bb_")[0],ha="left",va="bottom",rotation=90,size=fontsize/3*2,color=color)
+        plt.gca().text(3,10,os.path.basename(item[filename_id]).split("bb_")[0],ha="left",va="bottom",rotation=90,size=fontsize/3*2,color=color)
         try:
             circle = plt.Circle((lcen,kcen),5,color=color, fill=False,linestyle=circlelinestyle)
             ax.add_artist(circle)
@@ -216,10 +221,10 @@ if 1:
         sequence = float(item[sequence_id])
         print(seqref,sequence)
         if seqref == sequence:
-            # arrow = plt.arrow(lcenref,kcenref,xoffset-xoffset0,yoffset-yoffset0,color="#ff9900",linestyle =":",alpha=0.5)
-            # ax.add_artist(arrow)
+            arrow = plt.arrow(lcenref,kcenref,xoffset-xoffset0,yoffset-yoffset0,color="#ff9900",linestyle =":",alpha=0.5)
+            ax.add_artist(arrow)
             circle = plt.Circle((xoffset-xoffset0+lcenref,kcenref+yoffset-yoffset0),1,color="#ff9900", fill=False)
-            # ax.add_artist(circle)
+            ax.add_artist(circle)
         elif int(item[status_id]) >= 1:
             xoffset0 = xoffset
             yoffset0 = yoffset
@@ -227,9 +232,9 @@ if 1:
             kcenref = kcen
             seqref = sequence
             circle = plt.Circle((lcenref,kcenref),3,color="#ff9900", fill=False)
-            # ax.add_artist(circle)
+            ax.add_artist(circle)
             circle = plt.Circle((lcenref,kcenref),1,color="#ff9900", fill=False)
-            # ax.add_artist(circle)
+            ax.add_artist(circle)
         else:
             xoffset0 = 0
             yoffset0 = 0
@@ -245,9 +250,11 @@ if 1:
 
     f.subplots_adjust(wspace=0,hspace=0)
     # plt.show()
-    print("Saving "+os.path.join(out_pngs,"HR_8799_"+planet,"HR8799"+planet+"_"+suffix+"_images_kl{0}.pdf".format(resnumbasis)))
-    plt.savefig(os.path.join(out_pngs,"HR_8799_"+planet,"HR8799"+planet+"_"+suffix+"_images_kl{0}.png".format(resnumbasis)),bbox_inches='tight')
-    plt.savefig(os.path.join(out_pngs,"HR_8799_"+planet,"HR8799"+planet+"_"+suffix+"_images_kl{0}.pdf".format(resnumbasis)),bbox_inches='tight')
+    if not os.path.exists(os.path.join(out_pngs,planet)):
+        os.makedirs(os.path.join(out_pngs,planet))
+    print("Saving "+os.path.join(out_pngs,planet,planet+"_"+suffix+"_images_kl{0}.pdf".format(resnumbasis)))
+    plt.savefig(os.path.join(out_pngs,planet,planet+"_"+suffix+"_images_kl{0}.png".format(resnumbasis)),bbox_inches='tight')
+    plt.savefig(os.path.join(out_pngs,planet,planet+"_"+suffix+"_images_kl{0}.pdf".format(resnumbasis)),bbox_inches='tight')
     # print("Saving "+os.path.join(out_pngs,"HR8799"+planet+"_"+suffix+"_images_tentativedetec.pdf"))
     # plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+suffix+"_images_tentativedetec.pdf"),bbox_inches='tight')
     # plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+suffix+"_images_tentativedetec.png"),bbox_inches='tight')

@@ -50,7 +50,7 @@ new_list_data = copy(old_list_data)
 for item in old_list_table:
     print(item)
 
-if 1: # add filename
+if 0: # add filename
     filename_id = new_colnames.index("filename")
     old_filelist = [item[filename_id] for item in new_list_data]
 
@@ -62,7 +62,7 @@ if 1: # add filename
             new_list_data.append([filename,]+[np.nan,]*(N_col-1))
     print(new_list_data)
 # exit()
-if 1: # add spectral band
+if 0: # add spectral band
     filename_id = new_colnames.index("filename")
     try:
         ifs_filter_id = new_colnames.index("IFS filter")
@@ -80,7 +80,7 @@ if 1: # add spectral band
             new_list_data[k][ifs_filter_id] = "Kbb"
 
 #sort files
-if 1:
+if 0:
     filename_id = new_colnames.index("filename")
     filelist = [item[filename_id] for item in new_list_data]
     filelist_sorted = copy(filelist)
@@ -93,7 +93,7 @@ if 1:
 
     new_list_data = new_new_list_data
 
-if 1: # add MJD-OBS
+if 0: # add MJD-OBS
     filename_id = new_colnames.index("filename")
     MJDOBS_id = new_colnames.index("MJD-OBS")
 
@@ -102,7 +102,7 @@ if 1: # add MJD-OBS
         prihdr0 = hdulist[0].header
         new_list_data[k][MJDOBS_id] = prihdr0["MJD-OBS"]
 
-if 1: # add Temperature
+if 0: # add Temperature
     filename_id = new_colnames.index("filename")
     try:
         DTMP6_id = new_colnames.index("DTMP6")
@@ -116,7 +116,7 @@ if 1: # add Temperature
         prihdr0 = hdulist[0].header
         new_list_data[k][DTMP6_id] = prihdr0["DTMP7"]
 
-if 1: # add exposure time
+if 0: # add exposure time
     filename_id = new_colnames.index("filename")
     try:
         itime_id = new_colnames.index("itime")
@@ -133,7 +133,7 @@ if 1: # add exposure time
         else:
             new_list_data[k][itime_id] = float(prihdr0["ITIME"])
 
-if 1: # add barycenter RV
+if 0: # add barycenter RV
     from barycorrpy import get_BC_vel
     filename_id = new_colnames.index("filename")
     MJDOBS_id = new_colnames.index("MJD-OBS")
@@ -149,7 +149,7 @@ if 1: # add barycenter RV
         result = get_BC_vel(MJDOBS+2400000.5,hip_id=114189,obsname="Keck Observatory",ephemeris="de430")
         new_list_data[k][bary_rv_id] = result[0][0]
 
-if 1: # add filename
+if 0: # add filename
     if 0:
         filename_id = new_colnames.index("filename")
         ifs_filter_id = new_colnames.index("IFS filter")
@@ -171,24 +171,24 @@ if 1: # add filename
             pastnum = currnum
         exit()
     else:
-        sequence_list =[["/data/osiris_data/kap_And/20161106/reduced_jb/s161106_a019002_Kbb_020.fits",1,0,0],
-                        ["/data/osiris_data/kap_And/20161106/reduced_jb/s161106_a020002_Kbb_020.fits",1,1,0],
-                        ["/data/osiris_data/kap_And/20161106/reduced_jb/s161106_a021002_Kbb_020.fits",1,2,0],
-                        ["/data/osiris_data/kap_And/20161106/reduced_jb/s161106_a022002_Kbb_020.fits",1,3,0],
-                        ["/data/osiris_data/kap_And/20161106/reduced_jb/s161106_a023002_Kbb_020.fits",1,4,0],
-                        ["/data/osiris_data/kap_And/20161107/reduced_jb/s161107_a017002_Kbb_020.fits",2,0,0],
-                        ["/data/osiris_data/kap_And/20161107/reduced_jb/s161107_a018002_Kbb_020.fits",2,1,0],
-                        ["/data/osiris_data/kap_And/20161107/reduced_jb/s161107_a019002_Kbb_020.fits",2,2,0],
-                        ["/data/osiris_data/kap_And/20161107/reduced_jb/s161107_a020002_Kbb_020.fits",2,3,0],
-                        ["/data/osiris_data/kap_And/20161107/reduced_jb/s161107_a021002_Kbb_020.fits",2,4,0],
-                        ["/data/osiris_data/kap_And/20161107/reduced_jb/s161107_a022002_Kbb_020.fits",2,5,0],
-                        ["/data/osiris_data/kap_And/20161107/reduced_jb/s161107_a023002_Kbb_020.fits",2,6,0],
-                        ["/data/osiris_data/kap_And/20161107/reduced_jb/s161107_a024002_Kbb_020.fits",2,7,0],
-                        ["/data/osiris_data/kap_And/20161108/reduced_jb/s161108_a027002_Kbb_020.fits",3,0,0],
-                        ["/data/osiris_data/kap_And/20161108/reduced_jb/s161108_a028002_Kbb_020.fits",3,1,0],
-                        ["/data/osiris_data/kap_And/20161108/reduced_jb/s161108_a029002_Kbb_020.fits",3,2,0],
-                        ["/data/osiris_data/kap_And/20161108/reduced_jb/s161108_a030002_Kbb_020.fits",3,3,0],
-                        ["/data/osiris_data/kap_And/20161108/reduced_jb/s161108_a031002_Kbb_020.fits",3,4,0],]
+        sequence_list =[["/data/osiris_data/kap_And/20161106/reduced_jb/s161106_a019002_Kbb_020.fits",1,0,1],
+                        ["/data/osiris_data/kap_And/20161106/reduced_jb/s161106_a020002_Kbb_020.fits",1,1,1],
+                        ["/data/osiris_data/kap_And/20161106/reduced_jb/s161106_a021002_Kbb_020.fits",1,2,1],
+                        ["/data/osiris_data/kap_And/20161106/reduced_jb/s161106_a022002_Kbb_020.fits",1,3,1],
+                        ["/data/osiris_data/kap_And/20161106/reduced_jb/s161106_a023002_Kbb_020.fits",1,4,1],
+                        ["/data/osiris_data/kap_And/20161107/reduced_jb/s161107_a017002_Kbb_020.fits",2,0,1],
+                        ["/data/osiris_data/kap_And/20161107/reduced_jb/s161107_a018002_Kbb_020.fits",2,1,1],
+                        ["/data/osiris_data/kap_And/20161107/reduced_jb/s161107_a019002_Kbb_020.fits",2,2,1],
+                        ["/data/osiris_data/kap_And/20161107/reduced_jb/s161107_a020002_Kbb_020.fits",2,3,1],
+                        ["/data/osiris_data/kap_And/20161107/reduced_jb/s161107_a021002_Kbb_020.fits",2,4,1],
+                        ["/data/osiris_data/kap_And/20161107/reduced_jb/s161107_a022002_Kbb_020.fits",2,5,1],
+                        ["/data/osiris_data/kap_And/20161107/reduced_jb/s161107_a023002_Kbb_020.fits",2,6,1],
+                        ["/data/osiris_data/kap_And/20161107/reduced_jb/s161107_a024002_Kbb_020.fits",2,7,1],
+                        ["/data/osiris_data/kap_And/20161108/reduced_jb/s161108_a027002_Kbb_020.fits",3,0,1],
+                        ["/data/osiris_data/kap_And/20161108/reduced_jb/s161108_a028002_Kbb_020.fits",3,1,1],
+                        ["/data/osiris_data/kap_And/20161108/reduced_jb/s161108_a029002_Kbb_020.fits",3,2,1],
+                        ["/data/osiris_data/kap_And/20161108/reduced_jb/s161108_a030002_Kbb_020.fits",3,3,1],
+                        ["/data/osiris_data/kap_And/20161108/reduced_jb/s161108_a031002_Kbb_020.fits",3,4,1],]
 
     try:
         sequence_id = new_colnames.index("sequence")
@@ -218,7 +218,7 @@ if 1: # add filename
                 new_list_data[k][sequence_it_id] = sec_it
                 new_list_data[k][status_id] = status_it
 
-if 1:
+if 0:
     def determine_mosaic_offsets_from_header(prihdr_list):
         OBFMXIM_list = []
         OBFMYIM_list = []
@@ -302,7 +302,7 @@ if 1:
 
 
 
-if 1: # wavelength solution error
+if 0: # wavelength solution error
     try:
         wvsolerr_id = old_colnames.index("wv sol err")
     except:
@@ -372,7 +372,7 @@ def get_err_from_posterior(x,posterior):
         rx = rf(1-0.6827)
     return x[argmax_post],(rx-lx)/2.,argmax_post
 
-if 0:
+if 1:
     from scipy.signal import correlate2d
     try:
         cen_filename_id = old_colnames.index("cen filename")
@@ -428,11 +428,13 @@ if 0:
     # dwv = CDELT1/1000.
     # init_wv = CRVAL1/1000. # wv for first slice in mum
 
-    suffix = "_outputHPF_cutoff40_sherlock_v1_search"
-    # myfolder = "sherlock/20190401_HPF_only"
-    # myfolder = "sherlock/20190412_HPF_only"
-    # myfolder = "sherlock/20190416_HPF_only"
-    myfolder = "sherlock/20190416_no_persis_corr"
+    numbasis = 5#1,3,5
+    if numbasis ==0:
+        myfolder = "sherlock/20191010_normal"
+        suffix = "_outputHPF_cutoff40_sherlock_v1_search"
+    else:
+        myfolder = "sherlock/20191010_resH0model_RV"
+        suffix = "_outputHPF_cutoff40_sherlock_v1_search_resinmodel_kl{0}".format(numbasis)
     for k,item in enumerate(old_list_data):
         filename = item[filename_id]
         print(filename)
@@ -450,6 +452,11 @@ if 0:
             print(os.path.join(os.path.dirname(filename),myfolder,
                                            os.path.basename(filename).replace(".fits",suffix+"_planetRV.fits")))
         except:
+            new_list_data[k][kcen_id] = np.nan
+            new_list_data[k][lcen_id] = np.nan
+            new_list_data[k][rvcen_id],new_list_data[k][rvcensig_id] = np.nan,np.nan
+            new_list_data[k][cen_filename_id] = np.nan
+            new_list_data[k][snr_id] = np.nan
             continue
         planetRV = hdulist[0].data
         # print(hdulist[0].data.shape)
@@ -464,7 +471,7 @@ if 0:
         cube = hdulist[0].data[-1,0,0,NplanetRV_hd::,:,:]
 
         bary_rv = -float(item[bary_rv_id])/1000. # RV in km/s
-        rv_star = -12.6#-12.6+-1.4km/s HR 8799 Rob and Simbad
+        rv_star = -12.7#+-0.8km/s Simbad
 
         # print(bary_rv+rv_star)
         guess_rv_id = np.argmin(np.abs(planetRV_hd-(bary_rv+rv_star)))
@@ -480,8 +487,11 @@ if 0:
         # plt.imshow(guess_rv_im)
         # plt.show()
         try:
+        # if 1:
             guesspos = np.unravel_index(np.nanargmax(guess_rv_im),guess_rv_im.shape)
             guess_y,guess_x = guesspos
+            print(guess_y,guess_x)
+            # exit()
 
             cube_hd_cp = copy(cube_hd)
             cube_hd_cp[:,0:np.max([0,(guess_y-5)]),:] = np.nan
@@ -500,6 +510,8 @@ if 0:
 
             new_list_data[k][kcen_id] = ymax
             new_list_data[k][lcen_id] = xmax
+            # plt.plot(planetRV_hd,posterior)
+            # plt.show()
             new_list_data[k][rvcen_id],new_list_data[k][rvcensig_id],argmax_post = get_err_from_posterior(planetRV_hd,posterior)
             new_list_data[k][cen_filename_id] = os.path.join(os.path.dirname(filename),myfolder,
                                                os.path.basename(filename).replace(".fits",suffix+".fits"))
@@ -526,6 +538,8 @@ print(new_colnames)
 
 
 #Save NEW file
+if numbasis !=0:
+    fileinfos_filename = fileinfos_filename.replace(".csv","_kl{0}.csv".format(numbasis))
 with open(fileinfos_filename, 'w+') as csvfile:
     csvwriter = csv.writer(csvfile, delimiter=';')
     csvwriter.writerows([new_colnames])

@@ -122,7 +122,7 @@ if 0: # add Temperature
         prihdr0 = hdulist[0].header
         new_list_data[k][DTMP6_id] = prihdr0["DTMP7"]
 
-if 1: # add exposure time
+if 0: # add exposure time
     filename_id = new_colnames.index("filename")
     try:
         itime_id = new_colnames.index("itime")
@@ -560,11 +560,16 @@ if 1:
     # dwv = CDELT1/1000.
     # init_wv = CRVAL1/1000. # wv for first slice in mum
 
-    suffix = "_outputHPF_cutoff40_sherlock_v1_search"
-    # myfolder = "sherlock/20190401_HPF_only"
-    # myfolder = "sherlock/20190412_HPF_only"
-    # myfolder = "sherlock/20190416_HPF_only"
-    myfolder = "sherlock/20190416_no_persis_corr"
+    numbasis = 5#1,3,5
+    if numbasis ==0:
+        suffix = "_outputHPF_cutoff40_sherlock_v1_search"
+        # myfolder = "sherlock/20190401_HPF_only"
+        # myfolder = "sherlock/20190412_HPF_only"
+        # myfolder = "sherlock/20190416_HPF_only"
+        myfolder = "sherlock/20190416_no_persis_corr"
+    else:
+        myfolder = "sherlock/20190925_resH0model_RV"
+        suffix = "_outputHPF_cutoff40_sherlock_v1_search_resinmodel_kl{0}".format(numbasis)
     for k,item in enumerate(old_list_data):
         filename = item[filename_id]
         print(filename)
@@ -654,10 +659,12 @@ for item in new_list_data:
     print(item)
 print(new_colnames)
 
-exit()
+# exit()
 
 
 #Save NEW file
+if numbasis !=0:
+    fileinfos_filename = fileinfos_filename.replace(".csv","_kl{0}.csv".format(numbasis))
 with open(fileinfos_filename, 'w+') as csvfile:
     csvwriter = csv.writer(csvfile, delimiter=';')
     csvwriter.writerows([new_colnames])

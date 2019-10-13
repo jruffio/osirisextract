@@ -1654,9 +1654,9 @@ if __name__ == "__main__":
             psfs_rep4flux_filelist.sort()
             hr8799_flux_list = []
             for psfs_rep4flux_filename in psfs_rep4flux_filelist:
-                for fileid,refstarsinfo_file in enumerate(refstarsinfo_filelist):
+                for refstar_fileid,refstarsinfo_file in enumerate(refstarsinfo_filelist):
                     if os.path.basename(refstarsinfo_file).replace(".fits","") in psfs_rep4flux_filename:
-                        fileitem = refstarsinfo_list_data[fileid]
+                        fileitem = refstarsinfo_list_data[refstar_fileid]
                         break
                 refstar_RV = float(fileitem[rv_simbad_id])
                 ref_star_type = fileitem[type_id]
@@ -2212,6 +2212,26 @@ if __name__ == "__main__":
                     lpf = hdulist[0].data[0,0,5,:,:,:]
                     hpfres = hdulist[0].data[0,0,6,:,:,:]
                 res4model = hpfres/lpf
+
+                # import matplotlib.pyplot as plt
+                # plt.subplot(1,2,1)
+                # plt.imshow(np.nansum(original_imgs_np,axis=2))
+
+                try:
+                # if 1:
+                    status_id = colnames.index("status")
+                    if int(list_data[fileid][status_id]) == 1:
+                        kcen_id = colnames.index("kcen")
+                        lcen_id = colnames.index("lcen")
+                        kplloc,lplloc = int(list_data[fileid][kcen_id])+padding,int(list_data[fileid][lcen_id])+padding
+                        # print(kplloc,lplloc)
+                        res4model[:,kplloc-5:kplloc+6,lplloc-5:lplloc+6] = np.nan
+                except:
+                    pass
+
+                # plt.subplot(1,2,2)
+                # plt.imshow(np.nansum(res4model,axis=0))
+                # plt.show()
 
                 X = np.reshape(res4model,(res4model.shape[0],res4model.shape[1]*res4model.shape[2])).T
 
