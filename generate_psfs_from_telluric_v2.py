@@ -53,10 +53,10 @@ if __name__ == "__main__":
     if 1:
         IFSfilter = "Kbb"#"Jbb"#"Hbb"#"Kbb"
         # planet = "HR_8799_b"
-        # planet = "HR_8799_c"
+        planet = "HR_8799_c"
         # planet = "HR_8799_d"
         # planet = "51_Eri_b"
-        planet = "kap_And"
+        # planet = "kap_And"
         # extra_filter = "a013001"
         extra_filter = ""
         if "HR_8799_b" in planet:#/data/osiris_data/HR_8799_b/20161107/reduced_telluric_jb/HD_210501/s161107_a032002_Kbb_020.fits
@@ -106,7 +106,7 @@ if __name__ == "__main__":
         nl=1574
         R0=4000
 
-    run_all = False
+    run_all = True
     # extract PSFs stamps and calculate centroids
     if 0 or run_all:
         filename_filter = "*/s*"+extra_filter+"*"+IFSfilter+"*_[0-9][0-9][0-9].fits"

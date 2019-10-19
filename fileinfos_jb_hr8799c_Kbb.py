@@ -542,6 +542,12 @@ if 1:
         new_colnames.append("snr")
         new_list_data = [item+[np.nan,] for item in new_list_data]
         snr_id = new_colnames.index("snr")
+    try:
+        contrast_id = old_colnames.index("contrast")
+    except:
+        new_colnames.append("contrast")
+        new_list_data = [item+[np.nan,] for item in new_list_data]
+        contrast_id = new_colnames.index("contrast")
 
     filename_id = new_colnames.index("filename")
     bary_rv_id = new_colnames.index("barycenter rv")
@@ -560,7 +566,7 @@ if 1:
     # dwv = CDELT1/1000.
     # init_wv = CRVAL1/1000. # wv for first slice in mum
 
-    numbasis = 5#1,3,5
+    numbasis = 0#1,3,5
     if numbasis ==0:
         suffix = "_outputHPF_cutoff40_sherlock_v1_search"
         # myfolder = "sherlock/20190401_HPF_only"
@@ -619,7 +625,6 @@ if 1:
         try:
             guesspos = np.unravel_index(np.nanargmax(guess_rv_im),guess_rv_im.shape)
             guess_y,guess_x = guesspos
-
             cube_hd_cp = copy(cube_hd)
             cube_hd_cp[:,0:np.max([0,(guess_y-5)]),:] = np.nan
             cube_hd_cp[:,np.min([ny,(guess_y+5)])::,:] = np.nan
@@ -630,7 +635,6 @@ if 1:
             # plt.show()
 
             zmax,ymax,xmax = np.unravel_index(np.nanargmax(cube_hd_cp),cube_hd.shape)
-
 
             logposterior = hdulist[0].data[-1,0,9,0:NplanetRV_hd,ymax,xmax]
             posterior = np.exp(logposterior-np.nanmax(logposterior))
@@ -646,6 +650,9 @@ if 1:
             snr_cube[np.where(np.abs(planetRV)<100)] = np.nan
             snr_std = np.nanstd(snr_cube)
             new_list_data[k][snr_id] = snr_cube_hd[argmax_post,ymax,xmax]/snr_std
+
+            contrast_cube_hd = hdulist[0].data[-1,0,11,0:NplanetRV_hd,:,:]
+            new_list_data[k][contrast_id] = contrast_cube_hd[argmax_post,ymax,xmax]*1e-5
             # print(new_list_data[k][rvcen_id],planetRV_hd[zmax],planetRV_hd[zmax]-(bary_rv+rv_star))
         except:
             new_list_data[k][kcen_id] = np.nan
@@ -653,6 +660,7 @@ if 1:
             new_list_data[k][rvcen_id],new_list_data[k][rvcensig_id] = np.nan,np.nan
             new_list_data[k][cen_filename_id] = np.nan
             new_list_data[k][snr_id] = np.nan
+            new_list_data[k][contrast_id] = np.nan
 
 print("NEW")
 for item in new_list_data:

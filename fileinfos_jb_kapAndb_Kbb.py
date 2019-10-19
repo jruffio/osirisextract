@@ -434,6 +434,7 @@ if 1:
         suffix = "_outputHPF_cutoff40_sherlock_v1_search"
     else:
         myfolder = "sherlock/20191010_resH0model_RV"
+        # myfolder = "sherlock/20191012_resH0model_RV"
         suffix = "_outputHPF_cutoff40_sherlock_v1_search_resinmodel_kl{0}".format(numbasis)
     for k,item in enumerate(old_list_data):
         filename = item[filename_id]

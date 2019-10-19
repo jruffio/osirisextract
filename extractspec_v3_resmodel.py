@@ -60,6 +60,10 @@ if __name__ == "__main__":
                 myspecwvs_list = []
                 myspec_std_list = []
                 bias_myspec_list = []
+                fakes_myspec_list = []
+                fakes_myspec_std_list = []
+                fakes_myspeccorr_list = []
+                mycorrspec_list = []
 
                 filename_id = colnames.index("filename")
                 kcen_id = colnames.index("kcen")
@@ -69,14 +73,21 @@ if __name__ == "__main__":
                 for resnumbasis in np.array([0,1,5]):
                     for fileitem in list_data[0:1]:
                         filename = fileitem[filename_id]
+                        if "Kbb" not in os.path.basename(filename):
+                            continue
                         # if resnumbasis == 0:
                         #     data_filename = filename.replace("reduced_jb","reduced_jb/sherlock/20190920_resH0model_detec").replace(".fits","_outputHPF_cutoff40_sherlock_v1_search_rescalc_estispec.fits")
                         # else:
                         #     data_filename = filename.replace("reduced_jb","reduced_jb/sherlock/20190920_resH0model_detec").replace(".fits","_outputHPF_cutoff40_sherlock_v1_search_resinmodel_kl{0}_estispec.fits".format(resnumbasis))
-                        if resnumbasis == 0:
-                            data_filename = filename.replace("reduced_jb","reduced_jb/20190923_HPF_restest2").replace(".fits","_outputHPF_cutoff40_sherlock_v1_search_rescalc_estispec.fits")
-                        else:
-                            data_filename = filename.replace("reduced_jb","reduced_jb/20190923_HPF_restest2").replace(".fits","_outputHPF_cutoff40_sherlock_v1_search_resinmodel_kl{0}_estispec.fits".format(resnumbasis))
+                        # if resnumbasis == 0:
+                        #     data_filename = filename.replace("reduced_jb","reduced_jb/20190923_HPF_restest4").replace(".fits","_outputHPF_cutoff40_sherlock_v1_search_rescalc_estispec.fits")
+                        # else:
+                        #     data_filename = filename.replace("reduced_jb","reduced_jb/20190923_HPF_restest4").replace(".fits","_outputHPF_cutoff40_sherlock_v1_search_resinmodel_kl{0}_estispec.fits".format(resnumbasis))
+                        # if resnumbasis == 0:
+                        #     data_filename = filename.replace("reduced_jb","reduced_jb/sherlock/20190925_resH0model_RV").replace(".fits","_outputHPF_cutoff40_sherlock_v1_search_rescalc_estispec.fits")
+                        # else:
+                        #     data_filename = filename.replace("reduced_jb","reduced_jb/sherlock/20190925_resH0model_RV").replace(".fits","_outputHPF_cutoff40_sherlock_v1_search_resinmodel_kl{0}_estispec.fits".format(resnumbasis))
+                        data_filename = filename.replace("reduced_jb","reduced_jb/20191018_HPF_faketest").replace(".fits","_outputHPF_cutoff40_sherlock_v1_search_resinmodel_kl{0}_estispec.fits".format(resnumbasis))
                         # print(glob.glob(data_filename))
                         # exit()
                         if "20100715" not in data_filename:
@@ -89,6 +100,7 @@ if __name__ == "__main__":
 
                         with pyfits.open(data_filename) as hdulist:
                             esti_spec_arr = hdulist[0].data
+
                         print(esti_spec_arr.shape)
 
                         if fileitem[kcen_id] == "nan":
@@ -99,14 +111,55 @@ if __name__ == "__main__":
                         myspecwvs_list.append(copy(esti_spec_arr[0,:,plcen_k,plcen_l])*(1-host_bary_rv/c_kms) )
                         myspec_list.append(copy(esti_spec_arr[1,:,plcen_k,plcen_l]))
 
-
-                        esti_spec_arr[:,:,plcen_k-5:plcen_k+5,plcen_l-5:plcen_l+5] = np.nan
+                        esti_spec_arr_cp = copy(esti_spec_arr)
+                        esti_spec_arr_cp[:,:,plcen_k-5:plcen_k+6,plcen_l-5:plcen_l+6] = np.nan
+                        esti_spec_arr_cp[1,:,:,:] = esti_spec_arr_cp[1,:,:,:]#/np.nanstd(esti_spec_arr_cp[1,:,:,:],axis=0)[None,:,:]
                         # esti_spec_arr[:,:,plcen_k-5:plcen_k+5,0:plcen_l] = np.nan
-                        bias_myspec = np.nanmean(esti_spec_arr[1,:,:,:],axis=(1,2))
-                        std_myspec = np.nanstd(esti_spec_arr[1,:,:,:],axis=(1,2))
-
+                        bias_myspec = np.nanmean(esti_spec_arr_cp[1,:,:,:],axis=(1,2))
+                        std_myspec = np.nanstd(esti_spec_arr_cp[1,:,:,:],axis=(1,2))#/30
                         bias_myspec_list.append(bias_myspec)
                         myspec_std_list.append(std_myspec)
+
+
+                        # myspec_list.append(copy(esti_spec_fakes_arr[2,:,plcen_k+10,plcen_l]))
+                        # fakes_myspec_list.append(copy(esti_spec_fakes_arr[4,:,plcen_k+10,plcen_l]))
+
+                        # # import matplotlib.pyplot as plt
+                        # for a in np.arange(0,esti_spec_arr_cp.shape[2],3):
+                        #     for b in np.arange(0,esti_spec_arr_cp.shape[3],3):
+                        #         plt.plot(esti_spec_arr_cp[1,:,a,b],alpha=0.5)
+                        # plt.plot(bias_myspec-std_myspec,"--",linewidth=5)
+                        # plt.plot(bias_myspec,linewidth=5)
+                        # plt.plot(bias_myspec+std_myspec,"--",linewidth=5)
+                        # plt.show()
+
+
+                        a = copy(esti_spec_arr[1,:,plcen_k,plcen_l])
+                        b = bias_myspec
+                        a = a - b*np.nansum(a*b)/np.nansum(b*b)
+                        mycorrspec_list.append(a)
+
+                        # datafakes_filename = filename.replace("reduced_jb","reduced_jb/20191018_HPF_faketest").replace(".fits","_outputHPF_cutoff40_sherlock_v1_search_resinmodel_kl{0}_fakes_estispec.fits".format(resnumbasis))
+                        # with pyfits.open(datafakes_filename) as hdulist:
+                        #     esti_spec_fakes_arr = hdulist[0].data
+                        # esti_spec_fakes_arr[:,:,plcen_k-5:plcen_k+6,plcen_l-5:plcen_l+6] = np.nan
+                        # esti_spec_fakes_arr[:,:,:,0:plcen_l-5] = np.nan
+                        # esti_spec_fakes_arr[:,:,:,plcen_l+6::] = np.nan
+                        # fake_myspec = np.nanmean(esti_spec_fakes_arr[1,:,:,:],axis=(1,2))
+                        # fake_std_myspec = np.nanstd(esti_spec_fakes_arr[1,:,:,:],axis=(1,2))
+                        # fakes_myspec_list.append(fake_myspec)
+                        # fakes_myspec_std_list.append(fake_std_myspec)
+                        # a = copy(fake_myspec)
+                        # b = bias_myspec
+                        # a = a - b*np.nansum(a*b)/np.nansum(b*b)
+                        # fakes_myspeccorr_list.append(a)
+
+
+                        # print(plcen_k,plcen_l)
+                        # plt.imshow(np.nanmean(esti_spec_arr[1,:,:,:]-bias_myspec[:,None,None],axis=0),interpolation="nearest")
+                        # plt.show()
+
+                        # exit()
 
 
 
@@ -114,6 +167,10 @@ if __name__ == "__main__":
                     myspec_conca = np.concatenate(myspec_list)
                     myspec_std_conca = np.concatenate(myspec_std_list)
                     myspec_bias_conca = np.concatenate(bias_myspec_list)
+                    mycorrspec_conca = np.concatenate(mycorrspec_list)
+                    # fakes_myspec_conca = np.concatenate(fakes_myspec_list)
+                    # fakes_myspec_std_conca = np.concatenate(fakes_myspec_std_list)
+                    # fakes_myspeccorr_conca = np.concatenate(fakes_myspeccorr_list)
                     nbins = nl
                     binedges = np.linspace(wvs[0]-dwv/4,wvs[-1]+dwv/4,nbins+1,endpoint=True)
                     bincenter = np.linspace(wvs[0],wvs[-1],nbins,endpoint=True)
@@ -121,21 +178,39 @@ if __name__ == "__main__":
                     final_spec = np.zeros(nbins)+np.nan
                     final_spec_biascorr = np.zeros(nbins)+np.nan
                     final_spec_std = np.zeros(nbins)+np.nan
+                    finalfakes_spec = np.zeros(nbins)+np.nan
+                    finalfakes_spec_biascorr = np.zeros(nbins)+np.nan
+                    finalfakes_spec_std = np.zeros(nbins)+np.nan
                     for k in np.arange(2,nbins):
                         where_digit = np.where((k==digitized)*(np.isfinite(myspec_conca)))
                         if np.size(where_digit[0]) > 0.2*len(myspecwvs_list):
                             final_spec[k]=np.nansum((myspec_conca[where_digit])/myspec_std_conca[where_digit]**2)/np.nansum(1/myspec_std_conca[where_digit]**2)
-                            final_spec_biascorr[k]=np.nansum((myspec_conca[where_digit]-myspec_bias_conca[where_digit])/myspec_std_conca[where_digit]**2)/np.nansum(1/myspec_std_conca[where_digit]**2)
+                            # final_spec_biascorr[k]=np.nansum((myspec_conca[where_digit]-myspec_bias_conca[where_digit])/myspec_std_conca[where_digit]**2)/np.nansum(1/myspec_std_conca[where_digit]**2)
+                            final_spec_biascorr[k]=np.nansum((mycorrspec_conca[where_digit])/myspec_std_conca[where_digit]**2)/np.nansum(1/myspec_std_conca[where_digit]**2)
                             final_spec_std[k]=np.sqrt(1/np.nansum(1/myspec_std_conca[where_digit]**2))
+
+                            # finalfakes_spec[k]=np.nansum((fakes_myspec_conca[where_digit])/fakes_myspec_std_conca[where_digit]**2)/np.nansum(1/fakes_myspec_std_conca[where_digit]**2)
+                            # finalfakes_spec_biascorr[k]=np.nansum((fakes_myspeccorr_conca[where_digit])/fakes_myspec_std_conca[where_digit]**2)/np.nansum(1/fakes_myspec_std_conca[where_digit]**2)
+                            # finalfakes_spec_std[k]=np.sqrt(1/np.nansum(1/fakes_myspec_std_conca[where_digit]**2))
                         else:
                             final_spec[k]=np.nan
                             final_spec_biascorr[k]=np.nan
                             final_spec_std[k]=np.nan
 
+                            # finalfakes_spec[k]=np.nan
+                            # finalfakes_spec_biascorr[k]=np.nan
+                            # finalfakes_spec_std[k]=np.nan
 
-                    # plt.plot(bincenter,final_spec/np.nanstd(final_spec),linestyle="--",label="{0}: final_spec".format(resnumbasis))
-                    # plt.plot(bincenter,final_spec_biascorr/np.nanstd(final_spec_biascorr),linestyle="-",label="{0} final_spec - bias".format(resnumbasis))
-                    plt.plot(final_spec/np.nanstd(final_spec)-final_spec_biascorr/np.nanstd(final_spec_biascorr),linestyle="--",label="{0}: bias".format(resnumbasis))
+
+                    # plt.plot(bincenter,final_spec,linestyle="--",label="{0}: final_spec".format(resnumbasis))
+                    # plt.plot(bincenter,final_spec_biascorr,linestyle="-",label="{0} final_spec - bias".format(resnumbasis))
+                    plt.plot(bincenter,final_spec-final_spec_biascorr,linestyle="-",label="{0} bias".format(resnumbasis))
+                    plt.plot(bincenter,final_spec_std,linestyle="-",alpha=0.5,label="{0} std".format(resnumbasis))
+
+                    # plt.plot(bincenter,finalfakes_spec,linestyle="--",label="{0}: fakes final_spec".format(resnumbasis))
+                    # plt.plot(bincenter,finalfakes_spec_biascorr,linestyle="-",label="{0} fakes final_spec - bias".format(resnumbasis))
+                    # plt.plot(bincenter,finalfakes_spec-finalfakes_spec_biascorr,linestyle="-",label="{0} fakes bias".format(resnumbasis))
+                    # plt.plot(bincenter,finalfakes_spec_std,linestyle="-",alpha=0.5,label="{0} fakes std".format(resnumbasis))
 
 
 

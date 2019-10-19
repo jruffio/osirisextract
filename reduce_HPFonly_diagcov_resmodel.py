@@ -260,7 +260,7 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
                             transmission4planet_list,
                             hr8799_flux,
                             wvs,planetRV_array,dtype,cutoff,planet_search,centroid_guess,
-                            R_list,numbasis_list,wvsol_offsets,R_calib_arr=None,model_persistence=False,res4model_kl=None,lpf_res_calib=None):
+                            R_list,numbasis_list,wvsol_offsets,R_calib_arr=None,model_persistence=False,res4model_kl=None,lpf_res_calib=None,fake_paras=None):
     global original,sigmas,badpix,originalLPF,originalHPF, original_shape, output, output_shape, lambdas, img_center, \
         psfs, psfs_shape, Npixproc, Npixtot,outres,outres_shape,outautocorrres,outautocorrres_shape,persistence,out1dfit,out1dfit_shape,estispec,estispec_shape
     original_np = _arraytonumpy(original, original_shape,dtype=dtype)
@@ -312,10 +312,59 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
         data_sigmas = sigmas_np[k-w:k+w+1,l-w:l+w+1,:]
         data_badpix = badpix_np[k-w:k+w+1,l-w:l+w+1,:]
         data_wvsol_offsets = wvsol_offsets[k-w:k+w+1,l-w:l+w+1]
+
+        data_ny,data_nx,data_nz = HPFdata.shape
+        x_vec, y_vec = np.arange(padnx * 1.)-curr_l,np.arange(padny* 1.)-curr_k
+        x_grid, y_grid = np.meshgrid(x_vec, y_vec)
+        x_data_grid, y_data_grid = x_grid[k-w:k+w+1,l-w:l+w+1], y_grid[k-w:k+w+1,l-w:l+w+1]
+
+        ###################################
+        ## Define planet model
+        nospec_planet_model = np.zeros(HPFdata.shape)
+        pl_x_vec = x_data_grid[0,:]
+        pl_y_vec = y_data_grid[:,0]
+        for z in range(data_nz):
+            nospec_planet_model[:,:,z] = normalized_psfs_func_list[z](pl_x_vec,pl_y_vec).transpose()
+
+        if fake_paras is not None:
+            c_kms = 299792.458
+            planet_model = copy(nospec_planet_model)
+            for bkg_k in range(2*w+1):
+                for bkg_l in range(2*w+1):
+
+                    wvs4planet_model = wvs*(1-fake_paras["RV"]/c_kms) \
+                                       -data_wvsol_offsets[bkg_k,bkg_l]
+                    planet_model[bkg_k,bkg_l,:] *= planet_model_func_table[0][0](wvs4planet_model) * \
+                        transmission4planet_list[0](wvs)
+            planet_model = planet_model/np.nansum(planet_model)*hr8799_flux
+
+            HPF_fake = np.zeros(planet_model.shape)
+            LPF_fake = np.zeros(planet_model.shape)
+            for bkg_k in range(2*w+1):
+                for bkg_l in range(2*w+1):
+                    LPF_fake[bkg_k,bkg_l,:],HPF_fake[bkg_k,bkg_l,:]  = LPFvsHPF(planet_model[bkg_k,bkg_l,:] ,cutoff)
+
+
+            HPFdata = HPFdata + HPF_fake*fake_paras["contrast"]
+            LPFdata = LPFdata + LPF_fake*fake_paras["contrast"]
+
+            # import matplotlib.pyplot as plt
+            # plt.figure(1)
+            # plt.plot(np.ravel(HPFdata),label="before HPFdata")
+            # plt.plot(np.ravel(HPFdata2),label="after HPFdata")
+            # plt.plot(np.ravel(HPFdata2-HPFdata),label="diff HPFdata")
+            # plt.legend()
+            # plt.figure(1)
+            # plt.plot(np.ravel(LPFdata),label="before LPFdata")
+            # plt.plot(np.ravel(LPFdata2),label="after LPFdata")
+            # plt.plot(np.ravel(LPFdata2-LPFdata),label="diff LPFdata")
+            # plt.legend()
+            #
+            # plt.show()
+
         data_R_calib = R_calib_arr[k-w:k+w+1,l-w:l+w+1]
         if model_persistence:
             data_persistence = persistence_np[k-w:k+w+1,l-w:l+w+1]
-        data_ny,data_nx,data_nz = HPFdata.shape
 
 
         # import matplotlib.pyplot as plt
@@ -328,17 +377,6 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
         # plt.legend()
         # plt.show()
 
-        x_vec, y_vec = np.arange(padnx * 1.)-curr_l,np.arange(padny* 1.)-curr_k
-        x_grid, y_grid = np.meshgrid(x_vec, y_vec)
-        x_data_grid, y_data_grid = x_grid[k-w:k+w+1,l-w:l+w+1], y_grid[k-w:k+w+1,l-w:l+w+1]
-
-        ###################################
-        ## Define planet model
-        nospec_planet_model = np.zeros(HPFdata.shape)
-        pl_x_vec = x_data_grid[0,:]
-        pl_y_vec = y_data_grid[:,0]
-        for z in range(data_nz):
-            nospec_planet_model[:,:,z] = normalized_psfs_func_list[z](pl_x_vec,pl_y_vec).transpose()
 
         #(4,padimgs.shape[-1],padny,padnx)
         #data
@@ -401,70 +439,87 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
                 enumerate(zip(transmission_table,planet_model_func_table,HR8799pho_spec_func_list,transmission4planet_list)):
             # print("coucou4")
 
-            line_list = []
-            for transmission in tr_list:
-                HR8799_obsspec = transmission(wvs) * \
-                                HR8799pho_spec_func(wvs)
-                LPF_HR8799_obsspec,HPF_HR8799_obsspec = LPFvsHPF(HR8799_obsspec,cutoff)
-
-                line_spec = HPF_HR8799_obsspec/LPF_HR8799_obsspec
-                if lpf_res_calib is not None:
-                    line_spec = line_spec*lpf_res_calib
-                # line_spec = HR8799_obsspec/LPF_HR8799_obsspec
-                line_list.append(line_spec)
+            # line_list = []
+            # for transmission in tr_list:
+            #     HR8799_obsspec = transmission(wvs) * \
+            #                     HR8799pho_spec_func(wvs)
+            #     LPF_HR8799_obsspec,HPF_HR8799_obsspec = LPFvsHPF(HR8799_obsspec,cutoff)
+            #
+            #     line_spec = HPF_HR8799_obsspec/LPF_HR8799_obsspec
+            #     if lpf_res_calib is not None:
+            #         line_spec = line_spec*lpf_res_calib
+            #     # line_spec = HR8799_obsspec/LPF_HR8799_obsspec
+            #     line_list.append(line_spec)
 
             for numbasis_id,numbasis in enumerate(numbasis_list):
                 # print("coucou5")
                 HPFmodelH0_list = []
-                if 1:
-                    meanline = np.nanmean(line_list,axis=0)
-                    mean_wherenans = np.where(np.isnan(meanline))
-                    for myline in line_list:
-                        wherenans = np.where(np.isnan(myline))
-                        myline[wherenans] = meanline[wherenans]
-                        myline[mean_wherenans] = 0
-
-                    covar_trans = np.cov(np.array(line_list))
-                    evals, evecs = la.eigh(covar_trans, eigvals=(len(line_list)-numbasis, len(line_list)-1))
-
-                    evals = np.copy(evals[::-1])
-                    evecs = np.copy(evecs[:,::-1], order='F') #fortran order to improve memory caching in matrix multiplication
-
-                    kl_basis = np.dot(np.array(line_list).T, evecs)
-                    kl_basis = kl_basis * (1. / np.sqrt(evals * (np.size(line_list[0]) - 1)))[None, :]  #multiply a value for each row
-                    kl_basis = kl_basis.T
-
-                    kl_basis[:,mean_wherenans[0]] = np.nan
-
-                    # import  matplotlib.pyplot as plt
-                    # plt.plot(meanline,label="mean")
-                    # for n in range(numbasis):
-                    #     plt.plot(kl_basis[n,:],label="{0}".format(n))
-                    # plt.legend()
-                    # plt.show()
-
-                    new_line_list = kl_basis
-
-                # new_line_list =np.concatenate([new_line_list,self_line_spec[None,:]])
-
-                # import matplotlib.pyplot as plt
-                # HPFdata[np.where(np.isnan(data_badpix))] = np.nan
-                # LPFdata[np.where(np.isnan(data_badpix))] = np.nan
-                # plt.subplot(3,1,1)
-                # plt.plot(np.nansum(HPFdata,axis=(0,1)))
-                # plt.subplot(3,1,2)
-                # plt.plot(np.nansum(LPFdata,axis=(0,1))*new_line_list[0])
-                # plt.subplot(3,1,3)
-                # plt.plot(np.nansum(data_sigmas,axis=(0,1)))
-                # plt.show()
+                # if 1:
+                #     meanline = np.nanmean(line_list,axis=0)
+                #     mean_wherenans = np.where(np.isnan(meanline))
+                #     for myline in line_list:
+                #         wherenans = np.where(np.isnan(myline))
+                #         myline[wherenans] = meanline[wherenans]
+                #         myline[mean_wherenans] = 0
+                #
+                #     covar_trans = np.cov(np.array(line_list))
+                #     evals, evecs = la.eigh(covar_trans, eigvals=(len(line_list)-numbasis, len(line_list)-1))
+                #
+                #     evals = np.copy(evals[::-1])
+                #     evecs = np.copy(evecs[:,::-1], order='F') #fortran order to improve memory caching in matrix multiplication
+                #
+                #     kl_basis = np.dot(np.array(line_list).T, evecs)
+                #     kl_basis = kl_basis * (1. / np.sqrt(evals * (np.size(line_list[0]) - 1)))[None, :]  #multiply a value for each row
+                #     kl_basis = kl_basis.T
+                #
+                #     kl_basis[:,mean_wherenans[0]] = np.nan
+                #
+                #     # import  matplotlib.pyplot as plt
+                #     # plt.plot(meanline,label="mean")
+                #     # for n in range(numbasis):
+                #     #     plt.plot(kl_basis[n,:],label="{0}".format(n))
+                #     # plt.legend()
+                #     # plt.show()
+                #
+                #     new_line_list = kl_basis
+                #
+                # # new_line_list =np.concatenate([new_line_list,self_line_spec[None,:]])
+                #
+                # # import matplotlib.pyplot as plt
+                # # HPFdata[np.where(np.isnan(data_badpix))] = np.nan
+                # # LPFdata[np.where(np.isnan(data_badpix))] = np.nan
+                # # plt.subplot(3,1,1)
+                # # plt.plot(np.nansum(HPFdata,axis=(0,1)))
+                # # plt.subplot(3,1,2)
+                # # plt.plot(np.nansum(LPFdata,axis=(0,1))*new_line_list[0])
+                # # plt.subplot(3,1,3)
+                # # plt.plot(np.nansum(data_sigmas,axis=(0,1)))
+                # # plt.show()
 
                     # plt.plot(line_spec,label="line_spec")
-                for line_spec in new_line_list:
+                # for line_spec in new_line_list:
+                transmission_vec = np.nanmean(np.array([tr(wvs) for tr in tr_list]),axis=0)
+                if 1:
                     bkg_model = np.zeros((2*w+1,2*w+1,2*w+1,2*w+1,data_nz))
                     for bkg_k in range(2*w+1):
                         for bkg_l in range(2*w+1):
-                            myspec = LPFdata[bkg_k,bkg_l,:]*line_spec
-                            tmp,myspec = LPFvsHPF(myspec,cutoff,nansmooth=30)
+
+                            HR8799_obsspec =transmission_vec * \
+                                            HR8799pho_spec_func(wvs-data_wvsol_offsets[bkg_k,bkg_l])
+                            if 1:
+                                smooth_model = median_filter(HR8799_obsspec,footprint=np.ones(50),mode="reflect")
+                                where_bad_pix_4model = np.where(np.isnan(data_badpix[bkg_k,bkg_l,:]))
+                                HR8799_obsspec[where_bad_pix_4model] = smooth_model[where_bad_pix_4model]
+                                HR8799_obsspec[np.where(np.isnan(HPFdata[bkg_k,bkg_l,:]))] = np.nan
+                            LPF_HR8799_obsspec,HPF_HR8799_obsspec = LPFvsHPF(HR8799_obsspec,cutoff)
+
+                            myspec = LPFdata[bkg_k,bkg_l,:]*HR8799_obsspec/LPF_HR8799_obsspec
+                            if 1:
+                                smooth_model = median_filter(myspec,footprint=np.ones(50),mode="reflect")
+                                where_bad_pix_4model = np.where(np.isnan(data_badpix[bkg_k,bkg_l,:]))
+                                myspec[where_bad_pix_4model] = smooth_model[where_bad_pix_4model]
+                                myspec[np.where(np.isnan(HPFdata[bkg_k,bkg_l,:]))] = np.nan
+                            _,myspec = LPFvsHPF(myspec,cutoff)
 
                             # plt.plot(myspec,label="model")
                             # plt.plot(HPFdata[bkg_k,bkg_l,:],label="HPFdata")
@@ -494,7 +549,7 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
                         resmodel = np.zeros((2*w+1,2*w+1,2*w+1,2*w+1,data_nz))
                         for bkg_k in range(2*w+1):
                             for bkg_l in range(2*w+1):
-                                myspec = LPFdata[bkg_k,bkg_l,:]*res4model*np.nanstd(new_line_list[-1])
+                                myspec = LPFdata[bkg_k,bkg_l,:]*res4model#*np.nanstd(new_line_list[-1])
                                 resmodel[bkg_k,bkg_l,bkg_k,bkg_l,:] = myspec
                                 # import matplotlib.pyplot as plt
                                 # print(bkg_k,bkg_l)
@@ -504,52 +559,46 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
 
                 HPFmodel_H0 = np.concatenate(HPFmodelH0_list,axis=1)
 
+                HPFmodel_H0_cp_4res = copy(HPFmodel_H0)
 
-
-                #planet spec extraction
-                if 1:
-                    where_finite_data_cube = np.where(np.isfinite(data_badpix))
-                    where_bad_data_cube = np.where(np.isnan(data_badpix))
-                    # HPFmodel_H0_4spec = np.reshape(bkg_model,((2*w+1)**2,(2*w+1)**2*data_nz)).transpose()[where_finite_data[0],:]
-                    # where_valid_parameters = np.where(np.sum(np.abs(HPFmodel_H0_4spec),axis=0)!=0)
-                    # HPFmodel_H0_4spec = HPFmodel_H0_4spec[:,where_valid_parameters[0]]
-                    # ravelHPFdata_4spec  = np.ravel(HPFdata)[where_finite_data]
-                    # HPFmodel_H0_4spec[np.where(np.isnan(HPFmodel_H0_4spec))]=0
-
-
-                    HPFmodel_H0_4spec_fd = HPFmodel_H0[where_finite_data[0],:]
-                    where_valid_parameters = np.where(np.sum(np.abs(HPFmodel_H0_4spec_fd),axis=0)!=0)
-                    HPFmodel_H0_4spec_fd = HPFmodel_H0_4spec_fd[:,where_valid_parameters[0]]
-                    ravelHPFdata_4spec  = np.ravel(HPFdata)[where_finite_data]
-                    HPFmodel_H0_4spec_fd[np.where(np.isnan(HPFmodel_H0_4spec_fd))]=0
-
-                    HPFparas_H0,HPFchi2_H0,rank,s = np.linalg.lstsq(HPFmodel_H0_4spec_fd/sigmas_vec[:,None],ravelHPFdata_4spec/sigmas_vec,rcond=None)
-                    # print(HPFparas_H0)
-
-                    data_model_H0 = np.dot(HPFmodel_H0[:,where_valid_parameters[0]],HPFparas_H0)
-                    where_nan_data_model_H0 = np.where(np.isnan(data_model_H0))
-                    data_model_H0[where_nan_data_model_H0] = 0
-                    canvas_data_model_H0 = np.reshape(data_model_H0,HPFdata.shape)
-                    canvas_residuals = HPFdata-canvas_data_model_H0
-                    canvas_residuals_with_nans = copy(canvas_residuals)
-                    canvas_residuals_with_nans = np.ravel(canvas_residuals_with_nans)
-                    canvas_residuals_with_nans[where_nan_data_model_H0] = np.nan
-                    canvas_residuals_with_nans = np.reshape(canvas_residuals_with_nans,HPFdata.shape)
-                    canvas_residuals_with_nans[where_bad_data_cube] = np.nan
-
-                    PSF = copy(nospec_planet_model)
-                    PSF = PSF/np.nansum(PSF,axis=(0,1))[None,None,:]
-                    PSF[where_bad_data_cube] = np.nan
-                    estispec_np[0,row,col,:] = np.nanmean(wvs[None,None,:]-data_wvsol_offsets[:,:,None],axis=(0,1))
-                    estispec_np[1,row,col,:] = np.nansum(canvas_residuals_with_nans*PSF,axis=(0,1))/np.nansum(PSF**2,axis=(0,1))#/tr4planet(wvs)
-
-                    outres_np[numbasis_id,model_id,0,:,row,col] = np.nanmean(HPFdata,axis=(0,1))
-                    outres_np[numbasis_id,model_id,1,:,row,col] = np.nanmean(canvas_data_model_H0,axis=(0,1))
-                    outres_np[numbasis_id,model_id,2,:,row,col] = 0#final_res
-                    outres_np[numbasis_id,model_id,3,:,row,col] = 0#final_planet
-                    outres_np[numbasis_id,model_id,4,:,row,col] = 0#final_sigmas
-                    outres_np[numbasis_id,model_id,5,:,row,col] = np.nanmean(LPFdata,axis=(0,1))
-                    outres_np[numbasis_id,model_id,6,:,row,col] = np.nanmean(canvas_residuals_with_nans,axis=(0,1))
+                # #planet spec extraction
+                # if 1:
+                #     where_bad_data_cube = np.where(np.isnan(data_badpix))
+                #
+                #     HPFmodel_H0_4spec_fd = HPFmodel_H0_cp_4res[where_finite_data[0],:]
+                #     where_valid_parameters = np.where(np.sum(np.abs(HPFmodel_H0_4spec_fd),axis=0)!=0)
+                #     HPFmodel_H0_4spec_fd = HPFmodel_H0_4spec_fd[:,where_valid_parameters[0]]
+                #     ravelHPFdata_4spec  = np.ravel(HPFdata)[where_finite_data]
+                #     HPFmodel_H0_4spec_fd[np.where(np.isnan(HPFmodel_H0_4spec_fd))]=0
+                #
+                #     HPFparas_H0,HPFchi2_H0,rank,s = np.linalg.lstsq(HPFmodel_H0_4spec_fd/sigmas_vec[:,None],ravelHPFdata_4spec/sigmas_vec,rcond=None)
+                #     # print(HPFparas_H0)
+                #
+                #     data_model_H0 = np.dot(HPFmodel_H0_cp_4res[:,where_valid_parameters[0]],HPFparas_H0)
+                #     where_nan_data_model_H0 = np.where(np.isnan(data_model_H0))
+                #     data_model_H0[where_nan_data_model_H0] = 0
+                #     canvas_data_model_H0 = np.reshape(data_model_H0,HPFdata.shape)
+                #     canvas_residuals = HPFdata-canvas_data_model_H0
+                #     canvas_residuals_with_nans = copy(canvas_residuals)
+                #     canvas_residuals_with_nans = np.ravel(canvas_residuals_with_nans)
+                #     canvas_residuals_with_nans[where_nan_data_model_H0] = np.nan
+                #     canvas_residuals_with_nans = np.reshape(canvas_residuals_with_nans,HPFdata.shape)
+                #     canvas_residuals_with_nans[where_bad_data_cube] = np.nan
+                #
+                #     PSF = copy(nospec_planet_model)
+                #     PSF = PSF/np.nansum(PSF,axis=(0,1))[None,None,:]
+                #     PSF[where_bad_data_cube] = np.nan
+                #     estispec_np[0,row,col,:] = np.nanmean(wvs[None,None,:]-data_wvsol_offsets[:,:,None],axis=(0,1))
+                #     estispec_np[1,row,col,:] = np.nansum(canvas_residuals_with_nans*PSF,axis=(0,1))/np.nansum(PSF**2,axis=(0,1))
+                #     estispec_np[2,row,col,:] = np.nansum(canvas_residuals_with_nans*PSF,axis=(0,1))/np.nansum(PSF**2,axis=(0,1))/tr4planet(wvs)
+                #
+                #     outres_np[numbasis_id,model_id,0,:,row,col] = np.nanmean(HPFdata,axis=(0,1))
+                #     outres_np[numbasis_id,model_id,1,:,row,col] = np.nanmean(canvas_data_model_H0,axis=(0,1))
+                #     outres_np[numbasis_id,model_id,2,:,row,col] = 0#final_res
+                #     outres_np[numbasis_id,model_id,3,:,row,col] = 0#final_planet
+                #     outres_np[numbasis_id,model_id,4,:,row,col] = 0#final_sigmas
+                #     outres_np[numbasis_id,model_id,5,:,row,col] = np.nanmean(LPFdata,axis=(0,1))
+                #     outres_np[numbasis_id,model_id,6,:,row,col] = np.nanmean(canvas_residuals_with_nans,axis=(0,1))
 
                 HPFmodel_H0 = HPFmodel_H0[where_finite_data[0],:]/sigmas_vec[:,None]
 
@@ -621,6 +670,11 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
                         where_valid_parameters = np.where(np.sum(np.abs(HPFmodel_H0),axis=0)!=0)
                         HPFmodel_H0 = HPFmodel_H0[:,where_valid_parameters[0]]
 
+                        # import matplotlib.pyplot as plt
+                        # plt.plot(np.abs(np.linalg.eigvalsh((np.dot(HPFmodel.T,HPFmodel)))),label="H1")
+                        # plt.plot(np.abs(np.linalg.eigvalsh((np.dot(HPFmodel_H0.T,HPFmodel_H0)))),label="H0")
+                        # plt.yscale("log")
+                        # plt.show()
 
                         HPFparas,HPFchi2,rank,s = np.linalg.lstsq(HPFmodel,ravelHPFdata,rcond=None)
                         HPFparas_H0,HPFchi2_H0,rank,s = np.linalg.lstsq(HPFmodel_H0,ravelHPFdata,rcond=None)
@@ -656,11 +710,43 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
                         # plt.show()
 
                         if plrv_id == noplrv_id:
-
-    
                             res_ccf = np.correlate(ravelresiduals,ravelresiduals,mode="same")
                             res_ccf_argmax = np.argmax(res_ccf)
                             outautocorrres_np[:,row,col] = res_ccf[(res_ccf_argmax-500):(res_ccf_argmax+500)]
+
+                            where_bad_data_cube = np.where(np.isnan(data_badpix))
+
+                            data_model_H0_allpix = np.dot(HPFmodel_H0_cp_4res[:,where_valid_parameters[0]],HPFparas_H0)
+                            where_nan_data_model_H0 = np.where(np.isnan(data_model_H0_allpix))
+                            data_model_H0_allpix[where_nan_data_model_H0] = 0
+                            canvas_data_model_H0 = np.reshape(data_model_H0_allpix,HPFdata.shape)
+                            canvas_residuals = HPFdata-canvas_data_model_H0
+                            canvas_residuals_with_nans = copy(canvas_residuals)
+                            canvas_residuals_with_nans = np.ravel(canvas_residuals_with_nans)
+                            canvas_residuals_with_nans[where_nan_data_model_H0] = np.nan
+                            canvas_residuals_with_nans = np.reshape(canvas_residuals_with_nans,HPFdata.shape)
+                            canvas_residuals_with_nans[where_bad_data_cube] = np.nan
+
+                            PSF = copy(nospec_planet_model)
+                            PSF = PSF/np.nansum(PSF,axis=(0,1))[None,None,:]
+                            PSF[where_bad_data_cube] = np.nan
+                            estispec_np[0,row,col,:] = np.nanmean(wvs[None,None,:]-data_wvsol_offsets[:,:,None],axis=(0,1))
+                            estispec_np[1,row,col,:] = np.nansum(canvas_residuals_with_nans*PSF,axis=(0,1))/np.nansum(PSF**2,axis=(0,1))
+                            estispec_np[2,row,col,:] = np.nansum(canvas_residuals_with_nans*PSF,axis=(0,1))/np.nansum(PSF**2,axis=(0,1))/tr4planet(wvs)
+                            if fake_paras is not None:
+                                estispec_np[3,row,col,:] = np.nansum(HPF_fake*fake_paras["contrast"],axis=(0,1))
+                                estispec_np[4,row,col,:] = np.nansum(HPF_fake*fake_paras["contrast"],axis=(0,1))/tr4planet(wvs)
+                            else:
+                                estispec_np[3,row,col,:] = np.nan
+                                estispec_np[4,row,col,:] = np.nan
+
+                            outres_np[numbasis_id,model_id,0,:,row,col] = np.nanmean(HPFdata,axis=(0,1))
+                            outres_np[numbasis_id,model_id,1,:,row,col] = np.nanmean(canvas_data_model_H0,axis=(0,1))
+                            outres_np[numbasis_id,model_id,2,:,row,col] = 0#final_res
+                            outres_np[numbasis_id,model_id,3,:,row,col] = 0#final_planet
+                            outres_np[numbasis_id,model_id,4,:,row,col] = 0#final_sigmas
+                            outres_np[numbasis_id,model_id,5,:,row,col] = np.nanmean(LPFdata,axis=(0,1))
+                            outres_np[numbasis_id,model_id,6,:,row,col] = np.nanmean(canvas_residuals_with_nans,axis=(0,1))
 
     
                         Npixs_HPFdata = HPFmodel.shape[0]
@@ -859,8 +945,8 @@ if __name__ == "__main__":
         # date = "150828"
         # planet = "51_Eri_b"
         # date = "171103"
-        planet = "kap_And"
-        date = "161106"
+        # planet = "kap_And"
+        # date = "161106"
         IFSfilter = "Kbb"
         # IFSfilter = "Hbb"
         # IFSfilter = "Jbb" # "Kbb" or "Hbb"
@@ -870,7 +956,8 @@ if __name__ == "__main__":
         inputDir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190520_LPF/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190906_HPF_restest2/"
-        outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190923_HPF_restest2/"
+        # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190923_HPF_restest2/"
+        outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20191018_HPF_faketest/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190305_HPF_only_noperscor/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190228_mol_temp/"
 
@@ -887,7 +974,7 @@ if __name__ == "__main__":
         # filelist = filelist[4:]
         # filelist = filelist[len(filelist)-3:len(filelist)-2]
 
-        res_numbasis = +1
+        res_numbasis = 5
         numthreads = 28
         planet_search = True
         debug_paras = True
@@ -898,6 +985,7 @@ if __name__ == "__main__":
         # planet_model_string = "CO"#"CO2 CO H2O CH4"
         # planet_model_string = "CO2 CO H2O CH4 joint"
         # planet_model_string = "CO joint"
+        inject_fakes = False
 
         osiris_data_dir = "/data/osiris_data"
     else:
@@ -910,6 +998,7 @@ if __name__ == "__main__":
         planet_model_string = sys.argv[7]
         debug_paras = bool(int(sys.argv[8]))
         res_numbasis = int(sys.argv[9])
+        inject_fakes = bool(int(sys.argv[10]))
 
         filelist = [filename]
         IFSfilter = filename.split("_")[-2]
@@ -936,6 +1025,7 @@ if __name__ == "__main__":
     plot_transmissions0 = copy(plot_transmissions)
     plt_psfs0 = copy(plt_psfs)
     plot_persistence0 = copy(plot_persistence)
+    inject_fakes0 = copy(inject_fakes)
     for res_it in range(2):
 
         osiris_data_dir = copy(osiris_data_dir0)
@@ -946,11 +1036,15 @@ if __name__ == "__main__":
         planet_model_string = copy(planet_model_string0)
         if res_it == 0:
             # continue
+            if res_numbasis == 0:
+                continue
             debug_paras = True
             res_numbasis = 0
+            inject_fakes = False
         else:
             debug_paras = copy(debug_paras0)
             res_numbasis = copy(res_numbasis0)
+            inject_fakes = copy(inject_fakes0)
         # print(res_numbasis)
         # exit()
         filelist = copy(filelist0)
@@ -1040,6 +1134,8 @@ if __name__ == "__main__":
                 imgs_hdrbadpix = np.rollaxis(np.rollaxis(hdulist[2].data,2),2,1)
                 imgs_hdrbadpix = return_64x19(imgs_hdrbadpix)
                 imgs_hdrbadpix = np.moveaxis(imgs_hdrbadpix,0,2)
+                imgs_hdrbadpix = imgs_hdrbadpix.astype(dtype=ctypes.c_double)
+                imgs_hdrbadpix[np.where(imgs_hdrbadpix==0)] = np.nan
             ny,nx,nz = imgs.shape
             init_wv = prihdr["CRVAL1"]/1000. # wv for first slice in mum
             dwv = prihdr["CDELT1"]/1000. # wv interval between 2 slices in mum
@@ -1555,7 +1651,7 @@ if __name__ == "__main__":
                     plt.show()
 
                 mean_transmission_func1 = interp1d(wvs,mean_transmission,bounds_error=False,fill_value=np.nan)
-                imgs_hdrbadpix[:,:,np.where(np.isnan(mean_transmission))[0]] = 0
+                imgs_hdrbadpix[:,:,np.where(np.isnan(mean_transmission))[0]] = np.nan
 
 
                 # refstar_name_filter = "*"
@@ -1780,8 +1876,8 @@ if __name__ == "__main__":
             badpix_imgs = mp.Array(dtype, np.size(padimgs))
             badpix_imgs_shape = padimgs.shape
             badpix_imgs_np = _arraytonumpy(badpix_imgs, badpix_imgs_shape,dtype=dtype)
-            badpix_imgs_np[:] = 0#padimgs_hdrbadpix
-            badpix_imgs_np[np.where(original_imgs_np==0)] = np.nan
+            badpix_imgs_np[:] = padimgs_hdrbadpix
+            # badpix_imgs_np[np.where(original_imgs_np==0)] = np.nan
             originalHPF_imgs = mp.Array(dtype, np.size(padimgs))
             originalHPF_imgs_shape = padimgs.shape
             originalHPF_imgs_np = _arraytonumpy(originalHPF_imgs, originalHPF_imgs_shape,dtype=dtype)
@@ -1810,11 +1906,11 @@ if __name__ == "__main__":
             out1dfit_np = _arraytonumpy(out1dfit,out1dfit_shape,dtype=dtype)
             out1dfit_np[:] = np.nan
             if planet_search:
-                estispec = mp.Array(dtype, 2*padny*padnx*padimgs.shape[-1])
-                estispec_shape = (2,padny,padnx,padimgs.shape[-1])
+                estispec = mp.Array(dtype, 5*padny*padnx*padimgs.shape[-1])
+                estispec_shape = (5,padny,padnx,padimgs.shape[-1])
             else:
-                estispec = mp.Array(dtype, 2*dl_grid.shape[0]*dl_grid.shape[1]*padimgs.shape[-1])
-                estispec_shape = (2,dl_grid.shape[0],dl_grid.shape[1],padimgs.shape[-1])
+                estispec = mp.Array(dtype, 5*dl_grid.shape[0]*dl_grid.shape[1]*padimgs.shape[-1])
+                estispec_shape = (5,dl_grid.shape[0],dl_grid.shape[1],padimgs.shape[-1])
             estispec_np = _arraytonumpy(estispec,estispec_shape,dtype=dtype)
             estispec_np[:] = np.nan
             if planet_search:
@@ -2184,6 +2280,8 @@ if __name__ == "__main__":
             ressuffix = suffix + "_rescalc"
             if res_it == 0:
                 suffix = ressuffix
+            else:
+                suffix = suffix+"_resinmodel_kl{0}".format(res_numbasis)
             if res_numbasis <= -1:
                 # s171103_a023002_Hbb_020_outputHPF_cutoff40_sherlock_v1_search_res
                 # res_filename = os.path.join(outputdir,os.path.basename(filename).replace(".fits","_output"+ressuffix+"_res.fits"))
@@ -2211,6 +2309,13 @@ if __name__ == "__main__":
                     hpf = hdulist[0].data[0,0,0,:,:,:]
                     lpf = hdulist[0].data[0,0,5,:,:,:]
                     hpfres = hdulist[0].data[0,0,6,:,:,:]
+
+                res_filelist = glob.glob(os.path.join(outputdir,os.path.basename(filename).replace(".fits","")+"*_output"+ressuffix+"_estispec.fits"))
+                # res_filelist = glob.glob(os.path.join(outputdir,os.path.basename(filename).replace(".fits","")+"*_output"+"*kl1*"+"_res.fits"))
+                res_filename = res_filelist[0]
+                with pyfits.open(res_filename) as hdulist:
+                    hpfres = hdulist[0].data[1,:,:,:]
+                    hpfres = np.pad(hpfres,((0,0),(padding,padding),(padding,padding)),mode="constant",constant_values=0)
                 res4model = hpfres/lpf
 
                 # import matplotlib.pyplot as plt
@@ -2238,10 +2343,11 @@ if __name__ == "__main__":
                 print(X.shape)
                 # exit()
 
+
             if res_numbasis != 0:
-                suffix = suffix+"_resinmodel_kl{0}".format(res_numbasis)
-                X[np.where(np.isnan(X))] = 0
                 X = X[np.where(np.nansum(X,axis=1)!=0)[0],:]
+                X = X/np.nanstd(X,axis=1)[:,None]
+                X[np.where(np.isnan(X))] = 0
 
                 # lpf = np.nanmean(lpf,axis=(1,2))
                 # lpf_res,_ = LPFvsHPF(np.nanmean(X,axis=0),cutoff,nansmooth=30)
@@ -2270,7 +2376,8 @@ if __name__ == "__main__":
                 # res4model = res4model/np.nanstd(res4model)
 
                 # import matplotlib.pyplot as plt
-                # plt.plot(-res4model_kl[:,0]/np.nanstd(res4model_kl[:,0]),label="0")
+                # # plt.plot(wvs,-np.nanmean(X,axis=0)/np.nanstd(np.nanmean(X,axis=0)),label="0")
+                # plt.plot(wvs,res4model_kl[:,0]/np.nanstd(res4model_kl[:,0]),label="0")
                 # # plt.plot(-res4model_kl[:,1]/np.nanstd(res4model_kl[:,1]),label="1")
                 # # plt.plot(-res4model_kl[:,2]/np.nanstd(res4model_kl[:,2]),label="2")
                 # # plt.plot(res4model/np.nanstd(res4model),label="ref")
@@ -2283,6 +2390,24 @@ if __name__ == "__main__":
                 lpf_res_calib = None
             # print(res4model)
             # exit()
+
+            ##############################
+            ## Define fakes
+            ##############################
+            if inject_fakes:
+                try:
+                # if 1:
+                    contrast_id = colnames.index("contrast")
+                    RVcen_id = colnames.index("RVcen")
+                    contrast,RVcen = float(list_data[fileid][contrast_id]),float(list_data[fileid][RVcen_id])
+                    fake_paras = {"contrast":contrast,"RV":RVcen}
+                    suffix = suffix+"_fakes"
+                except:
+                    print("Cannot inject fake planets")
+                    exit()
+            else:
+                fake_paras = None
+
 
             ##############################
             ## Define tasks
@@ -2317,6 +2442,11 @@ if __name__ == "__main__":
             ##############################
             if 0 or debug:
                 print("coucou1")
+                plcen_k,plcen_l = 30+padding,10+padding
+                plcen_k_valid_pix = [plcen_k]
+                plcen_l_valid_pix = [plcen_l]
+                row_valid_pix = [plcen_k]
+                col_valid_pix = [plcen_l]
                 # print(planetRV_array)
                 # exit()
                 tpool.close()
@@ -2333,7 +2463,7 @@ if __name__ == "__main__":
                                         wvs_imgs,planetRV_array,
                                         dtype,cutoff,planet_search,(plcen_k,plcen_l),
                                         R_list,
-                                        numbasis_list,wvsol_offsets,R_calib_arr,model_persistence=model_persistence,res4model_kl=res4model_kl,lpf_res_calib=lpf_res_calib)
+                                        numbasis_list,wvsol_offsets,R_calib_arr,model_persistence=model_persistence,res4model_kl=res4model_kl,lpf_res_calib=lpf_res_calib,fake_paras=fake_paras)
                 exit()
             else:
                 chunk_size = 5#N_valid_pix//(3*numthreads)
@@ -2363,7 +2493,7 @@ if __name__ == "__main__":
                                                                           dtype,cutoff,planet_search,(plcen_k,plcen_l),
                                                                           R_list,
                                                                           numbasis_list,wvsol_offsets,R_calib_arr,
-                                                                          model_persistence,res4model_kl,lpf_res_calib))
+                                                                          model_persistence,res4model_kl,lpf_res_calib,fake_paras))
                          for plcen_k_indices, plcen_l_indices, row_indices, col_indices in zip(plcen_k_indices_list,plcen_l_indices_list, row_indices_list, col_indices_list)]
                 #save it to shared memory
                 for row_index, proc_pixs_task in enumerate(tasks):

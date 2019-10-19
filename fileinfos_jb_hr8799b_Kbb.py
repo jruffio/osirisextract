@@ -559,10 +559,16 @@ if 1:
     # dwv = CDELT1/1000.
     # init_wv = CRVAL1/1000. # wv for first slice in mum
 
-    suffix = "_outputHPF_cutoff40_sherlock_v1_search"
-    # myfolder = "sherlock/20190412_HPF_only"
-    # myfolder = "sherlock/20190416_HPF_only"
-    myfolder = "sherlock/20190416_no_persis_corr"
+    numbasis = 0#1,3,5
+    if numbasis ==0:
+        suffix = "_outputHPF_cutoff40_sherlock_v1_search"
+        # myfolder = "sherlock/20190412_HPF_only"
+        # myfolder = "sherlock/20190416_HPF_only"
+        myfolder = "sherlock/20190416_no_persis_corr"
+    else:
+        myfolder = "sherlock/20191010_resH0model_RV"
+        # myfolder = "sherlock/20191012_resH0model_RV"
+        suffix = "_outputHPF_cutoff40_sherlock_v1_search_resinmodel_kl{0}".format(numbasis)
     for k,item in enumerate(old_list_data):
         filename = item[filename_id]
         print(filename)
@@ -574,6 +580,11 @@ if 1:
             hdulist = pyfits.open(os.path.join(os.path.dirname(filename),myfolder,
                                            os.path.basename(filename).replace(".fits",suffix+"_planetRV.fits")))
         except:
+            new_list_data[k][kcen_id] = np.nan
+            new_list_data[k][lcen_id] = np.nan
+            new_list_data[k][rvcen_id],new_list_data[k][rvcensig_id] = np.nan,np.nan
+            new_list_data[k][cen_filename_id] = np.nan
+            new_list_data[k][snr_id] = np.nan
             continue
         planetRV = hdulist[0].data
         print(hdulist[0].data.shape)
@@ -652,6 +663,8 @@ print(new_colnames)
 # exit()
 
 #Save NEW file
+if numbasis !=0:
+    fileinfos_filename = fileinfos_filename.replace(".csv","_kl{0}.csv".format(numbasis))
 with open(fileinfos_filename, 'w+') as csvfile:
     csvwriter = csv.writer(csvfile, delimiter=';')
     csvwriter.writerows([new_colnames])
