@@ -665,9 +665,13 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
 
                         # print(np.sum(np.abs(HPFmodel),axis=0))
                         # print(np.sum(np.abs(HPFmodel),axis=0)!=0)
-                        where_valid_parameters = np.where(np.sum(np.abs(HPFmodel),axis=0)!=0)
+                        # where_valid_parameters = np.where(np.nansum(np.abs(HPFmodel),axis=0)!=0)
+                        # HPFmodel = HPFmodel[:,where_valid_parameters[0]]
+                        # where_valid_parameters = np.where(np.nansum(np.abs(HPFmodel_H0),axis=0)!=0)
+                        # HPFmodel_H0 = HPFmodel_H0[:,where_valid_parameters[0]]
+                        where_valid_parameters = np.where(np.nansum(np.abs(HPFmodel)>0,axis=0)>=50)
                         HPFmodel = HPFmodel[:,where_valid_parameters[0]]
-                        where_valid_parameters = np.where(np.sum(np.abs(HPFmodel_H0),axis=0)!=0)
+                        where_valid_parameters = np.where(np.nansum(np.abs(HPFmodel_H0)>0,axis=0)>50)
                         HPFmodel_H0 = HPFmodel_H0[:,where_valid_parameters[0]]
 
                         # import matplotlib.pyplot as plt
@@ -754,7 +758,7 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
                         minus2logL_HPF_H0 = Npixs_HPFdata*(1+np.log(HPFchi2_H0/Npixs_HPFdata)+logdet_Sigma+np.log(2*np.pi))
                         AIC_HPF = 2*(HPFmodel.shape[-1])+minus2logL_HPF
                         AIC_HPF_H0 = 2*(HPFmodel_H0.shape[-1])+minus2logL_HPF_H0
-    
+
                         covphi =  HPFchi2/Npixs_HPFdata*np.linalg.inv(np.dot(HPFmodel.T,HPFmodel))
                         slogdet_icovphi0 = np.linalg.slogdet(np.dot(HPFmodel.T,HPFmodel))
 
@@ -929,8 +933,8 @@ if __name__ == "__main__":
         # date = "130727"
         # date = "161106"
         # date = "180722"
-        planet = "HR_8799_c"
-        date = "100715"
+        # planet = "HR_8799_c"
+        # date = "100715"
         # date = "101028"
         # date = "101104"
         # date = "110723"
@@ -945,8 +949,8 @@ if __name__ == "__main__":
         # date = "150828"
         # planet = "51_Eri_b"
         # date = "171103"
-        # planet = "kap_And"
-        # date = "161106"
+        planet = "kap_And"
+        date = "161106"
         IFSfilter = "Kbb"
         # IFSfilter = "Hbb"
         # IFSfilter = "Jbb" # "Kbb" or "Hbb"
@@ -974,7 +978,7 @@ if __name__ == "__main__":
         # filelist = filelist[4:]
         # filelist = filelist[len(filelist)-3:len(filelist)-2]
 
-        res_numbasis = 5
+        res_numbasis = 1
         numthreads = 28
         planet_search = True
         debug_paras = True
@@ -2442,11 +2446,12 @@ if __name__ == "__main__":
             ##############################
             if 0 or debug:
                 print("coucou1")
-                plcen_k,plcen_l = 30+padding,10+padding
-                plcen_k_valid_pix = [plcen_k]
-                plcen_l_valid_pix = [plcen_l]
-                row_valid_pix = [plcen_k]
-                col_valid_pix = [plcen_l]
+                # plcen_k,plcen_l = 30+padding,10+padding
+                # plcen_k_valid_pix = [plcen_k]
+                # plcen_l_valid_pix = [plcen_l]
+                # row_valid_pix = [plcen_k]
+                # col_valid_pix = [plcen_l]
+
                 # print(planetRV_array)
                 # exit()
                 tpool.close()

@@ -159,8 +159,17 @@ if 1:
             # rv_per_pix = 3e5*dwv/(init_wv+dwv*nl//2) # 38.167938931297705
 
             hdulist = pyfits.open(reducfilename)
-            cube_hd = hdulist[0].data[-1,0,0,0:NplanetRV_hd,:,:]
-            cube = hdulist[0].data[-1,0,0,NplanetRV_hd::,:,:]
+            print(hdulist[0].data.shape)
+            # cube_hd = hdulist[0].data[-1,0,0,0:NplanetRV_hd,:,:]
+            # cube = hdulist[0].data[-1,0,0,NplanetRV_hd::,:,:]
+
+            cube_hd = hdulist[0].data[-1,0,2,0:NplanetRV_hd,:,:]-hdulist[0].data[-1,0,1,0:NplanetRV_hd,:,:]
+            cube = hdulist[0].data[-1,0,2,NplanetRV_hd::,:,:]-hdulist[0].data[-1,0,1,NplanetRV_hd::,:,:]
+            cube_cp = copy(cube)
+            cube_cp[np.where(np.abs(planetRV)<500)[0],:,:] = np.nan
+            offsets = np.nanmedian(cube_cp,axis=0)[None,:,:]
+            cube_hd = cube_hd - offsets
+            cube = cube - offsets
 
             bary_rv = -float(item[bary_rv_id])/1000. # RV in km/s
             rv_star = -12.6#-12.6+-1.4km/s HR 8799 Rob and Simbad
@@ -194,6 +203,7 @@ if 1:
                 plt.clim([0,np.max([np.nanstd(cube_hd)*10,30])])
             except:
                 plt.clim([0,np.max([np.nanstd(image)*10,30])])
+            plt.clim([0,100])
             plt.xticks([0,10])
 
 
@@ -249,7 +259,7 @@ if 1:
         plt.gca().spines["bottom"].set_visible(False)
 
     f.subplots_adjust(wspace=0,hspace=0)
-    # plt.show()
+    plt.show()
     if not os.path.exists(os.path.join(out_pngs,planet)):
         os.makedirs(os.path.join(out_pngs,planet))
     print("Saving "+os.path.join(out_pngs,planet,planet+"_"+suffix+"_images_kl{0}.pdf".format(resnumbasis)))

@@ -410,6 +410,12 @@ if 1:
         new_colnames.append("snr")
         new_list_data = [item+[np.nan,] for item in new_list_data]
         snr_id = new_colnames.index("snr")
+    try:
+        contrast_id = old_colnames.index("contrast")
+    except:
+        new_colnames.append("contrast")
+        new_list_data = [item+[np.nan,] for item in new_list_data]
+        contrast_id = new_colnames.index("contrast")
 
     filename_id = new_colnames.index("filename")
     bary_rv_id = new_colnames.index("barycenter rv")
@@ -428,14 +434,16 @@ if 1:
     # dwv = CDELT1/1000.
     # init_wv = CRVAL1/1000. # wv for first slice in mum
 
-    numbasis = 5#1,3,5
-    if numbasis ==0:
-        myfolder = "sherlock/20191010_normal"
-        suffix = "_outputHPF_cutoff40_sherlock_v1_search"
-    else:
-        myfolder = "sherlock/20191010_resH0model_RV"
-        # myfolder = "sherlock/20191012_resH0model_RV"
-        suffix = "_outputHPF_cutoff40_sherlock_v1_search_resinmodel_kl{0}".format(numbasis)
+    numbasis = 0#1,3,5
+    myfolder = "sherlock/20191018_RVsearch"
+    suffix = "_outputHPF_cutoff40_sherlock_v1_search_resinmodel_kl{0}".format(numbasis)
+    # if numbasis ==0:
+    #     myfolder = "sherlock/20191010_normal"
+    #     suffix = "_outputHPF_cutoff40_sherlock_v1_search"
+    # else:
+    #     myfolder = "sherlock/20191010_resH0model_RV"
+    #     # myfolder = "sherlock/20191012_resH0model_RV"
+    #     suffix = "_outputHPF_cutoff40_sherlock_v1_search_resinmodel_kl{0}".format(numbasis)
     for k,item in enumerate(old_list_data):
         filename = item[filename_id]
         print(filename)
@@ -523,12 +531,16 @@ if 1:
             snr_std = np.nanstd(snr_cube)
             new_list_data[k][snr_id] = snr_cube_hd[argmax_post,ymax,xmax]/snr_std
             # print(new_list_data[k][rvcen_id],planetRV_hd[zmax],planetRV_hd[zmax]-(bary_rv+rv_star))
+
+            contrast_cube_hd = hdulist[0].data[-1,0,11,0:NplanetRV_hd,:,:]
+            new_list_data[k][contrast_id] = contrast_cube_hd[argmax_post,ymax,xmax]*1e-5
         except:
             new_list_data[k][kcen_id] = np.nan
             new_list_data[k][lcen_id] = np.nan
             new_list_data[k][rvcen_id],new_list_data[k][rvcensig_id] = np.nan,np.nan
             new_list_data[k][cen_filename_id] = np.nan
             new_list_data[k][snr_id] = np.nan
+            new_list_data[k][contrast_id] = np.nan
 
 print("NEW")
 for item in new_list_data:
