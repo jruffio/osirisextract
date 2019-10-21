@@ -1063,7 +1063,7 @@ if __name__ == "__main__":
         molecular_template_folder = os.path.join(osiris_data_dir,"molecular_templates")
         sky_transmission_folder = os.path.join(osiris_data_dir,"sky_transmission")
         ref_star_folder = os.path.join(os.path.dirname(filelist[0]),"..","reduced_telluric_jb")
-        if res_numbasis == 0:
+        if res_numbasis == 0 or (not inject_fakes):
             fileinfos_filename = os.path.join(inputDir,"..","..","fileinfos_Kbb_jb.csv")
         else:
             fileinfos_filename = os.path.join(inputDir,"..","..","fileinfos_Kbb_jb_kl{0}.csv".format(res_numbasis))
