@@ -139,11 +139,11 @@ if 1:
         # print(reducfilename)
         # exit()
 
-        if "HR_8799" in planet:
-            if resnumbasis == 0 :
-                reducfilename = reducfilename.replace("20190416_no_persis_corr","20190920_resH0model_detec").replace("_outputHPF_cutoff40_sherlock_v1_search","_outputHPF_cutoff40_sherlock_v1_search_rescalc")
-            else:
-                reducfilename = reducfilename.replace("20190416_no_persis_corr","20190920_resH0model_detec").replace("_outputHPF_cutoff40_sherlock_v1_search","_outputHPF_cutoff40_sherlock_v1_search_resinmodel_kl{0}".format(resnumbasis))
+        # if "HR_8799" in planet:
+        #     if resnumbasis == 0 :
+        #         reducfilename = reducfilename.replace("20190416_no_persis_corr","20190920_resH0model_detec").replace("_outputHPF_cutoff40_sherlock_v1_search","_outputHPF_cutoff40_sherlock_v1_search_rescalc")
+        #     else:
+        #         reducfilename = reducfilename.replace("20190416_no_persis_corr","20190920_resH0model_detec").replace("_outputHPF_cutoff40_sherlock_v1_search","_outputHPF_cutoff40_sherlock_v1_search_resinmodel_kl{0}".format(resnumbasis))
         # exit()
 
         try:
