@@ -504,6 +504,7 @@ def get_err_from_posterior(x,posterior):
         rx = rf(1-0.6827)
     return x[argmax_post],(rx-lx)/2.,argmax_post
 
+numbasis=0
 if 1:
     from scipy.signal import correlate2d
     try:
@@ -548,6 +549,18 @@ if 1:
         new_colnames.append("contrast")
         new_list_data = [item+[np.nan,] for item in new_list_data]
         contrast_id = new_colnames.index("contrast")
+    try:
+        RVfakes_id = old_colnames.index("RVfakes")
+    except:
+        new_colnames.append("RVfakes")
+        new_list_data = [item+[np.nan,] for item in new_list_data]
+        RVfakes_id = new_colnames.index("RVfakes")
+    try:
+        RVfakessig_id = old_colnames.index("RVfakessig")
+    except:
+        new_colnames.append("RVfakessig")
+        new_list_data = [item+[np.nan,] for item in new_list_data]
+        RVfakessig_id = new_colnames.index("RVfakessig")
 
     filename_id = new_colnames.index("filename")
     bary_rv_id = new_colnames.index("barycenter rv")
@@ -567,15 +580,17 @@ if 1:
     # init_wv = CRVAL1/1000. # wv for first slice in mum
 
     numbasis = 0#1,3,5
-    if numbasis ==0:
-        suffix = "_outputHPF_cutoff40_sherlock_v1_search"
-        # myfolder = "sherlock/20190401_HPF_only"
-        # myfolder = "sherlock/20190412_HPF_only"
-        # myfolder = "sherlock/20190416_HPF_only"
-        myfolder = "sherlock/20190416_no_persis_corr"
-    else:
-        myfolder = "sherlock/20190925_resH0model_RV"
-        suffix = "_outputHPF_cutoff40_sherlock_v1_search_resinmodel_kl{0}".format(numbasis)
+    myfolder = "sherlock/20191018_RVsearch"
+    suffix = "_outputHPF_cutoff40_sherlock_v1_search_resinmodel_kl{0}".format(numbasis)
+    # if numbasis ==0:
+    #     suffix = "_outputHPF_cutoff40_sherlock_v1_search"
+    #     # myfolder = "sherlock/20190401_HPF_only"
+    #     # myfolder = "sherlock/20190412_HPF_only"
+    #     # myfolder = "sherlock/20190416_HPF_only"
+    #     myfolder = "sherlock/20190416_no_persis_corr"
+    # else:
+    #     myfolder = "sherlock/20190925_resH0model_RV"
+    #     suffix = "_outputHPF_cutoff40_sherlock_v1_search_resinmodel_kl{0}".format(numbasis)
     for k,item in enumerate(old_list_data):
         filename = item[filename_id]
         print(filename)
@@ -593,6 +608,13 @@ if 1:
             print(os.path.join(os.path.dirname(filename),myfolder,
                                            os.path.basename(filename).replace(".fits",suffix+"_planetRV.fits")))
         except:
+            new_list_data[k][kcen_id] = np.nan
+            new_list_data[k][lcen_id] = np.nan
+            new_list_data[k][rvcen_id],new_list_data[k][rvcensig_id] = np.nan,np.nan
+            new_list_data[k][cen_filename_id] = np.nan
+            new_list_data[k][snr_id] = np.nan
+            new_list_data[k][contrast_id] = np.nan
+            new_list_data[k][RVfakes_id],new_list_data[k][RVfakessig_id] = np.nan,np.nan
             continue
         planetRV = hdulist[0].data
         # print(hdulist[0].data.shape)
@@ -605,6 +627,12 @@ if 1:
                                            os.path.basename(filename).replace(".fits",suffix+".fits")))
         cube_hd = hdulist[0].data[-1,0,0,0:NplanetRV_hd,:,:]
         cube = hdulist[0].data[-1,0,0,NplanetRV_hd::,:,:]
+        if 1:
+            cube_cp = copy(cube)
+            cube_cp[np.where(np.abs(planetRV)<500)[0],:,:] = np.nan
+            offsets = np.nanmedian(cube_cp,axis=0)[None,:,:]
+            cube_hd = cube_hd - offsets
+            cube = cube - offsets
 
         bary_rv = -float(item[bary_rv_id])/1000. # RV in km/s
         rv_star = -12.6#-12.6+-1.4km/s HR 8799 Rob and Simbad
@@ -639,6 +667,36 @@ if 1:
             logposterior = hdulist[0].data[-1,0,9,0:NplanetRV_hd,ymax,xmax]
             posterior = np.exp(logposterior-np.nanmax(logposterior))
 
+
+
+            try:
+                hdulist_fakes = pyfits.open(os.path.join(os.path.dirname(filename),myfolder,
+                                                   os.path.basename(filename).replace(".fits",suffix+"_fakes.fits")))
+                logposterior_fakes = hdulist_fakes[0].data[-1,0,9,0:NplanetRV_hd,:,:]
+                logposterior_fakes[:,np.max([ymax-6,0]):np.min([ymax+7,ny]),np.max([xmax-6,0]):np.min([xmax+7,ny])] = np.nan
+                # logposterior_fakes[:,:,0:np.max([xmax-8,0])] = np.nan
+                # logposterior_fakes[:,:,np.min([xmax+8,ny])::] = np.nan
+                # logposterior_fakes[:,0:np.max([ymax-8,0]),:] = np.nan
+                # logposterior_fakes[:,np.min([ymax+8,ny])::,:] = np.nan
+                logposterior_fakes = np.reshape(logposterior_fakes,(NplanetRV_hd,ny*nx))
+                logposterior_fakes = logposterior_fakes[:,np.where(np.nansum(logposterior_fakes,axis=0)!=0)[0]]
+                posterior_fakes = np.exp(logposterior_fakes-np.nanmax(logposterior_fakes,axis=0)[None,:])
+                fakes_rvcen = np.array([ planetRV_hd[rvargmax] for rvargmax in np.argmax(logposterior_fakes,axis=0)])
+                fakes_rvcen[np.where(fakes_rvcen == fakes_rvcen[0])] = np.nan
+                new_list_data[k][RVfakes_id],new_list_data[k][RVfakessig_id] = np.nanmean(fakes_rvcen),np.nanstd(fakes_rvcen)
+                # tmp = np.reshape(fakes_rvcen,(ny,nx))
+                # plt.imshow(tmp)
+                # plt.clim([np.nanmean(tmp)-np.nanstd(tmp),np.nanmean(tmp)+np.nanstd(tmp)])
+                # plt.colorbar()
+                # plt.show()
+                # for fkpostid in range(posterior_fakes.shape[1]):
+                #     plt.plot(planetRV_hd,posterior_fakes[:,fkpostid],label="{0}".format(fkpostid),alpha = 0.2)
+                # plt.plot(planetRV_hd,posterior,label="planet",alpha = 1,linewidth=3)
+                # plt.show()
+                # exit()
+            except:
+                new_list_data[k][RVfakes_id],new_list_data[k][RVfakessig_id] = np.nan,np.nan
+
             new_list_data[k][kcen_id] = ymax
             new_list_data[k][lcen_id] = xmax
             new_list_data[k][rvcen_id],new_list_data[k][rvcensig_id],argmax_post = get_err_from_posterior(planetRV_hd,posterior)
@@ -661,6 +719,7 @@ if 1:
             new_list_data[k][cen_filename_id] = np.nan
             new_list_data[k][snr_id] = np.nan
             new_list_data[k][contrast_id] = np.nan
+            new_list_data[k][RVfakes_id],new_list_data[k][RVfakessig_id] = np.nan,np.nan
 
 print("NEW")
 for item in new_list_data:

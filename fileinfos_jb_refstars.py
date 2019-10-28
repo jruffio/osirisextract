@@ -60,7 +60,7 @@ if 1: # add filename
     for filename in filelist:
         if filename not in old_filelist:
             new_list_data.append([filename,]+[np.nan,]*(N_col-1))
-    print(new_list_data)
+    # print(new_list_data)
     # exit()
 
 if 1: # add filename for ao off
@@ -75,7 +75,7 @@ if 1: # add filename for ao off
     for filename in filelist:
         if filename not in old_filelist:
             new_list_data.append([filename,]+[np.nan,]*(N_col-1))
-    print(new_list_data)
+    # print(new_list_data)
 
 #sort files
 if 1:

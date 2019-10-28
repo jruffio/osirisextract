@@ -50,7 +50,7 @@ new_list_data = copy(old_list_data)
 for item in old_list_table:
     print(item)
 
-if 0: # add filename
+if 1: # add filename
     filename_id = new_colnames.index("filename")
     old_filelist = [item[filename_id] for item in new_list_data]
 
@@ -62,7 +62,7 @@ if 0: # add filename
             new_list_data.append([filename,]+[np.nan,]*(N_col-1))
     print(new_list_data)
 
-if 0: # add spectral band
+if 1: # add spectral band
     filename_id = new_colnames.index("filename")
     try:
         ifs_filter_id = new_colnames.index("IFS filter")
@@ -80,7 +80,7 @@ if 0: # add spectral band
             new_list_data[k][ifs_filter_id] = "Kbb"
 
 #sort files
-if 0:
+if 1:
     filename_id = new_colnames.index("filename")
     filelist = [item[filename_id] for item in new_list_data]
     filelist_sorted = copy(filelist)
@@ -93,7 +93,7 @@ if 0:
 
     new_list_data = new_new_list_data
 
-if 0: # add MJD-OBS
+if 1: # add MJD-OBS
     filename_id = new_colnames.index("filename")
     MJDOBS_id = new_colnames.index("MJD-OBS")
 
@@ -102,7 +102,7 @@ if 0: # add MJD-OBS
         prihdr0 = hdulist[0].header
         new_list_data[k][MJDOBS_id] = prihdr0["MJD-OBS"]
 
-if 0: # add Temperature
+if 1: # add Temperature
     filename_id = new_colnames.index("filename")
     try:
         DTMP6_id = new_colnames.index("DTMP6")
@@ -116,7 +116,7 @@ if 0: # add Temperature
         prihdr0 = hdulist[0].header
         new_list_data[k][DTMP6_id] = prihdr0["DTMP7"]
 
-if 0: # add exposure time
+if 1: # add exposure time
     filename_id = new_colnames.index("filename")
     try:
         itime_id = new_colnames.index("itime")
@@ -133,7 +133,7 @@ if 0: # add exposure time
         else:
             new_list_data[k][itime_id] = float(prihdr0["ITIME"])
 
-if 0: # add barycenter RV
+if 1: # add barycenter RV
     from barycorrpy import get_BC_vel
     filename_id = new_colnames.index("filename")
     MJDOBS_id = new_colnames.index("MJD-OBS")
@@ -179,7 +179,22 @@ if 1: # add filename
                         ["/data/osiris_data/51_Eri_b/20171103/reduced_jb/s171103_a071002_Kbb_020.fits",2,0,0],
                         ["/data/osiris_data/51_Eri_b/20171103/reduced_jb/s171103_a072002_Kbb_020.fits",2,1,0],
                         ["/data/osiris_data/51_Eri_b/20171103/reduced_jb/s171103_a073002_Kbb_020.fits",2,2,0],
-                        ["/data/osiris_data/51_Eri_b/20171103/reduced_jb/s171103_a074002_Kbb_020.fits",2,3,0],]
+                        ["/data/osiris_data/51_Eri_b/20171103/reduced_jb/s171103_a074002_Kbb_020.fits",2,3,0],
+                        ["/data/osiris_data/51_Eri_b/20171104/reduced_jb/s171104_a054002_Kbb_020.fits",3,0,0],
+                        ["/data/osiris_data/51_Eri_b/20171104/reduced_jb/s171104_a055002_Kbb_020.fits",3,1,0],
+                        ["/data/osiris_data/51_Eri_b/20171104/reduced_jb/s171104_a056002_Kbb_020.fits",3,2,0],
+                        ["/data/osiris_data/51_Eri_b/20171104/reduced_jb/s171104_a057002_Kbb_020.fits",3,3,0],
+                        ["/data/osiris_data/51_Eri_b/20171104/reduced_jb/s171104_a058002_Kbb_020.fits",3,4,0],
+                        ["/data/osiris_data/51_Eri_b/20171104/reduced_jb/s171104_a059002_Kbb_020.fits",3,5,0],
+                        ["/data/osiris_data/51_Eri_b/20171104/reduced_jb/s171104_a060002_Kbb_020.fits",3,6,0],
+                        ["/data/osiris_data/51_Eri_b/20171104/reduced_jb/s171104_a061002_Kbb_020.fits",3,7,0],
+                        ["/data/osiris_data/51_Eri_b/20171104/reduced_jb/s171104_a062002_Kbb_020.fits",3,8,0],
+                        ["/data/osiris_data/51_Eri_b/20171104/reduced_jb/s171104_a063002_Kbb_020.fits",3,9,0],
+                        ["/data/osiris_data/51_Eri_b/20171104/reduced_jb/s171104_a064002_Kbb_020.fits",3,10,0],
+                        ["/data/osiris_data/51_Eri_b/20171104/reduced_jb/s171104_a065002_Kbb_020.fits",3,11,0],
+                        ["/data/osiris_data/51_Eri_b/20171104/reduced_jb/s171104_a066002_Kbb_020.fits",3,12,0],
+                        ["/data/osiris_data/51_Eri_b/20171104/reduced_jb/s171104_a067002_Kbb_020.fits",3,13,0],
+                        ["/data/osiris_data/51_Eri_b/20171104/reduced_jb/s171104_a068002_Kbb_020.fits",3,14,0]]
 
     try:
         sequence_id = new_colnames.index("sequence")
@@ -363,6 +378,7 @@ def get_err_from_posterior(x,posterior):
         rx = rf(1-0.6827)
     return x[argmax_post],(rx-lx)/2.,argmax_post
 
+numbasis=0
 if 0:
     from scipy.signal import correlate2d
     try:

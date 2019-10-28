@@ -13,10 +13,10 @@ from copy import copy
 
 out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
 
-# planet = "HR_8799_b"
+planet = "HR_8799_b"
 # planet = "HR_8799_c"
 # planet = "HR_8799_d"
-planet = "kap_And"
+# planet = "kap_And"
 
 # IFSfilter = "Kbb"
 # IFSfilter = "Hbb"

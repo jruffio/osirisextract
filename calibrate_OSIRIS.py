@@ -195,7 +195,7 @@ def _remove_edges(wvs_indices,nan_mask_boxsize,dtype):
 ######
 ## Step 1
 # run the cross correlation with the OH template
-if 1:
+if 0:
     out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
     IFSfilter = "Kbb"
     # IFSfilter = "Hbb"
@@ -207,8 +207,14 @@ if 1:
     # filelist = glob.glob(os.path.join(inputdir,"201007/reduced_sky_jb/s*_Kbb_020.fits"))
     # inputdir = "/data/osiris_data/HR_8799_*"
     # filelist = glob.glob(os.path.join(inputdir,"2010*/reduced_sky_jb/s*_"+IFSfilter+"_[0-9][0-9][0-9].fits"))
-    inputdir = "/data/osiris_data/kap_And"
-    filelist = glob.glob(os.path.join(inputdir,"*/reduced_sky_jb/s*_"+IFSfilter+"_[0-9][0-9][0-9].fits"))
+    # inputdir = "/data/osiris_data/kap_And"
+    # inputdir = "/data/osiris_data/kap_And"
+    # filelist = glob.glob(os.path.join(inputdir,"2017*/reduced_sky_jb/s*_"+IFSfilter+"_[0-9][0-9][0-9].fits"))
+    # inputdir = "/data/osiris_data/51_Eri_b"
+    # filelist = glob.glob(os.path.join(inputdir,"2017*/reduced_sky_jb/s*_"+IFSfilter+"_[0-9][0-9][0-9].fits"))
+    inputdir = "/data/osiris_data/HR_8799_b"
+    filelist = glob.glob(os.path.join(inputdir,"2009*/reduced_sky_jb/s*_"+IFSfilter+"_[0-9][0-9][0-9].fits"))
+    # filelist = [filelist[1]]
     print(filelist)
     # exit()
 
@@ -239,7 +245,7 @@ if 1:
     debug = False
     numthreads = 28
     suffix="_Rfixed"
-if 0:
+
     # lambdas_air = lambdas_vac/(1+2.735182e-4+131.4182/lambdas_vac**2+2.76249e8/lambdas_vac**4)
     if 1:
         skybg_spec_list = []
@@ -546,6 +552,7 @@ if 0:
 
 #####################
 ## Step 2
+# exit()
 if 1:
     std_factor = np.zeros(20)
     for k in np.arange(2,20):
@@ -557,26 +564,30 @@ if 1:
     #20100711 b = 20100712 b = 20100715 c = 20101104 c
     #20110723 c = 20110724 c = 20110725 c
     #20130725 b = 20130726 b = 20130727 b
-    #20161106 b = 20161107 b= 20161108 b
-    #20171103 c
+    #2015 d
+    #20161106 b = 20161107 b= 20161108 b + kap and
+    #20171103 c + kap and + 51 eri
     #20180722 b
     #Hbb
     #20100713 b  = 20101028 c = 20101104 c
     #20110724 c = 20110725 c
     #20171103 c
+    suffix="_Rfixed"
     IFSfilter = "Kbb"
+    # IFSfilter = "Hbb"
+    year = 2018
     # inputdir = "/data/osiris_data/HR_8799_*"
     filename_filter_list = []
     # filename_filter = os.path.join(inputdir,"2010*/reduced_sky_jb/s*_"+IFSfilter+"_020.fits")
     # filename_filter = "/home/sda/jruffio/osiris_data/HR_8799_d/20150720/reduced_sky_Kbb/s*_Kbb_020.fits"
     # filename_filter = os.path.join(inputdir,"20101104/reduced_sky_jb/s*_Kbb_020.fits")
     # filename_filter = os.path.join(inputdir,"2013*/reduced_sky_jb/s*_Kbb_020.fits")
+    inputdir = "/data/osiris_data/51_Eri_b"
+    filename_filter_list.append(os.path.join(inputdir,"{0}*/reduced_sky_jb/s*_".format(year)+IFSfilter+"_020.fits"))
     inputdir = "/data/osiris_data/HR_8799_*"
-    filename_filter_list.append(os.path.join(inputdir,"2016*/reduced_sky_jb/s*_"+IFSfilter+"_020.fits"))
+    filename_filter_list.append(os.path.join(inputdir,"{0}*/reduced_sky_jb/s*_".format(year)+IFSfilter+"_035.fits"))
     inputdir = "/data/osiris_data/kap_And"
-    filename_filter_list.append(os.path.join(inputdir,"2016*/reduced_sky_jb/s*_"+IFSfilter+"_020.fits"))
-    filelist
-    # exit(0)
+    filename_filter_list.append(os.path.join(inputdir,"{0}*/reduced_sky_jb/s*_".format(year)+IFSfilter+"_020.fits"))
     filelist = []
     filelist_out = []
     filelist_R = []
@@ -590,12 +601,30 @@ if 1:
         filelist_model = filelist_model+glob.glob(filename_filter.replace(".fits","_OHccf"+suffix+"_model.fits"))
 
     filelist.sort()
-    print(filelist)
+    for fstr in filelist:
+        print(fstr)
+    # print(filelist)
+    exit()
     filelist_out.sort()
     filelist_R.sort()
     filelist_dwv.sort()
     filelist_model.sort()
     print(filelist_out)
+
+    if IFSfilter=="Kbb": #Kbb 1965.0 0.25
+        CRVAL1 = 1965.
+        CDELT1 = 0.25
+        nl=1665
+        R=4000
+    elif IFSfilter=="Hbb": #Hbb 1651 1473.0 0.2
+        CRVAL1 = 1473.
+        CDELT1 = 0.2
+        nl=1651
+        R=4000
+    init_wv = CRVAL1/1000.
+    dwv = CDELT1/1000.
+    wvs=np.arange(init_wv,init_wv+dwv*nl-1e-6,dwv)
+    dprv = 3e5*dwv/(init_wv+dwv*nl//2)
 
     dwv_map_list = []
     for k,(filename_R,filename_dwv,filename_model,filename_out) in enumerate(zip(filelist_R,filelist_dwv,filelist_model,filelist_out)):
