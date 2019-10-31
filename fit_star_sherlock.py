@@ -541,7 +541,7 @@ if __name__ == "__main__":
 
     numthreads = 32
 
-    osiris_data_dir = "/data/osiris_data"
+    osiris_data_dir = sys.argv[1]#"/data/osiris_data"
     fileinfos_refstars_filename = os.path.join(osiris_data_dir,"fileinfos_refstars_jb.csv")
     phoenix_folder = os.path.join(osiris_data_dir,"phoenix")
 
@@ -597,8 +597,8 @@ if __name__ == "__main__":
     uni_starname_list = ['kap_And','HIP_111538','51_Eri','HIP_25453','HD_7215','HIP_1123','HIP_116886','HR_8799','HD_210501','BD+14_4774']
     print(len(uni_starname_list)) #10
     print(len(ref_unique_dates)) #26
-    starname = uni_starname_list[sys.argv[1]]
-    date = ref_unique_dates[sys.argv[2]]
+    starname = uni_starname_list[sys.argv[2]]
+    date = ref_unique_dates[sys.argv[3]]
     if 1:
         print(uni_starname_list)
         # delta_teff = 50
