@@ -542,6 +542,7 @@ if __name__ == "__main__":
     numthreads = 32
 
     osiris_data_dir = sys.argv[1]#"/data/osiris_data"
+    # osiris_data_dir = "/data/osiris_data/"
     fileinfos_refstars_filename = os.path.join(osiris_data_dir,"fileinfos_refstars_jb.csv")
     phoenix_folder = os.path.join(osiris_data_dir,"phoenix")
 
@@ -566,7 +567,9 @@ if __name__ == "__main__":
     baryrv_id = refstarsinfo_colnames.index("barycenter rv")
     vsini_fixed_id = refstarsinfo_colnames.index("vsini fixed")
     rv_simbad_id = refstarsinfo_colnames.index("RV Simbad")
-    ref_stars_filelist = np.array([item[refstarsinfo_filename_id] for item in refstarsinfo_list_data])
+    ref_stars_filelist = np.array([item[refstarsinfo_filename_id].replace("/data/osiris_data",osiris_data_dir) for item in refstarsinfo_list_data])
+    # print(ref_stars_filelist[0])
+    # exit()
     ref_dates_list = np.array([os.path.basename(filename).split("_a")[0].replace("s","").replace("ao_off_","") for filename in ref_stars_filelist])
     ref_unique_dates = np.unique(ref_dates_list)
     print(ref_unique_dates)
