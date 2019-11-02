@@ -923,7 +923,7 @@ if __name__ == "__main__":
 
                 # rv_samples = np.arange(-30,10,1)
                 # vsini_samples = np.arange(10,250,50)
-                rv_samples = np.arange(rv0-50,rv0+50,1)
+                rv_samples = np.arange(100,100,0.5)
                 vsini_samples = np.arange(10,500,10)
 
                 print(len(grid_refstar_func_list))
