@@ -368,8 +368,8 @@ if 1:
 
     OSIRISDATA = os.path.dirname(fileinfos_filename)
 
-    ### Combining all the posteriors
-    # all_starnames = np.unique([item[starname_id] for item in new_list_data])
+    # ## Combining all the posteriors
+    # all_starnames = np.unique([item[starname_id] for item in new_list_data]+["kap_And","51_Eri"])
     # print(all_starnames)
     # for refstar_name in all_starnames:
     #     filelist = glob.glob(os.path.join(OSIRISDATA,"stellar_fits","{0}_*_*_*_posterior.fits".format(refstar_name)))

@@ -250,6 +250,24 @@ def combine_spectra(_spec_list):
     _spec = np.nanmean(_spec_LPF_list, axis=0) + np.nanmean(_spec_HPF_list, axis=0)
     return _spec
 
+def get_err_from_posterior(x,posterior):
+    ind = np.argsort(posterior)
+    cum_posterior = np.zeros(np.shape(posterior))
+    cum_posterior[ind] = np.cumsum(posterior[ind])
+    cum_posterior = cum_posterior/np.max(cum_posterior)
+    argmax_post = np.argmax(cum_posterior)
+    if len(x[0:argmax_post]) < 2:
+        lx = np.nan
+    else:
+        lf = interp1d(cum_posterior[0:argmax_post],x[0:argmax_post],bounds_error=False,fill_value=np.nan)
+        lx = lf(1-0.6827)
+    if len(x[argmax_post::]) < 2:
+        rx = np.nan
+    else:
+        rf = interp1d(cum_posterior[argmax_post::],x[argmax_post::],bounds_error=False,fill_value=np.nan)
+        rx = rf(1-0.6827)
+    return x[argmax_post],lx,rx,lx-x[argmax_post],rx-x[argmax_post],argmax_post
+
 # plcen_k_valid_pix[::-1],plcen_l_valid_pix[::-1],row_valid_pix[::-1],col_valid_pix[::-1],
 #                                     normalized_psfs_func_list,
 #                                     hr8799modelspec_Rlist,
@@ -929,11 +947,11 @@ if __name__ == "__main__":
     ##############################
     print(len(sys.argv))
     if len(sys.argv) == 1:
-        planet = "HR_8799_b"
+        # planet = "HR_8799_b"
         # date = "090722"
         # date = "090730"
         # date = "090903"
-        date = "100711"
+        # date = "100711"
         # date = "100712"
         # date = "100713"
         # date = "130725"
@@ -955,8 +973,9 @@ if __name__ == "__main__":
         # date = "150722"
         # date = "150723"
         # date = "150828"
-        # planet = "51_Eri_b"
-        # date = "171103"
+        planet = "51_Eri_b"
+        date = "171103"
+        # date = "171104"
         # planet = "kap_And"
         # date = "161106"
         IFSfilter = "Kbb"
@@ -1100,6 +1119,7 @@ if __name__ == "__main__":
             host_rv = -12.6 #+-1.4
             host_limbdark = 0.5
             host_vsini = 49 # true = 49
+            star_name = "HR_8799"
         if "51_Eri_b" in filelist[0]:
             phoenix_model_host_filename = glob.glob(os.path.join(phoenix_folder,"51_Eri"+"*.fits"))[0]
             travis_spec_filename=os.path.join(planet_template_folder,
@@ -1116,6 +1136,7 @@ if __name__ == "__main__":
             host_rv = 12.6 #+-0.3
             host_limbdark = 0.5
             host_vsini = 80
+            star_name = "51_Eri"
         if "kap_And" in filelist[0]:
             phoenix_model_host_filename = glob.glob(os.path.join(phoenix_folder,"kap_And"+"*.fits"))[0]
             travis_spec_filename=os.path.join(planet_template_folder,
@@ -1132,6 +1153,7 @@ if __name__ == "__main__":
             host_rv = -12.7 #+-0.8
             host_limbdark = 0.5
             host_vsini = 150 #unknown
+            star_name = "kap_And"
 
 
         for filename in filelist:
@@ -1278,6 +1300,58 @@ if __name__ == "__main__":
             host_bary_rv = -float(fileitem[baryrv_id])/1000
             # print(host_bary_rv)
             # exit()
+
+            if 1:
+                splitpostfilename = os.path.basename(filelist[0]).split("_")
+                imtype = "science"
+                # print(date,star_name)
+                # exit()
+                phoenix_db_folder = os.path.join(osiris_data_dir,"phoenix","PHOENIX-ACES-AGSS-COND-2011")
+                # phoenix_wv_filename = os.path.join(phoenix_folder,"WAVE_PHOENIX-ACES-AGSS-COND-2011_R{0}.fits".format(R0))
+                # with pyfits.open(phoenix_wv_filename) as hdulist:
+                #     phoenix_wvs = hdulist[0].data
+                if len(glob.glob(os.path.join(osiris_data_dir,"stellar_fits","{0}_{1}_{2}_{3}_rv_samples.fits".format(star_name,IFSfilter,date,imtype)))) >0:
+                    print(os.path.join(osiris_data_dir,"stellar_fits","{0}_{1}_{2}_{3}_rv_samples.fits".format(star_name,IFSfilter,date,imtype)))
+                    hdulist = pyfits.open(os.path.join(osiris_data_dir,"stellar_fits","{0}_{1}_{2}_{3}_rv_samples.fits".format(star_name,IFSfilter,date,imtype)))
+                    rv_samples = hdulist[0].data
+                    hdulist = pyfits.open(os.path.join(osiris_data_dir,"stellar_fits","{0}_{1}_{2}_{3}_vsini_samples.fits".format(star_name,IFSfilter,date,imtype)))
+                    vsini_samples = hdulist[0].data
+                    with open(os.path.join(osiris_data_dir,"stellar_fits","{0}_{1}_{2}_{3}_models.txt".format(star_name,IFSfilter,date,imtype)), 'r') as txtfile:
+                        grid_refstar_filelist = [s.strip().replace("/scratch/groups/bmacint/osiris_data",osiris_data_dir) for s in txtfile.readlines()]
+                else:
+                    print(glob.glob(os.path.join(osiris_data_dir,"stellar_fits","{0}_*_*_{1}_rv_samples.fits".format(star_name,imtype)))[0])
+                    hdulist = pyfits.open(glob.glob(os.path.join(osiris_data_dir,"stellar_fits","{0}_*_*_{1}_rv_samples.fits".format(star_name,imtype)))[0])
+                    rv_samples = hdulist[0].data
+                    hdulist = pyfits.open(glob.glob(os.path.join(osiris_data_dir,"stellar_fits","{0}_*_*_{1}_vsini_samples.fits".format(star_name,imtype)))[0])
+                    vsini_samples = hdulist[0].data
+                    print(os.path.join(osiris_data_dir,"stellar_fits","{0}_*_*_{1}_models.fits".format(star_name,imtype)))
+                    print(glob.glob(os.path.join(osiris_data_dir,"stellar_fits","{0}_*_*_{1}_models.txt".format(star_name,imtype))))
+                    with open(glob.glob(os.path.join(osiris_data_dir,"stellar_fits","{0}_*_*_{1}_models.txt".format(star_name,imtype)))[0], 'r') as txtfile:
+                        grid_refstar_filelist = [s.strip().replace("/scratch/groups/bmacint/osiris_data",osiris_data_dir) for s in txtfile.readlines()]
+                post_filename = os.path.join(osiris_data_dir,"stellar_fits","{0}_{1}_{2}_{3}_posterior.fits".format(star_name,IFSfilter,date,imtype))
+                if len(glob.glob(post_filename))>0:
+                    print(post_filename)
+                    hdulist = pyfits.open(post_filename)
+                else:
+                    print(os.path.join(osiris_data_dir,"stellar_fits","{0}_combined_posterior.fits".format(star_name)))
+                    hdulist = pyfits.open(os.path.join(osiris_data_dir,"stellar_fits","{0}_combined_posterior.fits".format(star_name)))
+                # exit()
+                posterior = hdulist[0].data[0]
+                logpost_arr = hdulist[0].data[1]
+                chi2_arr = hdulist[0].data[2]
+                posterior_rv_vsini = np.nansum(posterior,axis=0)
+                posterior_model = np.nansum(posterior,axis=(1,2))
+                rv_posterior = np.nansum(posterior_rv_vsini,axis=1)
+                vsini_posterior = np.nansum(posterior_rv_vsini,axis=0)
+                bestrv,_,_,bestrv_merr,bestrv_perr,_ = get_err_from_posterior(rv_samples,rv_posterior)
+                bestrv_merr = np.abs(bestrv_merr)
+                bestvsini,_,_,bestvsini_merr,bestvsini_perr,_ = get_err_from_posterior(vsini_samples,vsini_posterior)
+                bestvsini_merr = np.abs(bestvsini_merr)
+                best_model_id = np.argmax(posterior_model)
+
+                phoenix_model_host_filename = grid_refstar_filelist[best_model_id]
+                host_rv = bestrv
+                host_vsini = bestvsini
 
             if planet_search:
                 suffix = suffix+"_search"
@@ -1602,11 +1676,11 @@ if __name__ == "__main__":
             rv_simbad_id = refstarsinfo_colnames.index("RV Simbad")
             starname_id = refstarsinfo_colnames.index("star name")
 
-            phoenix_wv_filename = os.path.join(phoenix_folder,"WAVE_PHOENIX-ACES-AGSS-COND-2011.fits")
-            with pyfits.open(phoenix_wv_filename) as hdulist:
-                phoenix_wvs = hdulist[0].data/1.e4
-            crop_phoenix = np.where((phoenix_wvs>wvs[0]-(wvs[-1]-wvs[0])/2)*(phoenix_wvs<wvs[-1]+(wvs[-1]-wvs[0])/2))
-            phoenix_wvs = phoenix_wvs[crop_phoenix]
+            # phoenix_wv_filename = os.path.join(phoenix_folder,"WAVE_PHOENIX-ACES-AGSS-COND-2011.fits")
+            # with pyfits.open(phoenix_wv_filename) as hdulist:
+            #     phoenix_wvs = hdulist[0].data/1.e4
+            # crop_phoenix = np.where((phoenix_wvs>wvs[0]-(wvs[-1]-wvs[0])/2)*(phoenix_wvs<wvs[-1]+(wvs[-1]-wvs[0])/2))
+            # phoenix_wvs = phoenix_wvs[crop_phoenix]
 
             transmission_table = []
             transmission4planet_list = []
@@ -1709,42 +1783,45 @@ if __name__ == "__main__":
                 ## host star phoenix model
                 ##############################
 
-                phoenix_host_filename=phoenix_model_host_filename.replace(".fits","_gaussconv_R{0}_{1}.csv".format(R,IFSfilter))
-                if use_R_calib:
+                # phoenix_host_filename=phoenix_model_host_filename.replace(".fits","_gaussconv_R{0}_{1}.csv".format(R,IFSfilter))
+                # if use_R_calib:
+                #     with pyfits.open(phoenix_model_host_filename) as hdulist:
+                #         phoenix_HR8799 = hdulist[0].data[crop_phoenix]
+                #     where_IFSfilter = np.where((phoenix_wvs>wvs[0])*(phoenix_wvs<wvs[-1]))
+                #     phoenix_HR8799 = phoenix_HR8799/np.mean(phoenix_HR8799[where_IFSfilter])
+                #     HR8799pho_spec_func = interp1d(phoenix_wvs,phoenix_HR8799,bounds_error=False,fill_value=np.nan)
+                # else:
+                #     if len(glob.glob(phoenix_host_filename)) == 0:
+                #         with pyfits.open(phoenix_model_host_filename) as hdulist:
+                #             phoenix_HR8799 = hdulist[0].data[crop_phoenix]
+                #         print("convolving: "+phoenix_model_host_filename)
+                #         phoenix_HR8799_conv = convolve_spectrum(phoenix_wvs,phoenix_HR8799,R,specpool)
+                #
+                #         with open(phoenix_host_filename, 'w+') as csvfile:
+                #             csvwriter = csv.writer(csvfile, delimiter=' ')
+                #             csvwriter.writerows([["wvs","spectrum"]])
+                #             csvwriter.writerows([[a,b] for a,b in zip(phoenix_wvs,phoenix_HR8799_conv)])
+                #
+                #     with open(phoenix_host_filename, 'r') as csvfile:
+                #         csv_reader = csv.reader(csvfile, delimiter=' ')
+                #         list_starspec = list(csv_reader)
+                #         HR8799pho_spec_str_arr = np.array(list_starspec, dtype=np.str)
+                #         col_names = HR8799pho_spec_str_arr[0]
+                #         HR8799pho_spec = HR8799pho_spec_str_arr[1::,1].astype(np.float)
+                #         HR8799pho_spec_wvs = HR8799pho_spec_str_arr[1::,0].astype(np.float)
+                if 1:
+                    phoenix_wv_filename = os.path.join(phoenix_db_folder,"WAVE_PHOENIX-ACES-AGSS-COND-2011_R{0}.fits".format(R0))
+                    with pyfits.open(phoenix_wv_filename) as hdulist:
+                        HR8799pho_spec_wvs = hdulist[0].data
+
                     with pyfits.open(phoenix_model_host_filename) as hdulist:
-                        phoenix_HR8799 = hdulist[0].data[crop_phoenix]
-                    where_IFSfilter = np.where((phoenix_wvs>wvs[0])*(phoenix_wvs<wvs[-1]))
-                    phoenix_HR8799 = phoenix_HR8799/np.mean(phoenix_HR8799[where_IFSfilter])
-                    HR8799pho_spec_func = interp1d(phoenix_wvs,phoenix_HR8799,bounds_error=False,fill_value=np.nan)
-                else:
-                    if len(glob.glob(phoenix_host_filename)) == 0:
-                        with pyfits.open(phoenix_model_host_filename) as hdulist:
-                            phoenix_HR8799 = hdulist[0].data[crop_phoenix]
-                        print("convolving: "+phoenix_model_host_filename)
-                        phoenix_HR8799_conv = convolve_spectrum(phoenix_wvs,phoenix_HR8799,R,specpool)
-
-                        with open(phoenix_host_filename, 'w+') as csvfile:
-                            csvwriter = csv.writer(csvfile, delimiter=' ')
-                            csvwriter.writerows([["wvs","spectrum"]])
-                            csvwriter.writerows([[a,b] for a,b in zip(phoenix_wvs,phoenix_HR8799_conv)])
-
-                    with open(phoenix_host_filename, 'r') as csvfile:
-                        csv_reader = csv.reader(csvfile, delimiter=' ')
-                        list_starspec = list(csv_reader)
-                        HR8799pho_spec_str_arr = np.array(list_starspec, dtype=np.str)
-                        col_names = HR8799pho_spec_str_arr[0]
-                        HR8799pho_spec = HR8799pho_spec_str_arr[1::,1].astype(np.float)
-                        HR8799pho_spec_wvs = HR8799pho_spec_str_arr[1::,0].astype(np.float)
-
-
-                    where_IFSfilter = np.where((HR8799pho_spec_wvs>wvs[0])*(HR8799pho_spec_wvs<wvs[-1]))
-                    HR8799pho_spec = HR8799pho_spec/np.mean(HR8799pho_spec[where_IFSfilter])
+                        HR8799pho_spec = hdulist[0].data
+                    HR8799pho_spec = HR8799pho_spec/np.mean(HR8799pho_spec)
 
                     HR8799pho_spec_func = interp1d(HR8799pho_spec_wvs,HR8799pho_spec,bounds_error=False,fill_value=np.nan)
                     # import matplotlib.pyplot as plt
                     # plt.plot(HR8799pho_spec_wvs,HR8799pho_spec,label="ori")
-                    wvs4broadening = np.arange(HR8799pho_spec_wvs[0],HR8799pho_spec_wvs[-1],
-                                               np.median(HR8799pho_spec_wvs[1::] - HR8799pho_spec_wvs[0:np.size(HR8799pho_spec_wvs)-1])*50)
+                    wvs4broadening = np.arange(HR8799pho_spec_wvs[0],HR8799pho_spec_wvs[-1],1e-4)
                     # plt.plot(wvs4broadening,HR8799pho_spec_func(wvs4broadening),label="sampling")
                     broadened_HR8799pho_spec = pyasl.rotBroad(wvs4broadening, HR8799pho_spec_func(wvs4broadening), host_limbdark, host_vsini)
                     # plt.plot(wvs4broadening,broadened_HR8799pho_spec,label="broad")
@@ -1753,11 +1830,13 @@ if __name__ == "__main__":
 
                     HR8799pho_spec_func = interp1d(wvs4broadening/(1-(host_rv+host_bary_rv)/c_kms),broadened_HR8799pho_spec,bounds_error=False,fill_value=np.nan)
 
-                    # #remove
+                    # # #remove
                     # import matplotlib.pyplot as plt
-                    # plt.plot(HR8799pho_spec_func(wvs),color="red")
-                    # HR8799pho_spec_func = interp1d(HR8799pho_spec_wvs,HR8799pho_spec,bounds_error=False,fill_value=np.nan)
-                    # plt.plot(HR8799pho_spec_func(wvs),color="blue")
+                    # plt.plot(wvs,HR8799pho_spec_func(wvs)/np.mean(HR8799pho_spec_func(wvs)),color="red")
+                    # a = np.nansum(imgs,axis=(0,1))
+                    # plt.plot(wvs,a/np.nanmean(a),color="blue")
+                    #
+                    # plt.plot(wvs,(a/HR8799pho_spec_func(wvs))/np.nanmean(a/HR8799pho_spec_func(wvs)),color="blue")
                     # plt.show()
 
                 HR8799pho_spec_func_list.append(HR8799pho_spec_func)
