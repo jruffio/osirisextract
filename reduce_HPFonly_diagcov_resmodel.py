@@ -240,7 +240,15 @@ def _remove_bad_pixels_xy(wvs_indices,dtype):
         # plt.show()
 
 
-
+def combine_spectra(_spec_list):
+    _spec_LPF_list = []
+    _spec_HPF_list = []
+    for fid,spec_it in enumerate(_spec_list):
+        a,b = LPFvsHPF(spec_it/np.nanmean(spec_it),cutoff=10,nansmooth=50)
+        _spec_LPF_list.append(a)
+        _spec_HPF_list.append(b)
+    _spec = np.nanmean(_spec_LPF_list, axis=0) + np.nanmean(_spec_HPF_list, axis=0)
+    return _spec
 
 # plcen_k_valid_pix[::-1],plcen_l_valid_pix[::-1],row_valid_pix[::-1],col_valid_pix[::-1],
 #                                     normalized_psfs_func_list,
@@ -498,7 +506,7 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
 
                     # plt.plot(line_spec,label="line_spec")
                 # for line_spec in new_line_list:
-                transmission_vec = np.nanmean(np.array([tr(wvs) for tr in tr_list]),axis=0)
+                transmission_vec = tr4planet(wvs)#np.nanmean(np.array([tr(wvs) for tr in tr_list]),axis=0)
                 if 1:
                     bkg_model = np.zeros((2*w+1,2*w+1,2*w+1,2*w+1,data_nz))
                     for bkg_k in range(2*w+1):
@@ -921,11 +929,11 @@ if __name__ == "__main__":
     ##############################
     print(len(sys.argv))
     if len(sys.argv) == 1:
-        # planet = "HR_8799_b"
+        planet = "HR_8799_b"
         # date = "090722"
         # date = "090730"
         # date = "090903"
-        # date = "100711"
+        date = "100711"
         # date = "100712"
         # date = "100713"
         # date = "130725"
@@ -949,8 +957,8 @@ if __name__ == "__main__":
         # date = "150828"
         # planet = "51_Eri_b"
         # date = "171103"
-        planet = "kap_And"
-        date = "161106"
+        # planet = "kap_And"
+        # date = "161106"
         IFSfilter = "Kbb"
         # IFSfilter = "Hbb"
         # IFSfilter = "Jbb" # "Kbb" or "Hbb"
@@ -961,7 +969,7 @@ if __name__ == "__main__":
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190520_LPF/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190906_HPF_restest2/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190923_HPF_restest2/"
-        outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20191018_HPF_faketest/"
+        outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20191104_new_trans/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190305_HPF_only_noperscor/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190228_mol_temp/"
 
@@ -978,7 +986,7 @@ if __name__ == "__main__":
         # filelist = filelist[4:]
         # filelist = filelist[len(filelist)-3:len(filelist)-2]
 
-        res_numbasis = 1
+        res_numbasis = 0
         numthreads = 28
         planet_search = True
         debug_paras = True
@@ -1609,8 +1617,8 @@ if __name__ == "__main__":
                 # refstar_name_filter = "HD_210501"
                 refstar_name_filter = "*"
                 transmission_filelist = []
-                transmission_filelist.extend(glob.glob(os.path.join(ref_star_folder,refstar_name_filter,"s*"+IFSfilter+"_"+scale+"_psfs_repaired_spec_v2_cutoff20_transmission.fits")))
-                transmission_filelist.extend(glob.glob(os.path.join(ref_star_folder,refstar_name_filter,"ao_off_s*"+IFSfilter+"_"+scale+"_spec_v2_cutoff20_transmission.fits")))
+                transmission_filelist.extend(glob.glob(os.path.join(ref_star_folder,refstar_name_filter,"s*"+IFSfilter+"_"+scale+"_psfs_repaired_spec_v2_transmission_v3.fits")))
+                transmission_filelist.extend(glob.glob(os.path.join(ref_star_folder,refstar_name_filter,"ao_off_s*"+IFSfilter+"_"+scale+"_spec_v2_transmission_v3.fits")))
                 transmission_filelist.sort()
                 print(transmission_filelist)
                 transmission_list = []
@@ -1618,8 +1626,14 @@ if __name__ == "__main__":
                     with pyfits.open(transmission_filename) as hdulist:
                         transmission_wvs = hdulist[0].data[0,:]
                         transmission_spec = hdulist[0].data[1,:]
+                        if np.size(np.where(np.isnan(transmission_spec))[0]) >= 0.1*np.size(transmission_spec):
+                            continue
                         transmission_list.append(transmission_spec/np.nanmean(transmission_spec))
-                mean_transmission = np.nanmean(np.array(transmission_list),axis=0)
+                # mean_transmission = np.nanmean(np.array(transmission_list),axis=0)
+                mean_transmission = combine_spectra(transmission_list)
+                ## better tranmission combination
+                # ????
+                # exit()
 
                 if 0:
                     mean_wherenans = np.where(np.isnan(mean_transmission))

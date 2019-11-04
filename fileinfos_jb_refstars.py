@@ -47,7 +47,7 @@ new_list_data = copy(old_list_data)
 for item in old_list_table:
     print(item)
 
-if 1: # add filename
+if 0: # add filename
     filename_id = new_colnames.index("filename")
     old_filelist = [item[filename_id] for item in new_list_data]
 
@@ -63,7 +63,7 @@ if 1: # add filename
     # print(new_list_data)
     # exit()
 
-if 1: # add filename for ao off
+if 0: # add filename for ao off
     filename_id = new_colnames.index("filename")
     old_filelist = [item[filename_id] for item in new_list_data]
 
@@ -78,7 +78,7 @@ if 1: # add filename for ao off
     # print(new_list_data)
 
 #sort files
-if 1:
+if 0:
     filename_id = new_colnames.index("filename")
     filelist = [item[filename_id] for item in new_list_data]
     filelist_sorted = copy(filelist)
@@ -91,7 +91,7 @@ if 1:
 
     new_list_data = new_new_list_data
 
-if 1: # add MJD-OBS
+if 0: # add MJD-OBS
     filename_id = new_colnames.index("filename")
     MJDOBS_id = new_colnames.index("MJD-OBS")
 
@@ -100,23 +100,8 @@ if 1: # add MJD-OBS
         prihdr0 = hdulist[0].header
         new_list_data[k][MJDOBS_id] = prihdr0["MJD-OBS"]
 
-if 1: # add barycenter RV
-    from barycorrpy import get_BC_vel
-    filename_id = new_colnames.index("filename")
-    MJDOBS_id = new_colnames.index("MJD-OBS")
-    try:
-        bary_rv_id = new_colnames.index("barycenter rv")
-    except:
-        new_colnames.append("barycenter rv")
-        new_list_data = [item+[np.nan,] for item in new_list_data]
-        bary_rv_id = new_colnames.index("barycenter rv")
 
-    for k,item in enumerate(new_list_data):
-        MJDOBS = float(item[MJDOBS_id])
-        result = get_BC_vel(MJDOBS+2400000.5,hip_id=114189,obsname="Keck Observatory",ephemeris="de430")
-        new_list_data[k][bary_rv_id] = result[0][0]
-
-if 1: # add spectral band
+if 0: # add spectral band
     filename_id = new_colnames.index("filename")
     try:
         ifs_filter_id = new_colnames.index("IFS filter")
@@ -134,7 +119,7 @@ if 1: # add spectral band
             new_list_data[k][ifs_filter_id] = "Kbb"
 
 # Add star Simbad info
-if 1:
+if 0:
     try:
         type_id = old_colnames.index("type")
     except:
@@ -177,6 +162,12 @@ if 1:
         new_colnames.append("star name")
         new_list_data = [item+[np.nan,] for item in new_list_data]
         starname_id = new_colnames.index("star name")
+    try:
+        hipnum_id = old_colnames.index("hip num")
+    except:
+        new_colnames.append("hip num")
+        new_list_data = [item+[np.nan,] for item in new_list_data]
+        hipnum_id = new_colnames.index("hip num")
 
     filename_id = new_colnames.index("filename")
 
@@ -193,6 +184,7 @@ if 1:
             new_list_data[k][Jmag_id] = 7.615
             new_list_data[k][Hmag_id] = 7.606
             new_list_data[k][Kmag_id] = 7.597
+            new_list_data[k][hipnum_id] = 109452
         elif refstar_name == "HIP_1123":
             new_list_data[k][rv_simbad_id] = 0.9 #+-2
             new_list_data[k][vsini_fixed_id] = 75 #+-2.5
@@ -200,6 +192,7 @@ if 1:
             new_list_data[k][Jmag_id] = 6.186
             new_list_data[k][Hmag_id] = 6.219
             new_list_data[k][Kmag_id] = 6.189
+            new_list_data[k][hipnum_id] =1123
         elif refstar_name == "HIP_116886":
             new_list_data[k][rv_simbad_id] = 0#actually dunno np.nan
             new_list_data[k][vsini_fixed_id] = 50#actually dunno np.nan
@@ -207,6 +200,7 @@ if 1:
             new_list_data[k][Jmag_id] = 9.375
             new_list_data[k][Hmag_id] = 9.212
             new_list_data[k][Kmag_id] = 9.189
+            new_list_data[k][hipnum_id] = 116886
         elif refstar_name == "HR_8799":
             new_list_data[k][rv_simbad_id] = -12.6 #
             new_list_data[k][vsini_fixed_id] = 49 #+-2.5
@@ -214,6 +208,7 @@ if 1:
             new_list_data[k][Jmag_id] = 5.383
             new_list_data[k][Hmag_id] = 5.280
             new_list_data[k][Kmag_id] = 5.240
+            new_list_data[k][hipnum_id] = 114189
         elif refstar_name == "BD+14_4774":
             new_list_data[k][rv_simbad_id] = 0#actually dunno np.nan
             new_list_data[k][vsini_fixed_id] = 50#actually dunno np.nan
@@ -221,6 +216,7 @@ if 1:
             new_list_data[k][Jmag_id] = 9.291
             new_list_data[k][Hmag_id] = 9.655
             new_list_data[k][Kmag_id] = 9.613
+            new_list_data[k][hipnum_id] = np.nan
         elif refstar_name == "HD_7215":
             new_list_data[k][rv_simbad_id] =  -2.1
             new_list_data[k][vsini_fixed_id] = 81.3
@@ -228,6 +224,7 @@ if 1:
             new_list_data[k][Jmag_id] = 6.906
             new_list_data[k][Hmag_id] = 6.910
             new_list_data[k][Kmag_id] = 6.945
+            new_list_data[k][hipnum_id] = 5671
         elif refstar_name == "HIP_18717":
             new_list_data[k][rv_simbad_id] =  28.5
             new_list_data[k][vsini_fixed_id] = np.nan
@@ -235,6 +232,7 @@ if 1:
             new_list_data[k][Jmag_id] = 6.064
             new_list_data[k][Hmag_id] = 6.090
             new_list_data[k][Kmag_id] = 6.074
+            new_list_data[k][hipnum_id] = 18717
         elif refstar_name == "HIP_111538":
             new_list_data[k][rv_simbad_id] =  1.6
             new_list_data[k][vsini_fixed_id] = 100#actually dunno np.nan
@@ -242,6 +240,7 @@ if 1:
             new_list_data[k][Jmag_id] = 9.393
             new_list_data[k][Hmag_id] = 9.431
             new_list_data[k][Kmag_id] = 9.406
+            new_list_data[k][hipnum_id] =111538
         elif refstar_name == "HIP_25453":
             new_list_data[k][rv_simbad_id] = 13.10
             new_list_data[k][vsini_fixed_id] = 133
@@ -249,6 +248,7 @@ if 1:
             new_list_data[k][Jmag_id] = 6.394
             new_list_data[k][Hmag_id] = 6.418
             new_list_data[k][Kmag_id] = 6.438
+            new_list_data[k][hipnum_id] = 25453
         else:
             new_list_data[k][rv_simbad_id] =  np.nan
             new_list_data[k][vsini_fixed_id] = np.nan
@@ -256,6 +256,36 @@ if 1:
             new_list_data[k][Jmag_id] = np.nan
             new_list_data[k][Hmag_id] = np.nan
             new_list_data[k][Kmag_id] = np.nan
+            new_list_data[k][hipnum_id] = np.nan
+
+if 0: # add barycenter RV
+        # hip_id : Hipparcos Catalog ID. (Integer). Epoch will be taken to be Catalogue Epoch or J1991.25
+        #         If specified then ra,dec,pmra,pmdec,px, and epoch need not be specified.
+        #                         OR / AND
+        # ra, dec : RA and Dec of star [degrees].
+        # epoch : Epoch of coordinates in Julian Date. Default is J2000 or 2451545.
+        # pmra : Proper motion in RA [mas/year]. Eg. PMRA = d(RA)/dt * cos(dec). Default is 0.
+        # pmdec : Proper motion in Dec [mas/year]. Default is 0.
+        # px : Parallax of target [mas]. Default is 0.
+    from barycorrpy import get_BC_vel
+    filename_id = new_colnames.index("filename")
+    MJDOBS_id = new_colnames.index("MJD-OBS")
+    try:
+        bary_rv_id = new_colnames.index("barycenter rv")
+    except:
+        new_colnames.append("barycenter rv")
+        new_list_data = [item+[np.nan,] for item in new_list_data]
+        bary_rv_id = new_colnames.index("barycenter rv")
+
+    for k,item in enumerate(new_list_data):
+        MJDOBS = float(item[MJDOBS_id])
+        if item[starname_id] == "BD+14_4774":
+            result = get_BC_vel(MJDOBS+2400000.5,ra=334.9042083,dec=14.7468861,pmra=13.3,pmdec=2.370,px=2.3269,obsname="Keck Observatory",ephemeris="de430")
+        else:
+            print(item[hipnum_id])
+            result = get_BC_vel(MJDOBS+2400000.5,hip_id=int(item[hipnum_id]),obsname="Keck Observatory",ephemeris="de430")
+        new_list_data[k][bary_rv_id] = result[0][0]
+
 
 from scipy.interpolate import interp1d
 def get_err_from_posterior(x,posterior):
@@ -264,16 +294,32 @@ def get_err_from_posterior(x,posterior):
     cum_posterior[ind] = np.cumsum(posterior[ind])
     cum_posterior = cum_posterior/np.max(cum_posterior)
     argmax_post = np.argmax(cum_posterior)
-    lf = interp1d(cum_posterior[0:argmax_post],x[0:argmax_post],bounds_error=False,fill_value=np.nan)
-    rf = interp1d(cum_posterior[argmax_post::],x[argmax_post::],bounds_error=False,fill_value=np.nan)
-    return x[argmax_post],(rf(1-0.6827)-lf(1-0.6827))/2.
-if 0:
+    if len(x[0:argmax_post]) < 2:
+        lx = np.nan
+    else:
+        lf = interp1d(cum_posterior[0:argmax_post],x[0:argmax_post],bounds_error=False,fill_value=np.nan)
+        lx = lf(1-0.6827)
+    if len(x[argmax_post::]) < 2:
+        rx = np.nan
+    else:
+        rf = interp1d(cum_posterior[argmax_post::],x[argmax_post::],bounds_error=False,fill_value=np.nan)
+        rx = rf(1-0.6827)
+    return x[argmax_post],lx,rx,lx-x[argmax_post],rx-x[argmax_post],argmax_post
+
+
+if 1:
     try:
         post_filename_id = old_colnames.index("posterior filename")
     except:
         new_colnames.append("posterior filename")
         new_list_data = [item+[np.nan,] for item in new_list_data]
         post_filename_id = new_colnames.index("posterior filename")
+    try:
+        model_filename_id = old_colnames.index("model filename")
+    except:
+        new_colnames.append("model filename")
+        new_list_data = [item+[np.nan,] for item in new_list_data]
+        model_filename_id = new_colnames.index("model filename")
 
     try:
         vsini_id = old_colnames.index("vsini")
@@ -314,38 +360,109 @@ if 0:
         new_list_data = [item+[np.nan,] for item in new_list_data]
         limbdark_err_id = new_colnames.index("limb dark err")
 
+    type_id = new_colnames.index("type")
+    rv_simbad_id = new_colnames.index("RV Simbad")
+    vsini_fixed_id = new_colnames.index("vsini fixed")
+    starname_id = new_colnames.index("star name")
+    baryrv_id = new_colnames.index("barycenter rv")
+
+    OSIRISDATA = os.path.dirname(fileinfos_filename)
+
+    ### Combining all the posteriors
+    # all_starnames = np.unique([item[starname_id] for item in new_list_data])
+    # print(all_starnames)
+    # for refstar_name in all_starnames:
+    #     filelist = glob.glob(os.path.join(OSIRISDATA,"stellar_fits","{0}_*_*_*_posterior.fits".format(refstar_name)))
+    #     all_posterior = []
+    #     all_logpost_arr = []
+    #     all_chi2_arr = []
+    #     for myfilename in filelist:
+    #         hdulist = pyfits.open(myfilename.replace("_posterior","_rv_samples"))
+    #         rv_samples = hdulist[0].data
+    #         hdulist = pyfits.open(myfilename.replace("_posterior","_vsini_samples"))
+    #         vsini_samples = hdulist[0].data
+    #         hdulist = pyfits.open(myfilename)
+    #         posterior = hdulist[0].data[0]
+    #         posterior /=np.nanmax(posterior)
+    #         logpost_arr = hdulist[0].data[1]
+    #         chi2_arr = hdulist[0].data[2]
+    #         print(posterior.shape,rv_samples.shape,vsini_samples.shape)
+    #         all_posterior.append(posterior)
+    #         all_logpost_arr.append(logpost_arr)
+    #         all_chi2_arr.append(chi2_arr)
+    #     combined_posterior = np.prod(all_posterior,axis=0)
+    #     combined_posterior/=np.nanmax(combined_posterior)
+    #     combined_logpost = np.mean(all_logpost_arr,axis=0)
+    #     combined_chi2 = np.sum(all_chi2_arr,axis=0)
+    #     # print(combined_posterior.shape)
+    #     hdulist = pyfits.HDUList()
+    #     hdulist.append(pyfits.PrimaryHDU(data=np.concatenate((combined_posterior[None,:,:,:],combined_logpost[None,:,:,:],combined_chi2[None,:,:,:]))))
+    #     try:
+    #         hdulist.writeto(os.path.join(OSIRISDATA,"stellar_fits","{0}_combined_posterior.fits".format(refstar_name)), overwrite=True)
+    #     except TypeError:
+    #         hdulist.writeto(os.path.join(OSIRISDATA,"stellar_fits","{0}_combined_posterior.fits".format(refstar_name)), clobber=True)
+    #     hdulist.close()
+    #     # plt.imshow(np.nansum(combined_posterior,axis=0))
+    #     # plt.show()
+    # exit()
+
     print("coucou")
     cutoff=20
+    R0 = 4000
     filename_id = new_colnames.index("filename")
     filelist = [item[filename_id] for item in new_list_data]
     for item,filename in zip(new_list_data,filelist):
-        print(filename)
+        refstar_RV = float(item[rv_simbad_id])
+        vsini_fixed = float(item[vsini_fixed_id])
+        ref_star_type = item[type_id]
+        refstar_name = item[starname_id]
+        baryrv = -float(item[baryrv_id])/1000
+
+        splitpostfilename = os.path.basename(filename).split("_")
+        # print(splitpostfilename)
         if "ao_off" in filename:
-            spec_filename = filename.replace(".fits","_spec_v2_cutoff{0}_logpost.fits".format(cutoff))
+            imtype = "aooff"
+            IFSfilter,date = splitpostfilename[2+2],splitpostfilename[0+2][1::]
         else:
-            spec_filename = filename.replace(".fits","_psfs_repaired_spec_v2_cutoff{0}_logpost.fits".format(cutoff))
-        if len(glob.glob(spec_filename))>0:
-            with pyfits.open(spec_filename) as hdulist:
-                logposterior = hdulist[0].data
-            with pyfits.open(spec_filename.replace(".fits","_vsini.fits")) as hdulist:
-                vsini_vec = hdulist[0].data
-            with pyfits.open(spec_filename.replace(".fits","_limbdar.fits")) as hdulist:
-                limbdark_vec = hdulist[0].data
-            with pyfits.open(spec_filename.replace(".fits","_rv.fits")) as hdulist:
-                RV_vec = hdulist[0].data
+            imtype = "psf"
+            IFSfilter,date = splitpostfilename[2],splitpostfilename[0][1::]
+        if len(glob.glob(os.path.join(OSIRISDATA,"stellar_fits","{0}_{1}_{2}_{3}_posterior.fits".format(refstar_name,IFSfilter,date,imtype))))>0:
+            phoenix_folder = os.path.join(OSIRISDATA,"phoenix","PHOENIX-ACES-AGSS-COND-2011")
+            phoenix_wv_filename = os.path.join(phoenix_folder,"WAVE_PHOENIX-ACES-AGSS-COND-2011_R{0}.fits".format(R0))
+            with pyfits.open(phoenix_wv_filename) as hdulist:
+                phoenix_wvs = hdulist[0].data
+            hdulist = pyfits.open(os.path.join(OSIRISDATA,"stellar_fits","{0}_{1}_{2}_{3}_rv_samples.fits".format(refstar_name,IFSfilter,date,imtype)))
+            rv_samples = hdulist[0].data
+            hdulist = pyfits.open(os.path.join(OSIRISDATA,"stellar_fits","{0}_{1}_{2}_{3}_vsini_samples.fits".format(refstar_name,IFSfilter,date,imtype)))
+            vsini_samples = hdulist[0].data
+            hdulist = pyfits.open(os.path.join(OSIRISDATA,"stellar_fits","{0}_{1}_{2}_{3}_posterior.fits".format(refstar_name,IFSfilter,date,imtype)))
+            # hdulist = pyfits.open(os.path.join(OSIRISDATA,"stellar_fits","{0}_combined_posterior.fits".format(refstar_name,IFSfilter,date,imtype)))
+            posterior = hdulist[0].data[0]
+            logpost_arr = hdulist[0].data[1]
+            chi2_arr = hdulist[0].data[2]
+            posterior_rv_vsini = np.nansum(posterior,axis=0)
+            posterior_model = np.nansum(posterior,axis=(1,2))
+            with open(os.path.join(OSIRISDATA,"stellar_fits","{0}_{1}_{2}_{3}_models.txt".format(refstar_name,IFSfilter,date,imtype)), 'r') as txtfile:
+                grid_refstar_filelist = [s.strip().replace("/scratch/groups/bmacint","/data") for s in txtfile.readlines()]
+            rv_posterior = np.nansum(posterior_rv_vsini,axis=1)
+            vsini_posterior = np.nansum(posterior_rv_vsini,axis=0)
+            bestrv,_,_,bestrv_merr,bestrv_perr,_ = get_err_from_posterior(rv_samples,rv_posterior)
+            bestrv_merr = np.abs(bestrv_merr)
+            bestvsini,_,_,bestvsini_merr,bestvsini_perr,_ = get_err_from_posterior(vsini_samples,vsini_posterior)
+            bestvsini_merr = np.abs(bestvsini_merr)
+            best_model_id = np.argmax(posterior_model)
 
-            posterior = np.exp(logposterior-np.nanmax(logposterior))
-            print(posterior.shape)
+            item[vsini_id],item[vsini_err_id] = bestvsini,np.nanmax([bestvsini_merr,bestvsini_perr])
+            item[rv_id],item[rv_err_id] = bestrv,np.nanmax([bestrv_merr,bestrv_perr])
+            item[limbdark_id],item[limbdark_err_id] = 0.5,np.nan
+            item[post_filename_id] = os.path.join(OSIRISDATA,"stellar_fits","{0}_{1}_{2}_{3}_posterior.fits".format(refstar_name,IFSfilter,date,imtype))
+            item[model_filename_id] = grid_refstar_filelist[best_model_id]
 
-            vsini_post = np.sum(posterior,axis=(0,2))
-            item[vsini_id],item[vsini_err_id] = get_err_from_posterior(vsini_vec,vsini_post)
-            limbdark_post = np.sum(posterior,axis=(1,2))
-            item[limbdark_id],item[limbdark_err_id] = limbdark_vec[np.argmax(limbdark_post)],np.nan
-            rv_post = np.sum(posterior,axis=(0,1))
-            item[rv_id],item[rv_err_id] = get_err_from_posterior(RV_vec,rv_post)
+            # if os.path.basename(item[post_filename_id]) == "HR_8799_Kbb_130727_aooff_posterior.fits":
+            #     print("haha")
+            #     exit()
 
-            item[post_filename_id] = spec_filename
-            print(item)
+            # print(item)
         else:
             item[post_filename_id] = np.nan
             item[vsini_id] = np.nan

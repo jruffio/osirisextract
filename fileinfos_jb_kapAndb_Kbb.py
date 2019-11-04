@@ -50,7 +50,7 @@ new_list_data = copy(old_list_data)
 for item in old_list_table:
     print(item)
 
-if 0: # add filename
+if 1: # add filename
     filename_id = new_colnames.index("filename")
     old_filelist = [item[filename_id] for item in new_list_data]
 
@@ -58,11 +58,12 @@ if 0: # add filename
     filenamefilter = "s*_a*_[0-9][0-9][0-9].fits"
     filelist = glob.glob(os.path.join("/data/osiris_data/"+planet,"*",reductionname,filenamefilter))
     for filename in filelist:
+        print(filename)
         if filename not in old_filelist:
             new_list_data.append([filename,]+[np.nan,]*(N_col-1))
-    print(new_list_data)
+    # print(new_list_data)
 # exit()
-if 0: # add spectral band
+if 1: # add spectral band
     filename_id = new_colnames.index("filename")
     try:
         ifs_filter_id = new_colnames.index("IFS filter")
@@ -80,7 +81,7 @@ if 0: # add spectral band
             new_list_data[k][ifs_filter_id] = "Kbb"
 
 #sort files
-if 0:
+if 1:
     filename_id = new_colnames.index("filename")
     filelist = [item[filename_id] for item in new_list_data]
     filelist_sorted = copy(filelist)
@@ -93,7 +94,7 @@ if 0:
 
     new_list_data = new_new_list_data
 
-if 0: # add MJD-OBS
+if 1: # add MJD-OBS
     filename_id = new_colnames.index("filename")
     MJDOBS_id = new_colnames.index("MJD-OBS")
 
@@ -102,7 +103,7 @@ if 0: # add MJD-OBS
         prihdr0 = hdulist[0].header
         new_list_data[k][MJDOBS_id] = prihdr0["MJD-OBS"]
 
-if 0: # add Temperature
+if 1: # add Temperature
     filename_id = new_colnames.index("filename")
     try:
         DTMP6_id = new_colnames.index("DTMP6")
@@ -116,7 +117,7 @@ if 0: # add Temperature
         prihdr0 = hdulist[0].header
         new_list_data[k][DTMP6_id] = prihdr0["DTMP7"]
 
-if 0: # add exposure time
+if 1: # add exposure time
     filename_id = new_colnames.index("filename")
     try:
         itime_id = new_colnames.index("itime")
@@ -133,7 +134,7 @@ if 0: # add exposure time
         else:
             new_list_data[k][itime_id] = float(prihdr0["ITIME"])
 
-if 0: # add barycenter RV
+if 1: # add barycenter RV
     from barycorrpy import get_BC_vel
     filename_id = new_colnames.index("filename")
     MJDOBS_id = new_colnames.index("MJD-OBS")
@@ -146,10 +147,10 @@ if 0: # add barycenter RV
 
     for k,item in enumerate(new_list_data):
         MJDOBS = float(item[MJDOBS_id])
-        result = get_BC_vel(MJDOBS+2400000.5,hip_id=114189,obsname="Keck Observatory",ephemeris="de430")
+        result = get_BC_vel(MJDOBS+2400000.5,hip_id=116805,obsname="Keck Observatory",ephemeris="de430")
         new_list_data[k][bary_rv_id] = result[0][0]
 
-if 0: # add filename
+if 1: # add filename
     if 0:
         filename_id = new_colnames.index("filename")
         ifs_filter_id = new_colnames.index("IFS filter")
@@ -167,7 +168,7 @@ if 0: # add filename
             else:
                 seqid += 1
                 imid = 0
-            print("[\"{0}\",{1},{2},0],".format(filename,seqid,imid) )
+            print("[\"{0}\",{1},{2},1],".format(filename,seqid,imid) )
             pastnum = currnum
         exit()
     else:
@@ -188,7 +189,19 @@ if 0: # add filename
                         ["/data/osiris_data/kap_And/20161108/reduced_jb/s161108_a028002_Kbb_020.fits",3,1,1],
                         ["/data/osiris_data/kap_And/20161108/reduced_jb/s161108_a029002_Kbb_020.fits",3,2,1],
                         ["/data/osiris_data/kap_And/20161108/reduced_jb/s161108_a030002_Kbb_020.fits",3,3,1],
-                        ["/data/osiris_data/kap_And/20161108/reduced_jb/s161108_a031002_Kbb_020.fits",3,4,1],]
+                        ["/data/osiris_data/kap_And/20161108/reduced_jb/s161108_a031002_Kbb_020.fits",3,4,1],
+                        ["/data/osiris_data/kap_And/20171104/reduced_jb/s171104_a025002_Kbb_020.fits",4,0,1],
+                        ["/data/osiris_data/kap_And/20171104/reduced_jb/s171104_a026002_Kbb_020.fits",4,1,1],
+                        ["/data/osiris_data/kap_And/20171104/reduced_jb/s171104_a027002_Kbb_020.fits",4,2,1],
+                        ["/data/osiris_data/kap_And/20171104/reduced_jb/s171104_a028002_Kbb_020.fits",4,3,1],
+                        ["/data/osiris_data/kap_And/20171104/reduced_jb/s171104_a029002_Kbb_020.fits",4,4,1],
+                        ["/data/osiris_data/kap_And/20171104/reduced_jb/s171104_a030002_Kbb_020.fits",4,5,1],
+                        ["/data/osiris_data/kap_And/20171104/reduced_jb/s171104_a031002_Kbb_020.fits",4,6,1],
+                        ["/data/osiris_data/kap_And/20171104/reduced_jb/s171104_a032002_Kbb_020.fits",4,7,1],
+                        ["/data/osiris_data/kap_And/20171104/reduced_jb/s171104_a033002_Kbb_020.fits",4,8,1],
+                        ["/data/osiris_data/kap_And/20171104/reduced_jb/s171104_a034002_Kbb_020.fits",4,9,1],
+                        ["/data/osiris_data/kap_And/20171104/reduced_jb/s171104_a035002_Kbb_020.fits",4,10,1],
+                        ["/data/osiris_data/kap_And/20171104/reduced_jb/s171104_a036002_Kbb_020.fits",4,11,1]]
 
     try:
         sequence_id = new_colnames.index("sequence")
@@ -218,7 +231,7 @@ if 0: # add filename
                 new_list_data[k][sequence_it_id] = sec_it
                 new_list_data[k][status_id] = status_it
 
-if 0:
+if 1:
     def determine_mosaic_offsets_from_header(prihdr_list):
         OBFMXIM_list = []
         OBFMYIM_list = []
@@ -302,7 +315,7 @@ if 0:
 
 
 
-if 0: # wavelength solution error
+if 1: # wavelength solution error
     try:
         wvsolerr_id = old_colnames.index("wv sol err")
     except:
@@ -372,7 +385,8 @@ def get_err_from_posterior(x,posterior):
         rx = rf(1-0.6827)
     return x[argmax_post],(rx-lx)/2.,argmax_post
 
-if 1:
+numbasis = 0
+if 0:
     from scipy.signal import correlate2d
     try:
         cen_filename_id = old_colnames.index("cen filename")
@@ -446,7 +460,7 @@ if 1:
     # dwv = CDELT1/1000.
     # init_wv = CRVAL1/1000. # wv for first slice in mum
 
-    numbasis = 1#1,3,5
+    numbasis = 5#1,3,5
     myfolder = "sherlock/20191018_RVsearch"
     suffix = "_outputHPF_cutoff40_sherlock_v1_search_resinmodel_kl{0}".format(numbasis)
     # if numbasis ==0:
@@ -454,7 +468,7 @@ if 1:
     #     suffix = "_outputHPF_cutoff40_sherlock_v1_search"
     # else:
     #     myfolder = "sherlock/20191010_resH0model_RV"
-    #     # myfolder = "sherlock/20191012_resH0model_RV"
+    #     myfolder = "sherlock/20191012_resH0model_RV"
     #     suffix = "_outputHPF_cutoff40_sherlock_v1_search_resinmodel_kl{0}".format(numbasis)
     for k,item in enumerate(old_list_data):
         filename = item[filename_id]
@@ -478,6 +492,7 @@ if 1:
             new_list_data[k][rvcen_id],new_list_data[k][rvcensig_id] = np.nan,np.nan
             new_list_data[k][cen_filename_id] = np.nan
             new_list_data[k][snr_id] = np.nan
+            new_list_data[k][RVfakes_id],new_list_data[k][RVfakessig_id] = np.nan,np.nan
             continue
         planetRV = hdulist[0].data
         # print(hdulist[0].data.shape)
@@ -490,9 +505,12 @@ if 1:
                                            os.path.basename(filename).replace(".fits",suffix+".fits")))
         cube_hd = hdulist[0].data[-1,0,0,0:NplanetRV_hd,:,:]
         cube = hdulist[0].data[-1,0,0,NplanetRV_hd::,:,:]
-
-        hdulist_fakes = pyfits.open(os.path.join(os.path.dirname(filename),myfolder,
-                                           os.path.basename(filename).replace(".fits",suffix+"_fakes.fits")))
+        if 1:
+            cube_cp = copy(cube)
+            cube_cp[np.where(np.abs(planetRV)<500)[0],:,:] = np.nan
+            offsets = np.nanmedian(cube_cp,axis=0)[None,:,:]
+            cube_hd = cube_hd - offsets
+            cube = cube - offsets
 
         bary_rv = -float(item[bary_rv_id])/1000. # RV in km/s
         rv_star = -12.7#+-0.8km/s Simbad
@@ -533,30 +551,34 @@ if 1:
             posterior = np.exp(logposterior-np.nanmax(logposterior))
 
 
-            try:
-                logposterior_fakes = hdulist_fakes[0].data[-1,0,9,0:NplanetRV_hd,:,:]
-                logposterior_fakes[:,np.max([ymax-6,0]):np.min([ymax+7,ny]),np.max([xmax-6,0]):np.min([xmax+7,ny])] = np.nan
-                # logposterior_fakes[:,:,0:np.max([xmax-8,0])] = np.nan
-                # logposterior_fakes[:,:,np.min([xmax+8,ny])::] = np.nan
-                # logposterior_fakes[:,0:np.max([ymax-8,0]),:] = np.nan
-                # logposterior_fakes[:,np.min([ymax+8,ny])::,:] = np.nan
-                logposterior_fakes = np.reshape(logposterior_fakes,(NplanetRV_hd,ny*nx))
-                logposterior_fakes = logposterior_fakes[:,np.where(np.nansum(logposterior_fakes,axis=0)!=0)[0]]
-                posterior_fakes = np.exp(logposterior_fakes-np.nanmax(logposterior_fakes,axis=0)[None,:])
-                fakes_rvcen = np.array([ planetRV_hd[rvargmax] for rvargmax in np.argmax(logposterior_fakes,axis=0)])
-                fakes_rvcen[np.where(fakes_rvcen == fakes_rvcen[0])] = np.nan
-                new_list_data[k][RVfakes_id],new_list_data[k][RVfakessig_id] = np.nanmean(fakes_rvcen),np.nanstd(fakes_rvcen)
-                # tmp = np.reshape(fakes_rvcen,(ny,nx))
-                # plt.imshow(tmp)
-                # plt.clim([np.nanmean(tmp)-np.nanstd(tmp),np.nanmean(tmp)+np.nanstd(tmp)])
-                # plt.colorbar()
-                # plt.show()
-                # for fkpostid in range(posterior_fakes.shape[1]):
-                #     plt.plot(planetRV_hd,posterior_fakes[:,fkpostid],label="{0}".format(fkpostid),alpha = 0.2)
-                # plt.plot(planetRV_hd,posterior,label="planet",alpha = 1,linewidth=3)
-                # plt.show()
-                # exit()
-            except:
+            # try:
+            # # if 1:
+            #     hdulist_fakes = pyfits.open(os.path.join(os.path.dirname(filename),myfolder,
+            #                                        os.path.basename(filename).replace(".fits",suffix+"_fakes.fits")))
+            #     logposterior_fakes = hdulist_fakes[0].data[-1,0,9,0:NplanetRV_hd,:,:]
+            #     logposterior_fakes[:,np.max([ymax-6,0]):np.min([ymax+7,ny]),np.max([xmax-6,0]):np.min([xmax+7,ny])] = np.nan
+            #     # logposterior_fakes[:,:,0:np.max([xmax-8,0])] = np.nan
+            #     # logposterior_fakes[:,:,np.min([xmax+8,ny])::] = np.nan
+            #     # logposterior_fakes[:,0:np.max([ymax-8,0]),:] = np.nan
+            #     # logposterior_fakes[:,np.min([ymax+8,ny])::,:] = np.nan
+            #     logposterior_fakes = np.reshape(logposterior_fakes,(NplanetRV_hd,ny*nx))
+            #     logposterior_fakes = logposterior_fakes[:,np.where(np.nansum(logposterior_fakes,axis=0)!=0)[0]]
+            #     posterior_fakes = np.exp(logposterior_fakes-np.nanmax(logposterior_fakes,axis=0)[None,:])
+            #     fakes_rvcen = np.array([ planetRV_hd[rvargmax] for rvargmax in np.argmax(logposterior_fakes,axis=0)])
+            #     fakes_rvcen[np.where(fakes_rvcen == fakes_rvcen[0])] = np.nan
+            #     new_list_data[k][RVfakes_id],new_list_data[k][RVfakessig_id] = np.nanmean(fakes_rvcen),np.nanstd(fakes_rvcen)
+            #     # tmp = np.reshape(fakes_rvcen,(ny,nx))
+            #     # plt.imshow(tmp)
+            #     # plt.clim([np.nanmean(tmp)-np.nanstd(tmp),np.nanmean(tmp)+np.nanstd(tmp)])
+            #     # plt.colorbar()
+            #     # plt.show()
+            #     # for fkpostid in range(posterior_fakes.shape[1]):
+            #     #     plt.plot(planetRV_hd,posterior_fakes[:,fkpostid],label="{0}".format(fkpostid),alpha = 0.2)
+            #     # plt.plot(planetRV_hd,posterior,label="planet",alpha = 1,linewidth=3)
+            #     # plt.show()
+            #     # exit()
+            # except:
+            if 1:
                 new_list_data[k][RVfakes_id],new_list_data[k][RVfakessig_id] = np.nan,np.nan
 
             new_list_data[k][kcen_id] = ymax
@@ -583,6 +605,7 @@ if 1:
         #     new_list_data[k][cen_filename_id] = np.nan
         #     new_list_data[k][snr_id] = np.nan
         #     new_list_data[k][contrast_id] = np.nan
+        #     new_list_data[k][RVfakes_id],new_list_data[k][RVfakessig_id] = np.nan,np.nan
 
 print("NEW")
 for item in new_list_data:

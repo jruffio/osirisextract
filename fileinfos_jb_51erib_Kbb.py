@@ -146,7 +146,7 @@ if 1: # add barycenter RV
 
     for k,item in enumerate(new_list_data):
         MJDOBS = float(item[MJDOBS_id])
-        result = get_BC_vel(MJDOBS+2400000.5,hip_id=114189,obsname="Keck Observatory",ephemeris="de430")
+        result = get_BC_vel(MJDOBS+2400000.5,hip_id=21547,obsname="Keck Observatory",ephemeris="de430")
         new_list_data[k][bary_rv_id] = result[0][0]
 
 if 1: # add filename
