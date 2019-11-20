@@ -155,7 +155,7 @@ if 0: # add barycenter RV
         result = get_BC_vel(MJDOBS+2400000.5,hip_id=114189,obsname="Keck Observatory",ephemeris="de430")
         new_list_data[k][bary_rv_id] = result[0][0]
 
-if 0: # add filename
+if 1: # add filename
     if 0:
         filename_id = new_colnames.index("filename")
         ifs_filter_id = new_colnames.index("IFS filter")
@@ -219,8 +219,8 @@ if 0: # add filename
                         ["/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a036001_Kbb_020.fits",6,10,1],
                         ["/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a037001_Kbb_020.fits",6,11,1],
                         ["/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a038001_Kbb_020.fits",6,12,1],
-                        ["/data/osiris_data/HR_8799_c/20110723/reduced_jb/s110723_a017001_Kbb_020.fits",7,0,1],
-                        ["/data/osiris_data/HR_8799_c/20110723/reduced_jb/s110723_a018001_Kbb_020.fits",7,1,1],
+                        ["/data/osiris_data/HR_8799_c/20110723/reduced_jb/s110723_a017001_Kbb_020.fits",7,0,0],
+                        ["/data/osiris_data/HR_8799_c/20110723/reduced_jb/s110723_a018001_Kbb_020.fits",7,1,0],
                         ["/data/osiris_data/HR_8799_c/20110723/reduced_jb/s110723_a024001_Kbb_020.fits",8,0,1],
                         ["/data/osiris_data/HR_8799_c/20110723/reduced_jb/s110723_a025001_Kbb_020.fits",8,1,1],
                         ["/data/osiris_data/HR_8799_c/20110723/reduced_jb/s110723_a026001_Kbb_020.fits",8,2,1],
@@ -239,14 +239,14 @@ if 0: # add filename
                         ["/data/osiris_data/HR_8799_c/20110724/reduced_jb/s110724_a028001_Hbb_020.fits",10,5,0],
                         ["/data/osiris_data/HR_8799_c/20110724/reduced_jb/s110724_a029001_Hbb_020.fits",10,6,0],
                         ["/data/osiris_data/HR_8799_c/20110724/reduced_jb/s110724_a030001_Kbb_020.fits",10,7,0],
-                        ["/data/osiris_data/HR_8799_c/20110724/reduced_jb/s110724_a032001_Kbb_020.fits",11,0,0],
-                        ["/data/osiris_data/HR_8799_c/20110724/reduced_jb/s110724_a038001_Kbb_020.fits",12,0,0],
-                        ["/data/osiris_data/HR_8799_c/20110724/reduced_jb/s110724_a039001_Hbb_020.fits",12,1,0],
-                        ["/data/osiris_data/HR_8799_c/20110724/reduced_jb/s110724_a041001_Hbb_020.fits",13,0,0],
+                        ["/data/osiris_data/HR_8799_c/20110724/reduced_jb/s110724_a032001_Kbb_020.fits",11,0,1],
+                        ["/data/osiris_data/HR_8799_c/20110724/reduced_jb/s110724_a038001_Kbb_020.fits",12,0,1],
+                        ["/data/osiris_data/HR_8799_c/20110724/reduced_jb/s110724_a039001_Hbb_020.fits",12,1,1],
+                        ["/data/osiris_data/HR_8799_c/20110724/reduced_jb/s110724_a041001_Hbb_020.fits",13,0,1],
                         ["/data/osiris_data/HR_8799_c/20110724/reduced_jb/s110724_a042001_Hbb_020.fits",13,1,0],
                         ["/data/osiris_data/HR_8799_c/20110724/reduced_jb/s110724_a043001_Hbb_020.fits",13,2,0],
                         ["/data/osiris_data/HR_8799_c/20110724/reduced_jb/s110724_a044001_Hbb_020.fits",13,3,0],
-                        ["/data/osiris_data/HR_8799_c/20110725/reduced_jb/s110725_a035001_Kbb_020.fits",14,0,0],
+                        ["/data/osiris_data/HR_8799_c/20110725/reduced_jb/s110725_a035001_Kbb_020.fits",14,0,1],
                         ["/data/osiris_data/HR_8799_c/20110725/reduced_jb/s110725_a036001_Hbb_020.fits",14,1,0],
                         ["/data/osiris_data/HR_8799_c/20110725/reduced_jb/s110725_a037001_Hbb_020.fits",14,2,0],
                         ["/data/osiris_data/HR_8799_c/20110725/reduced_jb/s110725_a038001_Hbb_020.fits",14,3,0],
@@ -256,22 +256,12 @@ if 0: # add filename
                         ["/data/osiris_data/HR_8799_c/20110725/reduced_jb/s110725_a042001_Hbb_020.fits",14,7,0],
                         ["/data/osiris_data/HR_8799_c/20110725/reduced_jb/s110725_a043001_Hbb_020.fits",14,8,0],
                         ["/data/osiris_data/HR_8799_c/20110725/reduced_jb/s110725_a044001_Hbb_020.fits",14,9,0],
-                        ["/data/osiris_data/HR_8799_c/20110725/reduced_jb/s110725_a045001_Hbb_020.fits",14,10,-1],
-                        ["/data/osiris_data/HR_8799_c/20110725/reduced_jb/s110725_a050001_Kbb_020.fits",15,0,0],
-                        ["/data/osiris_data/HR_8799_c/20110725/reduced_jb/s110725_a051001_Hbb_020.fits",15,1,0],
-                        ["/data/osiris_data/HR_8799_c/20110725/reduced_jb/s110725_a052001_Hbb_020.fits",15,2,0],
-                        ["/data/osiris_data/HR_8799_c/20110725/reduced_jb/s110725_a053001_Hbb_020.fits",15,3,0],
-                        ["/data/osiris_data/HR_8799_c/20110725/reduced_jb/s110725_a055001_Hbb_020.fits",16,0,0],
+                        ["/data/osiris_data/HR_8799_c/20110725/reduced_jb/s110725_a050001_Kbb_020.fits",15,0,1],
+                        ["/data/osiris_data/HR_8799_c/20110725/reduced_jb/s110725_a051001_Hbb_020.fits",15,1,1],
+                        ["/data/osiris_data/HR_8799_c/20110725/reduced_jb/s110725_a052001_Hbb_020.fits",15,2,1],
+                        ["/data/osiris_data/HR_8799_c/20110725/reduced_jb/s110725_a053001_Hbb_020.fits",15,3,1],
+                        ["/data/osiris_data/HR_8799_c/20110725/reduced_jb/s110725_a055001_Hbb_020.fits",16,0,1],
                         ["/data/osiris_data/HR_8799_c/20110725/reduced_jb/s110725_a056001_Hbb_020.fits",16,1,1],
-                        ["/data/osiris_data/HR_8799_c/20130726/reduced_jb/s130726_a034001_Kbb_020.fits",17,0,1],
-                        ["/data/osiris_data/HR_8799_c/20130726/reduced_jb/s130726_a035001_Kbb_020.fits",17,1,2],
-                        ["/data/osiris_data/HR_8799_c/20130726/reduced_jb/s130726_a036001_Kbb_020.fits",17,2,0],
-                        ["/data/osiris_data/HR_8799_c/20130726/reduced_jb/s130726_a037001_Kbb_020.fits",17,3,1],
-                        ["/data/osiris_data/HR_8799_c/20130726/reduced_jb/s130726_a038001_Kbb_020.fits",17,4,2],
-                        ["/data/osiris_data/HR_8799_c/20130726/reduced_jb/s130726_a039001_Kbb_020.fits",17,5,2],
-                        ["/data/osiris_data/HR_8799_c/20130726/reduced_jb/s130726_a040001_Kbb_020.fits",17,6,2],
-                        ["/data/osiris_data/HR_8799_c/20130726/reduced_jb/s130726_a041001_Kbb_020.fits",17,7,2],
-                        ["/data/osiris_data/HR_8799_c/20130726/reduced_jb/s130726_a042001_Kbb_020.fits",17,8,2],
                         ["/data/osiris_data/HR_8799_c/20130726/reduced_jb/s130726_a057001_Kbb_020.fits",18,0,1],
                         ["/data/osiris_data/HR_8799_c/20130726/reduced_jb/s130726_a058001_Jbb_020.fits",18,1,0],
                         ["/data/osiris_data/HR_8799_c/20130726/reduced_jb/s130726_a059001_Jbb_020.fits",18,2,0],
@@ -306,14 +296,14 @@ if 0: # add filename
                         ["/data/osiris_data/HR_8799_c/20131031/reduced_jb/s131031_a029001_Jbb_020.fits",25,5,0],
                         ["/data/osiris_data/HR_8799_c/20171103/reduced_jb/s171103_a021002_Kbb_020.fits",26,0,1],
                         ["/data/osiris_data/HR_8799_c/20171103/reduced_jb/s171103_a022002_Kbb_020.fits",26,1,1],
-                        ["/data/osiris_data/HR_8799_c/20171103/reduced_jb/s171103_a023002_Hbb_020.fits",26,2,2],
-                        ["/data/osiris_data/HR_8799_c/20171103/reduced_jb/s171103_a024002_Hbb_020.fits",26,3,2],
+                        ["/data/osiris_data/HR_8799_c/20171103/reduced_jb/s171103_a023002_Hbb_020.fits",26,2,1],
+                        ["/data/osiris_data/HR_8799_c/20171103/reduced_jb/s171103_a024002_Hbb_020.fits",26,3,1],
                         ["/data/osiris_data/HR_8799_c/20171103/reduced_jb/s171103_a026002_Kbb_020.fits",27,0,1],
                         ["/data/osiris_data/HR_8799_c/20171103/reduced_jb/s171103_a027002_Hbb_020.fits",27,1,0],
-                        ["/data/osiris_data/HR_8799_c/20171103/reduced_jb/s171103_a028002_Hbb_020.fits",27,2,0],
+                        ["/data/osiris_data/HR_8799_c/20171103/reduced_jb/s171103_a028002_Hbb_020.fits",27,2,1],
                         ["/data/osiris_data/HR_8799_c/20171103/reduced_jb/s171103_a029002_Hbb_020.fits",27,3,0],
                         ["/data/osiris_data/HR_8799_c/20171103/reduced_jb/s171103_a030002_Hbb_020.fits",27,4,0],
-                        ["/data/osiris_data/HR_8799_c/20171103/reduced_jb/s171103_a031002_Hbb_020.fits",27,5,2],
+                        ["/data/osiris_data/HR_8799_c/20171103/reduced_jb/s171103_a031002_Hbb_020.fits",27,5,1],
                         ["/data/osiris_data/HR_8799_c/20171103/reduced_jb/s171103_a032002_Hbb_020.fits",27,6,0],
                         ["/data/osiris_data/HR_8799_c/20171103/reduced_jb/s171103_a033002_Hbb_020.fits",27,7,0],
                         ["/data/osiris_data/HR_8799_c/20171103/reduced_jb/s171103_a034002_Hbb_020.fits",27,8,0],
@@ -579,8 +569,9 @@ if 1:
     # dwv = CDELT1/1000.
     # init_wv = CRVAL1/1000. # wv for first slice in mum
 
-    numbasis = 0#1,3,5
-    myfolder = "sherlock/20191018_RVsearch"
+    numbasis = 1#1,3,5
+    myfolder = "sherlock/20191104_RVsearch"
+    # myfolder = "sherlock/20191018_RVsearch"
     suffix = "_outputHPF_cutoff40_sherlock_v1_search_resinmodel_kl{0}".format(numbasis)
     # if numbasis ==0:
     #     suffix = "_outputHPF_cutoff40_sherlock_v1_search"

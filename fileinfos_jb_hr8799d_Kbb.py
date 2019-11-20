@@ -187,7 +187,7 @@ if 1: # add filename
                         ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a096001_Kbb_020.fits",2,5,1],
                         ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a097001_Kbb_020.fits",2,6,1],
                         ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a098001_Kbb_020.fits",2,7,1],
-                        ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a099001_Kbb_020.fits",2,8,0],
+                        ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a099001_Kbb_020.fits",2,8,1],
                         ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a100001_Kbb_020.fits",2,9,0],
                         ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a107001_Kbb_020.fits",3,0,0],
                         ["/data/osiris_data/HR_8799_d/20150720/reduced_jb/s150720_a108001_Kbb_020.fits",3,1,0],
@@ -199,8 +199,8 @@ if 1: # add filename
                         ["/data/osiris_data/HR_8799_d/20150722/reduced_jb/s150722_a048001_Kbb_020.fits",4,2,0],
                         ["/data/osiris_data/HR_8799_d/20150722/reduced_jb/s150722_a049001_Kbb_020.fits",4,3,0],
                         ["/data/osiris_data/HR_8799_d/20150722/reduced_jb/s150722_a050001_Kbb_020.fits",4,4,0],
-                        ["/data/osiris_data/HR_8799_d/20150722/reduced_jb/s150722_a051001_Kbb_020.fits",4,5,1],
-                        ["/data/osiris_data/HR_8799_d/20150722/reduced_jb/s150722_a052001_Kbb_020.fits",4,6,1],
+                        ["/data/osiris_data/HR_8799_d/20150722/reduced_jb/s150722_a051001_Kbb_020.fits",4,5,0],
+                        ["/data/osiris_data/HR_8799_d/20150722/reduced_jb/s150722_a052001_Kbb_020.fits",4,6,0],
                         ["/data/osiris_data/HR_8799_d/20150722/reduced_jb/s150722_a053001_Kbb_020.fits",4,7,0],
                         ["/data/osiris_data/HR_8799_d/20150722/reduced_jb/s150722_a054001_Kbb_020.fits",4,8,0],
                         ["/data/osiris_data/HR_8799_d/20150722/reduced_jb/s150722_a055001_Kbb_020.fits",4,9,0],
@@ -497,8 +497,9 @@ if 1:
     # dwv = CDELT1/1000.
     # init_wv = CRVAL1/1000. # wv for first slice in mum
 
-    numbasis = 0#1,3,5
-    myfolder = "sherlock/20191018_RVsearch"
+    numbasis = 5#1,3,5
+    myfolder = "sherlock/20191104_RVsearch"
+    # myfolder = "sherlock/20191018_RVsearch"
     suffix = "_outputHPF_cutoff40_sherlock_v1_search_resinmodel_kl{0}".format(numbasis)
     # suffix = "_outputHPF_cutoff40_sherlock_v1_search"
     # # myfolder = "sherlock/20190412_HPF_only"

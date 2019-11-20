@@ -20,15 +20,18 @@ if __name__ == "__main__":
         pass
 
     out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
+    planet = "HR_8799_c"
     date = "*"
     cutoff = 40
     fontsize = 12
-
-    if 1:
+    fakes = True
+    R=4000
+    IFSfilter = "Kbb"
+    if 0:
         planetcolor_list = ["#0099cc","#ff9900","#6600ff"]
         # for planet,planetcolor in zip(["b","c","d"],planetcolor_list):
             # for IFSfilter in ["Kbb","Hbb"]:
-        for planet,planetcolor in zip(["c"],["#0099cc"]):
+        for planetcolor in ["#0099cc"]:
             for IFSfilter in ["Kbb"]:
 
                 if IFSfilter=="Kbb": #Kbb 1965.0 0.25
@@ -46,33 +49,40 @@ if __name__ == "__main__":
                 wvs=np.arange(init_wv,init_wv+dwv*nl-1e-6,dwv)
                 dprv = 3e5*dwv/(init_wv+dwv*nl//2)
 
-                ## file specific info
-                fileinfos_filename = os.path.join("/data/osiris_data/HR_8799_"+planet,"fileinfos_Kbb_jb.csv")
-                with open(fileinfos_filename, 'r') as csvfile:
-                    csv_reader = csv.reader(csvfile, delimiter=';')
-                    list_table = list(csv_reader)
-                    colnames = list_table[0]
-                    N_col = len(colnames)
-                    list_data = list_table[1::]
-                    N_lines =  len(list_data)
-
-                myspec_list = []
-                myspecwvs_list = []
-                myspec_std_list = []
-                bias_myspec_list = []
-                fakes_myspec_list = []
-                fakes_myspec_std_list = []
-                fakes_myspeccorr_list = []
-                mycorrspec_list = []
-
-                filename_id = colnames.index("filename")
-                kcen_id = colnames.index("kcen")
-                lcen_id = colnames.index("lcen")
-                baryrv_id = colnames.index("barycenter rv")
-
                 for resnumbasis in np.array([0,1,5]):
-                    for fileitem in list_data[0:1]:
+                    ## file specific info
+                    if resnumbasis ==0:
+                        fileinfos_filename = "/data/osiris_data/"+planet+"/fileinfos_Kbb_jb.csv"
+                    else:
+                        fileinfos_filename = "/data/osiris_data/"+planet+"/fileinfos_Kbb_jb_kl{0}.csv".format(resnumbasis)
+                    with open(fileinfos_filename, 'r') as csvfile:
+                        csv_reader = csv.reader(csvfile, delimiter=';')
+                        list_table = list(csv_reader)
+                        colnames = list_table[0]
+                        N_col = len(colnames)
+                        list_data = list_table[1::]
+                        N_lines =  len(list_data)
+
+                    myspec_list = []
+                    myspecwvs_list = []
+                    myspec_std_list = []
+                    bias_myspec_list = []
+                    fakes_myspec_list = []
+                    fakes_myspec_std_list = []
+                    fakes_myspeccorr_list = []
+                    mycorrspec_list = []
+                    fakes_myspec_list = []
+                    fakes_myspec_std_list = []
+
+                    cen_filename_id = colnames.index("cen filename")
+                    filename_id = colnames.index("filename")
+                    kcen_id = colnames.index("kcen")
+                    lcen_id = colnames.index("lcen")
+                    baryrv_id = colnames.index("barycenter rv")
+
+                    for fileitem in list_data:
                         filename = fileitem[filename_id]
+                        reduc_filename = fileitem[cen_filename_id]
                         if "Kbb" not in os.path.basename(filename):
                             continue
                         # if resnumbasis == 0:
@@ -87,19 +97,27 @@ if __name__ == "__main__":
                         #     data_filename = filename.replace("reduced_jb","reduced_jb/sherlock/20190925_resH0model_RV").replace(".fits","_outputHPF_cutoff40_sherlock_v1_search_rescalc_estispec.fits")
                         # else:
                         #     data_filename = filename.replace("reduced_jb","reduced_jb/sherlock/20190925_resH0model_RV").replace(".fits","_outputHPF_cutoff40_sherlock_v1_search_resinmodel_kl{0}_estispec.fits".format(resnumbasis))
-                        data_filename = filename.replace("reduced_jb","reduced_jb/20191018_HPF_faketest").replace(".fits","_outputHPF_cutoff40_sherlock_v1_search_resinmodel_kl{0}_estispec.fits".format(resnumbasis))
+                        # data_filename = filename.replace("reduced_jb","reduced_jb/20191018_HPF_faketest").replace(".fits","_outputHPF_cutoff40_sherlock_v1_search_resinmodel_kl{0}_estispec.fits".format(resnumbasis))
+                        data_filename = reduc_filename.replace(".fits","_estispec.fits")
                         # print(glob.glob(data_filename))
                         # exit()
-                        if "20100715" not in data_filename:
-                            continue
+                        # if "20100715" not in data_filename:
+                        #     continue
                         if len(glob.glob(data_filename)) == 0:
                             continue
 
                         print(data_filename)
-
-
                         with pyfits.open(data_filename) as hdulist:
                             esti_spec_arr = hdulist[0].data
+                            # estispec_np[0,row,col,:] = np.nanmean(wvs[None,None,:]-data_wvsol_offsets[:,:,None],axis=(0,1))
+                            # estispec_np[1,row,col,:] = np.nansum(canvas_residuals_with_nans*PSF,axis=(0,1))/np.nansum(PSF**2,axis=(0,1))
+                            # estispec_np[2,row,col,:] = np.nansum(canvas_residuals_with_nans*PSF,axis=(0,1))/np.nansum(PSF**2,axis=(0,1))/tr4planet(wvs)
+                            # if fake_paras is not None:
+                            #     estispec_np[3,row,col,:] = np.nansum(HPF_fake*fake_paras["contrast"],axis=(0,1))
+                            #     estispec_np[4,row,col,:] = np.nansum(HPF_fake*fake_paras["contrast"],axis=(0,1))/tr4planet(wvs)
+                            # else:
+                            #     estispec_np[3,row,col,:] = np.nan
+                            #     estispec_np[4,row,col,:] = np.nan
 
                         print(esti_spec_arr.shape)
 
@@ -109,17 +127,30 @@ if __name__ == "__main__":
                         host_bary_rv = -float(fileitem[baryrv_id])/1000
                         c_kms = 299792.458
                         myspecwvs_list.append(copy(esti_spec_arr[0,:,plcen_k,plcen_l])*(1-host_bary_rv/c_kms) )
-                        myspec_list.append(copy(esti_spec_arr[1,:,plcen_k,plcen_l]))
+                        myspec_list.append(copy(esti_spec_arr[2,:,plcen_k,plcen_l]))
 
                         esti_spec_arr_cp = copy(esti_spec_arr)
-                        esti_spec_arr_cp[:,:,plcen_k-5:plcen_k+6,plcen_l-5:plcen_l+6] = np.nan
-                        esti_spec_arr_cp[1,:,:,:] = esti_spec_arr_cp[1,:,:,:]#/np.nanstd(esti_spec_arr_cp[1,:,:,:],axis=0)[None,:,:]
+                        esti_spec_arr_cp[:,:,plcen_k-7:plcen_k+8,plcen_l-7:plcen_l+8] = np.nan
+                        # esti_spec_arr_cp[1,:,:,:] = esti_spec_arr_cp[1,:,:,:]#/np.nanstd(esti_spec_arr_cp[1,:,:,:],axis=0)[None,:,:]
                         # esti_spec_arr[:,:,plcen_k-5:plcen_k+5,0:plcen_l] = np.nan
-                        bias_myspec = np.nanmean(esti_spec_arr_cp[1,:,:,:],axis=(1,2))
-                        std_myspec = np.nanstd(esti_spec_arr_cp[1,:,:,:],axis=(1,2))#/30
+                        bias_myspec = np.nanmean(esti_spec_arr_cp[2,:,:,:],axis=(1,2))
+                        std_myspec = np.nanstd(esti_spec_arr_cp[2,:,:,:],axis=(1,2))#/30
                         bias_myspec_list.append(bias_myspec)
                         myspec_std_list.append(std_myspec)
 
+                        if fakes:
+                            try:
+                                fakes_filename = data_filename.replace("_estispec.fits","_fakes_estispec.fits")
+                                with pyfits.open(fakes_filename) as hdulist:
+                                    fakes_esti_spec_arr = hdulist[0].data
+                                fakes_esti_spec_arr[:,:,plcen_k-7:plcen_k+8,plcen_l-7:plcen_l+8] = np.nan
+                                fakes_myspec = np.nanmean(fakes_esti_spec_arr[1,:,:,:],axis=(1,2))
+                                fakes_std_myspec = np.nanstd(fakes_esti_spec_arr[1,:,:,:],axis=(1,2))#/30
+                                fakes_myspec_list.append(fakes_myspec)
+                                fakes_myspec_std_list.append(fakes_std_myspec)
+                            except:
+                                fakes_myspec_list.append(bias_myspec+np.nan)
+                                fakes_myspec_std_list.append(bias_myspec+np.nan)
 
                         # myspec_list.append(copy(esti_spec_fakes_arr[2,:,plcen_k+10,plcen_l]))
                         # fakes_myspec_list.append(copy(esti_spec_fakes_arr[4,:,plcen_k+10,plcen_l]))
@@ -168,6 +199,8 @@ if __name__ == "__main__":
                     myspec_std_conca = np.concatenate(myspec_std_list)
                     myspec_bias_conca = np.concatenate(bias_myspec_list)
                     mycorrspec_conca = np.concatenate(mycorrspec_list)
+                    fakes_spec_conca = np.concatenate(fakes_myspec_list)
+                    fakes_spec_std_conca = np.concatenate(fakes_myspec_std_list)
                     # fakes_myspec_conca = np.concatenate(fakes_myspec_list)
                     # fakes_myspec_std_conca = np.concatenate(fakes_myspec_std_list)
                     # fakes_myspeccorr_conca = np.concatenate(fakes_myspeccorr_list)
@@ -181,6 +214,8 @@ if __name__ == "__main__":
                     finalfakes_spec = np.zeros(nbins)+np.nan
                     finalfakes_spec_biascorr = np.zeros(nbins)+np.nan
                     finalfakes_spec_std = np.zeros(nbins)+np.nan
+                    final_spec_fakes = np.zeros(nbins)+np.nan
+                    final_spec_std_fakes = np.zeros(nbins)+np.nan
                     for k in np.arange(2,nbins):
                         where_digit = np.where((k==digitized)*(np.isfinite(myspec_conca)))
                         if np.size(where_digit[0]) > 0.2*len(myspecwvs_list):
@@ -189,6 +224,8 @@ if __name__ == "__main__":
                             final_spec_biascorr[k]=np.nansum((mycorrspec_conca[where_digit])/myspec_std_conca[where_digit]**2)/np.nansum(1/myspec_std_conca[where_digit]**2)
                             final_spec_std[k]=np.sqrt(1/np.nansum(1/myspec_std_conca[where_digit]**2))
 
+                            final_spec_fakes[k]=np.nansum((fakes_spec_conca[where_digit])/fakes_spec_std_conca[where_digit]**2)/np.nansum(1/fakes_spec_std_conca[where_digit]**2)
+                            final_spec_std_fakes[k]=np.sqrt(1/np.nansum(1/fakes_spec_std_conca[where_digit]**2))
                             # finalfakes_spec[k]=np.nansum((fakes_myspec_conca[where_digit])/fakes_myspec_std_conca[where_digit]**2)/np.nansum(1/fakes_myspec_std_conca[where_digit]**2)
                             # finalfakes_spec_biascorr[k]=np.nansum((fakes_myspeccorr_conca[where_digit])/fakes_myspec_std_conca[where_digit]**2)/np.nansum(1/fakes_myspec_std_conca[where_digit]**2)
                             # finalfakes_spec_std[k]=np.sqrt(1/np.nansum(1/fakes_myspec_std_conca[where_digit]**2))
@@ -196,6 +233,8 @@ if __name__ == "__main__":
                             final_spec[k]=np.nan
                             final_spec_biascorr[k]=np.nan
                             final_spec_std[k]=np.nan
+                            final_spec_fakes[k]=np.nan
+                            final_spec_std_fakes[k]=np.nan
 
                             # finalfakes_spec[k]=np.nan
                             # finalfakes_spec_biascorr[k]=np.nan
@@ -204,8 +243,53 @@ if __name__ == "__main__":
 
                     # plt.plot(bincenter,final_spec,linestyle="--",label="{0}: final_spec".format(resnumbasis))
                     # plt.plot(bincenter,final_spec_biascorr,linestyle="-",label="{0} final_spec - bias".format(resnumbasis))
-                    plt.plot(bincenter,final_spec-final_spec_biascorr,linestyle="-",label="{0} bias".format(resnumbasis))
-                    plt.plot(bincenter,final_spec_std,linestyle="-",alpha=0.5,label="{0} std".format(resnumbasis))
+                    # plt.plot(bincenter,final_spec-final_spec_biascorr,linestyle="-",label="{0} bias".format(resnumbasis))
+                    # plt.plot(bincenter,final_spec_std,linestyle="-",alpha=0.5,label="{0} std".format(resnumbasis))
+                    # plt.plot(bincenter,final_spec_fakes,linestyle="-",label="{0} final_spec_fakes".format(resnumbasis))
+                    # plt.plot(bincenter,final_spec_std_fakes,linestyle="-",label="{0} final_spec_std_fakes".format(resnumbasis))
+
+                    hdulist = pyfits.HDUList()
+                    hdulist.append(pyfits.PrimaryHDU(data=bincenter))
+                    try:
+                        hdulist.writeto(os.path.join(out_pngs,planet+"_spec"+"_wvs"+"_kl{0}.fits".format(resnumbasis)), overwrite=True)
+                    except TypeError:
+                        hdulist.writeto(os.path.join(out_pngs,planet+"_spec"+"_wvs"+"_kl{0}.fits".format(resnumbasis)), clobber=True)
+                    hdulist.close()
+                    hdulist = pyfits.HDUList()
+                    hdulist.append(pyfits.PrimaryHDU(data=final_spec))
+                    try:
+                        hdulist.writeto(os.path.join(out_pngs,planet+"_spec"+"_kl{0}.fits".format(resnumbasis)), overwrite=True)
+                    except TypeError:
+                        hdulist.writeto(os.path.join(out_pngs,planet+"_spec"+"_kl{0}.fits".format(resnumbasis)), clobber=True)
+                    hdulist.close()
+                    hdulist = pyfits.HDUList()
+                    hdulist.append(pyfits.PrimaryHDU(data=final_spec_biascorr))
+                    try:
+                        hdulist.writeto(os.path.join(out_pngs,planet+"_spec_"+"biascorr"+"_kl{0}.fits".format(resnumbasis)), overwrite=True)
+                    except TypeError:
+                        hdulist.writeto(os.path.join(out_pngs,planet+"_spec_"+"biascorr"+"_kl{0}.fits".format(resnumbasis)), clobber=True)
+                    hdulist.close()
+                    hdulist = pyfits.HDUList()
+                    hdulist.append(pyfits.PrimaryHDU(data=final_spec_std))
+                    try:
+                        hdulist.writeto(os.path.join(out_pngs,planet+"_specstd"+"_kl{0}.fits".format(resnumbasis)), overwrite=True)
+                    except TypeError:
+                        hdulist.writeto(os.path.join(out_pngs,planet+"_specstd"+"_kl{0}.fits".format(resnumbasis)), clobber=True)
+                    hdulist.close()
+                    hdulist = pyfits.HDUList()
+                    hdulist.append(pyfits.PrimaryHDU(data=final_spec_fakes))
+                    try:
+                        hdulist.writeto(os.path.join(out_pngs,planet+"_spec_"+"fakes"+"_kl{0}.fits".format(resnumbasis)), overwrite=True)
+                    except TypeError:
+                        hdulist.writeto(os.path.join(out_pngs,planet+"_spec_"+"fakes"+"_kl{0}.fits".format(resnumbasis)), clobber=True)
+                    hdulist.close()
+                    hdulist = pyfits.HDUList()
+                    hdulist.append(pyfits.PrimaryHDU(data=final_spec_fakes))
+                    try:
+                        hdulist.writeto(os.path.join(out_pngs,planet+"_specstd_"+"fakes"+"_kl{0}.fits".format(resnumbasis)), overwrite=True)
+                    except TypeError:
+                        hdulist.writeto(os.path.join(out_pngs,planet+"_specstd_"+"fakes"+"_kl{0}.fits".format(resnumbasis)), clobber=True)
+                    hdulist.close()
 
                     # plt.plot(bincenter,finalfakes_spec,linestyle="--",label="{0}: fakes final_spec".format(resnumbasis))
                     # plt.plot(bincenter,finalfakes_spec_biascorr,linestyle="-",label="{0} fakes final_spec - bias".format(resnumbasis))
@@ -243,10 +327,98 @@ if __name__ == "__main__":
                 #
                 #     plt.plot(bincenter,HPF_molec_spec/np.nanstd(HPF_molec_spec),color="black",linestyle="--",label=molecule)
 
-                plt.legend()
-                plt.show()
-                exit()
-        if 1:
+                # plt.legend()
+                # plt.show()
+                # exit()
+
+
+    if 1:
+        osiris_data_dir = "/data/osiris_data/"
+        phoenix_folder = os.path.join(osiris_data_dir,"phoenix")
+        planet_template_folder = os.path.join(osiris_data_dir,"planets_templates")
+        molecular_template_folder = os.path.join(osiris_data_dir,"molecular_templates")
+        sky_transmission_folder = os.path.join(osiris_data_dir,"sky_transmission")
+        fileinfos_refstars_filename = os.path.join(osiris_data_dir,"fileinfos_refstars_jb.csv")
+
+        if planet == "HR_8799_b":
+            travis_spec_filename=os.path.join(planet_template_folder,
+                                          "HR8799b_"+IFSfilter[0:1]+"_3Oct2018.save")
+        if planet == "HR_8799_c":
+            travis_spec_filename=os.path.join(planet_template_folder,
+                                          "HR8799c_"+IFSfilter[0:1]+"_3Oct2018.save")
+        if planet == "HR_8799_d":
+            travis_spec_filename=os.path.join(planet_template_folder,
+                                          "HR8799c_"+IFSfilter[0:1]+"_3Oct2018.save")
+        if "HR_8799" in planet:
+            phoenix_model_host_filename = glob.glob(os.path.join(phoenix_folder,"HR_8799"+"*.fits"))[0]
+            host_rv = -12.6 #+-1.4
+            host_limbdark = 0.5
+            host_vsini = 49 # true = 49
+            star_name = "HR_8799"
+        if planet == "51_Eri_b":
+            phoenix_model_host_filename = glob.glob(os.path.join(phoenix_folder,"51_Eri"+"*.fits"))[0]
+            travis_spec_filename=os.path.join(planet_template_folder,
+                                          "51Eri_b_highres_template.save")
+            host_rv = 12.6 #+-0.3
+            host_limbdark = 0.5
+            host_vsini = 80
+            star_name = "51_Eri"
+        if planet == "kap_And":
+            phoenix_model_host_filename = glob.glob(os.path.join(phoenix_folder,"kap_And"+"*.fits"))[0]
+            travis_spec_filename=os.path.join(planet_template_folder,
+                                          "KapAnd_lte19-3.50-0.0.AGSS09.Dusty.Kzz=0.0.PHOENIX-ACES-2019.7.save")
+            host_rv = -12.7 #+-0.8
+            host_limbdark = 0.5
+            host_vsini = 150 #unknown
+            star_name = "kap_And"
+        planet_template_filename=travis_spec_filename.replace(".save",
+                                                              "_gaussconv_R{0}_{1}.csv".format(R,IFSfilter))
+
+        with open(planet_template_filename, 'r') as csvfile:
+            csv_reader = csv.reader(csvfile, delimiter=' ')
+            list_starspec = list(csv_reader)
+            oriplanet_spec_str_arr = np.array(list_starspec, dtype=np.str)
+            col_names = oriplanet_spec_str_arr[0]
+            oriplanet_spec = oriplanet_spec_str_arr[1::,1].astype(np.float)
+            oriplanet_spec_wvs = oriplanet_spec_str_arr[1::,0].astype(np.float)
+            planet_spec_func = interp1d(oriplanet_spec_wvs,oriplanet_spec,bounds_error=False,fill_value=np.nan)
+
+        for resnumbasis in [0,1,5]:
+            filename = os.path.join(out_pngs,planet+"_spec_"+"wvs"+"_kl{0}.fits".format(resnumbasis))
+            with pyfits.open(filename) as hdulist:
+                bincenter = hdulist[0].data
+            filename = os.path.join(out_pngs,planet+"_spec"+"_kl{0}.fits".format(resnumbasis))
+            with pyfits.open(filename) as hdulist:
+                final_spec = hdulist[0].data
+            filename = os.path.join(out_pngs,planet+"_spec_"+"biascorr"+"_kl{0}.fits".format(resnumbasis))
+            with pyfits.open(filename) as hdulist:
+                final_spec_biascorr = hdulist[0].data
+            filename = os.path.join(out_pngs,planet+"_specstd"+"_kl{0}.fits".format(resnumbasis))
+            with pyfits.open(filename) as hdulist:
+                final_spec_std = hdulist[0].data
+            filename = os.path.join(out_pngs,planet+"_spec_"+"fakes"+"_kl{0}.fits".format(resnumbasis))
+            with pyfits.open(filename) as hdulist:
+                final_spec_fakes = hdulist[0].data
+            filename = os.path.join(out_pngs,planet+"_specstd_"+"fakes"+"_kl{0}.fits".format(resnumbasis))
+            with pyfits.open(filename) as hdulist:
+                final_spec_std_fakes = hdulist[0].data
+
+            plt.figure(1)
+            plt.plot(bincenter,final_spec,linestyle="--",label="{0}: final_spec".format(resnumbasis))
+            # plt.plot(bincenter,final_spec_biascorr,linestyle="-",label="{0} final_spec - bias".format(resnumbasis))
+            # plt.plot(bincenter,final_spec-final_spec_biascorr,linestyle="-",label="{0} bias".format(resnumbasis))
+            # plt.plot(bincenter,final_spec_std,linestyle="-",alpha=0.5,label="{0} std".format(resnumbasis))
+            # plt.plot(bincenter,final_spec_fakes,linestyle="-",label="{0} final_spec_fakes".format(resnumbasis))
+            # plt.plot(bincenter,final_spec_std_fakes,linestyle="-",label="{0} final_spec_std_fakes".format(resnumbasis))
+
+        _,model_spec = LPFvsHPF(planet_spec_func(bincenter),40)
+        plt.plot(bincenter,model_spec/np.nanstd(model_spec)*np.nanstd(final_spec),color="black",linestyle=":",label="model")
+        plt.legend()
+        plt.show()
+
+
+
+        if 0:
             if 1:
                 if 1:
                     exit()

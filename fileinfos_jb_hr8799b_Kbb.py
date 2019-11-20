@@ -583,8 +583,9 @@ if 1:
     # dwv = CDELT1/1000.
     # init_wv = CRVAL1/1000. # wv for first slice in mum
 
-    numbasis = 0#1,3,5
-    myfolder = "sherlock/20191018_RVsearch"
+    numbasis = 5#1,3,5
+    myfolder = "sherlock/20191104_RVsearch"
+    # myfolder = "sherlock/20191018_RVsearch"
     suffix = "_outputHPF_cutoff40_sherlock_v1_search_resinmodel_kl{0}".format(numbasis)
     # if numbasis ==0:
     #     suffix = "_outputHPF_cutoff40_sherlock_v1_search"
@@ -601,6 +602,7 @@ if 1:
         # if filename == '/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a034001_Kbb_020.fits':
         #     continue
         try:
+        # if 1:
             print(os.path.join(os.path.dirname(filename),myfolder,
                                            os.path.basename(filename).replace(".fits",suffix+"_planetRV.fits")))
             hdulist = pyfits.open(os.path.join(os.path.dirname(filename),myfolder,
@@ -648,7 +650,8 @@ if 1:
 
         # plt.imshow(guess_rv_im)
         # plt.show()
-        try:
+        # try:
+        if 1:
             guesspos = np.unravel_index(np.nanargmax(guess_rv_im),guess_rv_im.shape)
             guess_y,guess_x = guesspos
 
@@ -695,9 +698,12 @@ if 1:
             except:
                 new_list_data[k][RVfakes_id],new_list_data[k][RVfakessig_id] = np.nan,np.nan
 
+
             new_list_data[k][kcen_id] = ymax
             new_list_data[k][lcen_id] = xmax
             new_list_data[k][rvcen_id],new_list_data[k][rvcensig_id],argmax_post = get_err_from_posterior(planetRV_hd,posterior)
+            # print(new_list_data[k][rvcen_id],new_list_data[k][rvcensig_id],argmax_post )
+            # exit()
             new_list_data[k][cen_filename_id] = os.path.join(os.path.dirname(filename),myfolder,
                                                os.path.basename(filename).replace(".fits",suffix+".fits"))
 
@@ -710,15 +716,19 @@ if 1:
 
             contrast_cube_hd = hdulist[0].data[-1,0,11,0:NplanetRV_hd,:,:]
             new_list_data[k][contrast_id] = contrast_cube_hd[argmax_post,ymax,xmax]*1e-5
+
+            print(new_list_data[k])
+            # print(get_err_from_posterior(planetRV_hd,posterior))
+            # exit()
             # print(new_list_data[k][rvcen_id],planetRV_hd[zmax],planetRV_hd[zmax]-(bary_rv+rv_star))
-        except:
-            new_list_data[k][kcen_id] = np.nan
-            new_list_data[k][lcen_id] = np.nan
-            new_list_data[k][rvcen_id],new_list_data[k][rvcensig_id] = np.nan,np.nan
-            new_list_data[k][cen_filename_id] = np.nan
-            new_list_data[k][snr_id] = np.nan
-            new_list_data[k][contrast_id] = np.nan
-            new_list_data[k][RVfakes_id],new_list_data[k][RVfakessig_id] = np.nan,np.nan
+        # except:
+        #     new_list_data[k][kcen_id] = np.nan
+        #     new_list_data[k][lcen_id] = np.nan
+        #     new_list_data[k][rvcen_id],new_list_data[k][rvcensig_id] = np.nan,np.nan
+        #     new_list_data[k][cen_filename_id] = np.nan
+        #     new_list_data[k][snr_id] = np.nan
+        #     new_list_data[k][contrast_id] = np.nan
+        #     new_list_data[k][RVfakes_id],new_list_data[k][RVfakessig_id] = np.nan,np.nan
 
 
 print("NEW")

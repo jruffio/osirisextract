@@ -13,10 +13,11 @@ from copy import copy
 
 out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
 
-planet = "HR_8799_b"
+# planet = "HR_8799_b"
 # planet = "HR_8799_c"
-# planet = "HR_8799_d"
+planet = "HR_8799_d"
 # planet = "kap_And"
+# planet = "51_Eri_b"
 
 # IFSfilter = "Kbb"
 # IFSfilter = "Hbb"
@@ -24,7 +25,12 @@ planet = "HR_8799_b"
 suffix = "KbbHbb"
 # suffix = "all"
 fontsize = 12
-fileinfos_filename = "/data/osiris_data/"+planet+"/fileinfos_Kbb_jb.csv"
+resnumbasis = 5
+# fileinfos_filename = "/data/osiris_data/"+planet+"/fileinfos_Kbb_jb.csv"
+if resnumbasis ==0:
+    fileinfos_filename = "/data/osiris_data/"+planet+"/fileinfos_Kbb_jb.csv"
+else:
+    fileinfos_filename = "/data/osiris_data/"+planet+"/fileinfos_Kbb_jb_kl{0}.csv".format(resnumbasis)
 
 
 #read file
@@ -115,7 +121,8 @@ if 1:
     except:
         pass
 
-    resnumbasis = 0
+    # test = []
+    # test2 = []
     for k,item in enumerate(list_data):
         # if item[rvcen_id] == "nan":
         #     continue
@@ -183,6 +190,10 @@ if 1:
             zcen = np.argmin(np.abs(planetRV_hd-rvcen))
             image = copy(cube_hd[zcen,:,:])
             delta_AIC = cube_hd[zcen,kcen,lcen]
+            # if "171103" in reducfilename:
+            #     test.append(image)
+            # if "171103" not in reducfilename:
+            #     test2.append(image)
         else:
             try:
                 kcen = int(item[kcen_id])
@@ -203,7 +214,7 @@ if 1:
                 plt.clim([0,np.max([np.nanstd(cube_hd)*10,30])])
             except:
                 plt.clim([0,np.max([np.nanstd(image)*10,30])])
-            plt.clim([0,100])
+            plt.clim([0,30])
             plt.xticks([0,10])
 
 
@@ -257,9 +268,13 @@ if 1:
         plt.gca().spines["left"].set_visible(False)
         plt.gca().spines["top"].set_visible(False)
         plt.gca().spines["bottom"].set_visible(False)
+    #
+    # plt.figure(2)
+    # plt.imshow(np.nanmean(test2,axis=0),interpolation="nearest",origin="lower")
+    # plt.show()
 
     f.subplots_adjust(wspace=0,hspace=0)
-    plt.show()
+    # plt.show()
     if not os.path.exists(os.path.join(out_pngs,planet)):
         os.makedirs(os.path.join(out_pngs,planet))
     print("Saving "+os.path.join(out_pngs,planet,planet+"_"+suffix+"_images_kl{0}.pdf".format(resnumbasis)))
