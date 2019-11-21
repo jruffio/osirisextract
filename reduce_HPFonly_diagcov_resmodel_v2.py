@@ -1074,7 +1074,7 @@ if __name__ == "__main__":
         planet_search = copy(planet_search0)
         planet_model_string = copy(planet_model_string0)
         if res_it == 0:
-            continue
+            # continue
             if res_numbasis == 0:
                 continue
             debug_paras = True
