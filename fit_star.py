@@ -77,29 +77,27 @@ def LPFvsHPF(myvec,cutoff,nansmooth=10):
     HPF_myvec[wherenans] = np.nan
     return LPF_myvec,HPF_myvec
 
-def get_best_telluric_model(wvs_corr,_spec,phoenix_refstar_func,transmission_list,where_lines,rv0,bary_rv):
+def get_best_telluric_model(wvs_corr,_spec,phoenix_refstar_func,transmission_list,where_lines,rv0,bary_rv,cutoff):
     c_kms = 299792.458
-    _spec_LPF,_spec_HPF = LPFvsHPF(_spec,cutoff,nansmooth=10)
-    m_list = []
+    chi2_list = []
     # plt.figure(10)
     for k,trans in  enumerate(transmission_list):
-        _spec_model = phoenix_refstar_func(wvs_corr*(1-(rv0+bary_rv)/c_kms))*trans(wvs_corr)
-        _spec_model[np.where(np.isnan(_spec_model))] = np.nan
-        _spec_model_LPF,_spec_model_HPF = LPFvsHPF(_spec_model,cutoff,nansmooth=10)
-        _spec_model_lines = LPFvsHPF(_spec_model_HPF/_spec_model_LPF*_spec_LPF,cutoff,nansmooth=10)[1]
-        m_list.append(_spec_model_lines)
-        # plt.subplot(3,4,k+1)
-        # plt.plot(_spec/trans(wvs_corr),label="{0}".format(k))
-    d = copy(_spec_HPF)
-    d[where_lines] = np.nan
-    for m in m_list:
-        m[where_lines] = np.nan
-    chi2_tel_list = np.zeros(len(m_list))
-    for mid,m in enumerate(m_list):
-        res = d-m*np.nansum(d*m)/np.nansum(m*m)
-        chi2_tel_list[mid] = np.nansum(res**2)
-    bestmid = np.argmin(chi2_tel_list)
+        _spec_model = phoenix_refstar_func(wvs_corr*(1-(rv0+bary_rv)/c_kms))
+        res_hpf = LPFvsHPF(_spec/trans(wvs_corr)/_spec_model,cutoff,nansmooth=10)[1]
+        res_hpf[where_lines] = np.nan
+        chi2_list.append(np.nanvar(res_hpf))
+        # plt.plot(_spec/trans(wvs_corr)/_spec_model,label="{0}".format(k))
+    bestmid = np.argmin(chi2_list)
     # print(bestmid)
+
+    # plt.figure(11)
+    # trans = transmission_list[bestmid]
+    # for alpha in np.arange(0.95,1.15,0.05):
+    #     res_hpf = LPFvsHPF(_spec/(trans(wvs_corr)**alpha)/_spec_model,cutoff,nansmooth=10)[1]
+    #     res_hpf[where_lines] = np.nan
+    #     print(alpha,np.nanvar(res_hpf))
+    #     plt.plot(_spec/((trans(wvs_corr))**alpha)/_spec_model,label="{0}".format(alpha))
+    # plt.legend()
     # plt.show()
     return bestmid
 
@@ -608,7 +606,8 @@ if __name__ == "__main__":
     if 1:
         print(uni_starname_list)
         # delta_teff = 50
-        uni_starname_list = ['kap_And','HIP_111538','51_Eri','HIP_25453','HD_7215','HIP_1123','HIP_116886','HR_8799','HD_210501','BD+14_4774']
+        # uni_starname_list = ['kap_And','HIP_111538','51_Eri','HIP_25453','HD_7215','HIP_1123','HIP_116886','HR_8799','HD_210501','BD+14_4774']
+        uni_starname_list = ['HR_8799',]
         print(ref_unique_dates)
         # exit()
         print(uni_starname_list)
@@ -768,7 +767,7 @@ if __name__ == "__main__":
             ###########################################
             ## broadening
             c_kms = 299792.458
-            cutoff = 40
+            # cutoff = 40
 
             limbdark0 = 0.5
             rv0 = rv_simbad_dict[starname] #13.10
@@ -925,7 +924,7 @@ if __name__ == "__main__":
                 for Hline in Hlines[IFSfilter]:
                     where_lines_list.append(np.where((Hline-dwvfit[IFSfilter]<wvs_corr)*(wvs_corr<Hline+dwvfit[IFSfilter]))[0])
 
-                best_tr_id = get_best_telluric_model(wvs_corr,spec,phoenix_refstar_broad0_func,transmission_list,(np.concatenate(where_lines_list),),rv0,bary_rv)
+                best_tr_id = get_best_telluric_model(wvs_corr,spec,phoenix_refstar_broad0_func,transmission_list,(np.concatenate(where_lines_list),),rv0,bary_rv,cutoff=5)
                 print("Done optimizing transmission", best_tr_id,IFSfilter,bary_rv,date,type)
 
                 # rv_samples = np.arange(-30,10,1)
