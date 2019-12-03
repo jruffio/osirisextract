@@ -7,10 +7,28 @@ import astropy.io.fits as pyfits
 import numpy as np
 import multiprocessing as mp
 from reduce_HPFonly_diagcov import convolve_spectrum
-from reduce_HPFonly_diagcov import LPFvsHPF
+# from reduce_HPFonly_diagcov import LPFvsHPF
 from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
 from copy import copy
+
+
+def LPFvsHPF(myvec,cutoff):
+    myvec_cp = copy(myvec)
+    #handling nans:
+    wherenans = np.where(np.isnan(myvec_cp))
+    for k in wherenans[0]:
+        myvec_cp[k] = np.nanmedian(myvec_cp[np.max([0,k-20]):np.min([np.size(myvec_cp),k+20])])
+
+    fftmyvec = np.fft.fft(np.concatenate([myvec_cp,myvec_cp[::-1]],axis=0))
+    LPF_fftmyvec = copy(fftmyvec)
+    LPF_fftmyvec[cutoff:(2*np.size(myvec_cp)-cutoff+1)] = 0
+    LPF_myvec = np.real(np.fft.ifft(LPF_fftmyvec))[0:np.size(myvec_cp)]
+    HPF_myvec = myvec_cp - LPF_myvec
+
+    LPF_myvec[wherenans] = np.nan
+    HPF_myvec[wherenans] = np.nan
+    return LPF_myvec,HPF_myvec
 
 if __name__ == "__main__":
     try:
@@ -20,14 +38,16 @@ if __name__ == "__main__":
         pass
 
     out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
-    planet = "HR_8799_c"
-    date = "*"
+    planet = "kap_And"
+    # planet = "HR_8799_c"
+    date = "2010*"
     cutoff = 40
     fontsize = 12
     fakes = True
     R=4000
     IFSfilter = "Kbb"
-    if 0:
+    test = True
+    if 1:
         planetcolor_list = ["#0099cc","#ff9900","#6600ff"]
         # for planet,planetcolor in zip(["b","c","d"],planetcolor_list):
             # for IFSfilter in ["Kbb","Hbb"]:
@@ -49,12 +69,15 @@ if __name__ == "__main__":
                 wvs=np.arange(init_wv,init_wv+dwv*nl-1e-6,dwv)
                 dprv = 3e5*dwv/(init_wv+dwv*nl//2)
 
-                for resnumbasis in np.array([0,1,5]):
+                for resnumbasis in [0,1,5,10]:#np.arange(0,20):#np.array([0,1,5]):
                     ## file specific info
                     if resnumbasis ==0:
                         fileinfos_filename = "/data/osiris_data/"+planet+"/fileinfos_Kbb_jb.csv"
                     else:
-                        fileinfos_filename = "/data/osiris_data/"+planet+"/fileinfos_Kbb_jb_kl{0}.csv".format(resnumbasis)
+                        if test:
+                            fileinfos_filename = "/data/osiris_data/"+planet+"/fileinfos_Kbb_jb.csv"
+                        else:
+                            fileinfos_filename = "/data/osiris_data/"+planet+"/fileinfos_Kbb_jb_kl{0}.csv".format(resnumbasis)
                     with open(fileinfos_filename, 'r') as csvfile:
                         csv_reader = csv.reader(csvfile, delimiter=';')
                         list_table = list(csv_reader)
@@ -82,7 +105,14 @@ if __name__ == "__main__":
 
                     for fileitem in list_data:
                         filename = fileitem[filename_id]
-                        reduc_filename = fileitem[cen_filename_id]
+                        if test:
+                            # print(fileitem[cen_filename_id])
+                            reduc_filename = fileitem[cen_filename_id].replace("20191104_RVsearch","20191120_newresmodel").replace("kl0",'kl{0}'.format(resnumbasis))
+                            # print(reduc_filename)
+                            # print(glob.glob(reduc_filename))
+                            # exit()
+                        else:
+                            reduc_filename = fileitem[cen_filename_id]
                         if "Kbb" not in os.path.basename(filename):
                             continue
                         # if resnumbasis == 0:
@@ -127,14 +157,14 @@ if __name__ == "__main__":
                         host_bary_rv = -float(fileitem[baryrv_id])/1000
                         c_kms = 299792.458
                         myspecwvs_list.append(copy(esti_spec_arr[0,:,plcen_k,plcen_l])*(1-host_bary_rv/c_kms) )
-                        myspec_list.append(copy(esti_spec_arr[2,:,plcen_k,plcen_l]))
+                        myspec_list.append(copy(esti_spec_arr[1,:,plcen_k,plcen_l]))
 
                         esti_spec_arr_cp = copy(esti_spec_arr)
                         esti_spec_arr_cp[:,:,plcen_k-7:plcen_k+8,plcen_l-7:plcen_l+8] = np.nan
                         # esti_spec_arr_cp[1,:,:,:] = esti_spec_arr_cp[1,:,:,:]#/np.nanstd(esti_spec_arr_cp[1,:,:,:],axis=0)[None,:,:]
                         # esti_spec_arr[:,:,plcen_k-5:plcen_k+5,0:plcen_l] = np.nan
-                        bias_myspec = np.nanmean(esti_spec_arr_cp[2,:,:,:],axis=(1,2))
-                        std_myspec = np.nanstd(esti_spec_arr_cp[2,:,:,:],axis=(1,2))#/30
+                        bias_myspec = np.nanmean(esti_spec_arr_cp[1,:,:,:],axis=(1,2))
+                        std_myspec = np.nanstd(esti_spec_arr_cp[1,:,:,:],axis=(1,2))#/30
                         bias_myspec_list.append(bias_myspec)
                         myspec_std_list.append(std_myspec)
 
@@ -383,7 +413,19 @@ if __name__ == "__main__":
             oriplanet_spec_wvs = oriplanet_spec_str_arr[1::,0].astype(np.float)
             planet_spec_func = interp1d(oriplanet_spec_wvs,oriplanet_spec,bounds_error=False,fill_value=np.nan)
 
-        for resnumbasis in [0,1,5]:
+        plt.figure(1)
+        filename = os.path.join(out_pngs,planet+"_spec_"+"wvs"+"_kl{0}.fits".format(0))
+        with pyfits.open(filename) as hdulist:
+            bincenter = hdulist[0].data
+        filename = os.path.join(out_pngs,planet+"_spec"+"_kl{0}.fits".format(0))
+        with pyfits.open(filename) as hdulist:
+            final_spec = hdulist[0].data
+        planet_model = planet_spec_func(bincenter)
+        planet_model[np.where(np.isnan(final_spec))] = np.nan
+        _,model_spec = LPFvsHPF(planet_model,40)
+        plt.plot(bincenter,model_spec*np.nansum(final_spec*model_spec)/np.nansum(model_spec*model_spec),color="black",linestyle="-",label="model")
+
+        for resnumbasis in [0,1,5,10]:#np.arange(0,10):#[0,1,2]:
             filename = os.path.join(out_pngs,planet+"_spec_"+"wvs"+"_kl{0}.fits".format(resnumbasis))
             with pyfits.open(filename) as hdulist:
                 bincenter = hdulist[0].data
@@ -403,7 +445,6 @@ if __name__ == "__main__":
             with pyfits.open(filename) as hdulist:
                 final_spec_std_fakes = hdulist[0].data
 
-            plt.figure(1)
             plt.plot(bincenter,final_spec,linestyle="--",label="{0}: final_spec".format(resnumbasis))
             # plt.plot(bincenter,final_spec_biascorr,linestyle="-",label="{0} final_spec - bias".format(resnumbasis))
             # plt.plot(bincenter,final_spec-final_spec_biascorr,linestyle="-",label="{0} bias".format(resnumbasis))
@@ -411,8 +452,6 @@ if __name__ == "__main__":
             # plt.plot(bincenter,final_spec_fakes,linestyle="-",label="{0} final_spec_fakes".format(resnumbasis))
             # plt.plot(bincenter,final_spec_std_fakes,linestyle="-",label="{0} final_spec_std_fakes".format(resnumbasis))
 
-        _,model_spec = LPFvsHPF(planet_spec_func(bincenter),40)
-        plt.plot(bincenter,model_spec/np.nanstd(model_spec)*np.nanstd(final_spec),color="black",linestyle=":",label="model")
         plt.legend()
         plt.show()
 

@@ -460,8 +460,10 @@ if 1:
     # dwv = CDELT1/1000.
     # init_wv = CRVAL1/1000. # wv for first slice in mum
 
-    numbasis = 0#1,3,5
-    myfolder = "sherlock/20191104_RVsearch"
+    # numbasis = 0#0,1,5
+    # myfolder = "sherlock/20191104_RVsearch" # old res model
+    numbasis = 10#0,1,5,10
+    myfolder = "sherlock/20191120_newres_RV"
     # myfolder = "sherlock/20191018_RVsearch"
     suffix = "_outputHPF_cutoff40_sherlock_v1_search_resinmodel_kl{0}".format(numbasis)
     # if numbasis ==0:

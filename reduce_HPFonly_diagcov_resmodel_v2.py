@@ -770,10 +770,10 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
                             PSF[where_bad_data_cube] = np.nan
                             estispec_np[0,row,col,:] = np.nanmean(wvs[None,None,:]-data_wvsol_offsets[:,:,None],axis=(0,1))
                             estispec_np[1,row,col,:] = np.nansum(canvas_residuals_with_nans*PSF,axis=(0,1))/np.nansum(PSF**2,axis=(0,1))
-                            estispec_np[2,row,col,:] = np.nansum(canvas_residuals_with_nans*PSF,axis=(0,1))/np.nansum(PSF**2,axis=(0,1))/tr4planet(wvs)
+                            estispec_np[2,row,col,:] = tr4planet(wvs)
                             if fake_paras is not None:
                                 estispec_np[3,row,col,:] = np.nansum(HPF_fake*fake_paras["contrast"],axis=(0,1))
-                                estispec_np[4,row,col,:] = np.nansum(HPF_fake*fake_paras["contrast"],axis=(0,1))/tr4planet(wvs)
+                                estispec_np[4,row,col,:] = np.nan#np.nansum(HPF_fake*fake_paras["contrast"],axis=(0,1))/tr4planet(wvs)
                             else:
                                 estispec_np[3,row,col,:] = np.nan
                                 estispec_np[4,row,col,:] = np.nan
@@ -1013,7 +1013,7 @@ if __name__ == "__main__":
         # filelist = filelist[4:]
         # filelist = filelist[len(filelist)-3:len(filelist)-2]
 
-        res_numbasis = 10
+        res_numbasis = 1
         numthreads = 28
         planet_search = True
         debug_paras = True
