@@ -38,9 +38,9 @@ if __name__ == "__main__":
         pass
 
     out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
-    planet = "kap_And"
-    # planet = "HR_8799_c"
-    date = "2010*"
+    # planet = "kap_And"
+    planet = "HR_8799_c"
+    # date = "2010*"
     cutoff = 40
     fontsize = 12
     fakes = True
@@ -131,8 +131,8 @@ if __name__ == "__main__":
                         data_filename = reduc_filename.replace(".fits","_estispec.fits")
                         # print(glob.glob(data_filename))
                         # exit()
-                        # if "20100715" not in data_filename:
-                        #     continue
+                        if "20110723" not in data_filename:
+                            continue
                         if len(glob.glob(data_filename)) == 0:
                             continue
 

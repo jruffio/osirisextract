@@ -967,8 +967,8 @@ if __name__ == "__main__":
         # date = "130727"
         # date = "161106"
         # date = "180722"
-        # planet = "HR_8799_c"
-        # date = "100715"
+        planet = "HR_8799_c"
+        date = "100715"
         # date = "101028"
         # date = "101104"
         # date = "110723"
@@ -984,8 +984,8 @@ if __name__ == "__main__":
         # planet = "51_Eri_b"
         # date = "171103"
         # date = "171104"
-        planet = "kap_And"
-        date = "161106"
+        # planet = "kap_And"
+        # date = "161106"
         IFSfilter = "Kbb"
         # IFSfilter = "Hbb"
         # IFSfilter = "Jbb" # "Kbb" or "Hbb"
@@ -996,7 +996,8 @@ if __name__ == "__main__":
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190520_LPF/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190906_HPF_restest2/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190923_HPF_restest2/"
-        outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20191120_new_resmodel/"
+        # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20191120_new_resmodel/"
+        outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20191202_test/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190305_HPF_only_noperscor/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190228_mol_temp/"
 
@@ -1309,12 +1310,12 @@ if __name__ == "__main__":
             # print(host_bary_rv)
             # exit()
 
-            if 1:
+            phoenix_db_folder = os.path.join(osiris_data_dir,"phoenix","PHOENIX-ACES-AGSS-COND-2011")
+            if 0:
                 splitpostfilename = os.path.basename(filelist[0]).split("_")
                 imtype = "science"
                 # print(date,star_name)
                 # exit()
-                phoenix_db_folder = os.path.join(osiris_data_dir,"phoenix","PHOENIX-ACES-AGSS-COND-2011")
                 # phoenix_wv_filename = os.path.join(phoenix_folder,"WAVE_PHOENIX-ACES-AGSS-COND-2011_R{0}.fits".format(R0))
                 # with pyfits.open(phoenix_wv_filename) as hdulist:
                 #     phoenix_wvs = hdulist[0].data
@@ -1818,12 +1819,39 @@ if __name__ == "__main__":
                 #         HR8799pho_spec = HR8799pho_spec_str_arr[1::,1].astype(np.float)
                 #         HR8799pho_spec_wvs = HR8799pho_spec_str_arr[1::,0].astype(np.float)
                 if 1:
-                    phoenix_wv_filename = os.path.join(phoenix_db_folder,"WAVE_PHOENIX-ACES-AGSS-COND-2011_R{0}.fits".format(R0))
+                    # phoenix_wv_filename = os.path.join(phoenix_db_folder,"WAVE_PHOENIX-ACES-AGSS-COND-2011_R{0}.fits".format(R0))
+                    # with pyfits.open(phoenix_wv_filename) as hdulist:
+                    #     HR8799pho_spec_wvs = hdulist[0].data
+                    #
+                    # with pyfits.open(phoenix_model_host_filename) as hdulist:
+                    #     HR8799pho_spec = hdulist[0].data
+                    phoenix_wv_filename = os.path.join(phoenix_folder,"WAVE_PHOENIX-ACES-AGSS-COND-2011.fits")
                     with pyfits.open(phoenix_wv_filename) as hdulist:
-                        HR8799pho_spec_wvs = hdulist[0].data
+                        phoenix_wvs = hdulist[0].data/1.e4
+                    crop_phoenix = np.where((phoenix_wvs>wvs[0]-(wvs[-1]-wvs[0])/2)*(phoenix_wvs<wvs[-1]+(wvs[-1]-wvs[0])/2))
+                    phoenix_wvs = phoenix_wvs[crop_phoenix]
 
-                    with pyfits.open(phoenix_model_host_filename) as hdulist:
-                        HR8799pho_spec = hdulist[0].data
+                    phoenix_host_filename=phoenix_model_host_filename.replace(".fits","_gaussconv_R{0}_{1}.csv".format(R,IFSfilter))
+                    if len(glob.glob(phoenix_host_filename)) == 0:
+                        with pyfits.open(phoenix_model_host_filename) as hdulist:
+                            phoenix_HR8799 = hdulist[0].data[crop_phoenix]
+                        print("convolving: "+phoenix_model_host_filename)
+                        phoenix_HR8799_conv = convolve_spectrum(phoenix_wvs,phoenix_HR8799,R,specpool)
+
+                        with open(phoenix_host_filename, 'w+') as csvfile:
+                            csvwriter = csv.writer(csvfile, delimiter=' ')
+                            csvwriter.writerows([["wvs","spectrum"]])
+                            csvwriter.writerows([[a,b] for a,b in zip(phoenix_wvs,phoenix_HR8799_conv)])
+
+                    with open(phoenix_host_filename, 'r') as csvfile:
+                        csv_reader = csv.reader(csvfile, delimiter=' ')
+                        list_starspec = list(csv_reader)
+                        HR8799pho_spec_str_arr = np.array(list_starspec, dtype=np.str)
+                        col_names = HR8799pho_spec_str_arr[0]
+                        HR8799pho_spec = HR8799pho_spec_str_arr[1::,1].astype(np.float)
+                        HR8799pho_spec_wvs = HR8799pho_spec_str_arr[1::,0].astype(np.float)
+
+
                     HR8799pho_spec = HR8799pho_spec/np.mean(HR8799pho_spec)
 
                     HR8799pho_spec_func = interp1d(HR8799pho_spec_wvs,HR8799pho_spec,bounds_error=False,fill_value=np.nan)
