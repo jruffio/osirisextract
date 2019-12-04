@@ -1,5 +1,7 @@
 __author__ = 'jruffio'
 
+import matplotlib
+matplotlib.use("Agg")
 import os
 import csv
 import glob
@@ -916,7 +918,7 @@ if __name__ == "__main__":
                 for Hline in Hlines[IFSfilter]:
                     where_lines_list.append(np.where((Hline-dwvfit[IFSfilter]<wvs_corr)*(wvs_corr<Hline+dwvfit[IFSfilter]))[0])
 
-                best_tr_id = get_best_telluric_model(wvs_corr,spec,phoenix_refstar_broad0_func,transmission_list,(np.concatenate(where_lines_list),),rv0,bary_rv)
+                best_tr_id = get_best_telluric_model(wvs_corr,spec,phoenix_refstar_broad0_func,transmission_list,(np.concatenate(where_lines_list),),rv0,bary_rv,cutoff=5)
                 print("Done optimizing transmission", best_tr_id,IFSfilter,bary_rv,date,type)
 
                 # rv_samples = np.arange(-30,10,1)
