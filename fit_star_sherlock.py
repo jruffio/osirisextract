@@ -156,23 +156,29 @@ def get_residuals(rv, vsini,wvs_corr,spec,ref_star_func, trans_func,bary_rv,limb
     refstar_broad_func = interp1d(wvs4broadening,broadened_spec,bounds_error=False,fill_value=np.nan)
 
     # print(vsini_id,rv_id,vsini,rv)
-    if 0:
-        M = np.zeros((np.size(spec_stamps_conca),1+(degpoly+1)*len(wvs_stamps)))
-        M[:,0] = refstar_broad_func(wvs_stamps_conca*(1-(rv+bary_rv)/c_kms))*trans_func(wvs_stamps_conca)
-        M0_mn = np.mean(M[:,0])
-        M[:,0] /= M0_mn
+    if 1:
+        M = np.zeros((np.size(spec_stamps_conca),(degpoly+1)*len(wvs_stamps)))
+        tmp = refstar_broad_func(wvs_stamps_conca*(1-(rv+bary_rv)/c_kms))*trans_func(wvs_stamps_conca)
+        M0_mn = np.mean(tmp)
+        tmp /= M0_mn
         for stamp_id,(wvs_stamp,spec_stamp,first_index,last_index) in enumerate(zip(wvs_stamps,spec_stamps,first_index_list,last_index_list)):
-            for polypower in range(degpoly+1):
-                tmp = wvs_stamp**polypower
-                M[first_index:last_index,polypower+(degpoly+1)*stamp_id+1] = tmp/np.mean(tmp)
-        d = spec_stamps_conca[where_data_finite]
-        d_wvs = wvs_stamps_conca[where_data_finite]
-        M = M[where_data_finite[0],:]
-        p,chi2,rank,s = np.linalg.lstsq(M,d,rcond=None)
-        m = np.dot(M,p)
-        m_line = np.dot(M[:,0],p[0])
-        m_bckg = np.dot(M[:,1::],p[1::])
-        res = d-m
+            x_knots = wvs_stamp[np.linspace(0,len(wvs_stamp)-1,degpoly+1,endpoint=True).astype(np.int)]#np.array([wvs_stamp[wvid] for wvid in )
+            # print(x_knots)
+            # print(wvs_stamp)
+            for polypower in range(degpoly):
+                if polypower == 0:
+                    where_chunk = np.where((x_knots[polypower]<=wvs_stamp)*(wvs_stamp<=x_knots[polypower+1]))
+                else:
+                    where_chunk = np.where((x_knots[polypower]<wvs_stamp)*(wvs_stamp<=x_knots[polypower+1]))
+                M[where_chunk[0]+first_index,polypower+(degpoly+1)*stamp_id] = 1-(wvs_stamp[where_chunk]-x_knots[polypower])/(x_knots[polypower+1]-x_knots[polypower])
+                M[where_chunk[0]+first_index,1+polypower+(degpoly+1)*stamp_id] = (wvs_stamp[where_chunk]-x_knots[polypower])/(x_knots[polypower+1]-x_knots[polypower])
+                # print("coucou")
+        M = tmp[:,None]*M
+        # print(M.shape)
+        # for k in range(M.shape[1]):
+        #     plt.plot(M[:,k])
+        # plt.show()
+        # exit()
     else:
         M = np.zeros((np.size(spec_stamps_conca),(degpoly+1)*len(wvs_stamps)))
         tmp = refstar_broad_func(wvs_stamps_conca*(1-(rv+bary_rv)/c_kms))*trans_func(wvs_stamps_conca)
@@ -182,14 +188,14 @@ def get_residuals(rv, vsini,wvs_corr,spec,ref_star_func, trans_func,bary_rv,limb
             for polypower in range(degpoly+1):
                 M[first_index:last_index,polypower+(degpoly+1)*stamp_id] = \
                     tmp[first_index:last_index]*(wvs_stamp**polypower)
-        d = spec_stamps_conca[where_data_finite]
-        d_wvs = wvs_stamps_conca[where_data_finite]
-        M = M[where_data_finite[0],:]
-        p,chi2,rank,s = np.linalg.lstsq(M,d,rcond=None)
-        m = np.dot(M,p)
-        m_line = np.nan
-        m_bckg = np.nan
-        res = d-m
+    d = spec_stamps_conca[where_data_finite]
+    d_wvs = wvs_stamps_conca[where_data_finite]
+    M = M[where_data_finite[0],:]
+    p,chi2,rank,s = np.linalg.lstsq(M,d,rcond=None)
+    m = np.dot(M,p)
+    m_line = np.nan
+    m_bckg = np.nan
+    res = d-m
 
 
 
@@ -232,15 +238,29 @@ def fit_rv_vsin(rv_samples, vsini_samples,wvs_corr,spec,ref_star_func, trans_fun
 
         for rv_id,rv in enumerate(rv_samples):
             # print(vsini_id,rv_id,vsini,rv)
-            if 0:
-                M = np.zeros((np.size(spec_stamps_conca),1+(degpoly+1)*len(wvs_stamps)))
-                M[:,0] = refstar_broad_func(wvs_stamps_conca*(1-(rv+bary_rv)/c_kms))*trans_func(wvs_stamps_conca)
-                M0_mn = np.mean(M[:,0])
-                M[:,0] /= M0_mn
+            if 1:
+                M = np.zeros((np.size(spec_stamps_conca),(degpoly+1)*len(wvs_stamps)))
+                tmp = refstar_broad_func(wvs_stamps_conca*(1-(rv+bary_rv)/c_kms))*trans_func(wvs_stamps_conca)
+                M0_mn = np.mean(tmp)
+                tmp /= M0_mn
                 for stamp_id,(wvs_stamp,spec_stamp,first_index,last_index) in enumerate(zip(wvs_stamps,spec_stamps,first_index_list,last_index_list)):
-                    for polypower in range(degpoly+1):
-                        tmp = wvs_stamp**polypower
-                        M[first_index:last_index,polypower+(degpoly+1)*stamp_id+1] = tmp/np.mean(tmp)
+                    x_knots = wvs_stamp[np.linspace(0,len(wvs_stamp)-1,degpoly+1,endpoint=True).astype(np.int)]#np.array([wvs_stamp[wvid] for wvid in )
+                    # print(x_knots)
+                    # print(wvs_stamp)
+                    for polypower in range(degpoly):
+                        if polypower == 0:
+                            where_chunk = np.where((x_knots[polypower]<=wvs_stamp)*(wvs_stamp<=x_knots[polypower+1]))
+                        else:
+                            where_chunk = np.where((x_knots[polypower]<wvs_stamp)*(wvs_stamp<=x_knots[polypower+1]))
+                        M[where_chunk[0]+first_index,polypower+(degpoly+1)*stamp_id] = 1-(wvs_stamp[where_chunk]-x_knots[polypower])/(x_knots[polypower+1]-x_knots[polypower])
+                        M[where_chunk[0]+first_index,1+polypower+(degpoly+1)*stamp_id] = (wvs_stamp[where_chunk]-x_knots[polypower])/(x_knots[polypower+1]-x_knots[polypower])
+                        # print("coucou")
+                M = tmp[:,None]*M
+                # print(M.shape)
+                # for k in range(M.shape[1]):
+                #     plt.plot(M[:,k])
+                # plt.show()
+                # exit()
             else:
                 M = np.zeros((np.size(spec_stamps_conca),(degpoly+1)*len(wvs_stamps)))
                 tmp = refstar_broad_func(wvs_stamps_conca*(1-(rv+bary_rv)/c_kms))*trans_func(wvs_stamps_conca)
@@ -263,10 +283,10 @@ def fit_rv_vsin(rv_samples, vsini_samples,wvs_corr,spec,ref_star_func, trans_fun
             chi2_arr[rv_id,vsini_id] = chi2
             logpost_arr[rv_id,vsini_id] = logpost
             # plt.figure(3)
-            # # for m in M.T:
-            # #     plt.plot(m)
-            # plt.plot(spec_stamps_conca)
-            # plt.plot(data_model)
+            # for _m in M.T:
+            #     plt.plot(_m,"--")
+            # plt.plot(d)
+            # plt.plot(m)
             # plt.show()
 
 
@@ -284,7 +304,7 @@ def fit_rv_vsin_model(rv_samples, vsini_samples,wvs_corr,spec,ref_star_func_list
             chi2_arr[ref_id,:,:],logpost_arr[ref_id,:,:] = \
                 fit_rv_vsin(rv_samples, vsini_samples,wvs_corr,spec,ref_star_func, trans_func,bary_rv,limbdark0,Hlines,dwvfit,degpoly)
     else:
-        numthreads=32
+        # numthreads=32
         fitpool = mp.Pool(processes=numthreads)
 
         outputs_list = fitpool.map(_fit_rv_vsin, zip(itertools.repeat(rv_samples),
@@ -597,6 +617,7 @@ if __name__ == "__main__":
     # print(vsini_fixed_dict)
     # exit()
 
+    degpoly = 4
     uni_starname_list = ['kap_And','HIP_111538','51_Eri','HIP_25453','HD_7215','HIP_1123','HIP_116886','HR_8799','HD_210501','BD+14_4774']
     print(len(uni_starname_list)) #10
     print(len(ref_unique_dates)) #26
@@ -929,7 +950,7 @@ if __name__ == "__main__":
                 print(len(grid_refstar_func_list))
                 chi2_arr, logpost_arr = fit_rv_vsin_model(rv_samples, vsini_samples,wvs_corr,spec,
                                                 grid_refstar_func_list, transmission_list[best_tr_id],
-                                                bary_rv,limbdark0,Hlines[IFSfilter],dwvfit[IFSfilter],degpoly=1,numthreads=numthreads)
+                                                bary_rv,limbdark0,Hlines[IFSfilter],dwvfit[IFSfilter],degpoly=degpoly,numthreads=numthreads)
                 # print(chi2_arr.shape)
                 # exit()
                 # chi2_arr, logpost_arr = fit_rv_vsin(rv_samples, vsini_samples,wvs_corr,spec,
@@ -972,13 +993,13 @@ if __name__ == "__main__":
 
                 d_wvs,d,m,res,m_line,m_bckg = get_residuals(bestrv, bestvsini,wvs_corr,spec,
                                                 grid_refstar_func_list[best_model_id], transmission_list[best_tr_id],
-                                                bary_rv,limbdark0,Hlines[IFSfilter],dwvfit[IFSfilter],degpoly=1)
+                                                bary_rv,limbdark0,Hlines[IFSfilter],dwvfit[IFSfilter],degpoly=degpoly)
                 _,_,m_p10,_,_,_ = get_residuals(bestrv+10, bestvsini,wvs_corr,spec,
                                                 grid_refstar_func_list[best_model_id], transmission_list[best_tr_id],
-                                                bary_rv,limbdark0,Hlines[IFSfilter],dwvfit[IFSfilter],degpoly=1)
+                                                bary_rv,limbdark0,Hlines[IFSfilter],dwvfit[IFSfilter],degpoly=degpoly)
                 _,_,m_m10,_,_,_  = get_residuals(bestrv-10, bestvsini,wvs_corr,spec,
                                                 grid_refstar_func_list[best_model_id], transmission_list[best_tr_id],
-                                                bary_rv,limbdark0,Hlines[IFSfilter],dwvfit[IFSfilter],degpoly=1)
+                                                bary_rv,limbdark0,Hlines[IFSfilter],dwvfit[IFSfilter],degpoly=degpoly)
                 hdulist = pyfits.HDUList()
                 hdulist.append(pyfits.PrimaryHDU(data=np.concatenate((d_wvs[None,:],d[None,:],m[None,:],res[None,:],m_m10[None,:],m_p10[None,:]),axis=0)))
                 try:
