@@ -1311,7 +1311,7 @@ if __name__ == "__main__":
             # exit()
 
             phoenix_db_folder = os.path.join(osiris_data_dir,"phoenix","PHOENIX-ACES-AGSS-COND-2011")
-            if 0:
+            if 1:
                 splitpostfilename = os.path.basename(filelist[0]).split("_")
                 imtype = "science"
                 # print(date,star_name)
@@ -1819,37 +1819,37 @@ if __name__ == "__main__":
                 #         HR8799pho_spec = HR8799pho_spec_str_arr[1::,1].astype(np.float)
                 #         HR8799pho_spec_wvs = HR8799pho_spec_str_arr[1::,0].astype(np.float)
                 if 1:
-                    # phoenix_wv_filename = os.path.join(phoenix_db_folder,"WAVE_PHOENIX-ACES-AGSS-COND-2011_R{0}.fits".format(R0))
-                    # with pyfits.open(phoenix_wv_filename) as hdulist:
-                    #     HR8799pho_spec_wvs = hdulist[0].data
-                    #
-                    # with pyfits.open(phoenix_model_host_filename) as hdulist:
-                    #     HR8799pho_spec = hdulist[0].data
-                    phoenix_wv_filename = os.path.join(phoenix_folder,"WAVE_PHOENIX-ACES-AGSS-COND-2011.fits")
+                    phoenix_wv_filename = os.path.join(phoenix_db_folder,"WAVE_PHOENIX-ACES-AGSS-COND-2011_R{0}.fits".format(R0))
                     with pyfits.open(phoenix_wv_filename) as hdulist:
-                        phoenix_wvs = hdulist[0].data/1.e4
-                    crop_phoenix = np.where((phoenix_wvs>wvs[0]-(wvs[-1]-wvs[0])/2)*(phoenix_wvs<wvs[-1]+(wvs[-1]-wvs[0])/2))
-                    phoenix_wvs = phoenix_wvs[crop_phoenix]
+                        HR8799pho_spec_wvs = hdulist[0].data
 
-                    phoenix_host_filename=phoenix_model_host_filename.replace(".fits","_gaussconv_R{0}_{1}.csv".format(R,IFSfilter))
-                    if len(glob.glob(phoenix_host_filename)) == 0:
-                        with pyfits.open(phoenix_model_host_filename) as hdulist:
-                            phoenix_HR8799 = hdulist[0].data[crop_phoenix]
-                        print("convolving: "+phoenix_model_host_filename)
-                        phoenix_HR8799_conv = convolve_spectrum(phoenix_wvs,phoenix_HR8799,R,specpool)
-
-                        with open(phoenix_host_filename, 'w+') as csvfile:
-                            csvwriter = csv.writer(csvfile, delimiter=' ')
-                            csvwriter.writerows([["wvs","spectrum"]])
-                            csvwriter.writerows([[a,b] for a,b in zip(phoenix_wvs,phoenix_HR8799_conv)])
-
-                    with open(phoenix_host_filename, 'r') as csvfile:
-                        csv_reader = csv.reader(csvfile, delimiter=' ')
-                        list_starspec = list(csv_reader)
-                        HR8799pho_spec_str_arr = np.array(list_starspec, dtype=np.str)
-                        col_names = HR8799pho_spec_str_arr[0]
-                        HR8799pho_spec = HR8799pho_spec_str_arr[1::,1].astype(np.float)
-                        HR8799pho_spec_wvs = HR8799pho_spec_str_arr[1::,0].astype(np.float)
+                    with pyfits.open(phoenix_model_host_filename) as hdulist:
+                        HR8799pho_spec = hdulist[0].data
+                    # phoenix_wv_filename = os.path.join(phoenix_folder,"WAVE_PHOENIX-ACES-AGSS-COND-2011.fits")
+                    # with pyfits.open(phoenix_wv_filename) as hdulist:
+                    #     phoenix_wvs = hdulist[0].data/1.e4
+                    # crop_phoenix = np.where((phoenix_wvs>wvs[0]-(wvs[-1]-wvs[0])/2)*(phoenix_wvs<wvs[-1]+(wvs[-1]-wvs[0])/2))
+                    # phoenix_wvs = phoenix_wvs[crop_phoenix]
+                    #
+                    # phoenix_host_filename=phoenix_model_host_filename.replace(".fits","_gaussconv_R{0}_{1}.csv".format(R,IFSfilter))
+                    # if len(glob.glob(phoenix_host_filename)) == 0:
+                    #     with pyfits.open(phoenix_model_host_filename) as hdulist:
+                    #         phoenix_HR8799 = hdulist[0].data[crop_phoenix]
+                    #     print("convolving: "+phoenix_model_host_filename)
+                    #     phoenix_HR8799_conv = convolve_spectrum(phoenix_wvs,phoenix_HR8799,R,specpool)
+                    #
+                    #     with open(phoenix_host_filename, 'w+') as csvfile:
+                    #         csvwriter = csv.writer(csvfile, delimiter=' ')
+                    #         csvwriter.writerows([["wvs","spectrum"]])
+                    #         csvwriter.writerows([[a,b] for a,b in zip(phoenix_wvs,phoenix_HR8799_conv)])
+                    #
+                    # with open(phoenix_host_filename, 'r') as csvfile:
+                    #     csv_reader = csv.reader(csvfile, delimiter=' ')
+                    #     list_starspec = list(csv_reader)
+                    #     HR8799pho_spec_str_arr = np.array(list_starspec, dtype=np.str)
+                    #     col_names = HR8799pho_spec_str_arr[0]
+                    #     HR8799pho_spec = HR8799pho_spec_str_arr[1::,1].astype(np.float)
+                    #     HR8799pho_spec_wvs = HR8799pho_spec_str_arr[1::,0].astype(np.float)
 
 
                     HR8799pho_spec = HR8799pho_spec/np.mean(HR8799pho_spec)
