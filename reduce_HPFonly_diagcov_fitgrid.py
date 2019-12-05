@@ -1014,7 +1014,7 @@ if __name__ == "__main__":
         # filelist = filelist[4:]
         # filelist = filelist[len(filelist)-3:len(filelist)-2]
 
-        res_numbasis = 1
+        res_numbasis = 0
         numthreads = 28
         planet_search = False
         debug_paras = False
@@ -1388,7 +1388,7 @@ if __name__ == "__main__":
                     plcen_k,plcen_l = 32-10,-35.79802955665025+46.8
                     # plcen_k,plcen_l = 26,6#44,8
                 else:
-                    planetRV_array = np.arange(-2*dprv,2*dprv,dprv/1)
+                    planetRV_array = np.arange(-2*dprv,2*dprv,dprv/100)
                     dl_grid,dk_grid = np.array([[0]]),np.array([[0]])
                     # dl_grid,dk_grid = np.meshgrid(np.linspace(-1.,1.,3,endpoint=True),np.linspace(-1.,1.,3,endpoint=True))
 
