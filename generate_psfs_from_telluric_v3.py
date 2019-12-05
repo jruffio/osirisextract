@@ -69,12 +69,12 @@ if __name__ == "__main__":
     # OSIRISDATA = "/scratch/groups/bmacint/osiris_data/"
     OSIRISDATA = "/data/osiris_data/"
     if 1:
-        IFSfilter = "Kbb"#"Jbb"#"Hbb"#"Kbb"
+        IFSfilter = "Hbb"#"Jbb"#"Hbb"#"Kbb"
         # planet = "HR_8799_b"
-        # planet = "HR_8799_c"
-        planet = "HR_8799_d"
+        planet = "HR_8799_c"
+        # planet = "HR_8799_d"
         # planet = "kap_And"
-        planet = "51_Eri_b"
+        # planet = "51_Eri_b"
         # extra_filter = "a013001"
         extra_filter = ""
         if "HR_8799_b" in planet:#/data/osiris_data/HR_8799_b/20161107/reduced_telluric_jb/HD_210501/s161107_a032002_Kbb_020.fits

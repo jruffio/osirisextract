@@ -968,8 +968,8 @@ if __name__ == "__main__":
         # date = "161106"
         # date = "180722"
         planet = "HR_8799_c"
-        date = "100715"
-        # date = "101028"
+        # date = "100715"
+        date = "101028"
         # date = "101104"
         # date = "110723"
         # date = "110724"
@@ -986,8 +986,8 @@ if __name__ == "__main__":
         # date = "171104"
         # planet = "kap_And"
         # date = "161106"
-        IFSfilter = "Kbb"
-        # IFSfilter = "Hbb"
+        # IFSfilter = "Kbb"
+        IFSfilter = "Hbb"
         # IFSfilter = "Jbb" # "Kbb" or "Hbb"
         scale = "020"
         # scale = "035"
@@ -1026,7 +1026,7 @@ if __name__ == "__main__":
         # planet_model_string = "CO2 CO H2O CH4 joint"
         # planet_model_string = "CO joint"
         inject_fakes = False
-        gridname = "sonora"
+        gridname = "BTsettl"#"BTsettl"#"sonora"
 
         osiris_data_dir = "/data/osiris_data"
     else:
@@ -1410,18 +1410,17 @@ if __name__ == "__main__":
 
                 if "sonora" in gridname:
                     grid_filelist = glob.glob(os.path.join(osiris_data_dir,"sonora","spectra","sp_t*g*nc_m[0-9].[0-9]"))
-                    Tlist = np.array([int(os.path.basename(grid_filename).split("_t")[-1].split("g")[0]) for grid_filename in grid_filelist])
-                    glist = np.array([int(os.path.basename(grid_filename).split("g")[-1].split("nc")[0]) for grid_filename in grid_filelist])
-                    print("np.unique(Tlist)",np.unique(Tlist))
-                    print("np.unique(glist)",np.unique(glist))
-                    grid_filelist = np.array(grid_filelist)[np.where((500<Tlist)*(Tlist<2000)*(100<glist)*(glist<1000))]
+                    # Tlist = np.array([int(os.path.basename(grid_filename).split("_t")[-1].split("g")[0]) for grid_filename in grid_filelist])
+                    # glist = np.array([int(os.path.basename(grid_filename).split("g")[-1].split("nc")[0]) for grid_filename in grid_filelist])
+                    # print("np.unique(Tlist)",np.unique(Tlist))
+                    # print("np.unique(glist)",np.unique(glist))
+                    # grid_filelist = np.array(grid_filelist)[np.where((500<Tlist)*(Tlist<2000)*(100<glist)*(glist<1000))]
                     gridconv_filelist = [grid_filename+"_gaussconv_R{0}_{1}.csv".format(R,IFSfilter) for grid_filename in grid_filelist]
                     # print(grid_filename_filelist)
                     # exit()
                 elif "BTsettl" in gridname:
-                    grid_filelist = glob.glob(os.path.join(osiris_data_dir,"BTsettl","spectra","lte*BT-Settl.spec.fits"))
+                    grid_filelist = glob.glob(os.path.join(osiris_data_dir,"BTsettl","lte*BT-Settl.spec.fits"))
                     gridconv_filelist = [grid_filename.replace(".fits","_gaussconv_R{0}_{1}.csv".format(R,IFSfilter)) for grid_filename in grid_filelist]
-                    exit()
 
                 if res_it == 0:
                     grid_filelist= [grid_filelist[0],]
@@ -1435,9 +1434,12 @@ if __name__ == "__main__":
                             out = np.loadtxt(grid_filename,skiprows=2)
                             wmod = out[::-1,0]
                             ori_planet_spec = out[::-1,1]
-                            # exit()
                         elif "BTsettl" in gridname:
-                            exit()
+                            hdulist = pyfits.open(grid_filename)
+                            data = np.array(hdulist[1].data,dtype=np.dtype("float,float"))
+                            wmod = data["f0"]
+                            ori_planet_spec = data["f1"]
+
                         crop_wvs = np.where((wmod>wvs[0]-(wvs[-1]-wvs[0])/2)*(wmod<wvs[-1]+(wvs[-1]-wvs[0])/2))
                         wmod = wmod[crop_wvs]
                         ori_planet_spec = ori_planet_spec[crop_wvs]
