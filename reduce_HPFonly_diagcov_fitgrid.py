@@ -2678,7 +2678,7 @@ if __name__ == "__main__":
 
             if res_it != 0:
                 with open(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_output"+suffix+"_modelgrid.txt")), 'w+') as txtfile:
-                    txtfile.writelines([s+"\n" for s in grid_filelist])
+                    txtfile.writelines([s+"\n" for s in gridconv_filelist])
 
             print("Closing threadpool")
             tpool.close()
