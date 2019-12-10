@@ -463,7 +463,8 @@ if 1:
     # numbasis = 0#0,1,5
     # myfolder = "sherlock/20191104_RVsearch" # old res model
     numbasis = 10#0,1,5,10
-    myfolder = "sherlock/20191120_newres_RV"
+    myfolder = "sherlock/20191205_RV"
+    # myfolder = "sherlock/20191120_newres_RV"
     # myfolder = "sherlock/20191018_RVsearch"
     suffix = "_outputHPF_cutoff40_sherlock_v1_search_resinmodel_kl{0}".format(numbasis)
     # if numbasis ==0:

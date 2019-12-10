@@ -300,10 +300,10 @@ if 1: # add filename
                         ["/data/osiris_data/HR_8799_c/20171103/reduced_jb/s171103_a024002_Hbb_020.fits",26,3,1],
                         ["/data/osiris_data/HR_8799_c/20171103/reduced_jb/s171103_a026002_Kbb_020.fits",27,0,1],
                         ["/data/osiris_data/HR_8799_c/20171103/reduced_jb/s171103_a027002_Hbb_020.fits",27,1,0],
-                        ["/data/osiris_data/HR_8799_c/20171103/reduced_jb/s171103_a028002_Hbb_020.fits",27,2,1],
+                        ["/data/osiris_data/HR_8799_c/20171103/reduced_jb/s171103_a028002_Hbb_020.fits",27,2,0],
                         ["/data/osiris_data/HR_8799_c/20171103/reduced_jb/s171103_a029002_Hbb_020.fits",27,3,0],
                         ["/data/osiris_data/HR_8799_c/20171103/reduced_jb/s171103_a030002_Hbb_020.fits",27,4,0],
-                        ["/data/osiris_data/HR_8799_c/20171103/reduced_jb/s171103_a031002_Hbb_020.fits",27,5,1],
+                        ["/data/osiris_data/HR_8799_c/20171103/reduced_jb/s171103_a031002_Hbb_020.fits",27,5,0],
                         ["/data/osiris_data/HR_8799_c/20171103/reduced_jb/s171103_a032002_Hbb_020.fits",27,6,0],
                         ["/data/osiris_data/HR_8799_c/20171103/reduced_jb/s171103_a033002_Hbb_020.fits",27,7,0],
                         ["/data/osiris_data/HR_8799_c/20171103/reduced_jb/s171103_a034002_Hbb_020.fits",27,8,0],
@@ -569,8 +569,9 @@ if 1:
     # dwv = CDELT1/1000.
     # init_wv = CRVAL1/1000. # wv for first slice in mum
 
-    numbasis = 1#1,3,5
-    myfolder = "sherlock/20191104_RVsearch"
+    numbasis = 0#1,3,5
+    myfolder = "sherlock/20191205_RV"
+    # myfolder = "sherlock/20191104_RVsearch"
     # myfolder = "sherlock/20191018_RVsearch"
     suffix = "_outputHPF_cutoff40_sherlock_v1_search_resinmodel_kl{0}".format(numbasis)
     # if numbasis ==0:

@@ -15,9 +15,9 @@ out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
 
 # planet = "HR_8799_b"
 # planet = "HR_8799_c"
-planet = "HR_8799_d"
+# planet = "HR_8799_d"
 # planet = "kap_And"
-# planet = "51_Eri_b"
+planet = "51_Eri_b"
 
 # IFSfilter = "Kbb"
 # IFSfilter = "Hbb"
@@ -25,7 +25,7 @@ planet = "HR_8799_d"
 suffix = "KbbHbb"
 # suffix = "all"
 fontsize = 12
-resnumbasis = 5
+resnumbasis = 0
 # fileinfos_filename = "/data/osiris_data/"+planet+"/fileinfos_Kbb_jb.csv"
 if resnumbasis ==0:
     fileinfos_filename = "/data/osiris_data/"+planet+"/fileinfos_Kbb_jb.csv"
@@ -179,7 +179,14 @@ if 1:
             cube = cube - offsets
 
             bary_rv = -float(item[bary_rv_id])/1000. # RV in km/s
-            rv_star = -12.6#-12.6+-1.4km/s HR 8799 Rob and Simbad
+            if "HR_8799" in reducfilename:
+                rv_star = -12.6#-12.6+-1.4km/s HR 8799 Rob and Simbad
+            if "kap_And" in reducfilename:
+                rv_star = -12.7#-12.6+-1.4km/s HR 8799 Rob and Simbad
+            if "51_Eri_b" in reducfilename:
+                rv_star = +12.6#-12.6+-1.4km/s HR 8799 Rob and Simbad
+            print(rv_star)
+            # exit()
 
             try:
                 kcen = int(item[kcen_id])

@@ -968,8 +968,8 @@ if __name__ == "__main__":
         # date = "161106"
         # date = "180722"
         planet = "HR_8799_c"
-        # date = "100715"
-        date = "101028"
+        date = "100715"
+        # date = "101028"
         # date = "101104"
         # date = "110723"
         # date = "110724"
@@ -986,8 +986,8 @@ if __name__ == "__main__":
         # date = "171104"
         # planet = "kap_And"
         # date = "161106"
-        # IFSfilter = "Kbb"
-        IFSfilter = "Hbb"
+        IFSfilter = "Kbb"
+        # IFSfilter = "Hbb"
         # IFSfilter = "Jbb" # "Kbb" or "Hbb"
         scale = "020"
         # scale = "035"
@@ -997,7 +997,7 @@ if __name__ == "__main__":
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190906_HPF_restest2/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190923_HPF_restest2/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20191120_new_resmodel/"
-        outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20191204_gridtest/"
+        outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20191209_gridtest/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190305_HPF_only_noperscor/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190228_mol_temp/"
 
@@ -1026,9 +1026,23 @@ if __name__ == "__main__":
         # planet_model_string = "CO2 CO H2O CH4 joint"
         # planet_model_string = "CO joint"
         inject_fakes = False
-        gridname = "BTsettl"#"BTsettl"#"sonora"
+        # gridname = os.path.join("/data/osiris_data/","sonora","spectra")
+        # gridname = os.path.join("/data/osiris_data/","sonora","spectra","interpolated_1700-1895_750-1250")
+        # gridname = os.path.join("/data/osiris_data/","BTsettl")
+        gridname = os.path.join("/data/osiris_data/","BTsettl","interpolated_1300-1495_-3.80--3.25")
+        # gridname = "BTsettl"#"BTsettl"#"sonora"
 
         osiris_data_dir = "/data/osiris_data"
+
+        # print(outputdir)
+        # # with pyfits.open(os.path.join("/data/osiris_data/HR_8799_c/20100715/reduced_jb/sherlock/20191204_grid_sonora/","s100715_a010001_Kbb_020_outputHPF_cutoff40_sherlock_v1_centroid_resinmodel_kl0.fits")) as hdulist:
+        # with pyfits.open(os.path.join(outputdir,"s100715_a010001_Kbb_020_outputHPF_cutoff40_sherlock_v1_centroid_resinmodel_kl0.fits")) as hdulist:
+        #     data = hdulist[0].data
+        # print(data.shape)
+        # import matplotlib.pyplot as plt
+        # plt.plot(data[0,:,0,0,0,0])
+        # plt.show()
+        # exit()
     else:
         osiris_data_dir = sys.argv[1]
         inputDir = sys.argv[2]
@@ -1378,24 +1392,27 @@ if __name__ == "__main__":
                 plcen_k,plcen_l = np.nan,np.nan
             else:
                 suffix = suffix+"_centroid"
+                cen_filename_id = colnames.index("cen filename")
+                kcen_id = colnames.index("kcen")
+                lcen_id = colnames.index("lcen")
+                rvcen_id = colnames.index("RVcen")
 
                 if debug_paras:
-                    planetRV_array = np.array([host_bary_rv+host_rv,])
+                    # planetRV_array = np.array([host_bary_rv+host_rv,])
+                    planetRV_array = [float(fileitem[rvcen_id]),]#np.arange(float(fileitem[rvcen_id])-0.1*dprv,float(fileitem[rvcen_id])+0.1*dprv,dprv/100)
                     dl_grid,dk_grid = np.array([[0]]),np.array([[0]])
+                    # dl_grid,dk_grid = np.meshgrid(np.linspace(-1.,1.,3,endpoint=True),np.linspace(-1.,1.,3,endpoint=True))
                     # kcen_id = colnames.index("kcen")
                     # lcen_id = colnames.index("lcen")
                     # plcen_k,plcen_l = float(fileitem[kcen_id]),float(fileitem[lcen_id])
-                    plcen_k,plcen_l = 32-10,-35.79802955665025+46.8
+                    # plcen_k,plcen_l = 32-10,-35.79802955665025+46.8
+                    plcen_k,plcen_l = float(fileitem[kcen_id]),float(fileitem[lcen_id])
                     # plcen_k,plcen_l = 26,6#44,8
                 else:
-                    planetRV_array = np.arange(-2*dprv,2*dprv,dprv/100)
+                    planetRV_array = np.arange(float(fileitem[rvcen_id])-0.5*dprv,float(fileitem[rvcen_id])+0.5*dprv,1)
                     dl_grid,dk_grid = np.array([[0]]),np.array([[0]])
                     # dl_grid,dk_grid = np.meshgrid(np.linspace(-1.,1.,3,endpoint=True),np.linspace(-1.,1.,3,endpoint=True))
 
-                    cen_filename_id = colnames.index("cen filename")
-                    kcen_id = colnames.index("kcen")
-                    lcen_id = colnames.index("lcen")
-                    rvcen_id = colnames.index("RVcen")
                     plcen_k,plcen_l = float(fileitem[kcen_id]),float(fileitem[lcen_id])
 
             plcen_k,plcen_l = plcen_k+padding,plcen_l+padding
@@ -1408,19 +1425,32 @@ if __name__ == "__main__":
             for R in R_list:
                 planet_partial_template_func_list = []
 
-                if "sonora" in gridname:
-                    grid_filelist = glob.glob(os.path.join(osiris_data_dir,"sonora","spectra","sp_t*g*nc_m[0-9].[0-9]"))
-                    # Tlist = np.array([int(os.path.basename(grid_filename).split("_t")[-1].split("g")[0]) for grid_filename in grid_filelist])
-                    # glist = np.array([int(os.path.basename(grid_filename).split("g")[-1].split("nc")[0]) for grid_filename in grid_filelist])
-                    # print("np.unique(Tlist)",np.unique(Tlist))
-                    # print("np.unique(glist)",np.unique(glist))
-                    # grid_filelist = np.array(grid_filelist)[np.where((500<Tlist)*(Tlist<2000)*(100<glist)*(glist<1000))]
-                    gridconv_filelist = [grid_filename+"_gaussconv_R{0}_{1}.csv".format(R,IFSfilter) for grid_filename in grid_filelist]
-                    # print(grid_filename_filelist)
-                    # exit()
-                elif "BTsettl" in gridname:
-                    grid_filelist = glob.glob(os.path.join(osiris_data_dir,"BTsettl","lte*BT-Settl.spec.fits"))
-                    gridconv_filelist = [grid_filename.replace(".fits","_gaussconv_R{0}_{1}.csv".format(R,IFSfilter)) for grid_filename in grid_filelist]
+                if "interpolated" not in  gridname:
+                    if "sonora" in gridname:
+                        grid_filelist = glob.glob(os.path.join(gridname,"sp_t*g*nc_m[0-9].[0-9]"))
+                        gridconv_filelist = [grid_filename+"_gaussconv_R{0}_{1}.csv".format(R,IFSfilter) for grid_filename in grid_filelist]
+                        # Tlist = np.array([int(os.path.basename(grid_filename).split("_t")[-1].split("g")[0]) for grid_filename in grid_filelist])
+                        # glist = np.array([int(os.path.basename(grid_filename).split("g")[-1].split("nc")[0]) for grid_filename in grid_filelist])
+                        # print("np.unique(Tlist)",np.unique(Tlist))
+                        # print("np.unique(glist)",np.unique(glist))
+                        # exit()
+                        # # grid_filelist = np.array(grid_filelist)[np.where((500<Tlist)*(Tlist<2000)*(100<glist)*(glist<1000))]
+                        # # print(grid_filename_filelist)
+                        # # exit()
+                    elif "BTsettl" in gridname:
+                        grid_filelist = glob.glob(os.path.join(gridname,"lte*BT-Settl.spec.fits"))
+                        gridconv_filelist = [grid_filename.replace(".fits","_gaussconv_R{0}_{1}.csv".format(R,IFSfilter)) for grid_filename in grid_filelist]
+                        # Tlist = np.array([int(float(os.path.basename(grid_filename).split("lte")[-1].split("-")[0])*100) for grid_filename in grid_filelist])
+                        # para2list = np.array([-float(os.path.basename(grid_filename).split("-")[1].split("-0.0a")[0]) for grid_filename in grid_filelist])
+                        # print("np.unique(Tlist)",np.unique(Tlist))
+                        # print("np.unique(para2list)",np.unique(para2list))
+                        # exit()
+                else:
+                    if "sonora" in gridname:
+                        gridconv_filelist = glob.glob(os.path.join(gridname,"sp_t*g*nc_m[0-9].[0-9]"+"_gaussconv_R{0}_{1}.csv".format(R,IFSfilter)))
+                    elif "BTsettl" in gridname:
+                        gridconv_filelist = glob.glob(os.path.join(gridname,"lte*BT-Settl.spec"+"_gaussconv_R{0}_{1}.csv".format(R,IFSfilter)))
+                    grid_filelist = ["",]*len(gridconv_filelist)
 
                 if res_it == 0:
                     grid_filelist= [grid_filelist[0],]
@@ -1467,7 +1497,6 @@ if __name__ == "__main__":
 
             # import matplotlib.pyplot as plt
             # plt.plot(wvs,planet_model_func_table[0][0](wvs*(1-(-1*38)/c_kms)))
-            # plt.plot(wmod,ori_planet_spec)
             # plt.show()
 
             # import matplotlib.pyplot as plt
@@ -2552,7 +2581,7 @@ if __name__ == "__main__":
                     indices_list = []
                     for k in range(N_chunks-1):
                         indices_list.append(np.arange((k*chunk_size),((k+1)*chunk_size)).astype(np.int))
-                    indices_list.append(np.arange(((N_chunks-1)*chunk_size),N_valid_pix).astype(np.int))
+                    indices_list.append(np.arange(((N_chunks-1)*chunk_size),len(planet_model_func_table)).astype(np.int))
 
                     tasks = [tpool.apply_async(_process_pixels_onlyHPF, args=(plcen_k_valid_pix,plcen_l_valid_pix,row_valid_pix,col_valid_pix,
                                                                               normalized_psfs_func_list,

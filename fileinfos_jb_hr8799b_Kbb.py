@@ -158,7 +158,7 @@ if 0: # add barycenter RV
         result = get_BC_vel(MJDOBS+2400000.5,hip_id=114189,obsname="Keck Observatory",ephemeris="de430")
         new_list_data[k][bary_rv_id] = result[0][0]
 
-if 0: # add filename
+if 1: # add filename
     if 0:
         filename_id = new_colnames.index("filename")
         ifs_filter_id = new_colnames.index("IFS filter")
@@ -191,12 +191,12 @@ if 0: # add filename
                         ["/data/osiris_data/HR_8799_b/20090722/reduced_jb/s090722_a037001_Kbb_020.fits",2,1,2],
                         ["/data/osiris_data/HR_8799_b/20090722/reduced_jb/s090722_a037002_Kbb_020.fits",2,2,2],
                         ["/data/osiris_data/HR_8799_b/20090722/reduced_jb/s090722_a037003_Kbb_020.fits",2,3,0],
-                        ["/data/osiris_data/HR_8799_b/20090722/reduced_jb/s090722_a038001_Kbb_020.fits",2,4,1],
+                        ["/data/osiris_data/HR_8799_b/20090722/reduced_jb/s090722_a038001_Kbb_020.fits",2,4,0],
                         ["/data/osiris_data/HR_8799_b/20090723/reduced_jb/s090723_a019001_Hbb_020.fits",3,0,0],
                         ["/data/osiris_data/HR_8799_b/20090723/reduced_jb/s090723_a020001_Hbb_020.fits",3,1,0],
-                        ["/data/osiris_data/HR_8799_b/20090723/reduced_jb/s090723_a021001_Hbb_020.fits",3,2,1],
+                        ["/data/osiris_data/HR_8799_b/20090723/reduced_jb/s090723_a021001_Hbb_020.fits",3,2,0],
                         ["/data/osiris_data/HR_8799_b/20090723/reduced_jb/s090723_a021002_Hbb_020.fits",3,3,1],
-                        ["/data/osiris_data/HR_8799_b/20090723/reduced_jb/s090723_a021003_Hbb_020.fits",3,4,2],
+                        ["/data/osiris_data/HR_8799_b/20090723/reduced_jb/s090723_a021003_Hbb_020.fits",3,4,0],
                         ["/data/osiris_data/HR_8799_b/20090723/reduced_jb/s090723_a029001_Hbb_020.fits",4,0,0],
                         ["/data/osiris_data/HR_8799_b/20090730/reduced_jb/s090730_a021001_Hbb_020.fits",5,0,0],
                         ["/data/osiris_data/HR_8799_b/20090730/reduced_jb/s090730_a022001_Hbb_020.fits",5,1,0],
@@ -268,8 +268,8 @@ if 0: # add filename
                         ["/data/osiris_data/HR_8799_b/20130726/reduced_jb/s130726_a059001_Jbb_020.fits",24,2,0],
                         ["/data/osiris_data/HR_8799_b/20130726/reduced_jb/s130726_a060001_Jbb_020.fits",24,3,0],
                         ["/data/osiris_data/HR_8799_b/20130727/reduced_jb/s130727_a036001_Kbb_020.fits",25,0,1],
-                        ["/data/osiris_data/HR_8799_b/20130727/reduced_jb/s130727_a037001_Kbb_020.fits",25,1,1],
-                        ["/data/osiris_data/HR_8799_b/20130727/reduced_jb/s130727_a038001_Kbb_020.fits",25,2,1],
+                        ["/data/osiris_data/HR_8799_b/20130727/reduced_jb/s130727_a037001_Kbb_020.fits",25,1,0],
+                        ["/data/osiris_data/HR_8799_b/20130727/reduced_jb/s130727_a038001_Kbb_020.fits",25,2,0],
                         ["/data/osiris_data/HR_8799_b/20130727/reduced_jb/s130727_a039001_Kbb_020.fits",25,3,1],
                         ["/data/osiris_data/HR_8799_b/20130727/reduced_jb/s130727_a040001_Kbb_020.fits",25,4,1],
                         ["/data/osiris_data/HR_8799_b/20130727/reduced_jb/s130727_a041001_Kbb_020.fits",25,5,1],
@@ -583,8 +583,9 @@ if 1:
     # dwv = CDELT1/1000.
     # init_wv = CRVAL1/1000. # wv for first slice in mum
 
-    numbasis = 5#1,3,5
-    myfolder = "sherlock/20191104_RVsearch"
+    numbasis = 10#1,3,5
+    myfolder = "sherlock/20191205_RV"
+    # myfolder = "sherlock/20191104_RVsearch"
     # myfolder = "sherlock/20191018_RVsearch"
     suffix = "_outputHPF_cutoff40_sherlock_v1_search_resinmodel_kl{0}".format(numbasis)
     # if numbasis ==0:

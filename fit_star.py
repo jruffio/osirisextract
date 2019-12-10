@@ -154,24 +154,29 @@ def get_residuals(rv, vsini,wvs_corr,spec,ref_star_func, trans_func,bary_rv,limb
     refstar_broad_func = interp1d(wvs4broadening,broadened_spec,bounds_error=False,fill_value=np.nan)
 
     # print(vsini_id,rv_id,vsini,rv)
-    if 0:
-        pass
-        # M = np.zeros((np.size(spec_stamps_conca),1+(degpoly+1)*len(wvs_stamps)))
-        # M[:,0] = refstar_broad_func(wvs_stamps_conca*(1-(rv+bary_rv)/c_kms))*trans_func(wvs_stamps_conca)
-        # M0_mn = np.mean(M[:,0])
-        # M[:,0] /= M0_mn
-        # for stamp_id,(wvs_stamp,spec_stamp,first_index,last_index) in enumerate(zip(wvs_stamps,spec_stamps,first_index_list,last_index_list)):
-        #     for polypower in range(degpoly+1):
-        #         tmp = wvs_stamp**polypower
-        #         M[first_index:last_index,polypower+(degpoly+1)*stamp_id+1] = tmp/np.mean(tmp)
-        # d = spec_stamps_conca[where_data_finite]
-        # d_wvs = wvs_stamps_conca[where_data_finite]
-        # M = M[where_data_finite[0],:]
-        # p,chi2,rank,s = np.linalg.lstsq(M,d,rcond=None)
-        # m = np.dot(M,p)
-        # m_line = np.dot(M[:,0],p[0])
-        # m_bckg = np.dot(M[:,1::],p[1::])
-        # res = d-m
+    if 1:
+        M = np.zeros((np.size(spec_stamps_conca),(degpoly+1)*len(wvs_stamps)))
+        tmp = refstar_broad_func(wvs_stamps_conca*(1-(rv+bary_rv)/c_kms))*trans_func(wvs_stamps_conca)
+        M0_mn = np.mean(tmp)
+        tmp /= M0_mn
+        for stamp_id,(wvs_stamp,spec_stamp,first_index,last_index) in enumerate(zip(wvs_stamps,spec_stamps,first_index_list,last_index_list)):
+            x_knots = wvs_stamp[np.linspace(0,len(wvs_stamp)-1,degpoly+1,endpoint=True).astype(np.int)]#np.array([wvs_stamp[wvid] for wvid in )
+            # print(x_knots)
+            # print(wvs_stamp)
+            for polypower in range(degpoly):
+                if polypower == 0:
+                    where_chunk = np.where((x_knots[polypower]<=wvs_stamp)*(wvs_stamp<=x_knots[polypower+1]))
+                else:
+                    where_chunk = np.where((x_knots[polypower]<wvs_stamp)*(wvs_stamp<=x_knots[polypower+1]))
+                M[where_chunk[0]+first_index,polypower+(degpoly+1)*stamp_id] = 1-(wvs_stamp[where_chunk]-x_knots[polypower])/(x_knots[polypower+1]-x_knots[polypower])
+                M[where_chunk[0]+first_index,1+polypower+(degpoly+1)*stamp_id] = (wvs_stamp[where_chunk]-x_knots[polypower])/(x_knots[polypower+1]-x_knots[polypower])
+                # print("coucou")
+        M = tmp[:,None]*M
+        # print(M.shape)
+        # for k in range(M.shape[1]):
+        #     plt.plot(M[:,k])
+        # plt.show()
+        # exit()
     else:
         M = np.zeros((np.size(spec_stamps_conca),(degpoly+1)*len(wvs_stamps)))
         tmp = refstar_broad_func(wvs_stamps_conca*(1-(rv+bary_rv)/c_kms))*trans_func(wvs_stamps_conca)
@@ -181,14 +186,14 @@ def get_residuals(rv, vsini,wvs_corr,spec,ref_star_func, trans_func,bary_rv,limb
             for polypower in range(degpoly+1):
                 M[first_index:last_index,polypower+(degpoly+1)*stamp_id] = \
                     tmp[first_index:last_index]*(wvs_stamp**polypower)
-        d = spec_stamps_conca[where_data_finite]
-        d_wvs = wvs_stamps_conca[where_data_finite]
-        M = M[where_data_finite[0],:]
-        p,chi2,rank,s = np.linalg.lstsq(M,d,rcond=None)
-        m = np.dot(M,p)
-        m_line = np.nan
-        m_bckg = np.nan
-        res = d-m
+    d = spec_stamps_conca[where_data_finite]
+    d_wvs = wvs_stamps_conca[where_data_finite]
+    M = M[where_data_finite[0],:]
+    p,chi2,rank,s = np.linalg.lstsq(M,d,rcond=None)
+    m = np.dot(M,p)
+    m_line = np.nan
+    m_bckg = np.nan
+    res = d-m
 
 
 
@@ -205,7 +210,7 @@ def fit_rv_vsin(rv_samples, vsini_samples,wvs_corr,spec,ref_star_func, trans_fun
     logpost_arr = np.zeros((len(rv_samples),len(vsini_samples)))
 
     where_wvs4broadening = np.where((np.min(Hlines)-10*dwvfit<wvs_corr)*(wvs_corr<np.max(Hlines)+10*dwvfit))[0]
-    wvs4broadening = np.arange(wvs_corr[where_wvs4broadening][0],wvs_corr[where_wvs4broadening][-1],1e-5)
+    wvs4broadening = np.arange(wvs_corr[where_wvs4broadening][0],wvs_corr[where_wvs4broadening][-1],1e-4)
 
     #make stamps
     wvs_stamps = []
@@ -231,16 +236,29 @@ def fit_rv_vsin(rv_samples, vsini_samples,wvs_corr,spec,ref_star_func, trans_fun
 
         for rv_id,rv in enumerate(rv_samples):
             # print(vsini_id,rv_id,vsini,rv)
-            if 0:
-                pass
-                # M = np.zeros((np.size(spec_stamps_conca),1+(degpoly+1)*len(wvs_stamps)))
-                # M[:,0] = refstar_broad_func(wvs_stamps_conca*(1-(rv+bary_rv)/c_kms))*trans_func(wvs_stamps_conca)
-                # M0_mn = np.mean(M[:,0])
-                # M[:,0] /= M0_mn
-                # for stamp_id,(wvs_stamp,spec_stamp,first_index,last_index) in enumerate(zip(wvs_stamps,spec_stamps,first_index_list,last_index_list)):
-                #     for polypower in range(degpoly+1):
-                #         tmp = wvs_stamp**polypower
-                #         M[first_index:last_index,polypower+(degpoly+1)*stamp_id+1] = tmp/np.mean(tmp)
+            if 1:
+                M = np.zeros((np.size(spec_stamps_conca),(degpoly+1)*len(wvs_stamps)))
+                tmp = refstar_broad_func(wvs_stamps_conca*(1-(rv+bary_rv)/c_kms))*trans_func(wvs_stamps_conca)
+                M0_mn = np.mean(tmp)
+                tmp /= M0_mn
+                for stamp_id,(wvs_stamp,spec_stamp,first_index,last_index) in enumerate(zip(wvs_stamps,spec_stamps,first_index_list,last_index_list)):
+                    x_knots = wvs_stamp[np.linspace(0,len(wvs_stamp)-1,degpoly+1,endpoint=True).astype(np.int)]#np.array([wvs_stamp[wvid] for wvid in )
+                    # print(x_knots)
+                    # print(wvs_stamp)
+                    for polypower in range(degpoly):
+                        if polypower == 0:
+                            where_chunk = np.where((x_knots[polypower]<=wvs_stamp)*(wvs_stamp<=x_knots[polypower+1]))
+                        else:
+                            where_chunk = np.where((x_knots[polypower]<wvs_stamp)*(wvs_stamp<=x_knots[polypower+1]))
+                        M[where_chunk[0]+first_index,polypower+(degpoly+1)*stamp_id] = 1-(wvs_stamp[where_chunk]-x_knots[polypower])/(x_knots[polypower+1]-x_knots[polypower])
+                        M[where_chunk[0]+first_index,1+polypower+(degpoly+1)*stamp_id] = (wvs_stamp[where_chunk]-x_knots[polypower])/(x_knots[polypower+1]-x_knots[polypower])
+                        # print("coucou")
+                M = tmp[:,None]*M
+                # print(M.shape)
+                # for k in range(M.shape[1]):
+                #     plt.plot(M[:,k])
+                # plt.show()
+                # exit()
             else:
                 M = np.zeros((np.size(spec_stamps_conca),(degpoly+1)*len(wvs_stamps)))
                 tmp = refstar_broad_func(wvs_stamps_conca*(1-(rv+bary_rv)/c_kms))*trans_func(wvs_stamps_conca)
@@ -263,10 +281,10 @@ def fit_rv_vsin(rv_samples, vsini_samples,wvs_corr,spec,ref_star_func, trans_fun
             chi2_arr[rv_id,vsini_id] = chi2
             logpost_arr[rv_id,vsini_id] = logpost
             # plt.figure(3)
-            # for m in M.T:
-            #     plt.plot(m)
-            # # plt.plot(spec_stamps_conca)
-            # # plt.plot(data_model)
+            # for _m in M.T:
+            #     plt.plot(_m,"--")
+            # plt.plot(d)
+            # plt.plot(m)
             # plt.show()
 
 
@@ -284,7 +302,7 @@ def fit_rv_vsin_model(rv_samples, vsini_samples,wvs_corr,spec,ref_star_func_list
             chi2_arr[ref_id,:,:],logpost_arr[ref_id,:,:] = \
                 fit_rv_vsin(rv_samples, vsini_samples,wvs_corr,spec,ref_star_func, trans_func,bary_rv,limbdark0,Hlines,dwvfit,degpoly)
     else:
-        numthreads=32
+        # numthreads=32
         fitpool = mp.Pool(processes=numthreads)
 
         outputs_list = fitpool.map(_fit_rv_vsin, zip(itertools.repeat(rv_samples),
@@ -603,11 +621,12 @@ if __name__ == "__main__":
     # print(vsini_fixed_dict)
     # exit()
 
-    if 1:
+    if 0:
+        degpoly = 4
         print(uni_starname_list)
         # delta_teff = 50
         # uni_starname_list = ['kap_And','HIP_111538','51_Eri','HIP_25453','HD_7215','HIP_1123','HIP_116886','HR_8799','HD_210501','BD+14_4774']
-        uni_starname_list = ['HR_8799',]
+        uni_starname_list = ['HD_210501',]
         print(ref_unique_dates)
         # exit()
         print(uni_starname_list)
@@ -646,7 +665,7 @@ if __name__ == "__main__":
             #     # plt.plot(skytrans_wvs,skytrans_spec/np.nanmax(skytrans_spec))
 
             sky_transmission_folder = os.path.join(osiris_data_dir,"sky_transmission","interpolated")
-            filelist_skytrans = glob.glob(os.path.join(sky_transmission_folder,"mktrans_zm_*_*_R{0}.csv".format(R)))#[30:31]
+            filelist_skytrans = glob.glob(os.path.join(sky_transmission_folder,"mktrans_zm_*_*_R{0}.csv".format(R)))[30:31]
 
             # N_chunks = specpool._processes*5
             # chunk_size = int(len(filelist_skytrans)//N_chunks)
@@ -734,8 +753,8 @@ if __name__ == "__main__":
             # where_teff = np.where((teff0-delta_teff<Teff_grid_list)*(Teff_grid_list<teff0+delta_teff)*\
             #                       (-1.1<Fe_H_grid_list)*(Fe_H_grid_list<1.1))
             where_teff = np.where((teff0-10<Teff_grid_list)*(Teff_grid_list<teff0+10)*\
-                                  (0-1.1<Fe_H_grid_list)*(Fe_H_grid_list<0+1.1)*\
-                                  (-4.-1.1<logg_grid_list)*(logg_grid_list<-4.+1.1))
+                                  (0-0.1<Fe_H_grid_list)*(Fe_H_grid_list<0+0.1)*\
+                                  (-4.-0.1<logg_grid_list)*(logg_grid_list<-4.+0.1))
             grid_refstar_filelist = np.array(grid_refstar_filelist)[where_teff]
             print(len(grid_refstar_filelist))
             # exit()
@@ -788,7 +807,7 @@ if __name__ == "__main__":
             type_list = []
 
             plt.figure(2)
-            for date in ref_unique_dates:
+            for date in ['100715']:#ref_unique_dates:
                 for IFSfilter in ["Hbb","Kbb"]:
                     where_files = np.where((starname == ref_starname_list) *\
                                            np.array(["ao_off_" not in a for a in ref_stars_filelist])*\
@@ -828,7 +847,7 @@ if __name__ == "__main__":
                                            (date == ref_dates_list)*\
                                            (IFSfilter == ref_IFSfilter_list))
 
-                    if 1 and len(where_files[0]) != 0:
+                    if 0 and len(where_files[0]) != 0:
                         print(ref_stars_filelist[where_files])
 
                         _spec_list = []
@@ -927,15 +946,15 @@ if __name__ == "__main__":
                 best_tr_id = get_best_telluric_model(wvs_corr,spec,phoenix_refstar_broad0_func,transmission_list,(np.concatenate(where_lines_list),),rv0,bary_rv,cutoff=5)
                 print("Done optimizing transmission", best_tr_id,IFSfilter,bary_rv,date,type)
 
-                # rv_samples = np.arange(-30,10,1)
-                # vsini_samples = np.arange(10,250,50)
-                rv_samples = np.arange(-100,100,0.5)
-                vsini_samples = np.arange(10,500,10)
+                # rv_samples = np.arange(-100,100,0.5)
+                # vsini_samples = np.arange(10,500,10)
+                rv_samples = np.arange(-30,30,10)
+                vsini_samples = np.arange(100,300,50)
 
                 print(len(grid_refstar_func_list))
                 chi2_arr, logpost_arr = fit_rv_vsin_model(rv_samples, vsini_samples,wvs_corr,spec,
                                                 grid_refstar_func_list, transmission_list[best_tr_id],
-                                                bary_rv,limbdark0,Hlines[IFSfilter],dwvfit[IFSfilter],degpoly=1,numthreads=numthreads)
+                                                bary_rv,limbdark0,Hlines[IFSfilter],dwvfit[IFSfilter],degpoly=degpoly,numthreads=numthreads)
                 # print(chi2_arr.shape)
                 # exit()
                 # chi2_arr, logpost_arr = fit_rv_vsin(rv_samples, vsini_samples,wvs_corr,spec,
@@ -978,13 +997,13 @@ if __name__ == "__main__":
 
                 d_wvs,d,m,res,m_line,m_bckg = get_residuals(bestrv, bestvsini,wvs_corr,spec,
                                                 grid_refstar_func_list[best_model_id], transmission_list[best_tr_id],
-                                                bary_rv,limbdark0,Hlines[IFSfilter],dwvfit[IFSfilter],degpoly=1)
+                                                bary_rv,limbdark0,Hlines[IFSfilter],dwvfit[IFSfilter],degpoly=degpoly)
                 _,_,m_p10,_,_,_ = get_residuals(bestrv+10, bestvsini,wvs_corr,spec,
                                                 grid_refstar_func_list[best_model_id], transmission_list[best_tr_id],
-                                                bary_rv,limbdark0,Hlines[IFSfilter],dwvfit[IFSfilter],degpoly=1)
+                                                bary_rv,limbdark0,Hlines[IFSfilter],dwvfit[IFSfilter],degpoly=degpoly)
                 _,_,m_m10,_,_,_  = get_residuals(bestrv-10, bestvsini,wvs_corr,spec,
                                                 grid_refstar_func_list[best_model_id], transmission_list[best_tr_id],
-                                                bary_rv,limbdark0,Hlines[IFSfilter],dwvfit[IFSfilter],degpoly=1)
+                                                bary_rv,limbdark0,Hlines[IFSfilter],dwvfit[IFSfilter],degpoly=degpoly)
                 hdulist = pyfits.HDUList()
                 hdulist.append(pyfits.PrimaryHDU(data=np.concatenate((d_wvs[None,:],d[None,:],m[None,:],res[None,:],m_m10[None,:],m_p10[None,:]),axis=0)))
                 try:
@@ -1008,8 +1027,9 @@ if __name__ == "__main__":
 
         exit()
     if 1:
-        # for starname in ['kap_And','HIP_111538','51_Eri','HIP_25453','HD_7215','HIP_1123','HIP_116886','HR_8799','HD_210501','BD+14_4774']:
-        for starname in ['HD_210501','BD+14_4774']:
+        istest = ""#"_test"
+        for starname in ['kap_And','HIP_111538','51_Eri','HIP_25453','HD_7215','HIP_1123','HIP_116886','HR_8799','HD_210501','BD+14_4774']:
+        # for starname in ['HD_210501']:
             #
             # filter_postfilename = "kap_And_*_posterior.fits"
             # filter_postfilename = "HIP_111538_*_posterior.fits"
@@ -1017,7 +1037,8 @@ if __name__ == "__main__":
             # filter_postfilename = "HIP_25453_*_posterior.fits"
             # filter_postfilename = "HD_210501_*_posterior.fits"
             # filter_postfilename = "HR_8799_*_posterior.fits"
-            filter_postfilename = starname+"_*_posterior.fits"
+            filter_postfilename = starname+"_*_*_*_posterior{0}.fits".format(istest)
+            # filter_postfilename = starname+"_*_posterior_test.fits"
 
             postfilelist = glob.glob(os.path.join(osiris_data_dir,"stellar_fits",filter_postfilename))
 
@@ -1029,7 +1050,11 @@ if __name__ == "__main__":
             for spec_id,postfilename  in enumerate(postfilelist):
                 print(postfilename)
                 splitpostfilename = os.path.basename(postfilename).split("_")
-                IFSfilter,date,type = splitpostfilename[-4],splitpostfilename[-3],splitpostfilename[-2]
+                print(splitpostfilename)
+                if "test" in istest:
+                    IFSfilter,date,type = splitpostfilename[-5],splitpostfilename[-4],splitpostfilename[-3]
+                else:
+                    IFSfilter,date,type = splitpostfilename[-4],splitpostfilename[-3],splitpostfilename[-2]
                 starname = os.path.basename(postfilename).split("_"+IFSfilter)[0]
 
                 dates.append(date)
@@ -1037,12 +1062,12 @@ if __name__ == "__main__":
                 nrowplot = 6
                 plt.figure(1,figsize=(nrowplot*4,len(postfilelist)*4))
 
-                hdulist = pyfits.open(os.path.join(osiris_data_dir,"stellar_fits","{0}_{1}_{2}_{3}_rv_samples.fits".format(starname,IFSfilter,date,type)))
+                hdulist = pyfits.open(os.path.join(osiris_data_dir,"stellar_fits","{0}_{1}_{2}_{3}_rv_samples{4}.fits".format(starname,IFSfilter,date,type,istest)))
                 rv_samples = hdulist[0].data
-                hdulist = pyfits.open(os.path.join(osiris_data_dir,"stellar_fits","{0}_{1}_{2}_{3}_vsini_samples.fits".format(starname,IFSfilter,date,type)))
+                hdulist = pyfits.open(os.path.join(osiris_data_dir,"stellar_fits","{0}_{1}_{2}_{3}_vsini_samples{4}.fits".format(starname,IFSfilter,date,type,istest)))
                 vsini_samples = hdulist[0].data
 
-                hdulist = pyfits.open(os.path.join(osiris_data_dir,"stellar_fits","{0}_{1}_{2}_{3}_posterior.fits".format(starname,IFSfilter,date,type)))
+                hdulist = pyfits.open(os.path.join(osiris_data_dir,"stellar_fits","{0}_{1}_{2}_{3}_posterior{4}.fits".format(starname,IFSfilter,date,type,istest)))
                 posterior = hdulist[0].data[0]
                 logpost_arr = hdulist[0].data[1]
                 chi2_arr = hdulist[0].data[2]
@@ -1050,7 +1075,7 @@ if __name__ == "__main__":
                 posterior_model = np.nansum(posterior,axis=(1,2))
                 posterior_model /= np.nanmax(posterior_model)
 
-                with open(os.path.join(osiris_data_dir,"stellar_fits","{0}_{1}_{2}_{3}_models.txt".format(starname,IFSfilter,date,type)), 'r') as txtfile:
+                with open(os.path.join(osiris_data_dir,"stellar_fits","{0}_{1}_{2}_{3}_models{4}.txt".format(starname,IFSfilter,date,type,istest)), 'r') as txtfile:
                     grid_refstar_filelist = [s.strip() for s in txtfile.readlines()]
                     Teff_grid_list = np.array([int(os.path.basename(phoenix_db_filename)[3:8]) for phoenix_db_filename in grid_refstar_filelist])
                     logg_grid_list = np.array([float(os.path.basename(phoenix_db_filename)[8:13]) for phoenix_db_filename in grid_refstar_filelist])
@@ -1092,7 +1117,7 @@ if __name__ == "__main__":
                 plt.ylabel("Fe/H")
                 plt.colorbar(label="$T_{eff}$ (K)")
 
-                hdulist = pyfits.open(os.path.join(osiris_data_dir,"stellar_fits","{0}_{1}_{2}_{3}_best_data_fit.fits".format(starname,IFSfilter,date,type)))
+                hdulist = pyfits.open(os.path.join(osiris_data_dir,"stellar_fits","{0}_{1}_{2}_{3}_best_data_fit{4}.fits".format(starname,IFSfilter,date,type,istest)))
                 d_wvs = hdulist[0].data[0]
                 d = hdulist[0].data[1]
                 m = hdulist[0].data[2]
@@ -1113,7 +1138,7 @@ if __name__ == "__main__":
                 plt.legend()
                 # plt.figure(1)
 
-                hdulist = pyfits.open(os.path.join(osiris_data_dir,"stellar_fits","{0}_{1}_{2}_{3}_whole_spec_band.fits".format(starname,IFSfilter,date,type)))
+                hdulist = pyfits.open(os.path.join(osiris_data_dir,"stellar_fits","{0}_{1}_{2}_{3}_whole_spec_band{4}.fits".format(starname,IFSfilter,date,type,istest)))
                 # print(hdulist[0].data.shape)
                 # exit()
                 wvs_corr = hdulist[0].data[0]

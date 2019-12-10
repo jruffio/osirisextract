@@ -497,8 +497,9 @@ if 1:
     # dwv = CDELT1/1000.
     # init_wv = CRVAL1/1000. # wv for first slice in mum
 
-    numbasis = 5#1,3,5
-    myfolder = "sherlock/20191104_RVsearch"
+    numbasis = 0#1,3,5
+    myfolder = "sherlock/20191205_RV"
+    # myfolder = "sherlock/20191104_RVsearch"
     # myfolder = "sherlock/20191018_RVsearch"
     suffix = "_outputHPF_cutoff40_sherlock_v1_search_resinmodel_kl{0}".format(numbasis)
     # suffix = "_outputHPF_cutoff40_sherlock_v1_search"
@@ -555,6 +556,8 @@ if 1:
         guess_rv_im[-nan_mask_boxsize//2+1::,:] = np.nan
         guess_rv_im[:,0:nan_mask_boxsize//2] = np.nan
         guess_rv_im[:,-nan_mask_boxsize//2+1::] = np.nan
+        if "s150720_a091001" in filename:
+            guess_rv_im[0:ny//2,:] = np.nan
 
         # plt.imshow(guess_rv_im)
         # plt.show()
@@ -610,6 +613,13 @@ if 1:
             new_list_data[k][kcen_id] = ymax
             new_list_data[k][lcen_id] = xmax
             new_list_data[k][rvcen_id],new_list_data[k][rvcensig_id],argmax_post = get_err_from_posterior(planetRV_hd,posterior)
+            print(new_list_data[k][rvcen_id],new_list_data[k][rvcensig_id],argmax_post)
+            if np.isnan(new_list_data[k][rvcensig_id]):
+                print("coucou")
+                print(filename)
+                plt.plot(planetRV_hd,posterior)
+                plt.show()
+                exit()
             new_list_data[k][cen_filename_id] = os.path.join(os.path.dirname(filename),myfolder,
                                                os.path.basename(filename).replace(".fits",suffix+".fits"))
 
