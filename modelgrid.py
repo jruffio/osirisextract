@@ -140,13 +140,15 @@ suffix = "all"
 # grid = "BTsettl"
 grid = "sonora"
 
-if "BRsettl" == grid:
+if "BTsettl" == grid:
     gridfolder = "20191204_grid"
+    # gridfolder = "20191209_grid_sonora"
+
 if "sonora" == grid:
     gridfolder = "20191204_grid_sonora"
 
 # numbasis = 3
-for nbid,numbasis in enumerate([0,1]):
+for nbid,numbasis in enumerate([1]):
     if numbasis == 0:
         mylabel = "No PCA"
         mymark = "x"
@@ -165,9 +167,9 @@ for nbid,numbasis in enumerate([0,1]):
         mycolor = "grey"
 
     if numbasis ==0:
-        c_fileinfos_filename = "/data/osiris_data/HR_8799_c/fileinfos_Kbb_jb.csv"
+        c_fileinfos_filename = "/data/osiris_data/HR_8799_d/fileinfos_Kbb_jb.csv"
     else:
-        c_fileinfos_filename = "/data/osiris_data/HR_8799_c/fileinfos_Kbb_jb_kl{0}.csv".format(numbasis)
+        c_fileinfos_filename = "/data/osiris_data/HR_8799_d/fileinfos_Kbb_jb_kl{0}.csv".format(numbasis)
 
 
     #read file
@@ -214,7 +216,7 @@ for nbid,numbasis in enumerate([0,1]):
     c_status_list = np.array([int(item[c_status_id]) for item in c_list_data])
 
     posterior_list = []
-    for c_cen_filename,status,ifsfilter in zip(c_cen_filelist,c_status_list,c_ifs_fitler_list):
+    for c_cen_filename,status,ifsfilter in zip(c_cen_filelist[::2],c_status_list[::2],c_ifs_fitler_list[::2]):
         if status !=1:
             continue
         if "Hbb" in ifsfilter:
@@ -222,7 +224,10 @@ for nbid,numbasis in enumerate([0,1]):
 
         data_filename = c_cen_filename.replace("20191205_RV",gridfolder).replace("search","centroid")
         print(data_filename)
-        hdulist = pyfits.open(data_filename)
+        try:
+            hdulist = pyfits.open(data_filename)
+        except:
+            continue
         _,Nmodels,_,Nrvs,ny,nx = hdulist[0].data.shape
         logposterior = hdulist[0].data[-1,:,9,:,:,:]
         posterior = np.exp(logposterior-np.nanmax(logposterior))
@@ -233,13 +238,15 @@ for nbid,numbasis in enumerate([0,1]):
         print(np.nansum(posterior_rvposmargi))
         posterior_list.append(posterior_rvposmargi)
 
+
         modelgrid_filename = data_filename.replace(".fits","_modelgrid.txt")
+        # modelgrid_filename = "/data/osiris_data/"+"HR_8799_c"+"/20"+"100715"+"/reduced_jb/20191209_gridtest/s100715_a010001_Kbb_020_outputHPF_cutoff40_sherlock_v1_centroid_resinmodel_kl0_modelgrid.txt"
         print(modelgrid_filename)
         with open(modelgrid_filename, 'r') as txtfile:
             grid_filelist = [s.strip() for s in txtfile.readlines()]
             if grid == "sonora":
                 Tlist = np.array([int(os.path.basename(grid_filename).split("_t")[-1].split("g")[0]) for grid_filename in grid_filelist])
-                para2list = np.array([int(os.path.basename(grid_filename).split("g")[-1].split("nc")[0]) for grid_filename in grid_filelist])
+                para2list = np.array([int(os.path.basename(grid_filename).split("g")[1].split("nc")[0]) for grid_filename in grid_filelist])
                 logglist = np.log10(para2list*100)
             if grid == "BTsettl":
                 Tlist = np.array([int(float(os.path.basename(grid_filename).split("lte")[-1].split("-")[0])*100) for grid_filename in grid_filelist])
@@ -247,6 +254,14 @@ for nbid,numbasis in enumerate([0,1]):
             print(np.unique(Tlist))
             # print(np.unique(logglist))
 
+        # plt.figure(nbid)
+        # plt.scatter(Tlist,para2list,c=posterior_rvposmargi,s=100)
+        # plt.xlabel("T (K)")
+        # if grid == "sonora":
+        #     plt.ylabel("g (cm/s)")
+        # if grid == "BTsettl":
+        #     plt.ylabel("log[M/H]")
+        # plt.show()
 
         # plt.figure(1)
         # plt.subplot(1,2,1)
@@ -265,6 +280,7 @@ for nbid,numbasis in enumerate([0,1]):
         # print(posterior_rvposmargi.shape)
 
     log10_combined_posterior = np.nansum(np.log10(posterior_list),axis=0)
+    # log10_combined_posterior = np.log10(np.nanmean(posterior_list,axis=0))*len(posterior_list)
     log10_combined_posterior -= np.nanmax(log10_combined_posterior)
     combined_posterior = 10**(log10_combined_posterior)
     print(combined_posterior)
@@ -272,6 +288,7 @@ for nbid,numbasis in enumerate([0,1]):
     plt.figure(nbid+10)
     plt.plot(combined_posterior)
     print(grid_filelist[np.argmax(combined_posterior)])
+    print("N cubes",len(posterior_list))
 
     plt.figure(nbid)
     plt.scatter(Tlist,para2list,c=combined_posterior,s=100)

@@ -1108,12 +1108,15 @@ if __name__ == "__main__":
         if "HR_8799_b" in filelist[0]:
             travis_spec_filename=os.path.join(planet_template_folder,
                                           "HR8799b_"+IFSfilter[0:1]+"_3Oct2018.save")
+            RV4fakes = -9.06
         if "HR_8799_c" in filelist[0]:
             travis_spec_filename=os.path.join(planet_template_folder,
                                           "HR8799c_"+IFSfilter[0:1]+"_3Oct2018.save")
+            RV4fakes = -11.13
         if "HR_8799_d" in filelist[0]:
             travis_spec_filename=os.path.join(planet_template_folder,
                                           "HR8799c_"+IFSfilter[0:1]+"_3Oct2018.save")
+            RV4fakes = -14
         if "HR_8799" in filelist[0]:
             phoenix_model_host_filename = glob.glob(os.path.join(phoenix_folder,"HR_8799"+"*.fits"))[0]
             if IFSfilter == "Jbb":
@@ -1146,6 +1149,7 @@ if __name__ == "__main__":
             host_limbdark = 0.5
             host_vsini = 80
             star_name = "51_Eri"
+            RV4fakes = -12.6
         if "kap_And" in filelist[0]:
             phoenix_model_host_filename = glob.glob(os.path.join(phoenix_folder,"kap_And"+"*.fits"))[0]
             travis_spec_filename=os.path.join(planet_template_folder,
@@ -1163,6 +1167,7 @@ if __name__ == "__main__":
             host_limbdark = 0.5
             host_vsini = 150 #unknown
             star_name = "kap_And"
+            RV4fakes = -13.9
 
 
         for filename in filelist:
@@ -2536,7 +2541,8 @@ if __name__ == "__main__":
                     contrast_id = colnames.index("contrast")
                     RVcen_id = colnames.index("RVcen")
                     contrast,RVcen = float(list_data[fileid][contrast_id]),float(list_data[fileid][RVcen_id])
-                    fake_paras = {"contrast":contrast,"RV":RVcen}
+                    # fake_paras = {"contrast":contrast,"RV":RVcen}RV4fakes
+                    fake_paras = {"contrast":contrast,"RV":RV4fakes}
                     suffix = suffix+"_fakes"
                 except:
                     print("Cannot inject fake planets")
