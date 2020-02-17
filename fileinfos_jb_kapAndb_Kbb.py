@@ -558,7 +558,10 @@ if 1:
 
             try:
             # if 1:
-                hdulist_fakes = pyfits.open(os.path.join(os.path.dirname(filename),myfolder,
+            #     hdulist_fakes = pyfits.open(os.path.join(os.path.dirname(filename),myfolder,
+            #                                        os.path.basename(filename).replace(".fits",suffix+"_fakes.fits")))
+                # 20171104/reduced_jb/sherlock/20191211_RV_newfakes/s171104_a032002_Kbb_020_outputHPF_cutoff40_sherlock_v1_search_resinmodel_kl10_fakes.fits
+                hdulist_fakes = pyfits.open(os.path.join(os.path.dirname(filename),"sherlock/20191211_RV_newfakes",
                                                    os.path.basename(filename).replace(".fits",suffix+"_fakes.fits")))
                 logposterior_fakes = hdulist_fakes[0].data[-1,0,9,0:NplanetRV_hd,:,:]
                 logposterior_fakes[:,np.max([ymax-6,0]):np.min([ymax+7,ny]),np.max([xmax-6,0]):np.min([xmax+7,ny])] = np.nan

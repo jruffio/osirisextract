@@ -583,7 +583,7 @@ if 1:
     # dwv = CDELT1/1000.
     # init_wv = CRVAL1/1000. # wv for first slice in mum
 
-    numbasis = 0#1,3,5
+    numbasis = 10#1,3,5
     myfolder = "sherlock/20191205_RV"
     # myfolder = "sherlock/20191104_RVsearch"
     # myfolder = "sherlock/20191018_RVsearch"
@@ -672,7 +672,7 @@ if 1:
             posterior = np.exp(logposterior-np.nanmax(logposterior))
 
             try:
-                hdulist_fakes = pyfits.open(os.path.join(os.path.dirname(filename),myfolder,
+                hdulist_fakes = pyfits.open(os.path.join(os.path.dirname(filename),myfolder.replace("20191205_RV","20191211_RV_newfakes"),#
                                                    os.path.basename(filename).replace(".fits",suffix+"_fakes.fits")))
                 logposterior_fakes = hdulist_fakes[0].data[-1,0,9,0:NplanetRV_hd,:,:]
                 logposterior_fakes[:,np.max([ymax-6,0]):np.min([ymax+7,ny]),np.max([xmax-6,0]):np.min([xmax+7,ny])] = np.nan

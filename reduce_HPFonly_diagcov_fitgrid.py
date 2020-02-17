@@ -997,7 +997,7 @@ if __name__ == "__main__":
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190906_HPF_restest2/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190923_HPF_restest2/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20191120_new_resmodel/"
-        outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20191209_gridtest/"
+        outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20200214_gridtest_kl1/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190305_HPF_only_noperscor/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190228_mol_temp/"
 
@@ -1014,7 +1014,7 @@ if __name__ == "__main__":
         # filelist = filelist[4:]
         # filelist = filelist[len(filelist)-3:len(filelist)-2]
 
-        res_numbasis = 0
+        res_numbasis = 1
         numthreads = 28
         planet_search = False
         debug_paras = False
@@ -1029,7 +1029,8 @@ if __name__ == "__main__":
         # gridname = os.path.join("/data/osiris_data/","sonora","spectra")
         # gridname = os.path.join("/data/osiris_data/","sonora","spectra","interpolated_1700-1895_750-1250")
         # gridname = os.path.join("/data/osiris_data/","BTsettl")
-        gridname = os.path.join("/data/osiris_data/","BTsettl","interpolated_1300-1495_-3.80--3.25")
+        # gridname = os.path.join("/data/osiris_data/","BTsettl","interpolated_1300-1495_-3.80--3.25")
+        gridname = os.path.join("/data/osiris_data/","hr8799b_modelgrid")
         # gridname = "BTsettl"#"BTsettl"#"sonora"
 
         osiris_data_dir = "/data/osiris_data"
@@ -1444,7 +1445,22 @@ if __name__ == "__main__":
                         # para2list = np.array([-float(os.path.basename(grid_filename).split("-")[1].split("-0.0a")[0]) for grid_filename in grid_filelist])
                         # print("np.unique(Tlist)",np.unique(Tlist))
                         # print("np.unique(para2list)",np.unique(para2list))
+                    elif "hr8799b_modelgrid" in gridname:
+                        # grid_filelist = glob.glob(os.path.join(gridname,"lte*-*-0.0aces_hr8799b_pgs=4d6_Kzz=1d8_C=*_O=*_gs=5um.exoCH4_hiresHK.7"+"_gaussconv_R{0}_{1}.gz".format(R,IFSfilter)))
+                        grid_filelist = glob.glob(os.path.join(gridname,"lte*-*-0.0.aces_hr8799b_pgs=4d6_Kzz=1d8_C=*_O=*_gs=5um.exoCH4_hiresHK.7.D2e.sorted"))
+                        gridconv_filelist = [grid_filename.replace("hiresHK.7.D2e.sorted","hiresHK.7.D2e.sorted_gaussconv_R{0}_{1}.csv".format(R,IFSfilter)) for grid_filename in grid_filelist]
                         # exit()
+                        #         travis_spectrum = scio.readsav(travis_spec_filename)
+                        #         if "HR8799" in os.path.basename(travis_spec_filename):
+                        #             ori_planet_spec = np.array(travis_spectrum["fmod"])
+                        #             ori_planet_convspec = np.array(travis_spectrum["fmods"])
+                        #             wmod = np.array(travis_spectrum["wmod"])/1.e4
+                        #         elif "51Eri" in os.path.basename(travis_spec_filename):
+                        #             ori_planet_spec = np.array(travis_spectrum["flux"])
+                        #             wmod = np.array(travis_spectrum["wave"])
+                        #         elif "KapAnd" in os.path.basename(travis_spec_filename):
+                        #             ori_planet_spec = np.array(travis_spectrum["f"])
+                        #             wmod = np.array(travis_spectrum["w"])/1.e4
                 else:
                     if "sonora" in gridname:
                         gridconv_filelist = glob.glob(os.path.join(gridname,"sp_t*g*nc_m[0-9].[0-9]"+"_gaussconv_R{0}_{1}.csv".format(R,IFSfilter)))
@@ -1452,6 +1468,7 @@ if __name__ == "__main__":
                         gridconv_filelist = glob.glob(os.path.join(gridname,"lte*BT-Settl.spec"+"_gaussconv_R{0}_{1}.csv".format(R,IFSfilter)))
                     grid_filelist = ["",]*len(gridconv_filelist)
 
+                #print(gridname)
                 if res_it == 0:
                     grid_filelist= [grid_filelist[0],]
                     gridconv_filelist= [gridconv_filelist[0],]
@@ -1469,6 +1486,29 @@ if __name__ == "__main__":
                             data = np.array(hdulist[1].data,dtype=np.dtype("float,float"))
                             wmod = data["f0"]
                             ori_planet_spec = data["f1"]
+                        if "hr8799b_modelgrid" in gridname:
+                            # with open(grid_filename, 'r') as txtfile:
+                            #     D2e = [s.strip().replace("D","e") for s in txtfile.readlines()]
+                            # with open(grid_filename.replace(".7",".7.D2e"), 'w+') as txtfile:
+                            #     txtfile.writelines([s+"\n" for s in D2e])
+                            # # exit() #/data/osiris_data/hr8799b_modelgrid/lte12-4.5-0.0.aces_hr8799b_pgs=4d6_Kzz=1d8_C=8.35_O=8.57_gs=5um.exoCH4_hiresHK_gaussconv_R4000_Kbb.csv
+                            # os.system("rm "+grid_filename)
+                            # # exit()
+                            # continue
+                            # exit()
+                            out = np.loadtxt(grid_filename,skiprows=0)
+                            # wvs = out[:,0]
+                            # argsort_wvs = np.argsort(wvs)
+                            # print(out[argsort_wvs,:].shape)
+                            # np.savetxt(grid_filename+".sorted",out[argsort_wvs,:])
+                            # os.system("rm "+grid_filename)
+                            wmod = out[:,0]/1e4
+                            ori_planet_spec = out[:,1]
+
+                        # import matplotlib.pyplot as plt
+                        # plt.plot(wmod,ori_planet_spec)
+                        # plt.show()
+                        # exit()
 
                         crop_wvs = np.where((wmod>wvs[0]-(wvs[-1]-wvs[0])/2)*(wmod<wvs[-1]+(wvs[-1]-wvs[0])/2))
                         wmod = wmod[crop_wvs]
@@ -1493,6 +1533,7 @@ if __name__ == "__main__":
                         planet_spec_func = interp1d(oriplanet_spec_wvs,oriplanet_spec,bounds_error=False,fill_value=np.nan)
                         # planet_partial_template_func_list.append(planet_spec_func)
                         planet_model_func_table.append([planet_spec_func])
+                print(len(planet_model_func_table))
                 # exit()
 
             # import matplotlib.pyplot as plt

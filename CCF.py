@@ -162,7 +162,7 @@ if 0:
 
 
 # plot molecular templates
-if 1:
+if 0:
     osiris_data_dir = "/data/osiris_data"
     molecular_template_folder = os.path.join(osiris_data_dir,"molecular_templates")
     planet_template_folder = os.path.join(osiris_data_dir,"planets_templates")
@@ -324,7 +324,7 @@ if 1:
     exit()
 
 #template CCF
-if 1:
+if 0:
     cutoff = 40
     osiris_data_dir = "/data/osiris_data"
     molecular_template_folder = os.path.join(osiris_data_dir,"molecular_templates")
@@ -901,7 +901,8 @@ if 0:
 
 
 # plot CCF JOINT
-if 0:
+if 1:
+    resnumbasis = 0
     fontsize = 12
     for IFSfilter in ["Kbb"]:#["Kbb","Hbb"]:
         if IFSfilter=="Kbb": #Kbb 1965.0 0.25
@@ -912,8 +913,8 @@ if 0:
             f1,ax_CCF_list = plt.subplots(4,3,sharey="row",sharex="col",figsize=(12,12*4/5))#figsize=(12,8)
             f2,ax_histo_list = plt.subplots(4,3,sharey="row",sharex="col",figsize=(12,12*4/5))#figsize=(12,8)
             f4,ax_CCFsummary_list = plt.subplots(3,1,sharex="col",figsize=(12,9))#figsize=(12,8)
-            # planet_list = ["b","c","d"]
-            planet_list = ["c"]
+            planet_list = ["b","c","d"]
+            # planet_list = ["c","d"]
         elif IFSfilter=="Hbb": #Hbb 1651 1473.0 0.2
             CRVAL1 = 1473.
             CDELT1 = 0.2
@@ -928,7 +929,10 @@ if 0:
         init_wv = CRVAL1/1000. # wv for first slice in mum
         for plid,(planet,color) in enumerate(zip(planet_list,["#0099cc","#ff9900","#6600ff"])):
 
-            fileinfos_filename = "/data/osiris_data/HR_8799_"+planet+"/fileinfos_Kbb_jb.csv"
+            if resnumbasis == 0:
+                fileinfos_filename = "/data/osiris_data/HR_8799_"+planet+"/fileinfos_Kbb_jb.csv"
+            else:
+                fileinfos_filename = "/data/osiris_data/HR_8799_"+planet+"/fileinfos_Kbb_jb_kl{0}.csv".format(resnumbasis)
 
             #read file
             with open(fileinfos_filename, 'r') as csvfile:
@@ -971,16 +975,16 @@ if 0:
 
             # molecule_list = ["_H2O"]#["","_CH4","_CO","_CO2","_H2O"]
             # molecule_str_list = ["H2O"]#["Atmospheric model","CH4","CO","CO2","H2O"]
-            # molecule_list = ["","_CH4","_CO","_CO2","_H2O"]
-            # molecule_str_list = ["Atmospheric model","CH4","CO","CO2","H2O"]
+            molecule_list = ["","_CO","_H2O","_CH4"]
+            molecule_str_list = ["Model","CO","H2O","CH4"]
             # molecule_list = [""]
             # molecule_str_list = ["Atmospheric model"]
             # molecule_list = ["_CO"]
             # molecule_str_list = ["CO"]
             # molecule_list = ["_CO2"]
             # molecule_str_list = ["CO2"]
-            molecule_list = ["_CH4"]
-            molecule_str_list = ["CH4"]
+            # molecule_list = ["_CH4"]
+            # molecule_str_list = ["CH4"]
             # molecule_list = ["_CO","_H2O","_CH4","_CO2"]
             # molecule_str_list = ["CO","H2O","CH4","CO2"]
             # molecule_list = ["_CO","_H2O","_CH4"]
@@ -1009,10 +1013,18 @@ if 0:
                 ax_histoperfile_list = [ax for ax_list in ax_histoperfile_list for ax in ax_list]
                 for k,item in enumerate(filtered_list_data):
                     # reducfilename = item[cen_filename_id].replace("search","search_CO2_CO_H2O_CH4")
-                    reducfilename = item[cen_filename_id].replace("search","search_CO_H2O_CH4_joint")
+                    # reducfilename = item[cen_filename_id].replace("search","search_CO_H2O_CH4_joint")
                     # print(item[cen_filename_id].replace("search","search_CO2_CO_H2O_CH4"))
+                    if molecule != "":
+                        reducfilename = item[cen_filename_id].replace("20191205_RV","20200213_molecules").replace("search","search_"+molecule_str)
+                    else:
+                        reducfilename = item[cen_filename_id]
+                    # print(reducfilename)
+                    # exit()
                     if len(glob.glob(reducfilename.replace(".fits","_planetRV.fits"))) == 0:
                         continue
+                    print(reducfilename)
+                    # exit()
                     hdulist = pyfits.open(reducfilename.replace(".fits","_planetRV.fits"))
                     planetRV = hdulist[0].data
                     NplanetRV_hd = np.where((planetRV[1::]-planetRV[0:(np.size(planetRV)-1)]) < 0)[0][0]+1
@@ -1035,24 +1047,25 @@ if 0:
                     zcenhd = np.argmin(np.abs(planetRV_hd-rvcen))
                     zcen = np.argmin(np.abs(planetRV-rvcen))
 
-                    # if molecule_str == "CO2":
+                    # # if molecule_str == "CO2":
+                    # #     SNR_data = hdulist[0].data[0,0,13,NplanetRV_hd::,:,:]
+                    # # elif molecule_str == "CO":
+                    # #     SNR_data = hdulist[0].data[0,0,16,NplanetRV_hd::,:,:]
+                    # # elif molecule_str == "H2O":
+                    # #     SNR_data = hdulist[0].data[0,0,19,NplanetRV_hd::,:,:]
+                    # # elif molecule_str == "CH4":
+                    # #     SNR_data = hdulist[0].data[0,0,22,NplanetRV_hd::,:,:]
+                    # # else:
+                    # #     exit()
+                    # if molecule_str == "CO":
                     #     SNR_data = hdulist[0].data[0,0,13,NplanetRV_hd::,:,:]
-                    # elif molecule_str == "CO":
-                    #     SNR_data = hdulist[0].data[0,0,16,NplanetRV_hd::,:,:]
                     # elif molecule_str == "H2O":
-                    #     SNR_data = hdulist[0].data[0,0,19,NplanetRV_hd::,:,:]
+                    #     SNR_data = hdulist[0].data[0,0,16,NplanetRV_hd::,:,:]
                     # elif molecule_str == "CH4":
-                    #     SNR_data = hdulist[0].data[0,0,22,NplanetRV_hd::,:,:]
+                    #     SNR_data = hdulist[0].data[0,0,10,NplanetRV_hd::,:,:]
                     # else:
                     #     exit()
-                    if molecule_str == "CO":
-                        SNR_data = hdulist[0].data[0,0,13,NplanetRV_hd::,:,:]
-                    elif molecule_str == "H2O":
-                        SNR_data = hdulist[0].data[0,0,16,NplanetRV_hd::,:,:]
-                    elif molecule_str == "CH4":
-                        SNR_data = hdulist[0].data[0,0,10,NplanetRV_hd::,:,:]
-                    else:
-                        exit()
+                    SNR_data = hdulist[0].data[0,0,10,NplanetRV_hd::,:,:]
                     SNR_data_cp = copy(SNR_data)
                     SNR_data_cp[np.where(np.abs(SNR_data)>100)] = np.nan
 
@@ -1094,24 +1107,25 @@ if 0:
                     ((19*3)//2-lcen):((19*3)//2+nx-lcen)] += canvas
                     SNR_data_calib[np.where(np.isnan(SNR_data_calib))] = 0
 
-                    # if molecule_str == "CO2":
+                    # # if molecule_str == "CO2":
+                    # #     SNR_data_hd = hdulist[0].data[0,0,13,0:NplanetRV_hd,:,:]
+                    # # elif molecule_str == "CO":
+                    # #     SNR_data_hd = hdulist[0].data[0,0,16,0:NplanetRV_hd,:,:]
+                    # # elif molecule_str == "H2O":
+                    # #     SNR_data_hd = hdulist[0].data[0,0,19,0:NplanetRV_hd,:,:]
+                    # # elif molecule_str == "CH4":
+                    # #     SNR_data_hd = hdulist[0].data[0,0,22,0:NplanetRV_hd,:,:]
+                    # # else:
+                    # #     exit()
+                    # if molecule_str == "CO":
                     #     SNR_data_hd = hdulist[0].data[0,0,13,0:NplanetRV_hd,:,:]
-                    # elif molecule_str == "CO":
-                    #     SNR_data_hd = hdulist[0].data[0,0,16,0:NplanetRV_hd,:,:]
                     # elif molecule_str == "H2O":
-                    #     SNR_data_hd = hdulist[0].data[0,0,19,0:NplanetRV_hd,:,:]
+                    #     SNR_data_hd = hdulist[0].data[0,0,16,0:NplanetRV_hd,:,:]
                     # elif molecule_str == "CH4":
-                    #     SNR_data_hd = hdulist[0].data[0,0,22,0:NplanetRV_hd,:,:]
+                    #     SNR_data_hd = hdulist[0].data[0,0,10,0:NplanetRV_hd,:,:]
                     # else:
                     #     exit()
-                    if molecule_str == "CO":
-                        SNR_data_hd = hdulist[0].data[0,0,13,0:NplanetRV_hd,:,:]
-                    elif molecule_str == "H2O":
-                        SNR_data_hd = hdulist[0].data[0,0,16,0:NplanetRV_hd,:,:]
-                    elif molecule_str == "CH4":
-                        SNR_data_hd = hdulist[0].data[0,0,10,0:NplanetRV_hd,:,:]
-                    else:
-                        exit()
+                    SNR_data_hd = hdulist[0].data[0,0,10,0:NplanetRV_hd,:,:]
                     SNR_data_calib_hd = SNR_data_hd-meanSNR1
                     SNR_data_calib_hd_cp = copy(SNR_data_calib_hd)
                     SNR_data_calib_hd_cp[:,kcen-3:kcen+3,lcen-3:lcen+3] = np.nan
@@ -1188,11 +1202,11 @@ if 0:
                 for k,l in zip(colids_choice,rowids_choice):
                     plt.plot(planetRV,noise1[:,k,l],alpha=0.1,linestyle="--",linewidth=0.2,color="grey") #006699
                     # plt.plot(planetRV,noise2[:,k,l],alpha=0.5,linestyle="--",linewidth=1,color="cyan")
-                plt.plot(planetRV,summed_wideRV[200:400,(64*3)//2,(19*3)//2],linestyle="-",linewidth=3,color=color)
+                plt.plot(planetRV,summed_wideRV[200:400,(64*3)//2,(19*3)//2],linestyle="-",linewidth=2,color=color)
                 Nvalid_hdRV = np.sum(Nvalid_hdRV[400:800,:,:],axis=(1,2))
                 where_validhd = np.where(Nvalid_hdRV>0.9*np.nanmax(Nvalid_hdRV))
                 where_notvalidhd = np.where(Nvalid_hdRV<=0.9*np.nanmax(Nvalid_hdRV))
-                plt.plot(planetRV_hd[where_validhd],summed_hdRV[400:800,(64*3)//2,(19*3)//2][where_validhd],linestyle="--",linewidth=1,color="black") #"black","#ff9900","#006699","grey"
+                # plt.plot(planetRV_hd[where_validhd],summed_hdRV[400:800,(64*3)//2,(19*3)//2][where_validhd],linestyle="--",linewidth=1,color="black") #"black","#ff9900","#006699","grey"
                 plt.gca().tick_params(axis='x', labelsize=fontsize)
                 plt.gca().tick_params(axis='y', labelsize=fontsize)
                 plt.xlim([-4000,4000])
@@ -1240,7 +1254,7 @@ if 0:
                     plt.ylim([-3,15])
                     plt.yticks([0,5,10,15])
                 plt.legend(loc="upper right",frameon=True,fontsize=fontsize)#
-                plt.show()
+                # plt.show()
 
         plt.figure(f4.number)
         plt.sca(ax_CCFsummary_list[-1])
@@ -1253,9 +1267,9 @@ if 0:
         plt.gca().tick_params(axis='y', labelsize=fontsize)
         f4.subplots_adjust(wspace=0,hspace=0)
 
-        print("Saving "+os.path.join(out_pngs,"HR_8799_"+IFSfilter+"_CCFsummary_joint.png"))
-        plt.savefig(os.path.join(out_pngs,"HR_8799_"+IFSfilter+"_CCFsummary_joint.png"),bbox_inches='tight')
-        plt.savefig(os.path.join(out_pngs,"HR_8799_"+IFSfilter+"_CCFsummary_joint.pdf"),bbox_inches='tight')
+        print("Saving "+os.path.join(out_pngs,"HR_8799_"+IFSfilter+"_CCFsummary_kl{0}.png".format(resnumbasis)))
+        plt.savefig(os.path.join(out_pngs,"HR_8799_"+IFSfilter+"_CCFsummary_kl{0}.png".format(resnumbasis)),bbox_inches='tight')
+        plt.savefig(os.path.join(out_pngs,"HR_8799_"+IFSfilter+"_CCFsummary_kl{0}.pdf".format(resnumbasis)),bbox_inches='tight')
         plt.close(f4.number)
 
         plt.figure(f1.number)
@@ -1273,9 +1287,9 @@ if 0:
         plt.gca().tick_params(axis='y', labelsize=fontsize)
         f1.subplots_adjust(wspace=0,hspace=0)
 
-        print("Saving "+os.path.join(out_pngs,"HR_8799_"+IFSfilter+"_CCF_joint.png"))
-        plt.savefig(os.path.join(out_pngs,"HR_8799_"+IFSfilter+"_CCF_joint.png"),bbox_inches='tight')
-        plt.savefig(os.path.join(out_pngs,"HR_8799_"+IFSfilter+"_CCF_joint.pdf"),bbox_inches='tight')
+        print("Saving "+os.path.join(out_pngs,"HR_8799_"+IFSfilter+"_CCF_kl{0}.png".format(resnumbasis)))
+        plt.savefig(os.path.join(out_pngs,"HR_8799_"+IFSfilter+"_CCF_kl{0}.png".format(resnumbasis)),bbox_inches='tight')
+        plt.savefig(os.path.join(out_pngs,"HR_8799_"+IFSfilter+"_CCF_kl{0}.pdf".format(resnumbasis)),bbox_inches='tight')
         plt.close(f1.number)
 
 
@@ -1289,9 +1303,9 @@ if 0:
         plt.yticks([1e-6,1e-4,1e-2,1e-0])
         f2.subplots_adjust(wspace=0,hspace=0)
 
-        print("Saving "+os.path.join(out_pngs,"HR_8799_"+IFSfilter+"_CCF_histo_joint.png"))
-        plt.savefig(os.path.join(out_pngs,"HR_8799_"+IFSfilter+"_CCF_histo_joint.png"),bbox_inches='tight')
-        plt.savefig(os.path.join(out_pngs,"HR_8799_"+IFSfilter+"_CCF_histo_joint.pdf"),bbox_inches='tight')
+        print("Saving "+os.path.join(out_pngs,"HR_8799_"+IFSfilter+"_CCF_histo_kl{0}.png".format(resnumbasis)))
+        plt.savefig(os.path.join(out_pngs,"HR_8799_"+IFSfilter+"_CCF_histo_kl{0}.png".format(resnumbasis)),bbox_inches='tight')
+        plt.savefig(os.path.join(out_pngs,"HR_8799_"+IFSfilter+"_CCF_histo_kl{0}.pdf".format(resnumbasis)),bbox_inches='tight')
         plt.close(f2.number)
         plt.show()
         # exit()

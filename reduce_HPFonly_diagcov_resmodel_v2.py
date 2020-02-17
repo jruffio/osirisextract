@@ -997,7 +997,7 @@ if __name__ == "__main__":
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190906_HPF_restest2/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190923_HPF_restest2/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20191120_new_resmodel/"
-        outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20191202_test/"
+        outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20200213_molectest/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190305_HPF_only_noperscor/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190228_mol_temp/"
 
@@ -1015,14 +1015,14 @@ if __name__ == "__main__":
         # filelist = filelist[len(filelist)-3:len(filelist)-2]
 
         res_numbasis = 1
-        numthreads = 28
+        numthreads = 10
         planet_search = True
         debug_paras = True
         plot_transmissions = False
         plt_psfs = False
         plot_persistence = False
-        planet_model_string = "model"
-        # planet_model_string = "CO"#"CO2 CO H2O CH4"
+        # planet_model_string = "model"
+        planet_model_string = "CO"#"CO2 CO H2O CH4"
         # planet_model_string = "CO2 CO H2O CH4 joint"
         # planet_model_string = "CO joint"
         inject_fakes = False
