@@ -900,11 +900,11 @@ if 0:
 
 
 
-# plot CCF JOINT
+# plot CCF
 if 1:
-    resnumbasis = 0
+    resnumbasis = 10
     fontsize = 12
-    for IFSfilter in ["Kbb"]:#["Kbb","Hbb"]:
+    for IFSfilter in ["Hbb"]:#,"Hbb"]:
         if IFSfilter=="Kbb": #Kbb 1965.0 0.25
             CRVAL1 = 1965.
             CDELT1 = 0.25
@@ -912,17 +912,17 @@ if 1:
             R=4000
             f1,ax_CCF_list = plt.subplots(4,3,sharey="row",sharex="col",figsize=(12,12*4/5))#figsize=(12,8)
             f2,ax_histo_list = plt.subplots(4,3,sharey="row",sharex="col",figsize=(12,12*4/5))#figsize=(12,8)
-            f4,ax_CCFsummary_list = plt.subplots(3,1,sharex="col",figsize=(12,9))#figsize=(12,8)
+            f4,ax_CCFsummary_list = plt.subplots(3,1,sharex="col",figsize=(6,9))#figsize=(12,8)
             planet_list = ["b","c","d"]
             # planet_list = ["c","d"]
         elif IFSfilter=="Hbb": #Hbb 1651 1473.0 0.2
             CRVAL1 = 1473.
             CDELT1 = 0.2
             nl=1651
-            R=5000
+            R=4000
             f1,ax_CCF_list = plt.subplots(4,2,sharey="row",sharex="col",figsize=(8,12*4/5))#figsize=(12,8)
             f2,ax_histo_list = plt.subplots(4,2,sharey="row",sharex="col",figsize=(8,12*4/5))#figsize=(12,8)
-            f4,ax_CCFsummary_list = plt.subplots(2,1,sharex="col",figsize=(12,6))#figsize=(12,8)
+            f4,ax_CCFsummary_list = plt.subplots(2,1,sharex="col",figsize=(6,6))#figsize=(12,8)
             planet_list = ["b","c"]
         linestyle_list = ["-","-","--","-.",":"]
         dwv = CDELT1/1000.

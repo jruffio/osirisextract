@@ -968,9 +968,9 @@ if __name__ == "__main__":
         # date = "161106"
         # date = "180722"
         planet = "HR_8799_c"
-        date = "100715"
+        # date = "100715"
         # date = "101028"
-        # date = "101104"
+        date = "101104"
         # date = "110723"
         # date = "110724"
         # date = "110725"
@@ -986,7 +986,7 @@ if __name__ == "__main__":
         # date = "171104"
         # planet = "kap_And"
         # date = "161106"
-        IFSfilter = "Kbb"
+        IFSfilter = "Hbb"
         # IFSfilter = "Hbb"
         # IFSfilter = "Jbb" # "Kbb" or "Hbb"
         scale = "020"
@@ -1014,7 +1014,7 @@ if __name__ == "__main__":
         # filelist = filelist[4:]
         # filelist = filelist[len(filelist)-3:len(filelist)-2]
 
-        res_numbasis = 1
+        res_numbasis = 0
         numthreads = 28
         planet_search = False
         debug_paras = False
@@ -1503,10 +1503,31 @@ if __name__ == "__main__":
                             # np.savetxt(grid_filename+".sorted",out[argsort_wvs,:])
                             # os.system("rm "+grid_filename)
                             wmod = out[:,0]/1e4
-                            ori_planet_spec = out[:,1]
+                            ori_planet_spec = 10**(out[:,1]-np.max(out[:,1]))
 
                         # import matplotlib.pyplot as plt
-                        # plt.plot(wmod,ori_planet_spec)
+                        # planet_convspec = convolve_spectrum(wmod,10**(ori_planet_spec-np.max(ori_planet_spec)),R,specpool)
+                        # plt.plot(wmod,planet_convspec/np.max(planet_convspec),label="new 10")
+                        # # plt.plot(wmod,np.exp(ori_planet_spec-np.max(ori_planet_spec)),label="new exp")
+                        # testfilename = grid_filename.replace(".7.D2e.sorted",".7.filter_new.save")
+                        # travis_spectrum = scio.readsav(testfilename)
+                        # print(travis_spec_filename)
+                        # print(travis_spectrum)
+                        # # exit()
+                        # wv = np.array(travis_spectrum["wobs_b"])
+                        # f = np.array(travis_spectrum["FMOD_B"])
+                        # plt.plot(wv,f/np.max(f),label="new but comp",linestyle="--")
+                        #
+                        #
+                        # # travis_spec_filename=os.path.join(planet_template_folder,
+                        # #                               "HR8799c_"+IFSfilter[0:1]+"_3Oct2018.save")
+                        # # travis_spectrum = scio.readsav(travis_spec_filename)
+                        # # ori_planet_spec = np.array(travis_spectrum["fmod"])
+                        # # ori_planet_convspec = np.array(travis_spectrum["fmods"])
+                        # # wmod = np.array(travis_spectrum["wmod"])/1.e4
+                        # # plt.plot(wmod,ori_planet_spec/np.max(ori_planet_spec),label="old")
+                        #
+                        # plt.legend()
                         # plt.show()
                         # exit()
 
