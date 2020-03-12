@@ -33,13 +33,32 @@ def LPFvsHPF(myvec,cutoff,nansmooth=10):
 out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
 
 suffix = "all"
-planet = "c"
+planet = "b"
 grid = "Travis"
 
-gridfolder = "20200217_grid_travis"
+# gridfolder = "20200217_grid_travis"
+gridfolder = "20200301_grid_travis"
 
+
+
+
+
+
+
+# data_filename1 = "/data/osiris_data/HR_8799_c/20100715/reduced_jb/sherlock/20200217_grid_travis/s100715_a010001_Kbb_020_outputHPF_cutoff40_sherlock_v1_centroid_resinmodel_kl10.fits"
+# data_filename2 = "/data/osiris_data/s100715_a010001_Kbb_020_outputHPF_cutoff40_sherlock_v1_centroid_resinmodel_kl10.fits"
+# hdulist = pyfits.open(data_filename1)
+# _,Nmodels,_,Nrvs,ny,nx = hdulist[0].data.shape
+# logposterior1 = hdulist[0].data[-1,:,9,:,:,:]
+#
+# hdulist = pyfits.open(data_filename2)
+# _,Nmodels,_,Nrvs,ny,nx = hdulist[0].data.shape
+# logposterior2 = hdulist[0].data[-1,:,9,:,:,:]
+#
+# print(np.nanmax(logposterior1-logposterior2))
+# exit()
 # plot grid
-if 1:
+if 0:
     gridname = os.path.join("/data/osiris_data/","hr8799b_modelgrid")
 
 
@@ -93,10 +112,11 @@ if 1:
     print(np.unique(logglist))
     print(np.unique(Clist))
     print(np.unique(Olist))
+    print(np.unique(Clist)-np.unique(Olist))
     # exit()
     for grid_filename,gridconv_filename,T,logg,C,O in zip(grid_filelist,gridconv_filelist,Tlist,logglist,Clist,Olist):
-        # if not ((T == 800 ) or (T == 1200)) :
-        #     continue
+        if not ((T == 800 ) or (T == 1200)) :
+            continue
         # if not ((logg == -4.5 ) or (logg == -3) ) :
         #     continue
         # if not ((C == 8.48 and O == 8.82) or (C == 8.25 and O == 8.3)):
@@ -105,14 +125,14 @@ if 1:
         #     continue
         # if T != 1000:
         #     continue
-        # if logg != -3.5:
-        #     continue
-        # if C != -8.33:
-        #     continue
-        # if O != -8.51:
-        #     continue
-        if not ((C == 8.48 and O == 8.82 and logg == -3 and T == 1000)):# or (C == 8.25 and O == 8.3 and logg == -4.5 and T == 1000)):
+        if logg != -3.5:
             continue
+        if C != 8.33:
+            continue
+        if O != 8.51:
+            continue
+        # if not ((C == 8.48 and O == 8.82 and logg == -3 and T == 1000)):# or (C == 8.25 and O == 8.3 and logg == -4.5 and T == 1000)):
+        #     continue
         # if not (C == -8.33 and O == -8.51 and logg == -3.5 and T == 1100):
         #     continue
         print(gridconv_filename)
@@ -137,7 +157,7 @@ if 1:
 
         out = np.loadtxt(grid_filename,skiprows=0)
         wmod = out[:,0]/1e4
-        ori_planet_spec = out[:,1]
+        ori_planet_spec = 10**(out[:,1]-np.max(out[:,1]))
         plt.figure(3)
         plt.plot(wmod,ori_planet_spec/np.max(ori_planet_spec),label="T{0} logg{1} C{2} O{3}".format(T,logg,C,O),alpha=0.5)
 
@@ -232,18 +252,39 @@ for nbid,numbasis in enumerate([10]):
     for c_cen_filename,status,ifsfilter in zip(c_cen_filelist,c_status_list,c_ifs_fitler_list):
         if status !=1:
             continue
-        if "Kbb" in ifsfilter:
+        if "Hbb" in ifsfilter:
             continue
 
         data_filename = c_cen_filename.replace("20191205_RV",gridfolder).replace("search","centroid")
         print(data_filename)
         # exit()
+        modelgrid_filename = data_filename.replace(".fits","_modelgrid.txt")
+        # modelgrid_filename = "/data/osiris_data/"+"HR_8799_c"+"/20"+"100715"+"/reduced_jb/20191209_gridtest/s100715_a010001_Kbb_020_outputHPF_cutoff40_sherlock_v1_centroid_resinmodel_kl0_modelgrid.txt"
+        print(modelgrid_filename)
         try:
-            hdulist = pyfits.open(data_filename)
+            txtfile = open(modelgrid_filename, 'r')
         except:
             continue
+        grid_filelist = [s.strip() for s in txtfile.readlines()]
+        print(grid_filelist[0])
+        Tlist = np.array([int(float(os.path.basename(grid_filename).split("lte")[-1].split("-")[0])*100) for grid_filename in grid_filelist])
+        logglist = np.array([-float(os.path.basename(grid_filename).split("-")[1]) for grid_filename in grid_filelist])
+        Clist = np.array([float(os.path.basename(grid_filename).split("C=")[-1].split("_O")[0]) for grid_filename in grid_filelist])
+        Olist = np.array([float(os.path.basename(grid_filename).split("O=")[-1].split("_gs")[0]) for grid_filename in grid_filelist])
+
+        selec_models = np.where(Tlist==900)
+        Tlist = Tlist[selec_models]
+        logglist = logglist[selec_models]
+        Clist = Clist[selec_models]
+        Olist = Olist[selec_models]
+        print(selec_models)
+        # exit()
+
+        print(np.unique(Tlist))
+        # print(np.unique(logglist))
+        hdulist = pyfits.open(data_filename)
         _,Nmodels,_,Nrvs,ny,nx = hdulist[0].data.shape
-        logposterior = hdulist[0].data[-1,:,9,:,:,:]
+        logposterior = hdulist[0].data[-1,selec_models[0],9,:,:,:]
         posterior = np.exp(logposterior-np.nanmax(logposterior))
         posterior_posmargi = np.nansum(posterior,axis=(2,3))
         posterior_posmargi /= np.nanmax(posterior_posmargi)
@@ -252,25 +293,18 @@ for nbid,numbasis in enumerate([10]):
         print(np.nansum(posterior_rvposmargi))
         posterior_list.append(posterior_rvposmargi)
 
-        modelgrid_filename = data_filename.replace(".fits","_modelgrid.txt")
-        # modelgrid_filename = "/data/osiris_data/"+"HR_8799_c"+"/20"+"100715"+"/reduced_jb/20191209_gridtest/s100715_a010001_Kbb_020_outputHPF_cutoff40_sherlock_v1_centroid_resinmodel_kl0_modelgrid.txt"
-        print(modelgrid_filename)
-        with open(modelgrid_filename, 'r') as txtfile:
-            grid_filelist = [s.strip() for s in txtfile.readlines()]
-            print(grid_filelist[0])
-            Tlist = np.array([int(float(os.path.basename(grid_filename).split("lte")[-1].split("-")[0])*100) for grid_filename in grid_filelist])
-            logglist = np.array([-float(os.path.basename(grid_filename).split("-")[1]) for grid_filename in grid_filelist])
-            Clist = np.array([-float(os.path.basename(grid_filename).split("C=")[-1].split("_O")[0]) for grid_filename in grid_filelist])
-            Olist = np.array([-float(os.path.basename(grid_filename).split("O=")[-1].split("_gs")[0]) for grid_filename in grid_filelist])
-
-            print(np.unique(Tlist))
-            # print(np.unique(logglist))
 
         # plt.figure(nbid+20)
         # plt.scatter(Clist,Olist,c=posterior_rvposmargi,s=100*posterior_rvposmargi)
         # plt.plot(Clist,Olist,"x",color="black")
         # plt.xlabel("C")
         # plt.ylabel("O")
+        # plt.show()
+
+        # plt.figure(1)
+        # plt.plot(Tlist,posterior_rvposmargi,"x")
+        # plt.xlabel("T (K)")
+        # plt.ylabel("Posterior")
         # plt.show()
 
         # print(posterior_rvposmargi.shape)
@@ -281,25 +315,26 @@ for nbid,numbasis in enumerate([10]):
     combined_posterior = 10**(log10_combined_posterior)
     print(combined_posterior)
 
-    plt.figure(nbid)
-    plt.plot(combined_posterior)
-    print(grid_filelist[np.argmax(combined_posterior)])
-    print("N cubes",len(posterior_list))
+    # plt.figure(nbid)
+    # plt.plot(combined_posterior)
+    # print(grid_filelist[np.argmax(combined_posterior)])
+    # print("N cubes",len(posterior_list))
 
-    plt.figure(nbid+10)
+    plt.figure(nbid+10,figsize=(12,3))
+    plt.subplot(1,3,1)
     plt.plot(Tlist,combined_posterior,"x")
     plt.xlabel("T (K)")
     plt.ylabel("Posterior")
+    plt.title("HR 8799 "+planet)
 
-    plt.figure(nbid+20)
+    plt.subplot(1,3,2)
     plt.plot(logglist,combined_posterior,"x")
     plt.xlabel("log(g)")
-    plt.ylabel("Posterior")
 
-    plt.figure(nbid+30)
-    plt.scatter(Clist,Olist,c=combined_posterior,s=100*combined_posterior)
-    plt.plot(Clist,Olist,".",color="grey")
-    plt.xlabel("C")
-    plt.ylabel("O")
+    plt.subplot(1,3,3)
+    plt.plot(10**(Clist-Olist),combined_posterior,"x")
+    plt.xlabel("C/O")
+
+    plt.tight_layout()
 
 plt.show()

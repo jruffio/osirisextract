@@ -286,7 +286,7 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
                             transmission4planet_list,
                             hr8799_flux,
                             wvs,planetRV_array,dtype,cutoff,planet_search,centroid_guess,
-                            R_list,numbasis_list,wvsol_offsets,R_calib_arr=None,model_persistence=False,res4model_kl=None,lpf_res_calib=None,fake_paras=None,indices=None):
+                            R_list,numbasis_list,wvsol_offsets,R_calib_arr=None,model_persistence=False,res4model_kl=None,lpf_res_calib=None,fake_paras=None,outputdir=None,filename=None):
     global original,sigmas,badpix,originalLPF,originalHPF, original_shape, output, output_shape, lambdas, img_center, \
         psfs, psfs_shape, Npixproc, Npixtot,outres,outres_shape,outautocorrres,outautocorrres_shape,persistence,out1dfit,out1dfit_shape,estispec,estispec_shape
     original_np = _arraytonumpy(original, original_shape,dtype=dtype)
@@ -308,18 +308,6 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
     chi2ref = 0#np.nansum((originalHPF_np[tmpwhere]/sigmas_imgs_np[tmpwhere])**2)
 
 
-    # # import matplotlib.pyplot as plt
-    # # cube_cp = copy(original_np)
-    # # cube_cp[np.where(cube_cp < np.nanmedian(cube_cp,axis=(0,1))[None,None,:])] = np.nan
-    # LPF_self_ref,HPF_self_ref = LPFvsHPF(np.nanmean(original_np,axis=(0,1)),cutoff)
-    # self_line_spec = HPF_self_ref/LPF_self_ref
-    # # plt.plot(np.nanmean(cube_cp,axis=(0,1)))
-    # # plt.plot(LPF_self_ref)
-    # # plt.plot(HPF_self_ref)
-    # # plt.show()
-    # # exit()
-
-
     for curr_k,curr_l,row,col in zip(curr_k_indices,curr_l_indices,row_indices,col_indices):
         # print("coucou3")
         if planet_search:
@@ -334,6 +322,10 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
         ###################################
         ## Extrac the data
         HPFdata = copy(originalHPF_np[k-w:k+w+1,l-w:l+w+1,:])
+        # print(k,l)
+        # print(HPFdata[:,:,0])
+        # print(k,l)
+        # exit()
         LPFdata = copy(originalLPF_np[k-w:k+w+1,l-w:l+w+1,:])
         data_sigmas = sigmas_np[k-w:k+w+1,l-w:l+w+1,:]
         data_badpix = badpix_np[k-w:k+w+1,l-w:l+w+1,:]
@@ -344,6 +336,76 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
         x_grid, y_grid = np.meshgrid(x_vec, y_vec)
         x_data_grid, y_data_grid = x_grid[k-w:k+w+1,l-w:l+w+1], y_grid[k-w:k+w+1,l-w:l+w+1]
 
+        if outputdir is not None: #_corrwvs _LPFdata _HPFdata _badpix _sigmas _trans _starspec _reskl _plrv0
+            hdulist = pyfits.HDUList()
+            hdulist.append(pyfits.PrimaryHDU(data=wvs[None,None,:]-data_wvsol_offsets[:,:,None]))
+            try:
+                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_corrwvs.fits")), overwrite=True)
+            except TypeError:
+                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_corrwvs.fits")), clobber=True)
+            hdulist.close()
+            hdulist = pyfits.HDUList()
+            hdulist.append(pyfits.PrimaryHDU(data=LPFdata))
+            try:
+                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_LPFdata.fits")), overwrite=True)
+            except TypeError:
+                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_LPFdata.fits")), clobber=True)
+            hdulist.close()
+            hdulist = pyfits.HDUList()
+            hdulist.append(pyfits.PrimaryHDU(data=HPFdata))
+            try:
+                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_HPFdata.fits")), overwrite=True)
+            except TypeError:
+                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_HPFdata.fits")), clobber=True)
+            hdulist.close()
+            hdulist = pyfits.HDUList()
+            hdulist.append(pyfits.PrimaryHDU(data=data_badpix))
+            try:
+                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_badpix.fits")), overwrite=True)
+            except TypeError:
+                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_badpix.fits")), clobber=True)
+            hdulist.close()
+            hdulist = pyfits.HDUList()
+            hdulist.append(pyfits.PrimaryHDU(data=data_sigmas))
+            try:
+                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_sigmas.fits")), overwrite=True)
+            except TypeError:
+                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_sigmas.fits")), clobber=True)
+            hdulist.close()
+            hdulist = pyfits.HDUList()
+            hdulist.append(pyfits.PrimaryHDU(data=transmission4planet_list[0](wvs)))
+            try:
+                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_trans.fits")), overwrite=True)
+            except TypeError:
+                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_trans.fits")), clobber=True)
+            hdulist.close()
+            hdulist = pyfits.HDUList()
+            HR8799_obsspec = transmission4planet_list[0](wvs)[None,None,:]*HR8799pho_spec_func_list[0](wvs[None,None,:]-data_wvsol_offsets[:,:,None])
+            hdulist.append(pyfits.PrimaryHDU(data=HR8799_obsspec/np.nansum(HR8799_obsspec,axis=2)[:,:,None]*hr8799_flux))
+            try:
+                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_starspec.fits")), overwrite=True)
+            except TypeError:
+                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_starspec.fits")), clobber=True)
+            hdulist.close()
+            hdulist = pyfits.HDUList()
+            hdulist.append(pyfits.PrimaryHDU(data=res4model_kl))
+            try:
+                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_reskl.fits")), overwrite=True)
+            except TypeError:
+                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_reskl.fits")), clobber=True)
+            hdulist.close()
+            hdulist = pyfits.HDUList()
+            print(planetRV_array[0],planetRV_array)
+            hdulist.append(pyfits.PrimaryHDU(data=planetRV_array))
+            try:
+                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_plrv0.fits")), overwrite=True)
+            except TypeError:
+                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_plrv0.fits")), clobber=True)
+            hdulist.close()
+            return 0
+
+
+
         ###################################
         ## Define planet model
         nospec_planet_model = np.zeros(HPFdata.shape)
@@ -352,178 +414,23 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
         for z in range(data_nz):
             nospec_planet_model[:,:,z] = normalized_psfs_func_list[z](pl_x_vec,pl_y_vec).transpose()
 
-        if fake_paras is not None:
-            c_kms = 299792.458
-            planet_model = copy(nospec_planet_model)
-            for bkg_k in range(2*w+1):
-                for bkg_l in range(2*w+1):
-
-                    wvs4planet_model = wvs*(1-fake_paras["RV"]/c_kms) \
-                                       -data_wvsol_offsets[bkg_k,bkg_l]
-                    planet_model[bkg_k,bkg_l,:] *= planet_model_func_table[0][0](wvs4planet_model) * \
-                        transmission4planet_list[0](wvs)
-            planet_model = planet_model/np.nansum(planet_model)*hr8799_flux
-
-            HPF_fake = np.zeros(planet_model.shape)
-            LPF_fake = np.zeros(planet_model.shape)
-            for bkg_k in range(2*w+1):
-                for bkg_l in range(2*w+1):
-                    LPF_fake[bkg_k,bkg_l,:],HPF_fake[bkg_k,bkg_l,:]  = LPFvsHPF(planet_model[bkg_k,bkg_l,:] ,cutoff)
-
-
-            HPFdata = HPFdata + HPF_fake*fake_paras["contrast"]
-            LPFdata = LPFdata + LPF_fake*fake_paras["contrast"]
-
-            # import matplotlib.pyplot as plt
-            # plt.figure(1)
-            # plt.plot(np.ravel(HPFdata),label="before HPFdata")
-            # plt.plot(np.ravel(HPFdata2),label="after HPFdata")
-            # plt.plot(np.ravel(HPFdata2-HPFdata),label="diff HPFdata")
-            # plt.legend()
-            # plt.figure(1)
-            # plt.plot(np.ravel(LPFdata),label="before LPFdata")
-            # plt.plot(np.ravel(LPFdata2),label="after LPFdata")
-            # plt.plot(np.ravel(LPFdata2-LPFdata),label="diff LPFdata")
-            # plt.legend()
-            #
-            # plt.show()
-
-        data_R_calib = R_calib_arr[k-w:k+w+1,l-w:l+w+1]
-        if model_persistence:
-            data_persistence = persistence_np[k-w:k+w+1,l-w:l+w+1]
-
-
-        # import matplotlib.pyplot as plt
-        # for k in range(5):
-        #     for l in range(5):
-        #         plt.subplot(5,5,5*k+l+1)
-        #         plt.plot(HPFdata[k,l,:],label="HPF")
-        #         wherefinite = np.where(np.isfinite(data_badpix[k,l,:]))
-        #         plt.plot(wherefinite[0],HPFdata[k,l,:][wherefinite],label="BP after")
-        # plt.legend()
-        # plt.show()
-
-
-        #(4,padimgs.shape[-1],padny,padnx)
-        #data
-        if 1:
-            where_bad_data_3d = np.where(np.isnan(data_badpix))
-            copy_model = copy(nospec_planet_model)
-            copy_model[where_bad_data_3d] = np.nan
-            # print(out1dfit_np.shape)
-            # canvas_HPFdata = copy(HPFdata)
-            # canvas_LPFdata = copy(LPFdata)
-            # canvas_LPFdata[where_bad_data_3d] = np.nan
-            # canvas_sigmas = copy(data_sigmas)
-            # canvas_sigmas[where_bad_data_3d] = np.nan
-            data_var = data_sigmas**2
-            out1dfit_np[2,row,col,:] = 1/np.nansum(copy_model**2/data_var,axis=(0,1))
-            out1dfit_np[0,row,col,:] = np.nansum(HPFdata*copy_model/data_var,axis=(0,1))*out1dfit_np[2,row,col,:]
-            out1dfit_np[1,row,col,:] = np.nansum(LPFdata*copy_model/data_var,axis=(0,1))*out1dfit_np[2,row,col,:]
-            if model_persistence:
-                out1dfit_np[3,row,col,:] = np.nansum(data_persistence*nospec_planet_model,axis=(0,1))
-
-        # import matplotlib.pyplot as plt
-        # for bkg_k in range(2*w+1):
-        #     for bkg_l in range(2*w+1):
-        #         plt.subplot(2*w+1,2*w+1,bkg_k*w+bkg_l+1)
-        #         plt.plot(nospec_planet_model[bkg_k,bkg_l,:])
-        # plt.show()
 
         ravelHPFdata = np.ravel(copy(HPFdata))
         ravelLPFdata = np.ravel(copy(LPFdata))
         ravelsigmas = np.ravel(copy(data_sigmas))
-        # todo maybe to change back
-        # where_finite_data = np.where(np.isfinite(np.ravel(data_badpix))*(ravelLPFdata>0))
         where_finite_data = np.where(np.isfinite(np.ravel(data_badpix)))
         where_bad_data = np.where(~(np.isfinite(np.ravel(data_badpix))))
         ravelLPFdata = ravelLPFdata[where_finite_data]
         sigmas_vec = ravelsigmas[where_finite_data]#np.ones(ravelLPFdata.shape)#np.sqrt(np.abs(ravelLPFdata))
-        # print(ravelHPFdata.shape)
         ravelHPFdata = ravelHPFdata[where_finite_data]
-        # import matplotlib.pyplot as plt
-        # plt.plot(ravelHPFdata,label="HPF")
-        # plt.plot(sigmas_vec,label="sig")
-        # print(ravelHPFdata.shape)
-        # exit()
         ravelHPFdata = ravelHPFdata/sigmas_vec
-        # plt.plot(ravelHPFdata,label="HPF/sig")
-        # plt.show()
         logdet_Sigma = np.sum(2*np.log(sigmas_vec))
 
-        # import matplotlib.pyplot as plt
-        # plt.plot(np.ravel(copy(LPFdata)),label="LPF")
-        # plt.plot(np.ravel(copy(data_sigmas)),label="sigmas")
-        # plt.legend()
-        # plt.show()
-
-        # print(transmission_table)
-        # print(planet_model_func_table)
-        # print(HR8799pho_spec_func_list)
-        # print(transmission4planet_list)
         for model_id, (tr_list,planet_partial_template_func_list,HR8799pho_spec_func,tr4planet) in \
                 enumerate(zip(transmission_table,planet_model_func_table,HR8799pho_spec_func_list,transmission4planet_list)):
-            # print("coucou4")
-
-            # line_list = []
-            # for transmission in tr_list:
-            #     HR8799_obsspec = transmission(wvs) * \
-            #                     HR8799pho_spec_func(wvs)
-            #     LPF_HR8799_obsspec,HPF_HR8799_obsspec = LPFvsHPF(HR8799_obsspec,cutoff)
-            #
-            #     line_spec = HPF_HR8799_obsspec/LPF_HR8799_obsspec
-            #     if lpf_res_calib is not None:
-            #         line_spec = line_spec*lpf_res_calib
-            #     # line_spec = HR8799_obsspec/LPF_HR8799_obsspec
-            #     line_list.append(line_spec)
 
             for numbasis_id,numbasis in enumerate(numbasis_list):
-                # print("coucou5")
                 HPFmodelH0_list = []
-                # if 1:
-                #     meanline = np.nanmean(line_list,axis=0)
-                #     mean_wherenans = np.where(np.isnan(meanline))
-                #     for myline in line_list:
-                #         wherenans = np.where(np.isnan(myline))
-                #         myline[wherenans] = meanline[wherenans]
-                #         myline[mean_wherenans] = 0
-                #
-                #     covar_trans = np.cov(np.array(line_list))
-                #     evals, evecs = la.eigh(covar_trans, eigvals=(len(line_list)-numbasis, len(line_list)-1))
-                #
-                #     evals = np.copy(evals[::-1])
-                #     evecs = np.copy(evecs[:,::-1], order='F') #fortran order to improve memory caching in matrix multiplication
-                #
-                #     kl_basis = np.dot(np.array(line_list).T, evecs)
-                #     kl_basis = kl_basis * (1. / np.sqrt(evals * (np.size(line_list[0]) - 1)))[None, :]  #multiply a value for each row
-                #     kl_basis = kl_basis.T
-                #
-                #     kl_basis[:,mean_wherenans[0]] = np.nan
-                #
-                #     # import  matplotlib.pyplot as plt
-                #     # plt.plot(meanline,label="mean")
-                #     # for n in range(numbasis):
-                #     #     plt.plot(kl_basis[n,:],label="{0}".format(n))
-                #     # plt.legend()
-                #     # plt.show()
-                #
-                #     new_line_list = kl_basis
-                #
-                # # new_line_list =np.concatenate([new_line_list,self_line_spec[None,:]])
-                #
-                # # import matplotlib.pyplot as plt
-                # # HPFdata[np.where(np.isnan(data_badpix))] = np.nan
-                # # LPFdata[np.where(np.isnan(data_badpix))] = np.nan
-                # # plt.subplot(3,1,1)
-                # # plt.plot(np.nansum(HPFdata,axis=(0,1)))
-                # # plt.subplot(3,1,2)
-                # # plt.plot(np.nansum(LPFdata,axis=(0,1))*new_line_list[0])
-                # # plt.subplot(3,1,3)
-                # # plt.plot(np.nansum(data_sigmas,axis=(0,1)))
-                # # plt.show()
-
-                    # plt.plot(line_spec,label="line_spec")
-                # for line_spec in new_line_list:
                 transmission_vec = tr4planet(wvs)#np.nanmean(np.array([tr(wvs) for tr in tr_list]),axis=0)
                 if 1:
                     bkg_model = np.zeros((2*w+1,2*w+1,2*w+1,2*w+1,data_nz))
@@ -547,92 +454,18 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
                                 myspec[np.where(np.isnan(HPFdata[bkg_k,bkg_l,:]))] = np.nan
                             _,myspec = LPFvsHPF(myspec,cutoff)
 
-                            # plt.plot(myspec,label="model")
-                            # plt.plot(HPFdata[bkg_k,bkg_l,:],label="HPFdata")
-                            # plt.plot(LPFdata[bkg_k,bkg_l,:],label="LPFdata")
-                            # plt.plot(HPFdata[bkg_k,bkg_l,:]+LPFdata[bkg_k,bkg_l,:],label="data")
-                            # plt.legend()
-                            # plt.show()
-
                             bkg_model[bkg_k,bkg_l,bkg_k,bkg_l,:] = myspec
                     HPFmodelH0_list.append(np.reshape(bkg_model,((2*w+1)**2,(2*w+1)**2*data_nz)).transpose())
-                if model_persistence:
-                    persistence_model = np.zeros((2*w+1,2*w+1,2*w+1,2*w+1,data_nz))
-                    for bkg_k in range(2*w+1):
-                        for bkg_l in range(2*w+1):
-                            if np.nanmean(data_persistence[bkg_k,bkg_l,:]) != 0.0:
-                                persistence_model[bkg_k,bkg_l,bkg_k,bkg_l,:] = data_persistence[bkg_k,bkg_l,:]/np.nanstd(data_persistence[bkg_k,bkg_l,:])*np.nanstd(HPFdata[bkg_k,bkg_l,:])/10
-                                # import matplotlib.pyplot as plt
-                                # print(bkg_k,bkg_l)
-                                # print(np.nansum(data_persistence[bkg_k,bkg_l,:]))
-                                # plt.plot(data_persistence[bkg_k,bkg_l,:]/np.nanstd(data_persistence[bkg_k,bkg_l,:]))
-                                # plt.show()
-                    HPFmodelH0_list.append(np.reshape(persistence_model,((2*w+1)**2,(2*w+1)**2*data_nz)).transpose())
-                    # print(np.nansum(np.abs(np.reshape(persistence_model,((2*w+1)**2,(2*w+1)**2*data_nz)).transpose()),axis=0))
                 if res4model_kl is not None:
                     for kid in range(res4model_kl.shape[1]):
                         res4model = res4model_kl[:,kid]
                         LPF4resmodel = np.nansum(LPFdata*nospec_planet_model,axis=(0,1))/np.nansum(nospec_planet_model**2,axis=(0,1))
                         resmodel = nospec_planet_model*LPF4resmodel[None,None,:]*res4model[None,None,:]
-                        # print(nospec_planet_model.shape,LPF4resmodel.shape)
-                        # print(np.ravel(resmodel).shape)
-                        # print(HPFmodelH0_list[-1].shape)
                         HPFmodelH0_list.append(np.ravel(resmodel)[:,None])
-
-                    #     res4model = res4model_kl[:,kid]
-                    #     resmodel = np.zeros((2*w+1,2*w+1,2*w+1,2*w+1,data_nz))
-                    #     for bkg_k in range(2*w+1):
-                    #         for bkg_l in range(2*w+1):
-                    #             myspec = LPFdata[bkg_k,bkg_l,:]*res4model#*np.nanstd(new_line_list[-1])
-                    #             resmodel[bkg_k,bkg_l,bkg_k,bkg_l,:] = myspec
-                    #             # import matplotlib.pyplot as plt
-                    #             # print(bkg_k,bkg_l)
-                    #             # plt.plot(myspec)
-                    #             # plt.show()
-                    #     HPFmodelH0_list.append(np.reshape(resmodel,((2*w+1)**2,(2*w+1)**2*data_nz)).transpose())
 
                 HPFmodel_H0 = np.concatenate(HPFmodelH0_list,axis=1)
 
                 HPFmodel_H0_cp_4res = copy(HPFmodel_H0)
-
-                # #planet spec extraction
-                # if 1:
-                #     where_bad_data_cube = np.where(np.isnan(data_badpix))
-                #
-                #     HPFmodel_H0_4spec_fd = HPFmodel_H0_cp_4res[where_finite_data[0],:]
-                #     where_valid_parameters = np.where(np.sum(np.abs(HPFmodel_H0_4spec_fd),axis=0)!=0)
-                #     HPFmodel_H0_4spec_fd = HPFmodel_H0_4spec_fd[:,where_valid_parameters[0]]
-                #     ravelHPFdata_4spec  = np.ravel(HPFdata)[where_finite_data]
-                #     HPFmodel_H0_4spec_fd[np.where(np.isnan(HPFmodel_H0_4spec_fd))]=0
-                #
-                #     HPFparas_H0,HPFchi2_H0,rank,s = np.linalg.lstsq(HPFmodel_H0_4spec_fd/sigmas_vec[:,None],ravelHPFdata_4spec/sigmas_vec,rcond=None)
-                #     # print(HPFparas_H0)
-                #
-                #     data_model_H0 = np.dot(HPFmodel_H0_cp_4res[:,where_valid_parameters[0]],HPFparas_H0)
-                #     where_nan_data_model_H0 = np.where(np.isnan(data_model_H0))
-                #     data_model_H0[where_nan_data_model_H0] = 0
-                #     canvas_data_model_H0 = np.reshape(data_model_H0,HPFdata.shape)
-                #     canvas_residuals = HPFdata-canvas_data_model_H0
-                #     canvas_residuals_with_nans = copy(canvas_residuals)
-                #     canvas_residuals_with_nans = np.ravel(canvas_residuals_with_nans)
-                #     canvas_residuals_with_nans[where_nan_data_model_H0] = np.nan
-                #     canvas_residuals_with_nans = np.reshape(canvas_residuals_with_nans,HPFdata.shape)
-                #     canvas_residuals_with_nans[where_bad_data_cube] = np.nan
-                #
-                #     PSF = copy(nospec_planet_model)
-                #     PSF = PSF/np.nansum(PSF,axis=(0,1))[None,None,:]
-                #     PSF[where_bad_data_cube] = np.nan
-                #     estispec_np[0,row,col,:] = np.nanmean(wvs[None,None,:]-data_wvsol_offsets[:,:,None],axis=(0,1))
-                #     estispec_np[1,row,col,:] = np.nansum(canvas_residuals_with_nans*PSF,axis=(0,1))/np.nansum(PSF**2,axis=(0,1))
-                #     estispec_np[2,row,col,:] = np.nansum(canvas_residuals_with_nans*PSF,axis=(0,1))/np.nansum(PSF**2,axis=(0,1))/tr4planet(wvs)
-                #
-                #     outres_np[numbasis_id,model_id,0,:,row,col] = np.nanmean(HPFdata,axis=(0,1))
-                #     outres_np[numbasis_id,model_id,1,:,row,col] = np.nanmean(canvas_data_model_H0,axis=(0,1))
-                #     outres_np[numbasis_id,model_id,2,:,row,col] = 0#final_res
-                #     outres_np[numbasis_id,model_id,3,:,row,col] = 0#final_planet
-                #     outres_np[numbasis_id,model_id,4,:,row,col] = 0#final_sigmas
-                #     outres_np[numbasis_id,model_id,5,:,row,col] = np.nanmean(LPFdata,axis=(0,1))
-                #     outres_np[numbasis_id,model_id,6,:,row,col] = np.nanmean(canvas_residuals_with_nans,axis=(0,1))
 
                 HPFmodel_H0 = HPFmodel_H0[where_finite_data[0],:]/sigmas_vec[:,None]
 
@@ -658,28 +491,12 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
                                     wvs4planet_model = wvs*(1-(planetRV_array[plrv_id])/c_kms) \
                                                        -data_wvsol_offsets[bkg_k,bkg_l]
 
-                                    # import matplotlib.pyplot as plt
-                                    # plt.subplot(1,2,1)
-                                    # plt.plot(wvs,label="wvs")
-                                    # plt.plot(wvs4planet_model,label="wvs4planet_model")
-                                    # plt.legend()
-                                    # plt.subplot(1,2,2)
-                                    # plt.plot((wvs-wvs4planet_model)/dwv)
-                                    # plt.show()
                                     if pl_fun_id == 0:
                                         planet_model[bkg_k,bkg_l,:] *= planet_partial_template_func(wvs4planet_model) * \
                                             tr4planet(wvs)
                                     else:
                                         planet_model[bkg_k,bkg_l,:] *= planet_partial_template_func(wvs4planet_model)
 
-                                    # import matplotlib.pyplot as plt
-                                    # plt.plot(planet_partial_template_func_list[0](wvs4planet_model),label="planet_partial_template_func 1")
-                                    # plt.plot(planet_partial_template_func_list[1](wvs4planet_model),label="planet_partial_template_func 2")
-                                    # plt.plot(planet_partial_template_func_list[2](wvs4planet_model),label="planet_partial_template_func 3")
-                                    # plt.plot(planet_partial_template_func_list[3](wvs4planet_model),label="planet_partial_template_func 4")
-                                    # plt.plot(tr4planet(wvs-data_wvsol_offsets[bkg_k,bkg_l]-custom_wvoffset),label="tr4planet")
-                                    # plt.legend()
-                                    # plt.show()
 
                             planet_model = planet_model/np.nansum(planet_model)*hr8799_flux*1e-5
                             HPF_planet_model = np.zeros(planet_model.shape)
@@ -690,7 +507,7 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
                             HPFmodelH1_list.append((HPF_planet_model.ravel())[:,None])
 
                         HPFmodel_H1only = np.concatenate(HPFmodelH1_list,axis=1)
-    
+
                         HPFmodel_H1only = HPFmodel_H1only[where_finite_data[0],:]/sigmas_vec[:,None]
                         HPFmodel_H1only[np.where(np.isnan(HPFmodel_H1only))] = 0
                         HPFmodel_H0[np.where(np.isnan(HPFmodel_H0))] = 0
@@ -771,20 +588,14 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
                             estispec_np[0,row,col,:] = np.nanmean(wvs[None,None,:]-data_wvsol_offsets[:,:,None],axis=(0,1))
                             estispec_np[1,row,col,:] = np.nansum(canvas_residuals_with_nans*PSF,axis=(0,1))/np.nansum(PSF**2,axis=(0,1))
                             estispec_np[2,row,col,:] = tr4planet(wvs)
-                            if fake_paras is not None:
-                                estispec_np[3,row,col,:] = np.nansum(HPF_fake*fake_paras["contrast"],axis=(0,1))
-                                estispec_np[4,row,col,:] = np.nan#np.nansum(HPF_fake*fake_paras["contrast"],axis=(0,1))/tr4planet(wvs)
-                            else:
-                                estispec_np[3,row,col,:] = np.nan
-                                estispec_np[4,row,col,:] = np.nan
 
-                            outres_np[numbasis_id,model_id+indices[0],0,:,row,col] = np.nanmean(HPFdata,axis=(0,1))
-                            outres_np[numbasis_id,model_id+indices[0],1,:,row,col] = np.nanmean(canvas_data_model_H0,axis=(0,1))
-                            outres_np[numbasis_id,model_id+indices[0],2,:,row,col] = 0#final_res
-                            outres_np[numbasis_id,model_id+indices[0],3,:,row,col] = 0#final_planet
-                            outres_np[numbasis_id,model_id+indices[0],4,:,row,col] = 0#final_sigmas
-                            outres_np[numbasis_id,model_id+indices[0],5,:,row,col] = np.nanmean(LPFdata,axis=(0,1))
-                            outres_np[numbasis_id,model_id+indices[0],6,:,row,col] = np.nanmean(canvas_residuals_with_nans,axis=(0,1))
+                            outres_np[numbasis_id,model_id,0,:,row,col] = np.nanmean(HPFdata,axis=(0,1))
+                            outres_np[numbasis_id,model_id,1,:,row,col] = np.nanmean(canvas_data_model_H0,axis=(0,1))
+                            outres_np[numbasis_id,model_id,2,:,row,col] = 0#final_res
+                            outres_np[numbasis_id,model_id,3,:,row,col] = 0#final_planet
+                            outres_np[numbasis_id,model_id,4,:,row,col] = 0#final_sigmas
+                            outres_np[numbasis_id,model_id,5,:,row,col] = np.nanmean(LPFdata,axis=(0,1))
+                            outres_np[numbasis_id,model_id,6,:,row,col] = np.nanmean(canvas_residuals_with_nans,axis=(0,1))
 
     
                         Npixs_HPFdata = HPFmodel.shape[0]
@@ -798,52 +609,37 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
 
                         # delta AIC ~ likelihood ratio
                         if HPFparas[0]>0:
-                            output_maps_np[numbasis_id,model_id+indices[0],0,row,col,plrv_id] = AIC_HPF_H0-AIC_HPF
+                            output_maps_np[numbasis_id,model_id,0,row,col,plrv_id] = AIC_HPF_H0-AIC_HPF
                         else:
-                            output_maps_np[numbasis_id,model_id+indices[0],0,row,col,plrv_id] = 0
+                            output_maps_np[numbasis_id,model_id,0,row,col,plrv_id] = 0
                         # AIC for planet + star model
-                        output_maps_np[numbasis_id,model_id+indices[0],1,row,col,plrv_id] = AIC_HPF
+                        output_maps_np[numbasis_id,model_id,1,row,col,plrv_id] = AIC_HPF
                         # AIC for star model only
-                        output_maps_np[numbasis_id,model_id+indices[0],2,row,col,plrv_id] = AIC_HPF_H0
+                        output_maps_np[numbasis_id,model_id,2,row,col,plrv_id] = AIC_HPF_H0
                         # Chi2 of the stamp
-                        output_maps_np[numbasis_id,model_id+indices[0],3,row,col,plrv_id] = HPFchi2
+                        output_maps_np[numbasis_id,model_id,3,row,col,plrv_id] = HPFchi2
                         # Size of the data
-                        output_maps_np[numbasis_id,model_id+indices[0],4,row,col,plrv_id] = Npixs_HPFdata
+                        output_maps_np[numbasis_id,model_id,4,row,col,plrv_id] = Npixs_HPFdata
                         # number of parameters of the model
-                        output_maps_np[numbasis_id,model_id+indices[0],5,row,col,plrv_id] = HPFmodel.shape[-1]
+                        output_maps_np[numbasis_id,model_id,5,row,col,plrv_id] = HPFmodel.shape[-1]
                         # estimated scaling factor of the covariance matrix of the data
-                        output_maps_np[numbasis_id,model_id+indices[0],6,row,col,plrv_id] = HPFchi2/Npixs_HPFdata
+                        output_maps_np[numbasis_id,model_id,6,row,col,plrv_id] = HPFchi2/Npixs_HPFdata
                         #
-                        output_maps_np[numbasis_id,model_id+indices[0],7,row,col,plrv_id] = logdet_Sigma
-                        output_maps_np[numbasis_id,model_id+indices[0],8,row,col,plrv_id] =  slogdet_icovphi0[0]*slogdet_icovphi0[1]
+                        output_maps_np[numbasis_id,model_id,7,row,col,plrv_id] = logdet_Sigma
+                        output_maps_np[numbasis_id,model_id,8,row,col,plrv_id] =  slogdet_icovphi0[0]*slogdet_icovphi0[1]
                         # marginalized posterior
-                        output_maps_np[numbasis_id,model_id+indices[0],9,row,col,plrv_id] = -0.5*logdet_Sigma-0.5*slogdet_icovphi0[1]- (Npixs_HPFdata-HPFmodel.shape[-1]+2-1)/(2)*np.log(HPFchi2+deltachi2)
+                        output_maps_np[numbasis_id,model_id,9,row,col,plrv_id] = -0.5*logdet_Sigma-0.5*slogdet_icovphi0[1]- (Npixs_HPFdata-HPFmodel.shape[-1]+2-1)/(2)*np.log(HPFchi2+deltachi2)
                         for plmod_id in range(len(planet_partial_template_func_list)):
                             # print(plmod_id)
                             # SNR
-                            output_maps_np[numbasis_id,model_id+indices[0],10+plmod_id*3,row,col,plrv_id] = HPFparas[plmod_id]/np.sqrt(np.abs(covphi[plmod_id,plmod_id]))
+                            output_maps_np[numbasis_id,model_id,10+plmod_id*3,row,col,plrv_id] = HPFparas[plmod_id]/np.sqrt(np.abs(covphi[plmod_id,plmod_id]))
                             # estimated planet to star flux ratio
-                            output_maps_np[numbasis_id,model_id+indices[0],10+plmod_id*3+1,row,col,plrv_id] = HPFparas[plmod_id]
+                            output_maps_np[numbasis_id,model_id,10+plmod_id*3+1,row,col,plrv_id] = HPFparas[plmod_id]
                             # error bar on estimated planet to star flux ratio
-                            output_maps_np[numbasis_id,model_id+indices[0],10+plmod_id*3+2,row,col,plrv_id] = np.sign(covphi[plmod_id,plmod_id])*np.sqrt(np.abs(covphi[plmod_id,plmod_id]))
-                        # print(output_maps_np[numbasis_id,model_id+indices[0],:,row,col,plrv_id])
+                            output_maps_np[numbasis_id,model_id,10+plmod_id*3+2,row,col,plrv_id] = np.sign(covphi[plmod_id,plmod_id])*np.sqrt(np.abs(covphi[plmod_id,plmod_id]))
+                        # print(output_maps_np[numbasis_id,model_id,:,row,col,plrv_id])
                         # print(HPFchi2,deltachi2)
                         # exit()
-                    # except:
-                    #     pass
-        # #remove
-        # plt.legend()
-        # plt.show()
-        #             print("jb here0")
-        #             exit()
-    #             print("jb here1")
-    #             exit()
-    #         print("jb here2")
-    #         exit()
-    #     print("jb here3")
-    #     exit()
-    # print("jb here4")
-    # exit()
     return
 
 def _task_convolve_spectrum(paras):
@@ -955,7 +751,7 @@ if __name__ == "__main__":
     ##############################
     print(len(sys.argv))
     if len(sys.argv) == 1:
-        # planet = "HR_8799_b"
+        planet = "HR_8799_b"
         # date = "090722"
         # date = "090730"
         # date = "090903"
@@ -967,8 +763,8 @@ if __name__ == "__main__":
         # date = "130727"
         # date = "161106"
         # date = "180722"
-        planet = "HR_8799_c"
-        date = "100715"
+        # planet = "HR_8799_c"
+        # date = "100715"
         # date = "101028"
         # date = "101104"
         # date = "110723"
@@ -986,20 +782,22 @@ if __name__ == "__main__":
         # date = "171104"
         # planet = "kap_And"
         # date = "161106"
+        date = "*"
         IFSfilter = "Kbb"
         # IFSfilter = "Hbb"
         # IFSfilter = "Jbb" # "Kbb" or "Hbb"
-        scale = "020"
-        # scale = "035"
+        # scale = "020"
+        scale = "035"
 
         inputDir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190520_LPF/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190906_HPF_restest2/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190923_HPF_restest2/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20191120_new_resmodel/"
-        outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20200214_gridtest_kl1/"
+        # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20200214_gridtest_kl1/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190305_HPF_only_noperscor/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190228_mol_temp/"
+        # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20200309_model/"
 
         # inputDir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb_pairsub/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb_pairsub/20190228_HPF_only/"
@@ -1009,15 +807,15 @@ if __name__ == "__main__":
         filelist.sort()
         print(filelist)
         # exit()
-        filelist = [filelist[1]]
+        # filelist = [filename]
         # print(os.path.join(inputDir,"s"+date+"*"+IFSfilter+"_020.fits"))
         # filelist = filelist[4:]
         # filelist = filelist[len(filelist)-3:len(filelist)-2]
 
-        res_numbasis = 10
-        numthreads = 28
+        res_numbasis = 15
+        numthreads = 10
         planet_search = False
-        debug_paras = False
+        debug_paras = True
         plot_transmissions = False
         plt_psfs = False
         plot_persistence = False
@@ -1068,123 +866,105 @@ if __name__ == "__main__":
         #CO CH4 CO2 H2O
         #nice -n 15 /home/anaconda3/bin/python ./reduce_HPFonly_diagcov.py /data/osiris_data /data/osiris_data/HR_8799_b/20180722/reduced_jb/ /data/osiris_data/HR_8799_b/20180722/reduced_jb/20190326_HPF_only_sherlock_test/ /data/osiris_data/HR_8799_b/20180722/reduced_jb/s180722_a033002_Kbb_035.fits 20 1 'CO' 1
 
+
     osiris_data_dir0 = copy(osiris_data_dir)
-    inputDir0 = copy(inputDir)
-    outputdir0 = copy(outputdir)
     numthreads0 = copy(numthreads)
     planet_search0 = copy(planet_search)
     planet_model_string0 = copy(planet_model_string)
     debug_paras0 = copy(debug_paras)
     res_numbasis0 = copy(res_numbasis)
-    filelist0 = copy(filelist)
-    IFSfilter0 = copy(IFSfilter)
-    date0 = copy(date)
-    plot_transmissions0 = copy(plot_transmissions)
-    plt_psfs0 = copy(plt_psfs)
-    plot_persistence0 = copy(plot_persistence)
     inject_fakes0 = copy(inject_fakes)
-    for res_it in range(2):
 
-        osiris_data_dir = copy(osiris_data_dir0)
-        inputDir = copy(inputDir0)
-        outputdir = copy(outputdir0)
-        numthreads = copy(numthreads0)
-        planet_model_string = copy(planet_model_string0)
-        if res_it == 0:
-            # continue
-            if res_numbasis == 0:
-                continue
-            planet_search = True
-            debug_paras = True
-            res_numbasis = 0
-            inject_fakes = False
-        else:
+    for filename in filelist:
+        print("Processing "+filename)
+        inputDir = os.path.dirname(filename)
+        outputdir = os.path.join(inputDir,"20200309_model")
+        date = os.path.basename(filename).split("_")[0].replace("s","")
+        IFSfilter = filename.split("_")[-2]
+        outputdir_res = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/sherlock/20191205_RV/"
+
+        for res_it in [1]:
+
+            osiris_data_dir = copy(osiris_data_dir0)
+            numthreads = copy(numthreads0)
+            planet_model_string = copy(planet_model_string0)
+
             planet_search = copy(planet_search0)
             debug_paras = copy(debug_paras0)
             res_numbasis = copy(res_numbasis0)
             inject_fakes = copy(inject_fakes0)
-        # print(res_numbasis)
-        # exit()
-        filelist = copy(filelist0)
-        IFSfilter = copy(IFSfilter0)
-        date = copy(date0)
-        plot_transmissions = copy(plot_transmissions0)
-        plt_psfs = copy(plt_psfs0)
-        plot_persistence = copy(plot_persistence0)
 
-        phoenix_folder = os.path.join(osiris_data_dir,"phoenix")
-        planet_template_folder = os.path.join(osiris_data_dir,"planets_templates")
-        molecular_template_folder = os.path.join(osiris_data_dir,"molecular_templates")
-        sky_transmission_folder = os.path.join(osiris_data_dir,"sky_transmission")
-        ref_star_folder = os.path.join(os.path.dirname(filelist[0]),"..","reduced_telluric_jb")
-        if res_numbasis == 0 or (not inject_fakes):
-            fileinfos_filename = os.path.join(inputDir,"..","..","fileinfos_Kbb_jb.csv")
-        else:
-            fileinfos_filename = os.path.join(inputDir,"..","..","fileinfos_Kbb_jb_kl{0}.csv".format(res_numbasis))
-        fileinfos_refstars_filename = os.path.join(osiris_data_dir,"fileinfos_refstars_jb.csv")
 
-        if "HR_8799_b" in filelist[0]:
-            travis_spec_filename=os.path.join(planet_template_folder,
-                                          "HR8799b_"+IFSfilter[0:1]+"_3Oct2018.save")
-        if "HR_8799_c" in filelist[0]:
-            travis_spec_filename=os.path.join(planet_template_folder,
-                                          "HR8799c_"+IFSfilter[0:1]+"_3Oct2018.save")
-        if "HR_8799_d" in filelist[0]:
-            travis_spec_filename=os.path.join(planet_template_folder,
-                                          "HR8799c_"+IFSfilter[0:1]+"_3Oct2018.save")
-        if "HR_8799" in filelist[0]:
-            phoenix_model_host_filename = glob.glob(os.path.join(phoenix_folder,"HR_8799"+"*.fits"))[0]
-            if IFSfilter == "Jbb":
-                host_mag = 5.383
-            elif IFSfilter == "Hbb":
-                host_mag = 5.280
-            elif IFSfilter == "Kbb":
-                host_mag = 5.240
+            phoenix_folder = os.path.join(osiris_data_dir,"phoenix")
+            planet_template_folder = os.path.join(osiris_data_dir,"planets_templates")
+            molecular_template_folder = os.path.join(osiris_data_dir,"molecular_templates")
+            sky_transmission_folder = os.path.join(osiris_data_dir,"sky_transmission")
+            ref_star_folder = os.path.join(os.path.dirname(filename),"..","reduced_telluric_jb")
+            if res_numbasis == 0 or (not inject_fakes):
+                fileinfos_filename = os.path.join(inputDir,"..","..","fileinfos_Kbb_jb.csv")
             else:
-                raise("IFS filter name unknown")
-            host_type = "F0"
-            host_rv = -12.6 #+-1.4
-            host_limbdark = 0.5
-            host_vsini = 49 # true = 49
-            star_name = "HR_8799"
-        if "51_Eri_b" in filelist[0]:
-            phoenix_model_host_filename = glob.glob(os.path.join(phoenix_folder,"51_Eri"+"*.fits"))[0]
-            travis_spec_filename=os.path.join(planet_template_folder,
-                                          "51Eri_b_highres_template.save")
-            if IFSfilter == "Jbb":
-                host_mag = 4.744
-            elif IFSfilter == "Hbb":
-                host_mag = 4.770
-            elif IFSfilter == "Kbb":
-                host_mag = 4.537
-            else:
-                raise("IFS filter name unknown")
-            host_type = "F0"
-            host_rv = 12.6 #+-0.3
-            host_limbdark = 0.5
-            host_vsini = 80
-            star_name = "51_Eri"
-        if "kap_And" in filelist[0]:
-            phoenix_model_host_filename = glob.glob(os.path.join(phoenix_folder,"kap_And"+"*.fits"))[0]
-            travis_spec_filename=os.path.join(planet_template_folder,
-                                          "KapAnd_lte19-3.50-0.0.AGSS09.Dusty.Kzz=0.0.PHOENIX-ACES-2019.7.save")
-            if IFSfilter == "Jbb":
-                host_mag = 4.29
-            elif IFSfilter == "Hbb":
-                host_mag = 4.31
-            elif IFSfilter == "Kbb":
-                host_mag = 4.34
-            else:
-                raise("IFS filter name unknown")
-            host_type = "A0"
-            host_rv = -12.7 #+-0.8
-            host_limbdark = 0.5
-            host_vsini = 150 #unknown
-            star_name = "kap_And"
+                fileinfos_filename = os.path.join(inputDir,"..","..","fileinfos_Kbb_jb_kl{0}.csv".format(res_numbasis))
+            fileinfos_refstars_filename = os.path.join(osiris_data_dir,"fileinfos_refstars_jb.csv")
 
+            if "HR_8799_b" in filename:
+                travis_spec_filename=os.path.join(planet_template_folder,
+                                              "HR8799b_"+IFSfilter[0:1]+"_3Oct2018.save")
+            if "HR_8799_c" in filename:
+                travis_spec_filename=os.path.join(planet_template_folder,
+                                              "HR8799c_"+IFSfilter[0:1]+"_3Oct2018.save")
+            if "HR_8799_d" in filename:
+                travis_spec_filename=os.path.join(planet_template_folder,
+                                              "HR8799c_"+IFSfilter[0:1]+"_3Oct2018.save")
+            if "HR_8799" in filename:
+                phoenix_model_host_filename = glob.glob(os.path.join(phoenix_folder,"HR_8799"+"*.fits"))[0]
+                if IFSfilter == "Jbb":
+                    host_mag = 5.383
+                elif IFSfilter == "Hbb":
+                    host_mag = 5.280
+                elif IFSfilter == "Kbb":
+                    host_mag = 5.240
+                else:
+                    raise("IFS filter name unknown")
+                host_type = "F0"
+                host_rv = -12.6 #+-1.4
+                host_limbdark = 0.5
+                host_vsini = 49 # true = 49
+                star_name = "HR_8799"
+            if "51_Eri_b" in filename:
+                phoenix_model_host_filename = glob.glob(os.path.join(phoenix_folder,"51_Eri"+"*.fits"))[0]
+                travis_spec_filename=os.path.join(planet_template_folder,
+                                              "51Eri_b_highres_template.save")
+                if IFSfilter == "Jbb":
+                    host_mag = 4.744
+                elif IFSfilter == "Hbb":
+                    host_mag = 4.770
+                elif IFSfilter == "Kbb":
+                    host_mag = 4.537
+                else:
+                    raise("IFS filter name unknown")
+                host_type = "F0"
+                host_rv = 12.6 #+-0.3
+                host_limbdark = 0.5
+                host_vsini = 80
+                star_name = "51_Eri"
+            if "kap_And" in filename:
+                phoenix_model_host_filename = glob.glob(os.path.join(phoenix_folder,"kap_And"+"*.fits"))[0]
+                travis_spec_filename=os.path.join(planet_template_folder,
+                                              "KapAnd_lte19-3.50-0.0.AGSS09.Dusty.Kzz=0.0.PHOENIX-ACES-2019.7.save")
+                if IFSfilter == "Jbb":
+                    host_mag = 4.29
+                elif IFSfilter == "Hbb":
+                    host_mag = 4.31
+                elif IFSfilter == "Kbb":
+                    host_mag = 4.34
+                else:
+                    raise("IFS filter name unknown")
+                host_type = "A0"
+                host_rv = -12.7 #+-0.8
+                host_limbdark = 0.5
+                host_vsini = 150 #unknown
+                star_name = "kap_And"
 
-        for filename in filelist:
-            print("Processing "+filename)
 
             ##############################
             ## Read OSIRIS spectral cube
@@ -1317,11 +1097,16 @@ if __name__ == "__main__":
                 N_lines =  len(list_data)
 
             filename_id = colnames.index("filename")
-            filelist = [os.path.basename(item[filename_id]) for item in list_data]
-            fileid = filelist.index(os.path.basename(filename))
+            filelist2 = [os.path.basename(item[filename_id]) for item in list_data]
+            fileid = filelist2.index(os.path.basename(filename))
             fileitem = list_data[fileid]
             for colname,it in zip(colnames,fileitem):
                 print(colname+": "+it)
+
+            status_id= colnames.index("status")
+            print(fileitem[status_id],int(fileitem[status_id]) != 1,int(fileitem[status_id]) != 0)
+            if int(fileitem[status_id]) != 1:
+                continue
 
             baryrv_id = colnames.index("barycenter rv")
             host_bary_rv = -float(fileitem[baryrv_id])/1000
@@ -1330,7 +1115,7 @@ if __name__ == "__main__":
 
             phoenix_db_folder = os.path.join(osiris_data_dir,"phoenix","PHOENIX-ACES-AGSS-COND-2011")
             if 1:
-                splitpostfilename = os.path.basename(filelist[0]).split("_")
+                splitpostfilename = os.path.basename(filename).split("_")
                 imtype = "science"
                 # print(date,star_name)
                 # exit()
@@ -1418,6 +1203,17 @@ if __name__ == "__main__":
 
             plcen_k,plcen_l = plcen_k+padding,plcen_l+padding
 
+            planetRV_array = [float(fileitem[rvcen_id]),]
+            # hdulist = pyfits.HDUList()
+            # print(planetRV_array[0],planetRV_array)
+            # hdulist.append(pyfits.PrimaryHDU(data=planetRV_array))
+            # try:
+            #     hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_plrv0.fits")), overwrite=True)
+            # except TypeError:
+            #     hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_plrv0.fits")), clobber=True)
+            # hdulist.close()
+            # # exit()
+            # continue
 
             ##############################
             ## Planet spectrum model
@@ -1430,37 +1226,12 @@ if __name__ == "__main__":
                     if "sonora" in gridname:
                         grid_filelist = glob.glob(os.path.join(gridname,"sp_t*g*nc_m[0-9].[0-9]"))
                         gridconv_filelist = [grid_filename+"_gaussconv_R{0}_{1}.csv".format(R,IFSfilter) for grid_filename in grid_filelist]
-                        # Tlist = np.array([int(os.path.basename(grid_filename).split("_t")[-1].split("g")[0]) for grid_filename in grid_filelist])
-                        # glist = np.array([int(os.path.basename(grid_filename).split("g")[-1].split("nc")[0]) for grid_filename in grid_filelist])
-                        # print("np.unique(Tlist)",np.unique(Tlist))
-                        # print("np.unique(glist)",np.unique(glist))
-                        # exit()
-                        # # grid_filelist = np.array(grid_filelist)[np.where((500<Tlist)*(Tlist<2000)*(100<glist)*(glist<1000))]
-                        # # print(grid_filename_filelist)
-                        # # exit()
                     elif "BTsettl" in gridname:
                         grid_filelist = glob.glob(os.path.join(gridname,"lte*BT-Settl.spec.fits"))
                         gridconv_filelist = [grid_filename.replace(".fits","_gaussconv_R{0}_{1}.csv".format(R,IFSfilter)) for grid_filename in grid_filelist]
-                        # Tlist = np.array([int(float(os.path.basename(grid_filename).split("lte")[-1].split("-")[0])*100) for grid_filename in grid_filelist])
-                        # para2list = np.array([-float(os.path.basename(grid_filename).split("-")[1].split("-0.0a")[0]) for grid_filename in grid_filelist])
-                        # print("np.unique(Tlist)",np.unique(Tlist))
-                        # print("np.unique(para2list)",np.unique(para2list))
                     elif "hr8799b_modelgrid" in gridname:
-                        # grid_filelist = glob.glob(os.path.join(gridname,"lte*-*-0.0aces_hr8799b_pgs=4d6_Kzz=1d8_C=*_O=*_gs=5um.exoCH4_hiresHK.7"+"_gaussconv_R{0}_{1}.gz".format(R,IFSfilter)))
                         grid_filelist = glob.glob(os.path.join(gridname,"lte*-*-0.0.aces_hr8799b_pgs=4d6_Kzz=1d8_C=*_O=*_gs=5um.exoCH4_hiresHK.7.D2e.sorted"))
                         gridconv_filelist = [grid_filename.replace("hiresHK.7.D2e.sorted","hiresHK.7.D2e.sorted_gaussconv_R{0}_{1}.csv".format(R,IFSfilter)) for grid_filename in grid_filelist]
-                        # exit()
-                        #         travis_spectrum = scio.readsav(travis_spec_filename)
-                        #         if "HR8799" in os.path.basename(travis_spec_filename):
-                        #             ori_planet_spec = np.array(travis_spectrum["fmod"])
-                        #             ori_planet_convspec = np.array(travis_spectrum["fmods"])
-                        #             wmod = np.array(travis_spectrum["wmod"])/1.e4
-                        #         elif "51Eri" in os.path.basename(travis_spec_filename):
-                        #             ori_planet_spec = np.array(travis_spectrum["flux"])
-                        #             wmod = np.array(travis_spectrum["wave"])
-                        #         elif "KapAnd" in os.path.basename(travis_spec_filename):
-                        #             ori_planet_spec = np.array(travis_spectrum["f"])
-                        #             wmod = np.array(travis_spectrum["w"])/1.e4
                 else:
                     if "sonora" in gridname:
                         gridconv_filelist = glob.glob(os.path.join(gridname,"sp_t*g*nc_m[0-9].[0-9]"+"_gaussconv_R{0}_{1}.csv".format(R,IFSfilter)))
@@ -1468,10 +1239,10 @@ if __name__ == "__main__":
                         gridconv_filelist = glob.glob(os.path.join(gridname,"lte*BT-Settl.spec"+"_gaussconv_R{0}_{1}.csv".format(R,IFSfilter)))
                     grid_filelist = ["",]*len(gridconv_filelist)
 
+                grid_filelist = grid_filelist[0:1]
+                gridconv_filelist = gridconv_filelist[0:1]
+
                 #print(gridname)
-                if res_it == 0:
-                    grid_filelist= [grid_filelist[0],]
-                    gridconv_filelist= [gridconv_filelist[0],]
                 for grid_filename,gridconv_filename in zip(grid_filelist,gridconv_filelist):
                     print(gridconv_filename)
 
@@ -1487,49 +1258,9 @@ if __name__ == "__main__":
                             wmod = data["f0"]
                             ori_planet_spec = data["f1"]
                         if "hr8799b_modelgrid" in gridname:
-                            # with open(grid_filename, 'r') as txtfile:
-                            #     D2e = [s.strip().replace("D","e") for s in txtfile.readlines()]
-                            # with open(grid_filename.replace(".7",".7.D2e"), 'w+') as txtfile:
-                            #     txtfile.writelines([s+"\n" for s in D2e])
-                            # # exit() #/data/osiris_data/hr8799b_modelgrid/lte12-4.5-0.0.aces_hr8799b_pgs=4d6_Kzz=1d8_C=8.35_O=8.57_gs=5um.exoCH4_hiresHK_gaussconv_R4000_Kbb.csv
-                            # os.system("rm "+grid_filename)
-                            # # exit()
-                            # continue
-                            # exit()
                             out = np.loadtxt(grid_filename,skiprows=0)
-                            # wvs = out[:,0]
-                            # argsort_wvs = np.argsort(wvs)
-                            # print(out[argsort_wvs,:].shape)
-                            # np.savetxt(grid_filename+".sorted",out[argsort_wvs,:])
-                            # os.system("rm "+grid_filename)
                             wmod = out[:,0]/1e4
                             ori_planet_spec = 10**(out[:,1]-np.max(out[:,1]))
-
-                        # import matplotlib.pyplot as plt
-                        # planet_convspec = convolve_spectrum(wmod,10**(ori_planet_spec-np.max(ori_planet_spec)),R,specpool)
-                        # plt.plot(wmod,planet_convspec/np.max(planet_convspec),label="new 10")
-                        # # plt.plot(wmod,np.exp(ori_planet_spec-np.max(ori_planet_spec)),label="new exp")
-                        # testfilename = grid_filename.replace(".7.D2e.sorted",".7.filter_new.save")
-                        # travis_spectrum = scio.readsav(testfilename)
-                        # print(travis_spec_filename)
-                        # print(travis_spectrum)
-                        # # exit()
-                        # wv = np.array(travis_spectrum["wobs_b"])
-                        # f = np.array(travis_spectrum["FMOD_B"])
-                        # plt.plot(wv,f/np.max(f),label="new but comp",linestyle="--")
-                        #
-                        #
-                        # # travis_spec_filename=os.path.join(planet_template_folder,
-                        # #                               "HR8799c_"+IFSfilter[0:1]+"_3Oct2018.save")
-                        # # travis_spectrum = scio.readsav(travis_spec_filename)
-                        # # ori_planet_spec = np.array(travis_spectrum["fmod"])
-                        # # ori_planet_convspec = np.array(travis_spectrum["fmods"])
-                        # # wmod = np.array(travis_spectrum["wmod"])/1.e4
-                        # # plt.plot(wmod,ori_planet_spec/np.max(ori_planet_spec),label="old")
-                        #
-                        # plt.legend()
-                        # plt.show()
-                        # exit()
 
                         crop_wvs = np.where((wmod>wvs[0]-(wvs[-1]-wvs[0])/2)*(wmod<wvs[-1]+(wvs[-1]-wvs[0])/2))
                         wmod = wmod[crop_wvs]
@@ -1557,107 +1288,6 @@ if __name__ == "__main__":
                 print(len(planet_model_func_table))
                 # exit()
 
-            # import matplotlib.pyplot as plt
-            # plt.plot(wvs,planet_model_func_table[0][0](wvs*(1-(-1*38)/c_kms)))
-            # plt.show()
-
-            # import matplotlib.pyplot as plt
-            # tmp = planet_model_func_table[0][0](wvs*(1-(-1*38)/c_kms))
-            # for k,planet_partial_template_func in enumerate(planet_model_func_table[0][1:2]):
-            #     # print(k)
-            #     # tmp /= planet_partial_template_func(wvs*(1-(-1*38)/c_kms))
-            #     plt.plot(wvs,planet_partial_template_func(wvs*(1-(-1*38)/c_kms)))
-            # plt.plot(wvs,tmp)
-            # plt.legend()
-            # plt.show()
-            #
-            # import matplotlib.pyplot as plt
-            # for k,planet_partial_template_func in enumerate(planet_model_func_table[0]):
-            #     plt.plot(wvs,LPFvsHPF(planet_partial_template_func(wvs*(1-(-1*38)/c_kms)),cutoff)[1],label="{0}".format(k))
-            # plt.legend()
-            # plt.show()
-            #
-            # import matplotlib.pyplot as plt
-            # for k,planet_partial_template_func in enumerate(planet_model_func_table[0][1::]):
-            #     plt.plot(wvs,planet_model_func_table[0][0](wvs*(1-(-1*38)/c_kms))+3*LPFvsHPF(planet_partial_template_func(wvs*(1-(-1*38)/c_kms)),cutoff)[1],label="{0}".format(k))
-            # plt.legend()
-            # plt.show()
-
-
-            ##############################
-            ## Persistence model
-            ##############################
-            if model_persistence:
-                persistence_arr = np.zeros((ny,nx,nz))
-                persistence_filelist = glob.glob(os.path.join(ref_star_folder,"*","s*"+IFSfilter+"_"+scale+".fits"))
-                persistence_filelist.extend(glob.glob(os.path.join(ref_star_folder,"*","*persistence*"+IFSfilter+"_"+scale+".fits")))
-                for spdc_refstar_filename in persistence_filelist:
-                    # print(spdc_refstar_filename)
-
-                    if 0: # Hack to include a Jbb header into a Kbb raw file
-                        # with pyfits.open("/data/osiris_data/HR_8799_b/20130726/raw_telluric_Jbb/HR_8799/bad/s130726_a050001.fits") as hdulist1:
-                        # with pyfits.open("/data/osiris_data/HR_8799_c/20130726/raw_telluric_Jbb/HR_8799/s130726_a050001.fits") as hdulist1:
-                        # with pyfits.open("/data/osiris_data/HR_8799_c/20130726/raw_telluric_Jbb/HR_8799/s130726_a051001.fits") as hdulist1:
-                        with pyfits.open("/data/osiris_data/HR_8799_c/20130726/raw_telluric_Jbb/HR_8799/s130726_a052001.fits") as hdulist1:
-                            tmphdr0 = hdulist1[0].header
-                            tmphdr1 = hdulist1[1].header
-                            tmphdr2 = hdulist1[2].header
-                        # with pyfits.open("/data/osiris_data/HR_8799_b/20130726/raw_telluric_Kbb/HD_210501/s130726_a033001.fits") as hdulist:
-                        # with pyfits.open("/data/osiris_data/HR_8799_c/20130726/raw_telluric_Kbb/HD_210501/s130726_a031001.fits") as hdulist:
-                        # with pyfits.open("/data/osiris_data/HR_8799_c/20130726/raw_telluric_Kbb/HD_210501/s130726_a032001.fits") as hdulist:
-                        with pyfits.open("/data/osiris_data/HR_8799_c/20130726/raw_telluric_Kbb/HD_210501/s130726_a033001.fits") as hdulist:
-                            data0 = hdulist[0].data
-                            data1 = hdulist[1].data
-                            data2 = hdulist[2].data
-                        hdulist = pyfits.HDUList()
-                        hdulist.append(pyfits.PrimaryHDU(data=data0,header=tmphdr0))
-                        hdulist.append(pyfits.PrimaryHDU(data=data1,header=tmphdr1))
-                        hdulist.append(pyfits.PrimaryHDU(data=data2,header=tmphdr2))
-                        try:
-                            hdulist.writeto("/data/osiris_data/HR_8799_c/20130726/test/s130726_a033001_fakeJbb.fits", overwrite=True)
-                        except TypeError:
-                            hdulist.writeto("/data/osiris_data/HR_8799_c/20130726/test/s130726_a033001_fakeJbb.fits", clobber=True)
-                        hdulist.close()
-                        exit()
-
-                    with pyfits.open(spdc_refstar_filename) as hdulist:
-                        spdc_refstar_prihdr = hdulist[0].header
-                        print(spdc_refstar_prihdr["MJD-OBS"],spdc_refstar_prihdr["MJD-OBS"] < curr_mjdobs,spdc_refstar_filename)
-                        if spdc_refstar_prihdr["MJD-OBS"] < curr_mjdobs:
-                            spdc_refstar_cube = np.rollaxis(np.rollaxis(hdulist[0].data,2),2,1)
-                            spdc_refstar_cube = return_64x19(spdc_refstar_cube)
-                            spdc_refstar_cube = np.moveaxis(spdc_refstar_cube,0,2)
-
-                            spdc_refstar_im = np.nansum(spdc_refstar_cube,axis=2)
-                            persis_where2mask = np.where(spdc_refstar_im<np.nanmax(spdc_refstar_im)/4)
-                            spdc_refstar_cube[persis_where2mask[0],persis_where2mask[1],:] = 0
-                            # persis_where2mask = np.where(spdc_refstar_cube<np.nanmax(spdc_refstar_cube)/2)
-                            # spdc_refstar_cube[persis_where2mask] = 0
-                            persistence_arr += spdc_refstar_cube
-
-                window_size=100
-                threshold=7
-                for m in range(ny):
-                    for n in range(nx):
-                        myvec = copy(persistence_arr[m,n,:])
-                        smooth_vec = median_filter(myvec,footprint=np.ones(window_size),mode="reflect")
-                        myvec = myvec - smooth_vec
-                        wherefinite = np.where(np.isfinite(myvec))
-                        mad = mad_std(myvec[wherefinite])
-                        whereoutliers = np.where(np.abs(myvec)>threshold*mad)[0]
-                        persistence_arr[m,n,whereoutliers] = np.nan
-                        widen_badpix_vec = np.correlate(persistence_arr[m,n,:],np.ones(nan_mask_boxsize),mode="same")
-                        widen_nans = np.where(np.isnan(widen_badpix_vec))[0]
-                        persistence_arr[m,n,widen_nans] = np.nan
-                        persistence_arr[m,n,widen_nans] = smooth_vec[widen_nans]
-
-                if plot_persistence:
-                    import matplotlib.pyplot as plt
-                    plt.imshow(np.nansum(persistence_arr,axis=2))
-                    plt.clim([0,10])
-                    plt.show()
-
-
             ##############################
             ## Reference star*transmission spectrum
             ##############################
@@ -1675,11 +1305,6 @@ if __name__ == "__main__":
             rv_simbad_id = refstarsinfo_colnames.index("RV Simbad")
             starname_id = refstarsinfo_colnames.index("star name")
 
-            # phoenix_wv_filename = os.path.join(phoenix_folder,"WAVE_PHOENIX-ACES-AGSS-COND-2011.fits")
-            # with pyfits.open(phoenix_wv_filename) as hdulist:
-            #     phoenix_wvs = hdulist[0].data/1.e4
-            # crop_phoenix = np.where((phoenix_wvs>wvs[0]-(wvs[-1]-wvs[0])/2)*(phoenix_wvs<wvs[-1]+(wvs[-1]-wvs[0])/2))
-            # phoenix_wvs = phoenix_wvs[crop_phoenix]
 
             transmission_table = []
             transmission4planet_list = []
@@ -1690,7 +1315,9 @@ if __name__ == "__main__":
                 # refstar_name_filter = "HD_210501"
                 refstar_name_filter = "*"
                 transmission_filelist = []
+                print(os.path.join(ref_star_folder,refstar_name_filter,"s*"+IFSfilter+"_"+scale+"_psfs_repaired_spec_v2_transmission_v3.fits"))
                 transmission_filelist.extend(glob.glob(os.path.join(ref_star_folder,refstar_name_filter,"s*"+IFSfilter+"_"+scale+"_psfs_repaired_spec_v2_transmission_v3.fits")))
+                print(os.path.join(ref_star_folder,refstar_name_filter,"ao_off_s*"+IFSfilter+"_"+scale+"_spec_v2_transmission_v3.fits"))
                 transmission_filelist.extend(glob.glob(os.path.join(ref_star_folder,refstar_name_filter,"ao_off_s*"+IFSfilter+"_"+scale+"_spec_v2_transmission_v3.fits")))
                 transmission_filelist.sort()
                 print(transmission_filelist)
@@ -1704,76 +1331,10 @@ if __name__ == "__main__":
                         transmission_list.append(transmission_spec/np.nanmean(transmission_spec))
                 # mean_transmission = np.nanmean(np.array(transmission_list),axis=0)
                 mean_transmission = combine_spectra(transmission_list)
-                ## better tranmission combination
-                # ????
-                # exit()
-
-                if 0:
-                    mean_wherenans = np.where(np.isnan(mean_transmission))
-                    for mytransmission in transmission_list:
-                        wherenans = np.where(np.isnan(mytransmission))
-                        print(wherenans)
-                        mytransmission[wherenans] = mean_transmission[wherenans]
-
-                        mytransmission[mean_wherenans] = 0
-
-                    # for mytransmission in transmission_list:
-                    #     wherenans = np.where(np.isnan(mytransmission))
-                    #     print(2, wherenans)
-                    #     exit()
-                    covar_trans = np.cov(np.array(transmission_list))
-                    numbasis = 3
-                    evals, evecs = la.eigh(covar_trans, eigvals=(len(transmission_list)-numbasis, len(transmission_list)-1))
-
-                    evals = np.copy(evals[::-1])
-                    evecs = np.copy(evecs[:,::-1], order='F') #fortran order to improve memory caching in matrix multiplication
-
-                    kl_basis = np.dot(np.array(transmission_list).T, evecs)
-                    kl_basis = kl_basis * (1. / np.sqrt(evals * (np.size(transmission_list[0]) - 1)))[None, :]  #multiply a value for each row
-                    kl_basis = kl_basis.T
-
-                    print(kl_basis.shape)
-                    # exit()
-                    for n in range(numbasis):
-                        kl_basis[n,mean_wherenans[0]] = np.nan
-
-                    import  matplotlib.pyplot as plt
-                    plt.plot(mean_transmission,label="mean")
-                    for n in range(numbasis):
-                        plt.plot(kl_basis[n,:],label="{0}".format(n))
-                    plt.legend()
-                    plt.show()
 
                 mean_transmission_func1 = interp1d(wvs,mean_transmission,bounds_error=False,fill_value=np.nan)
                 imgs_hdrbadpix[:,:,np.where(np.isnan(mean_transmission))[0]] = np.nan
 
-
-                # refstar_name_filter = "*"
-                # transmission_filelist = []
-                # # transmission_filelist.extend(glob.glob(os.path.join(ref_star_folder,refstar_name_filter,"s*"+IFSfilter+"_"+scale+"_psfs_repaired_spec_v2_cutoff20_transmission.fits")))
-                # transmission_filelist.extend(glob.glob(os.path.join(ref_star_folder,refstar_name_filter,"ao_off_s*"+IFSfilter+"_"+scale+"_spec_v2_cutoff20_transmission.fits")))
-                # transmission_filelist.sort()
-                # print(transmission_filelist)
-                # transmission_list = []
-                # for transmission_filename in transmission_filelist[0:2]:
-                #     with pyfits.open(transmission_filename) as hdulist:
-                #         transmission_wvs = hdulist[0].data[0,:]
-                #         transmission_spec = hdulist[0].data[1,:]
-                #         transmission_list.append(transmission_spec/np.nanmean(transmission_spec))
-                # mean_transmission_func2 = interp1d(wvs,np.nanmean(np.array(transmission_list),axis=0),bounds_error=False,fill_value=np.nan)
-
-                if plot_transmissions:
-                    import matplotlib.pyplot as plt
-                    print(R)
-                    print(transmission_list)
-                    # plt.figure(1)
-                    for transid,trans in enumerate(transmission_list):
-                        plt.plot(wvs,trans,label="{0}".format(transid))
-                    plt.legend()
-                    plt.show()
-
-                # transmission_func_list = [mean_transmission_func1]
-                # transmission_func_list = [mean_transmission_func1,mean_transmission_func2]
                 transmission_func_list = [interp1d(wvs,mytrans,bounds_error=False,fill_value=np.nan) for mytrans in transmission_list]
                 transmission4planet_list.append(mean_transmission_func1)
                 transmission_table.append(transmission_func_list)
@@ -1781,33 +1342,6 @@ if __name__ == "__main__":
                 ##############################
                 ## host star phoenix model
                 ##############################
-
-                # phoenix_host_filename=phoenix_model_host_filename.replace(".fits","_gaussconv_R{0}_{1}.csv".format(R,IFSfilter))
-                # if use_R_calib:
-                #     with pyfits.open(phoenix_model_host_filename) as hdulist:
-                #         phoenix_HR8799 = hdulist[0].data[crop_phoenix]
-                #     where_IFSfilter = np.where((phoenix_wvs>wvs[0])*(phoenix_wvs<wvs[-1]))
-                #     phoenix_HR8799 = phoenix_HR8799/np.mean(phoenix_HR8799[where_IFSfilter])
-                #     HR8799pho_spec_func = interp1d(phoenix_wvs,phoenix_HR8799,bounds_error=False,fill_value=np.nan)
-                # else:
-                #     if len(glob.glob(phoenix_host_filename)) == 0:
-                #         with pyfits.open(phoenix_model_host_filename) as hdulist:
-                #             phoenix_HR8799 = hdulist[0].data[crop_phoenix]
-                #         print("convolving: "+phoenix_model_host_filename)
-                #         phoenix_HR8799_conv = convolve_spectrum(phoenix_wvs,phoenix_HR8799,R,specpool)
-                #
-                #         with open(phoenix_host_filename, 'w+') as csvfile:
-                #             csvwriter = csv.writer(csvfile, delimiter=' ')
-                #             csvwriter.writerows([["wvs","spectrum"]])
-                #             csvwriter.writerows([[a,b] for a,b in zip(phoenix_wvs,phoenix_HR8799_conv)])
-                #
-                #     with open(phoenix_host_filename, 'r') as csvfile:
-                #         csv_reader = csv.reader(csvfile, delimiter=' ')
-                #         list_starspec = list(csv_reader)
-                #         HR8799pho_spec_str_arr = np.array(list_starspec, dtype=np.str)
-                #         col_names = HR8799pho_spec_str_arr[0]
-                #         HR8799pho_spec = HR8799pho_spec_str_arr[1::,1].astype(np.float)
-                #         HR8799pho_spec_wvs = HR8799pho_spec_str_arr[1::,0].astype(np.float)
                 if 1:
                     phoenix_wv_filename = os.path.join(phoenix_db_folder,"WAVE_PHOENIX-ACES-AGSS-COND-2011_R{0}.fits".format(R0))
                     with pyfits.open(phoenix_wv_filename) as hdulist:
@@ -1815,55 +1349,14 @@ if __name__ == "__main__":
 
                     with pyfits.open(phoenix_model_host_filename) as hdulist:
                         HR8799pho_spec = hdulist[0].data
-                    # phoenix_wv_filename = os.path.join(phoenix_folder,"WAVE_PHOENIX-ACES-AGSS-COND-2011.fits")
-                    # with pyfits.open(phoenix_wv_filename) as hdulist:
-                    #     phoenix_wvs = hdulist[0].data/1.e4
-                    # crop_phoenix = np.where((phoenix_wvs>wvs[0]-(wvs[-1]-wvs[0])/2)*(phoenix_wvs<wvs[-1]+(wvs[-1]-wvs[0])/2))
-                    # phoenix_wvs = phoenix_wvs[crop_phoenix]
-                    #
-                    # phoenix_host_filename=phoenix_model_host_filename.replace(".fits","_gaussconv_R{0}_{1}.csv".format(R,IFSfilter))
-                    # if len(glob.glob(phoenix_host_filename)) == 0:
-                    #     with pyfits.open(phoenix_model_host_filename) as hdulist:
-                    #         phoenix_HR8799 = hdulist[0].data[crop_phoenix]
-                    #     print("convolving: "+phoenix_model_host_filename)
-                    #     phoenix_HR8799_conv = convolve_spectrum(phoenix_wvs,phoenix_HR8799,R,specpool)
-                    #
-                    #     with open(phoenix_host_filename, 'w+') as csvfile:
-                    #         csvwriter = csv.writer(csvfile, delimiter=' ')
-                    #         csvwriter.writerows([["wvs","spectrum"]])
-                    #         csvwriter.writerows([[a,b] for a,b in zip(phoenix_wvs,phoenix_HR8799_conv)])
-                    #
-                    # with open(phoenix_host_filename, 'r') as csvfile:
-                    #     csv_reader = csv.reader(csvfile, delimiter=' ')
-                    #     list_starspec = list(csv_reader)
-                    #     HR8799pho_spec_str_arr = np.array(list_starspec, dtype=np.str)
-                    #     col_names = HR8799pho_spec_str_arr[0]
-                    #     HR8799pho_spec = HR8799pho_spec_str_arr[1::,1].astype(np.float)
-                    #     HR8799pho_spec_wvs = HR8799pho_spec_str_arr[1::,0].astype(np.float)
-
 
                     HR8799pho_spec = HR8799pho_spec/np.mean(HR8799pho_spec)
 
                     HR8799pho_spec_func = interp1d(HR8799pho_spec_wvs,HR8799pho_spec,bounds_error=False,fill_value=np.nan)
-                    # import matplotlib.pyplot as plt
-                    # plt.plot(HR8799pho_spec_wvs,HR8799pho_spec,label="ori")
                     wvs4broadening = np.arange(HR8799pho_spec_wvs[0],HR8799pho_spec_wvs[-1],1e-4)
-                    # plt.plot(wvs4broadening,HR8799pho_spec_func(wvs4broadening),label="sampling")
                     broadened_HR8799pho_spec = pyasl.rotBroad(wvs4broadening, HR8799pho_spec_func(wvs4broadening), host_limbdark, host_vsini)
-                    # plt.plot(wvs4broadening,broadened_HR8799pho_spec,label="broad")
-                    # plt.legend()
-                    # plt.show()
 
                     HR8799pho_spec_func = interp1d(wvs4broadening/(1-(host_rv+host_bary_rv)/c_kms),broadened_HR8799pho_spec,bounds_error=False,fill_value=np.nan)
-
-                    # # #remove
-                    # import matplotlib.pyplot as plt
-                    # plt.plot(wvs,HR8799pho_spec_func(wvs)/np.mean(HR8799pho_spec_func(wvs)),color="red")
-                    # a = np.nansum(imgs,axis=(0,1))
-                    # plt.plot(wvs,a/np.nanmean(a),color="blue")
-                    #
-                    # plt.plot(wvs,(a/HR8799pho_spec_func(wvs))/np.nanmean(a/HR8799pho_spec_func(wvs)),color="blue")
-                    # plt.show()
 
                 HR8799pho_spec_func_list.append(HR8799pho_spec_func)
 
@@ -1896,43 +1389,9 @@ if __name__ == "__main__":
 
             hr8799_flux = np.mean(hr8799_flux_list)
 
-            ##############################
-            ## Sky transmission spectrum model
-            ##############################
-            if model_based_sky_trans:
-                transmission_table = []
-                filelist_skytrans = glob.glob(os.path.join(sky_transmission_folder,"mktrans_zm_*_*.dat"))
-                if debug_paras:
-                    filelist_skytrans = filelist_skytrans[3:5]
-
-                for Rid,R in enumerate(R_list):
-                    for filename_skytrans in filelist_skytrans:
-                        skybg_arr=np.loadtxt(filename_skytrans)
-                        skytrans_wvs = skybg_arr[:,0]
-                        skytrans_spec = skybg_arr[:,1]
-                        selec_skytrans = np.where((skytrans_wvs>wvs[0]-(wvs[-1]-wvs[0])/2)*(skytrans_wvs<wvs[-1]+(wvs[-1]-wvs[0])/2))
-                        skytrans_wvs = skytrans_wvs[selec_skytrans]
-                        skytrans_spec = skytrans_spec[selec_skytrans]
-
-                        if not use_R_calib:
-                            print("convolving: "+filename_skytrans+" with R={0}".format(R))
-                            skytrans_spec = convolve_spectrum(skytrans_wvs,skytrans_spec,R,specpool)
-
-                        transmission_table.append([interp1d(skytrans_wvs,skytrans_spec,bounds_error=False,fill_value=np.nan)])
-
             transmission_table = transmission_table*len(planet_model_func_table)
             HR8799pho_spec_func_list = HR8799pho_spec_func_list*len(planet_model_func_table)
             transmission4planet_list = transmission4planet_list*len(planet_model_func_table)
-            # print(len(transmission_table*len(planet_model_func_table)),len(transmission_table[0]))
-            # print(len(planet_model_func_table),len(planet_model_func_table[0]))
-            # print(len(HR8799pho_spec_func_list*len(planet_model_func_table)))
-            # print(len(transmission4planet_list*len(planet_model_func_table)))
-            # exit()
-            # #remove
-            # for transid,trans in enumerate(transmission_list):
-            #     plt.plot(trans,label="{0}".format(transid))
-            # plt.legend()
-            # plt.show()
 
             ##############################
             ## Create PSF model
@@ -1967,28 +1426,6 @@ if __name__ == "__main__":
                 normalized_psfs_func_list.extend(out[1])
                 chunks_ids.append(out[0])
             specpool.close()
-
-            if plt_psfs:
-                w=2
-                pl_x_vec = np.linspace(-w,w+1,100)
-                pl_y_vec = np.linspace(-w,w+1,100)
-                nospec_planet_model = np.zeros((100,100,nz))
-                # nospec_planet_model = np.zeros((2*w+1,2*w+1,nz))
-                for z in range(nz):
-                    nospec_planet_model[:,:,z] = normalized_psfs_func_list[z](pl_x_vec,pl_y_vec).transpose()
-
-                import matplotlib.pyplot as plt
-                plt.figure(1)
-                for k in range(25):
-                    plt.subplot(5,5,k+1)
-                    plt.imshow(nospec_planet_model[:,:,int(1600//25)*k],interpolation="nearest")
-                # for bkg_k in range(2*w+1):
-                #     for bkg_l in range(2*w+1):
-                #         print(bkg_k*w+bkg_l+1)
-                #         plt.subplot(2*w+1,2*w+1,bkg_k*(2*w+1)+bkg_l+1)
-                #         plt.plot(nospec_planet_model[bkg_k,bkg_l,:])
-                plt.show()
-
 
 
             padimgs = np.pad(imgs,((padding,padding),(padding,padding),(0,0)),mode="constant",constant_values=0)
@@ -2089,15 +1526,6 @@ if __name__ == "__main__":
                 wvs_indices_list.append(np.arange((k*chunk_size),((k+1)*chunk_size)))
             wvs_indices_list.append(np.arange(((N_chunks-1)*chunk_size),padnz))
 
-            # import matplotlib.pyplot as plt
-            # tmpk, tmpl = 44,8
-            # for k in range(5):
-            #     for l in range(5):
-            #         plt.subplot(5,5,5*k+l+1)
-            #         plt.plot(original_imgs_np[tmpk+5+k,tmpl+5+l,:],label="before")
-            #         wherenans = np.where(np.isfinite(badpix_imgs_np[tmpk+5+k,tmpl+5+l,:]))
-            #         plt.plot(wherenans[0],original_imgs_np[tmpk+5+k,tmpl+5+l,:][wherenans],label="BP before")
-
             tasks = [tpool.apply_async(_remove_bad_pixels_z, args=(col_index,nan_mask_boxsize, dtype,100,7))
                      for col_index in range(padnx)]
             #save it to shared memory
@@ -2112,81 +1540,6 @@ if __name__ == "__main__":
             for chunk_index, rmedge_task in enumerate(tasks):
                 print("Finished rm edge chunk {0}".format(chunk_index))
                 rmedge_task.wait()
-
-
-            # tasks = [tpool.apply_async(_remove_bad_pixels_xy, args=(wvs_indices,dtype))
-            #          for wvs_indices in wvs_indices_list]
-            # #save it to shared memory
-            # for chunk_index, rmedge_task in enumerate(tasks):
-            #     print("Finished rm bad pixel xy chunk {0}".format(chunk_index))
-            #     rmedge_task.wait()
-
-            ##############################
-            ## derive sigma for pairsub
-            ##############################
-            if pairsub:
-                save_original_imgs_np = copy(original_imgs_np[:])
-
-                for line_num,line in enumerate(prihdr["COMMENT"]):
-                    if "Subtract Frame" in line:
-                        followingline = 0
-                        while ".fits" not in prihdr["COMMENT"][line_num+followingline]:
-                            followingline += 1
-                        subfilename = "s"+prihdr["COMMENT"][line_num+followingline].split(".fits")[0].split("s")[-1]+".fits"
-                        break
-
-                filename1_skysub = filename.replace("_pairsub","")
-                filename2_skysub = os.path.join(os.path.dirname(filename1_skysub),
-                                                subfilename.replace(".fits","_"+IFSfilter+"_"+scale+".fits"))
-                with pyfits.open(filename1_skysub) as hdulist:
-                    imgs1_skysub = np.rollaxis(np.rollaxis(hdulist[0].data,2),2,1)
-                    imgs1_skysub = np.moveaxis(imgs1_skysub,0,2)
-                with pyfits.open(filename2_skysub) as hdulist:
-                    imgs2_skysub = np.rollaxis(np.rollaxis(hdulist[0].data,2),2,1)
-                    imgs2_skysub = np.moveaxis(imgs2_skysub,0,2)
-
-                padimgs1_skysub = np.pad(imgs1_skysub,((padding,padding),(padding,padding),(0,0)),mode="constant",constant_values=0)
-                original_imgs_np[:] = copy(padimgs1_skysub)
-                tasks = [tpool.apply_async(_HPF_z, args=(col_index,cutoff, dtype))
-                         for col_index in range(padnx)]
-                #save it to shared memory
-                for col_index, task in enumerate(tasks):
-                    print("Finished col {0}".format(col_index))
-                    task.wait()
-                imgs1_skysub_LPF = copy(originalLPF_imgs_np)
-
-                padimgs2_skysub = np.pad(imgs2_skysub,((padding,padding),(padding,padding),(0,0)),mode="constant",constant_values=0)
-                original_imgs_np[:] = copy(padimgs2_skysub)
-                tasks = [tpool.apply_async(_HPF_z, args=(col_index,cutoff, dtype))
-                         for col_index in range(padnx)]
-                #save it to shared memory
-                for col_index, task in enumerate(tasks):
-                    print("Finished col {0}".format(col_index))
-                    task.wait()
-                imgs2_skysub_LPF = copy(originalLPF_imgs_np)
-
-                # sigmas_imgs = np.clip(np.sqrt(np.abs(imgs1_skysub)+np.abs(imgs2_skysub)),
-                #                       np.sqrt(np.abs(np.nanmedian(imgs1_skysub))+np.abs(np.nanmedian(imgs2_skysub))),np.inf)
-                padsigmas_imgs = np.sqrt(np.abs(imgs1_skysub_LPF)+np.abs(imgs2_skysub_LPF))
-
-                original_imgs_np[:] = save_original_imgs_np
-
-            ##############################
-            if model_persistence:
-                save_original_imgs_np = copy(original_imgs_np[:])
-
-                pad_persistence_arr = np.pad(persistence_arr,((padding,padding),(padding,padding),(0,0)),mode="constant",constant_values=0)
-                original_imgs_np[:] = copy(pad_persistence_arr)
-                tasks = [tpool.apply_async(_HPF_z, args=(col_index,cutoff, dtype))
-                         for col_index in range(padnx)]
-                #save it to shared memory
-                for col_index, task in enumerate(tasks):
-                    print("Finished col {0}".format(col_index))
-                    task.wait()
-                persistence_imgs_np[:] = copy(originalHPF_imgs_np)
-
-
-                original_imgs_np[:] = save_original_imgs_np
 
 
             tasks = [tpool.apply_async(_HPF_z, args=(col_index,cutoff, dtype))
@@ -2216,200 +1569,11 @@ if __name__ == "__main__":
                 badpix_imgs_np[:,:,(padnz-50)::]=np.nan
                 badpix_imgs_np[:,:,0:50]=np.nan
 
+            sigmas_imgs_np[:] = np.sqrt(np.abs(originalLPF_imgs_np))
+            for k in range(padny):
+                for l in range(padnx):
+                    sigmas_imgs_np[k,l,:] = np.clip(sigmas_imgs_np[k,l,:],np.nanmedian(sigmas_imgs_np[k,l,:])/2,np.inf)
 
-            # import matplotlib.pyplot as plt
-            # tmpk, tmpl = 49,12
-            # for k in range(5):
-            #     for l in range(5):
-            #         plt.subplot(5,5,5*k+l+1)
-            #         plt.plot(original_imgs_np[tmpk+5+k,tmpl+5+l,:],label="original_imgs_np")
-            #         plt.plot(originalHPF_imgs_np[tmpk+5+k,tmpl+5+l,:],label="originalHPF_imgs_np")
-            #         plt.plot(originalLPF_imgs_np[tmpk+5+k,tmpl+5+l,:],label="originalLPF_imgs_np")
-            #         # plt.plot(imgs1_skysub_LPF[tmpk+5+k,tmpl+5+l,:],label="imgs1_skysub_LPF")
-            #         # plt.plot(imgs2_skysub_LPF[tmpk+5+k,tmpl+5+l,:],label="imgs2_skysub_LPF")
-            #         plt.ylim([-3,3])
-            # plt.legend()
-            # tpool.close()
-            # plt.show()
-
-            # import matplotlib.pyplot as plt
-            # tmpk, tmpl = 14,12
-            # for k in range(5):
-            #     for l in range(5):
-            #         plt.subplot(5,5,5*k+l+1)
-            #         plt.plot(original_imgs_np[tmpk+5+k,tmpl+5+l,:],label="after")
-            #         plt.plot(originalHPF_imgs_np[tmpk+5+k,tmpl+5+l,:],label="HPF after")
-            #         wherenans = np.where(np.isfinite(badpix_imgs_np[tmpk+5+k,tmpl+5+l,:]))
-            #         plt.plot(wherenans[0],originalHPF_imgs_np[tmpk+5+k,tmpl+5+l,:][wherenans],label="BP after")
-            # plt.legend()
-            # tpool.close()
-            # plt.show()
-
-            if pairsub:
-                sigmas_imgs_np[:] = padsigmas_imgs
-                for k in range(padny):
-                    for l in range(padnx):
-                        sigmas_imgs_np[k,l,:] = np.clip(sigmas_imgs_np[k,l,:],np.nanmedian(sigmas_imgs_np[k,l,:])/2,np.inf)
-            else:
-                sigmas_imgs_np[:] = np.sqrt(np.abs(originalLPF_imgs_np))
-                for k in range(padny):
-                    for l in range(padnx):
-                        sigmas_imgs_np[k,l,:] = np.clip(sigmas_imgs_np[k,l,:],np.nanmedian(sigmas_imgs_np[k,l,:])/2,np.inf)
-            # import matplotlib.pyplot as plt
-            # tmpk, tmpl = 44,8
-            # for k in range(5):
-            #     for l in range(5):
-            #         plt.subplot(5,5,5*k+l+1)
-            #         plt.plot(originalHPF_imgs_np[tmpk+5+k,tmpl+5+l,:],label="originalLPF_imgs_np")
-            #         plt.plot(sigmas_imgs_np[tmpk+5+k,tmpl+5+l,:],label="sigmas_imgs_np")
-            #         plt.ylim([-3,3])
-            # plt.legend()
-            # tpool.close()
-            # plt.show()
-
-            if 0: #"JBhere"
-                out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
-                import matplotlib.pyplot as plt
-                print(original_imgs_np.shape)
-                fontsize = 12
-                plt.figure(1,figsize=(12,3))
-                ax1 = plt.gca()
-                plt.figure(2,figsize=(12,3))
-                ax2 = plt.gca()
-                for myk in np.arange(25,35):
-                    for myl in np.arange(7,9):
-                        myvec = copy(original_imgs_np[myk,myl,:])
-                        myvec_cp = copy(myvec)#/transmission4planet_list[0](wvs)
-                        print(np.nanmax(myvec_cp))
-                        plt.sca(ax1)
-                        plt.plot(wvs,myvec_cp,color="grey",alpha = 0.2)
-                        wherenans = np.where(np.isnan(myvec_cp))
-                        for k in wherenans[0]:
-                            myvec_cp[k] = np.nanmedian(myvec_cp[np.max([0,k-10]):np.min([np.size(myvec_cp),k+10])])
-
-                        fftmyvec = np.fft.fft(np.concatenate([myvec_cp,myvec_cp[::-1]],axis=0))
-                        LPF_fftmyvec = copy(fftmyvec)
-                        LPF_fftmyvec[cutoff:(2*np.size(myvec_cp)-cutoff+1)] = 0
-                        LPF_myvec = np.real(np.fft.ifft(LPF_fftmyvec))[0:np.size(myvec_cp)]
-                        HPF_myvec = myvec_cp - LPF_myvec
-                        HPF_myvec[wherenans] = np.nan
-                        plt.sca(ax2)
-                        plt.plot(wvs,HPF_myvec,color="grey",alpha = 0.2)
-                plt.sca(ax1)
-                plt.plot(wvs,myvec,color="grey",alpha = 0.2,label="Noise sample")
-                plt.sca(ax2)
-                plt.plot(wvs,HPF_myvec,color="grey",alpha = 0.2,label="Noise sample")
-
-                myvec_cp = planet_partial_template_func_list[0](wvs)*transmission4planet_list[0](wvs)
-                # plt.figure(3)
-                # plt.plot(planet_partial_template_func_list[0](wvs))
-                # plt.figure(4)
-                # plt.plot(transmission4planet_list[0](wvs))
-                # plt.show()
-                plt.sca(ax1)
-                plt.plot(wvs,myvec_cp/np.nanmax(myvec_cp)*0.4,color="#ff9900",alpha=0.75,label="HR 8799 c model")
-                wherenans = np.where(np.isnan(myvec_cp))
-                for k in wherenans[0]:
-                    myvec_cp[k] = np.nanmedian(myvec_cp[np.max([0,k-10]):np.min([np.size(myvec_cp),k+10])])
-                fftmyvec = np.fft.fft(np.concatenate([myvec_cp,myvec_cp[::-1]],axis=0))
-                LPF_fftmyvec = copy(fftmyvec)
-                LPF_fftmyvec[cutoff:(2*np.size(myvec_cp)-cutoff+1)] = 0
-                LPF_myvec = np.real(np.fft.ifft(LPF_fftmyvec))[0:np.size(myvec_cp)]
-                HPF_myvec = myvec_cp - LPF_myvec
-                plt.sca(ax2)
-                plt.plot(wvs,HPF_myvec/np.max(myvec_cp)*0.4,color="#ff9900",alpha=0.75,label="HR 8799 c model")
-
-                plt.sca(ax1)
-                plt.ylim([0,0.5])
-                plt.legend(loc="upper right",frameon=True,fontsize=fontsize,ncol=3)
-                plt.xlabel(r"$\lambda$ ($\mu$m)",fontsize=fontsize)
-                plt.gca().tick_params(axis='x', labelsize=fontsize)
-                plt.gca().tick_params(axis='y', labelsize=fontsize)
-                # plt.tick_params(axis="y",which="both",labelleft=False,right=False,left=False)
-                # plt.gca().spines["right"].set_visible(False)
-                # plt.gca().spines["left"].set_visible(False)
-                # plt.gca().spines["top"].set_visible(False)
-                plt.tight_layout()
-                print("Saving "+os.path.join(out_pngs,"speckles_uncorr.png"))
-                plt.savefig(os.path.join(out_pngs,"speckles_uncorr.png"),bbox_inches='tight')
-                plt.savefig(os.path.join(out_pngs,"speckles_uncorr.pdf"),bbox_inches='tight')
-
-                plt.sca(ax2)
-                plt.ylim([-0.2,0.2])
-                plt.legend(loc="upper right",frameon=True,fontsize=fontsize,ncol=3)
-                plt.xlabel(r"$\lambda$ ($\mu$m)",fontsize=fontsize)
-                plt.gca().tick_params(axis='x', labelsize=fontsize)
-                plt.gca().tick_params(axis='y', labelsize=fontsize)
-                plt.tight_layout()
-                print("Saving "+os.path.join(out_pngs,"speckles_HPF_uncorr.png"))
-                plt.savefig(os.path.join(out_pngs,"speckles_HPF_uncorr.png"),bbox_inches='tight')
-                plt.savefig(os.path.join(out_pngs,"speckles_HPF_uncorr.pdf"),bbox_inches='tight')
-
-                plt.figure(3,figsize=(12,3))
-                fftx = 2*(wvs[-1]-wvs[0])/np.arange(padnz)
-                plt.fill_betweenx([0,1e5],[100,100],[fftx[40],fftx[40]],color="#0099cc",alpha=0.2,label="Filtered out")
-                for myk in np.arange(25,35):
-                    for myl in np.arange(7,9):
-                        myvec = original_imgs_np[myk,myl,:]
-                        myvec_cp = copy(myvec)#/transmission4planet_list[0](wvs)
-                        #handling nans:
-                        wherenans = np.where(np.isnan(myvec_cp))
-                        for k in wherenans[0]:
-                            myvec_cp[k] = np.nanmedian(myvec_cp[np.max([0,k-10]):np.min([np.size(myvec_cp),k+10])])
-
-                        fftmyvec = np.fft.fft(np.concatenate([myvec_cp,myvec_cp[::-1]],axis=0))
-                        # LPF_fftmyvec = copy(fftmyvec)
-                        # LPF_fftmyvec[cutoff:(2*np.size(myvec_cp)-cutoff+1)] = 0
-                        # LPF_fftmyvec[:] = 0
-                        # LPF_fftmyvec[cutoff] = 1
-                        # LPF_myvec = np.real(np.fft.ifft(LPF_fftmyvec))[0:np.size(myvec_cp)]
-                        # HPF_myvec = myvec_cp - LPF_myvec
-
-                        plt.plot(fftx,np.abs(fftmyvec)[0:np.size(myvec_cp)],color="grey",alpha = 0.2)
-                plt.plot(fftx,np.abs(fftmyvec)[0:np.size(myvec_cp)],color="grey",alpha = 0.2,label="Noise sample")
-
-                myplvec = planet_partial_template_func_list[0](wvs)*transmission4planet_list[0](wvs)
-                wherenans = np.where(np.isnan(myplvec))
-                for k in wherenans[0]:
-                    myplvec[k] = np.nanmedian(myplvec[np.max([0,k-10]):np.min([np.size(myplvec),k+10])])
-                fftmyvec = np.fft.fft(np.concatenate([myplvec,myplvec[::-1]],axis=0))
-                plt.plot(fftx,np.abs(fftmyvec)[0:np.size(myplvec)],color="#ff9900",alpha=0.75,label="HR 8799 c model")
-                # plt.xlim([0.100,0.416])
-                plt.legend(loc="upper right",frameon=True,fontsize=fontsize,ncol=3)
-                plt.xlim([np.min(fftx),1])
-                plt.ylim([1e-1,1e3])
-                plt.xscale("log")
-                plt.yscale("log")
-                plt.xlabel(r"Period ($\mu$m)",fontsize=fontsize)
-                plt.ylabel(r"Power spectrum",fontsize=fontsize)
-                plt.gca().tick_params(axis='x', labelsize=fontsize)
-                plt.gca().tick_params(axis='y', labelsize=fontsize)
-                plt.gca().invert_xaxis()
-                plt.tight_layout()
-                print("Saving "+os.path.join(out_pngs,"speckles_fft_uncorr.png"))
-                plt.savefig(os.path.join(out_pngs,"speckles_fft_uncorr.png"),bbox_inches='tight')
-                plt.savefig(os.path.join(out_pngs,"speckles_fft_uncorr.pdf"),bbox_inches='tight')
-                plt.show()
-                exit()
-
-            if 0:
-                if not os.path.exists(os.path.join(outputdir)):
-                    os.makedirs(os.path.join(outputdir))
-                hdulist = pyfits.HDUList()
-                hdulist.append(pyfits.PrimaryHDU(data=np.moveaxis(originalLPF_imgs_np,len(originalLPF_imgs_np.shape)-1,len(originalLPF_imgs_np.shape)-3)[:,padding:(padny-padding),padding:(padnx-padding)],header=prihdr))
-                try:
-                    hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_output"+suffix+"_LPF.fits")), overwrite=True)
-                except TypeError:
-                    hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_output"+suffix+"_LPF.fits")), clobber=True)
-                hdulist.close()
-                hdulist = pyfits.HDUList()
-                hdulist.append(pyfits.PrimaryHDU(data=np.moveaxis(badpix_imgs_np,len(badpix_imgs_np.shape)-1,len(badpix_imgs_np.shape)-3)[:,padding:(padny-padding),padding:(padnx-padding)],header=prihdr))
-                try:
-                    hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_output"+suffix+"_LPF_badpix.fits")), overwrite=True)
-                except TypeError:
-                    hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_output"+suffix+"_LPF_badpix.fits")), clobber=True)
-                hdulist.close()
-                continue
 
             ressuffix = suffix.replace("centroid","search") + "_rescalc"
             if res_it == 0:
@@ -2418,9 +1582,9 @@ if __name__ == "__main__":
                 suffix = suffix+"_resinmodel_kl{0}".format(res_numbasis)
             if res_numbasis <= -1:
                 # s171103_a023002_Hbb_020_outputHPF_cutoff40_sherlock_v1_search_res
-                # res_filename = os.path.join(outputdir,os.path.basename(filename).replace(".fits","_output"+ressuffix+"_res.fits"))
-                res_filelist = glob.glob(os.path.join(outputdir,os.path.basename(filename).split("_")[0]+"*"+os.path.basename(filename).split("_")[2]+"*_output"+ressuffix+"_res.fits"))
-                print(os.path.join(outputdir,os.path.basename(filename).split("_")[0]+"*"+os.path.basename(filename).split("_")[2]+"*_output"+ressuffix+"_res.fits"))
+                # res_filename = os.path.join(outputdir_res,os.path.basename(filename).replace(".fits","_output"+ressuffix+"_res.fits"))
+                res_filelist = glob.glob(os.path.join(outputdir_res,os.path.basename(filename).split("_")[0]+"*"+os.path.basename(filename).split("_")[2]+"*_output"+ressuffix+"_res.fits"))
+                print(os.path.join(outputdir_res,os.path.basename(filename).split("_")[0]+"*"+os.path.basename(filename).split("_")[2]+"*_output"+ressuffix+"_res.fits"))
                 print(res_filelist)
                 # exit()
                 X_list = []
@@ -2435,8 +1599,9 @@ if __name__ == "__main__":
                 X = np.concatenate(X_list)
 
             if res_numbasis >= 1:
-                res_filelist = glob.glob(os.path.join(outputdir,os.path.basename(filename).replace(".fits","")+"*_output"+ressuffix+"_res.fits"))
-                # res_filelist = glob.glob(os.path.join(outputdir,os.path.basename(filename).replace(".fits","")+"*_output"+"*kl1*"+"_res.fits"))
+                print(os.path.join(outputdir_res,os.path.basename(filename).replace(".fits","")+"*_output"+ressuffix+"_res.fits"))
+                res_filelist = glob.glob(os.path.join(outputdir_res,os.path.basename(filename).replace(".fits","")+"*_output"+ressuffix+"_res.fits"))
+                # res_filelist = glob.glob(os.path.join(outputdir_res,os.path.basename(filename).replace(".fits","")+"*_output"+"*kl1*"+"_res.fits"))
                 res_filename = res_filelist[0]
                 with pyfits.open(res_filename) as hdulist:
                     # hpfres = hdulist[0].data[0,0,2,:,:,:]
@@ -2444,8 +1609,8 @@ if __name__ == "__main__":
                     lpf = hdulist[0].data[0,0,5,:,:,:]
                     hpfres = hdulist[0].data[0,0,6,:,:,:]
 
-                res_filelist = glob.glob(os.path.join(outputdir,os.path.basename(filename).replace(".fits","")+"*_output"+ressuffix+"_estispec.fits"))
-                # res_filelist = glob.glob(os.path.join(outputdir,os.path.basename(filename).replace(".fits","")+"*_output"+"*kl1*"+"_res.fits"))
+                res_filelist = glob.glob(os.path.join(outputdir_res,os.path.basename(filename).replace(".fits","")+"*_output"+ressuffix+"_estispec.fits"))
+                # res_filelist = glob.glob(os.path.join(outputdir_res,os.path.basename(filename).replace(".fits","")+"*_output"+"*kl1*"+"_res.fits"))
                 res_filename = res_filelist[0]
                 with pyfits.open(res_filename) as hdulist:
                     hpfres = hdulist[0].data[1,:,:,:]
@@ -2468,14 +1633,7 @@ if __name__ == "__main__":
                 except:
                     pass
 
-                # plt.subplot(1,2,2)
-                # plt.imshow(np.nansum(res4model,axis=0))
-                # plt.show()
-
                 X = np.reshape(res4model,(res4model.shape[0],res4model.shape[1]*res4model.shape[2])).T
-
-                print(X.shape)
-                # exit()
 
 
             if res_numbasis != 0:
@@ -2483,15 +1641,8 @@ if __name__ == "__main__":
                 X = X/np.nanstd(X,axis=1)[:,None]
                 X[np.where(np.isnan(X))] = 0
 
-                # lpf = np.nanmean(lpf,axis=(1,2))
-                # lpf_res,_ = LPFvsHPF(np.nanmean(X,axis=0),cutoff,nansmooth=30)
-                # lpf_res_calib = 1+ lpf_res/lpf
-                # # X = X-lpf_res[None,:]
-
                 print(X.shape)
                 C = np.cov(X)
-                # print(C.shape)
-                # exit()
                 tot_basis = C.shape[0]
                 tmp_res_numbasis = np.clip(np.abs(res_numbasis) - 1, 0, tot_basis-1)  # clip values, for output consistency we'll keep duplicates
                 max_basis = np.max(tmp_res_numbasis) + 1  # maximum number of eigenvectors/KL basis we actually need to use/calculate
@@ -2503,46 +1654,12 @@ if __name__ == "__main__":
                 kl_basis = np.dot(X.T, evecs)
                 # JB question: Why is there this [None, :]? (It adds an empty first dimension)
                 res4model_kl = kl_basis * (1. / np.sqrt(evals * (res4model.shape[0] - 1)))[None, :]  #multiply a value for each row
-                print(res4model_kl.shape)
-                # exit()
-
-                # res4model = np.nansum(res4model,axis=(1,2))
-                # res4model = res4model/np.nanstd(res4model)
-
-                # import matplotlib.pyplot as plt
-                # # plt.plot(wvs,-np.nanmean(X,axis=0)/np.nanstd(np.nanmean(X,axis=0)),label="0")
-                # plt.plot(wvs,res4model_kl[:,0]/np.nanstd(res4model_kl[:,0]),label="0")
-                # # plt.plot(-res4model_kl[:,1]/np.nanstd(res4model_kl[:,1]),label="1")
-                # # plt.plot(-res4model_kl[:,2]/np.nanstd(res4model_kl[:,2]),label="2")
-                # # plt.plot(res4model/np.nanstd(res4model),label="ref")
-                # plt.legend()
-                # plt.show()
-                # exit()
                 lpf_res_calib = None
             else:
                 res4model_kl = None
                 lpf_res_calib = None
-            # print(res4model)
-            # exit()
 
-
-            ##############################
-            ## Define fakes
-            ##############################
-            if inject_fakes:
-                try:
-                # if 1:
-                    contrast_id = colnames.index("contrast")
-                    RVcen_id = colnames.index("RVcen")
-                    contrast,RVcen = float(list_data[fileid][contrast_id]),float(list_data[fileid][RVcen_id])
-                    fake_paras = {"contrast":contrast,"RV":RVcen}
-                    suffix = suffix+"_fakes"
-                except:
-                    print("Cannot inject fake planets")
-                    exit()
-            else:
-                fake_paras = None
-
+            fake_paras = None
 
             ##############################
             ## Define tasks
@@ -2575,17 +1692,22 @@ if __name__ == "__main__":
             ##############################
             ## Process
             ##############################
-            if 0 or debug:
-                print("coucou1")
+            if res_it >= 1:
+                # print("coucou1")
                 # plcen_k,plcen_l = 30+padding,10+padding
                 # plcen_k_valid_pix = [plcen_k]
                 # plcen_l_valid_pix = [plcen_l]
                 # row_valid_pix = [plcen_k]
                 # col_valid_pix = [plcen_l]
 
-                # print(planetRV_array)
+                print(planetRV_array)
+                print(plcen_k_valid_pix,plcen_l_valid_pix,row_valid_pix,col_valid_pix)
+                print("yup")
                 # exit()
                 tpool.close()
+                tpool.join()
+                if not os.path.exists(os.path.join(outputdir)):
+                    os.makedirs(os.path.join(outputdir))
                 _tpool_init(original_imgs,sigmas_imgs,badpix_imgs,originalLPF_imgs,originalHPF_imgs, original_imgs_shape, output_maps,
                             output_maps_shape,wvs_imgs,psfs_stamps, psfs_stamps_shape,outres,outres_shape,outautocorrres,
                             outautocorrres_shape,persistence_imgs,out1dfit,out1dfit_shape,estispec,estispec_shape)
@@ -2599,159 +1721,5 @@ if __name__ == "__main__":
                                         wvs_imgs,planetRV_array,
                                         dtype,cutoff,planet_search,(plcen_k,plcen_l),
                                         R_list,
-                                        numbasis_list,wvsol_offsets,R_calib_arr,model_persistence=model_persistence,res4model_kl=res4model_kl,lpf_res_calib=lpf_res_calib,fake_paras=fake_paras,indices=[0])
-                exit()
-            else:
-                if res_it == 0:
-                    chunk_size = 5#N_valid_pix//(3*numthreads)
-                    N_chunks = N_valid_pix//chunk_size
-                    row_indices_list = []
-                    col_indices_list = []
-                    plcen_k_indices_list = []
-                    plcen_l_indices_list = []
-                    for k in range(N_chunks-1):
-                        row_indices_list.append(row_valid_pix[(k*chunk_size):((k+1)*chunk_size)])
-                        col_indices_list.append(col_valid_pix[(k*chunk_size):((k+1)*chunk_size)])
-                        plcen_k_indices_list.append(plcen_k_valid_pix[(k*chunk_size):((k+1)*chunk_size)])
-                        plcen_l_indices_list.append(plcen_l_valid_pix[(k*chunk_size):((k+1)*chunk_size)])
-                    row_indices_list.append(row_valid_pix[((N_chunks-1)*chunk_size):N_valid_pix])
-                    col_indices_list.append(col_valid_pix[((N_chunks-1)*chunk_size):N_valid_pix])
-                    plcen_k_indices_list.append(plcen_k_valid_pix[((N_chunks-1)*chunk_size):N_valid_pix])
-                    plcen_l_indices_list.append(plcen_l_valid_pix[((N_chunks-1)*chunk_size):N_valid_pix])
-
-                    tasks = [tpool.apply_async(_process_pixels_onlyHPF, args=(plcen_k_indices,plcen_l_indices,row_indices,col_indices,
-                                                                              normalized_psfs_func_list,
-                                                                              transmission_table,
-                                                                              planet_model_func_table,
-                                                                              HR8799pho_spec_func_list,
-                                                                              transmission4planet_list,
-                                                                              hr8799_flux,
-                                                                              wvs_imgs,planetRV_array,
-                                                                              dtype,cutoff,planet_search,(plcen_k,plcen_l),
-                                                                              R_list,
-                                                                              numbasis_list,wvsol_offsets,R_calib_arr,
-                                                                              model_persistence,res4model_kl,lpf_res_calib,fake_paras,[0]))
-                             for plcen_k_indices, plcen_l_indices, row_indices, col_indices in zip(plcen_k_indices_list,plcen_l_indices_list, row_indices_list, col_indices_list)]
-                    #save it to shared memory
-                    for row_index, proc_pixs_task in enumerate(tasks):
-                        print("Finished image chunk {0}/{1}".format(row_index,len(plcen_k_indices_list)))
-                        proc_pixs_task.wait()
-                else:
-                    chunk_size = 1#N_valid_pix//(3*numthreads)
-                    N_chunks = len(planet_model_func_table)//chunk_size
-                    print(N_chunks)
-                    indices_list = []
-                    for k in range(N_chunks-1):
-                        indices_list.append(np.arange((k*chunk_size),((k+1)*chunk_size)).astype(np.int))
-                    indices_list.append(np.arange(((N_chunks-1)*chunk_size),len(planet_model_func_table)).astype(np.int))
-
-                    tasks = [tpool.apply_async(_process_pixels_onlyHPF, args=(plcen_k_valid_pix,plcen_l_valid_pix,row_valid_pix,col_valid_pix,
-                                                                              normalized_psfs_func_list,
-                                                                              [transmission_table[j] for j in indices],
-                                                                              [planet_model_func_table[j] for j in indices],
-                                                                              [HR8799pho_spec_func_list[j] for j in indices],
-                                                                              [transmission4planet_list[j] for j in indices],
-                                                                              hr8799_flux,
-                                                                              wvs_imgs,planetRV_array,
-                                                                              dtype,cutoff,planet_search,(plcen_k,plcen_l),
-                                                                              R_list,
-                                                                              numbasis_list,wvsol_offsets,R_calib_arr,
-                                                                              model_persistence,res4model_kl,lpf_res_calib,fake_paras,indices))
-                             for indices in indices_list]
-                    #save it to shared memory
-                    for row_index, proc_pixs_task in enumerate(tasks):
-                        print("Finished image chunk {0}/{1}".format(row_index,len(indices_list)))
-                        proc_pixs_task.wait()
-
-            ##############################
-            ## Save data to disk
-            ##############################
-            if not os.path.exists(os.path.join(outputdir)):
-                os.makedirs(os.path.join(outputdir))
-
-            hdulist = pyfits.HDUList()
-            if planet_search:
-                hdulist.append(pyfits.PrimaryHDU(data=np.moveaxis(output_maps_np,len(output_maps_shape)-1,len(output_maps_shape)-3)[:,:,:,:,padding:(padny-padding),padding:(padnx-padding)]))
-            else:
-                hdulist.append(pyfits.PrimaryHDU(data=np.moveaxis(output_maps_np,len(output_maps_shape)-1,len(output_maps_shape)-3)))
-            try:
-                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_output"+suffix+".fits")), overwrite=True)
-            except TypeError:
-                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_output"+suffix+".fits")), clobber=True)
-            hdulist.close()
-
-            hdulist = pyfits.HDUList()
-            hdulist.append(pyfits.PrimaryHDU(data=planetRV_array))
-            try:
-                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_output"+suffix+"_planetRV.fits")), overwrite=True)
-            except TypeError:
-                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_output"+suffix+"_planetRV.fits")), clobber=True)
-            hdulist.close()
-
-            hdulist = pyfits.HDUList()
-            hdulist.append(pyfits.PrimaryHDU(data=outres_np))
-            try:
-                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_output"+suffix+"_res.fits")), overwrite=True)
-            except TypeError:
-                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_output"+suffix+"_res.fits")), clobber=True)
-            hdulist.close()
-
-            hdulist = pyfits.HDUList()
-            hdulist.append(pyfits.PrimaryHDU(data=outautocorrres_np))
-            try:
-                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_output"+suffix+"_autocorrres.fits")), overwrite=True)
-            except TypeError:
-                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_output"+suffix+"_autocorrres.fits")), clobber=True)
-            hdulist.close()
-
-            hdulist = pyfits.HDUList()
-            if planet_search:
-                hdulist.append(pyfits.PrimaryHDU(data=np.moveaxis(out1dfit_np,len(out1dfit_shape)-1,len(out1dfit_shape)-3)[:,:,padding:(padny-padding),padding:(padnx-padding)]))
-            else:
-                hdulist.append(pyfits.PrimaryHDU(data=np.moveaxis(out1dfit_np,len(out1dfit_shape)-1,len(out1dfit_shape)-3)))
-            # hdulist.append(pyfits.PrimaryHDU(data=out1dfit_np))
-            try:
-                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_output"+suffix+"_out1dfit.fits")), overwrite=True)
-            except TypeError:
-                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_output"+suffix+"_out1dfit.fits")), clobber=True)
-            hdulist.close()
-            hdulist = pyfits.HDUList()
-            if planet_search:
-                hdulist.append(pyfits.PrimaryHDU(data=np.moveaxis(estispec_np,len(estispec_shape)-1,len(estispec_shape)-3)[:,:,padding:(padny-padding),padding:(padnx-padding)]))
-            else:
-                hdulist.append(pyfits.PrimaryHDU(data=np.moveaxis(estispec_np,len(estispec_shape)-1,len(estispec_shape)-3)))
-            try:
-                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_output"+suffix+"_estispec.fits")), overwrite=True)
-            except TypeError:
-                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_output"+suffix+"_estispec.fits")), clobber=True)
-            hdulist.close()
-
-            if not planet_search:
-                hdulist = pyfits.HDUList()
-                if planet_search:
-                    hdulist.append(pyfits.PrimaryHDU(data=np.concatenate([-padding+plcen_k_grid[None,padding:(padny-padding),padding:(padnx-padding)],-padding+plcen_l_grid[None,padding:(padny-padding),padding:(padnx-padding)]],axis=0)))
-                else:
-                    hdulist.append(pyfits.PrimaryHDU(data=np.concatenate([-padding+plcen_k_grid[None,:,:],-padding+plcen_l_grid[None,:,:]],axis=0)))
-                try:
-                    hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_output"+suffix+"_klgrids.fits")), overwrite=True)
-                except TypeError:
-                    hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_output"+suffix+"_klgrids.fits")), clobber=True)
-                hdulist.close()
-
-            if res_it != 0:
-                with open(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_output"+suffix+"_modelgrid.txt")), 'w+') as txtfile:
-                    txtfile.writelines([s+"\n" for s in gridconv_filelist])
-
-            print("Closing threadpool")
-            tpool.close()
-            tpool.join()
-            # plt.figure(2)
-            # plt.subplot(1,2,1)
-            # plt.imshow(output_maps_np[0,:,:])
-            # plt.subplot(1,2,2)
-            # plt.imshow(output_maps_np[1,:,:])
-            # print("bonjour")
-            # plt.show()
-
-
-            # exit()
+                                        numbasis_list,wvsol_offsets,R_calib_arr,model_persistence=model_persistence,res4model_kl=res4model_kl,lpf_res_calib=lpf_res_calib,fake_paras=fake_paras,outputdir=outputdir,filename=filename)
+                # exit()

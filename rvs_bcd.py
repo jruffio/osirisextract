@@ -196,7 +196,7 @@ if 1:
                 allepochs_Nexp_b[epochid] = epochs_Nexp_b[wheretmp]
     # exit()
 
-    def convertdata(date_list):
+    def convertdates(date_list):
         return [date[4:6]+"-"+date[6:8]+"-"+date[0:4] for date in date_list ]
 
     plt.figure(1,figsize=(6,6))
@@ -298,7 +298,7 @@ if 1:
     plt.xlabel("RV (km/s)",fontsize=fontsize)
     plt.tick_params(axis="x",labelsize=fontsize)
     plt.tick_params(axis="y",labelsize=fontsize)
-    plt.yticks(np.arange(0,np.size(allepochs)),convertdata(allepochs))
+    plt.yticks(np.arange(0,np.size(allepochs)),convertdates(allepochs))
     plt.gca().spines["right"].set_visible(False)
     plt.gca().spines["top"].set_visible(False)
     plt.gca().spines["left"].set_visible(False)

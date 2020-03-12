@@ -13,7 +13,7 @@ import glob
 import time
 
 
-# BE REALLY CAREFUL
+# # BE REALLY CAREFUL
 # if 0: # delete old folders in osiris_data!
 #     for mydir in glob.glob(os.path.join("/data/osiris_data/HR_8799_*/","*","reduced_jb")):
 #         # for myinsidedir in os.listdir(mydir):
@@ -23,22 +23,33 @@ import time
 #         #         time.sleep(1)
 #         try:
 #             for mysherlockdir in os.listdir(os.path.join(mydir,"sherlock")):
-#                 if os.path.isdir(os.path.join(mydir,"sherlock",mysherlockdir)):# and "20190416_no_persis_corr" != myinsidedir :
-#             #         pass
-#                     if "20190416_no_persis_corr" != mysherlockdir \
-#                             and "20191204_grid" != mysherlockdir \
-#                             and "20191120_newres_RV" != mysherlockdir \
-#                             and "20191202_newresmodel" != mysherlockdir \
-#                             and "20191120_newresmodel" != mysherlockdir \
-#                             and "20190510_spec_esti" != mysherlockdir \
-#                             and "20190508_models2" != mysherlockdir \
-#                             and "20191018_RVsearch" != mysherlockdir \
-#                             and "logs" != mysherlockdir:
+#                 if os.path.isdir(os.path.join(mydir,"sherlock",mysherlockdir)):
+#                     if "newresmodel" in mysherlockdir:
+#                         # print(os.path.join(mydir,"sherlock",mysherlockdir))
 #                         os.system("du -sh {0}".format(os.path.join(mydir,"sherlock",mysherlockdir)))
-#                         # os.system("rm -R {0}".format(os.path.join(mydir,"sherlock",mysherlockdir)))
+#                         # coucou os.system("rm -R {0}".format(os.path.join(mydir,"sherlock",mysherlockdir)))
 #                         time.sleep(1)
 #         except:
 #             print("failed "+ mydir)
+#         # try:
+#         #     for mysherlockdir in os.listdir(os.path.join(mydir,"sherlock")):
+#         #         if os.path.isdir(os.path.join(mydir,"sherlock",mysherlockdir)):# and "20190416_no_persis_corr" != myinsidedir :
+#         #     #         pass
+#         #             if "20190416_no_persis_corr" != mysherlockdir \
+#         #                     and "20191204_grid" != mysherlockdir \
+#         #                     and "20191120_newres_RV" != mysherlockdir \
+#         #                     and "20191202_newresmodel" != mysherlockdir \
+#         #                     and "20191120_newresmodel" != mysherlockdir \
+#         #                     and "20190510_spec_esti" != mysherlockdir \
+#         #                     and "20190508_models2" != mysherlockdir \
+#         #                     and "20191018_RVsearch" != mysherlockdir \
+#         #                     and "logs" != mysherlockdir:
+#         #                 os.system("du -sh {0}".format(os.path.join(mydir,"sherlock",mysherlockdir)))
+#         #                 # coucou os.system("rm -R {0}".format(os.path.join(mydir,"sherlock",mysherlockdir)))
+#         #                 time.sleep(1)
+#         # except:
+#         #     print("failed "+ mydir)
+#     exit()
 
 
 # interpolate and save grid spectra
