@@ -29,8 +29,12 @@ for foldername in ["HR_8799_b","HR_8799_c","HR_8799_d"]:#["kap_And","HR_8799_b",
                 filelist = glob.glob(os.path.join(OSIRISDATA,foldername,year,reductionname,filenamefilter))
                 filelist.sort()
                 for fileid, filename in enumerate(filelist):
-                    print(fileid,filename)
+                    print(filename)
                     #continue
+                    tmpfilename = os.path.join(os.path.dirname(filename),modelfolder,os.path.basename(filename).replace(".fits","_corrwvs.fits"))
+                    if len(glob.glob(tmpfilename))!=1:
+                        print("No data on "+filename)
+                        continue
 
                     inputdir = os.path.dirname(filename)
 
