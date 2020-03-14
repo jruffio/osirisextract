@@ -44,54 +44,55 @@ def _spline_psf_model(paras):
 
 
 def get_rv_logpost(paras):
-    planet_template_func,planetRV_array,star_flux,cutoff,logdet_Sigma,transmission_vec,nospec_planet_model,wvs,sigmas_vec,where_finite_data,ravelHPFdata = paras
-    w = int((nospec_planet_model.shape[0]-1)/2)
-    c_kms = 299792.458
+    planet_template_func_list,planetRV_array,star_flux,cutoff,logdet_Sigma,transmission_vec,nospec_planet_model,wvs,sigmas_vec,where_finite_data,ravelHPFdata = paras
+    logpost_rv = np.zeros((len(planet_template_func_list),np.size(planetRV_array)))
+    for temp_id,planet_template_func in enumerate(planet_template_func_list):
+        w = int((nospec_planet_model.shape[0]-1)/2)
+        c_kms = 299792.458
 
-    logpost_rv = np.zeros(planetRV_array.shape)
-    for plrv_id,plrv in enumerate(planetRV_array):
-        # print(plrv_id,plrv)
-        planet_model = copy(nospec_planet_model)
-        for bkg_k in range(2*w+1):
-            for bkg_l in range(2*w+1):
-                # print(wvs.shape,plrv,c_kms)
-                wvs4planet_model = wvs[bkg_k,bkg_l,:]*(1-(plrv)/c_kms)
-                planet_model[bkg_k,bkg_l,:] *= planet_template_func(wvs4planet_model) * transmission_vec
+        for plrv_id,plrv in enumerate(planetRV_array):
+            # print(plrv_id,plrv)
+            planet_model = copy(nospec_planet_model)
+            for bkg_k in range(2*w+1):
+                for bkg_l in range(2*w+1):
+                    # print(wvs.shape,plrv,c_kms)
+                    wvs4planet_model = wvs[bkg_k,bkg_l,:]*(1-(plrv)/c_kms)
+                    planet_model[bkg_k,bkg_l,:] *= planet_template_func(wvs4planet_model) * transmission_vec
 
-        planet_model = planet_model/np.nansum(planet_model)*star_flux*1e-5
-        HPF_planet_model = np.zeros(planet_model.shape)
-        for bkg_k in range(2*w+1):
-            for bkg_l in range(2*w+1):
-                HPF_planet_model[bkg_k,bkg_l,:]  = LPFvsHPF(planet_model[bkg_k,bkg_l,:] ,cutoff)[1]
+            planet_model = planet_model/np.nansum(planet_model)*star_flux*1e-5
+            HPF_planet_model = np.zeros(planet_model.shape)
+            for bkg_k in range(2*w+1):
+                for bkg_l in range(2*w+1):
+                    HPF_planet_model[bkg_k,bkg_l,:]  = LPFvsHPF(planet_model[bkg_k,bkg_l,:] ,cutoff)[1]
 
-        HPFmodel_H1only = (HPF_planet_model.ravel())[:,None]
+            HPFmodel_H1only = (HPF_planet_model.ravel())[:,None]
 
-        HPFmodel_H1only = HPFmodel_H1only[where_finite_data[0],:]/sigmas_vec[:,None]
-        HPFmodel_H1only[np.where(np.isnan(HPFmodel_H1only))] = 0
-        HPFmodel_H0[np.where(np.isnan(HPFmodel_H0))] = 0
+            HPFmodel_H1only = HPFmodel_H1only[where_finite_data[0],:]/sigmas_vec[:,None]
+            HPFmodel_H1only[np.where(np.isnan(HPFmodel_H1only))] = 0
+            HPFmodel_H0[np.where(np.isnan(HPFmodel_H0))] = 0
 
-        # print(HPFmodel_H1only.shape,HPFmodel_H0.shape)
-        # print(HPFmodel_H1only[0:5])
-        # print(HPFmodel_H0[0:5,0:5])
-        # print(plrv)
-        # exit()
-        HPFmodel = np.concatenate([HPFmodel_H1only,HPFmodel_H0],axis=1)
+            # print(HPFmodel_H1only.shape,HPFmodel_H0.shape)
+            # print(HPFmodel_H1only[0:5])
+            # print(HPFmodel_H0[0:5,0:5])
+            # print(plrv)
+            # exit()
+            HPFmodel = np.concatenate([HPFmodel_H1only,HPFmodel_H0],axis=1)
 
-        where_valid_parameters = np.where(np.nansum(np.abs(HPFmodel)>0,axis=0)>=50)
-        HPFmodel = HPFmodel[:,where_valid_parameters[0]]
+            where_valid_parameters = np.where(np.nansum(np.abs(HPFmodel)>0,axis=0)>=50)
+            HPFmodel = HPFmodel[:,where_valid_parameters[0]]
 
-        # print(HPFmodel.shape,ravelHPFdata.shape)
-        HPFparas,HPFchi2,rank,s = np.linalg.lstsq(HPFmodel,ravelHPFdata,rcond=None)
-        # print(HPFparas)
-        # exit()
-        data_model = np.dot(HPFmodel,HPFparas)
-        ravelresiduals = ravelHPFdata-data_model
-        HPFchi2 = np.nansum((ravelresiduals)**2)
-        Npixs_HPFdata = HPFmodel.shape[0]
-        covphi =  HPFchi2/Npixs_HPFdata*np.linalg.inv(np.dot(HPFmodel.T,HPFmodel))
-        slogdet_icovphi0 = np.linalg.slogdet(np.dot(HPFmodel.T,HPFmodel))
+            # print(HPFmodel.shape,ravelHPFdata.shape)
+            HPFparas,HPFchi2,rank,s = np.linalg.lstsq(HPFmodel,ravelHPFdata,rcond=None)
+            # print(HPFparas)
+            # exit()
+            data_model = np.dot(HPFmodel,HPFparas)
+            ravelresiduals = ravelHPFdata-data_model
+            HPFchi2 = np.nansum((ravelresiduals)**2)
+            Npixs_HPFdata = HPFmodel.shape[0]
+            covphi =  HPFchi2/Npixs_HPFdata*np.linalg.inv(np.dot(HPFmodel.T,HPFmodel))
+            slogdet_icovphi0 = np.linalg.slogdet(np.dot(HPFmodel.T,HPFmodel))
 
-        logpost_rv[plrv_id] = -0.5*logdet_Sigma-0.5*slogdet_icovphi0[1]- (Npixs_HPFdata-HPFmodel.shape[-1]+2-1)/(2)*np.log(HPFchi2)
+            logpost_rv[temp_id,plrv_id] = -0.5*logdet_Sigma-0.5*slogdet_icovphi0[1]- (Npixs_HPFdata-HPFmodel.shape[-1]+2-1)/(2)*np.log(HPFchi2)
     return logpost_rv
 #------------------------------------------------
 if __name__ == "__main__":
@@ -107,6 +108,7 @@ if __name__ == "__main__":
 
     print(len(sys.argv))
     if len(sys.argv) == 1:
+        osiris_data_dir = "/data/osiris_data/"
         IFSfilter = "Kbb"
         planet = "HR_8799_d"
         scale = "*"
@@ -145,6 +147,9 @@ if __name__ == "__main__":
     fitT_list = np.linspace(900,1200,12,endpoint=True)
     fitlogg_list = np.linspace(-4.5,-3,30,endpoint=True)
     fitCtoO_list = np.linspace(10**(8.48 - 8.82),10**(8.33 - 8.51),40,endpoint=True)
+    # fitT_list = np.linspace(900,1200,3,endpoint=True)
+    # fitlogg_list = np.linspace(-4.5,-3,3,endpoint=True)
+    # fitCtoO_list = np.linspace(10**(8.48 - 8.82),10**(8.33 - 8.51),4,endpoint=True)
     # fitT_list = np.arange(900,1200,50)
     # fitlogg_list = np.arange(-4.5,-3,0.25)
     # fitCtoO_list = np.arange(10**(8.48 - 8.82),10**(8.33 - 8.51),0.005)
@@ -425,8 +430,18 @@ if __name__ == "__main__":
         # print(len(paras_id_list))
         # exit()
 
+        chunk_size=200
+        N_chunks = len(planet_template_func_list)//chunk_size
+        parasidlist_list = []
+        speclist_list = []
+        for k in range(N_chunks-1):
+            parasidlist_list.append(paras_id_list[k*chunk_size:(k+1)*chunk_size])
+            speclist_list.append(planet_template_func_list[k*chunk_size:(k+1)*chunk_size])
+        parasidlist_list.append(paras_id_list[(N_chunks-1)*chunk_size:len(planet_template_func_list)])
+        speclist_list.append(planet_template_func_list[(N_chunks-1)*chunk_size:len(planet_template_func_list)])
+
         specpool = mp.Pool(processes=numthreads)
-        outputs_list = specpool.map(get_rv_logpost, zip(planet_template_func_list,
+        outputs_list = specpool.map(get_rv_logpost, zip(speclist_list,
                                                         itertools.repeat(planetRV_array),
                                                         itertools.repeat(star_flux),
                                                         itertools.repeat(cutoff),
@@ -437,9 +452,10 @@ if __name__ == "__main__":
                                                         itertools.repeat(sigmas_vec),
                                                         itertools.repeat(where_finite_data),
                                                         itertools.repeat(ravelHPFdata)))
-        for paras_id,out in zip(paras_id_list,outputs_list):
-            temp_id,fitlogg_id,CtoO_id = paras_id
-            logpost[temp_id,fitlogg_id,CtoO_id,:] = out
+        for parasidlist,outlist in zip(parasidlist_list,outputs_list):
+            for paras_id,out in zip(parasidlist,outlist):
+                temp_id,fitlogg_id,CtoO_id = paras_id
+                logpost[temp_id,fitlogg_id,CtoO_id,:] = out
         specpool.close()
 
         # print(logpost.shape)

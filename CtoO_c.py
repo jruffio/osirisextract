@@ -70,12 +70,12 @@ if __name__ == "__main__":
 
 
     # planet = "HR_8799_b"
-    # priorTeff,priorTeff_sig = 1000,1e-9
-    # priorlogg,priorlogg_sig = -3.5,1e-9
-    planet = "HR_8799_c"
-    priorTeff,priorTeff_sig = 1100,1e-3
-    priorlogg,priorlogg_sig = -3.5,1e-3
-    # planet = "HR_8799_d"
+    priorTeff,priorTeff_sig = 1000,1#1e-9
+    priorlogg,priorlogg_sig = -3.5,10#1e-9
+    # planet = "HR_8799_c"
+    # priorTeff,priorTeff_sig = 1100,1e-3
+    # priorlogg,priorlogg_sig = -3.5,1e-3
+    planet = "HR_8799_b"
     IFSfilter = "Kbb"
     scale = "*"
     date = "*"
@@ -135,6 +135,10 @@ if __name__ == "__main__":
         # exit()
         logpriorTeff_vec = -0.5/priorTeff_sig**2*(fitT_list-priorTeff)**2
         logpriorlogg_vec = -0.5/priorlogg_sig**2*(fitlogg_list-priorlogg)**2
+        try:
+            combined_logpost += logpost
+        except:
+            combined_logpost = logpost
         logpost = logpost + logpriorTeff_vec[:,None,None,None] + logpriorlogg_vec[:,None,None,None]
         post = np.exp(logpost-np.nanmax(logpost))
         # logpriorTeff_vec = 1/(np.sqrt(2*np.pi)*priorTeff_sig)*np.exp(-0.5/priorTeff_sig**2*(fitT_list-priorTeff)**2)
@@ -179,8 +183,8 @@ if __name__ == "__main__":
     # plt.errorbar(np.arange(len(CtoO_CI_list)),yval,yerr=[m_yerr,p_yerr ])
 
     plt.figure(1,figsize=(12,4))
-    plt.errorbar(np.arange(len(CtoO_CI_list)),yval,yerr=[m_yerr,p_yerr ],fmt="none",color="#cc6600")
-    plt.plot(np.arange(len(CtoO_CI_list)),yval,"x",color="#ff9900",label="K-band")
+    plt.errorbar(np.arange(len(CtoO_CI_list)),yval,yerr=[m_yerr,p_yerr ],fmt="none",color="#ff9900")
+    plt.plot(np.arange(len(CtoO_CI_list)),yval,"x",color="#ff9900",label="K-band") # #0099cc  #ff9900
 
     print(fitCtoO_list)
     plt.ylim([fitCtoO_list[0],fitCtoO_list[-1]])
@@ -254,6 +258,8 @@ if __name__ == "__main__":
     hdulist.close()
 
 
+
+
     final_leftCI,final_yval,final_rightCI,_ = get_err_from_posterior(fitCtoO_list,final_CtoO_post)
     final_m_yerr = final_yval - final_leftCI
     final_p_yerr = final_rightCI - final_yval
@@ -261,6 +267,9 @@ if __name__ == "__main__":
     print(final_yval,final_m_yerr,final_p_yerr)
     # exit()
 
+    combined_logpost = combined_logpost + logpriorTeff_vec[:,None,None,None] + logpriorlogg_vec[:,None,None,None]
+    combined_post = np.exp(combined_logpost-np.nanmax(combined_logpost))
+    combined_post_rvmargi = np.nansum(combined_post,axis=3)
     plt.figure(2,figsize=(12,12))
     para_vec_list = [fitT_list,fitlogg_list,fitCtoO_list]
     xlabel_list = ["T (K)", "log(g) (cgs?)","C/O"]
@@ -270,16 +279,17 @@ if __name__ == "__main__":
         dims.pop(k)
 
         plt.subplot(Nparas,Nparas,k+1+k*Nparas)
-        tmppost = np.sum(final_post,axis=(*dims,))
+        tmppost = np.sum(combined_post_rvmargi,axis=(*dims,))
         tmppost /= np.max(tmppost)
         plt.plot(para_vec_list[k],tmppost)
         plt.xlabel(xlabel_list[k])
+
         for l in np.arange(k+1,Nparas):
             plt.subplot(Nparas,Nparas,k+1+(l)*Nparas)
             dims = np.arange(Nparas).tolist()
             dims.pop(k)
             dims.pop(l-1)
-            tmppost = np.sum(final_post,axis=(*dims,))
+            tmppost = np.sum(combined_post_rvmargi,axis=(*dims,))
             tmppost /= np.max(tmppost)
             tmppost = tmppost.T
 

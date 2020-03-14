@@ -38,35 +38,35 @@ if 1:
     out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
     fontsize=12
     numbasis_list = np.array([0])
-    rv_b = [0.4920881896148752]
-    rvmerr_b = [0.013720486405409349]
-    rvperr_b = [0.008466184363451479]
-    rv_c = [0.5720881896148753  ]
-    rvmerr_c = [0.007555074480420365]
-    rvperr_c = [0.004273973788900376]
+    rv_b = [0.4770881896148752]
+    rvmerr_b = [0.009366900980685822]
+    rvperr_b = [0.007481767555257368]
+    rv_c = [0.5520881896148753  ]
+    rvmerr_c = [0.008513334049441879]
+    rvperr_c = [0.005541985372088609]
     rv_d = [0.5870881896148753]
-    rvmerr_d = [0.037483488514273855]
-    rvperr_d = [0.02700830863970982]
+    rvmerr_d = [0.03407766692871694]
+    rvperr_d = [0.03155199331507741]
 
     #kl 10
-    epochs_b =  ['20100711', '20100712', '20130725']
-    epochs_rv_b =  [ 0.4570881896148752, 0.6020881896148753, 0.5470881896148753]
-    epochs_rvmerr_b = [ 0.0, 0.012443490035948135, 0.022231000707946924]
-    epochs_rvperr_b = [ 0.015040172364527316, 0.019625311449477212, 0.019595703217906935]
-    epochs_Nexp_b = [6, 9, 9, 8]
+    epochs_b =  ['20090722', '20100711', '20100712', '20130725', '20130726', '20130727', '20161106', '20161107', '20161108', '20180722']
+    epochs_rv_b =  [0.4570881896148752, 0.4570881896148752, 0.6020881896148753, 0.4770881896148752, 0.4720881896148752, 0.4870881896148752, 0.4870881896148752, 0.6420881896148753, 0.4570881896148752, 0.4570881896148752]
+    epochs_rvmerr_b = [0.0, 0.0, 0.012454921819535558, 0.015606546516245823, 0.015000000000000013, 0.017696403491876733, 0.024967236691255446, 0.030439740254334824, 0.0, 0.0]
+    epochs_rvperr_b = [0.006990640796310399, 0.01606401669871238, 0.019622255922465026, 0.018159846275942082, 0.0189906348634597, 0.05279881717897561, 0.042474981531926304, 0.015000000000000013, 0.01632177317917255, 0.015156153909095471]
+    epochs_Nexp_b = [6, 9, 9, 16, 9, 5, 2, 3, 1, 6]
 
     #kl 10
     epochs_c = ['20100715', '20101104', '20110723', '20110724' ,'20110725' ,'20130726', '20171103']
-    epochs_rv_c = [0.5770881896148753, 0.6120881896148753, 0.5620881896148753, 0.5270881896148752, 0.5020881896148752, 0.5820881896148753, 0.5420881896148753]
-    epochs_rvmerr_c = [0.00873566738438003, 0.012394674307188769, 0.01621109063021342, 0.020544220520430256, 0.0226948414896761, 0.06448905330747357, 0.00969140949731373]
-    epochs_rvperr_c = [0.006128291869357483, 0.014823259324531213, 0.01246934796403465, 0.02202295195539039, 0.020185919585072543, 0.06202795456009802, 0.01702541758372611]
+    epochs_rv_c = [0.5570881896148753, 0.5470881896148753, 0.5320881896148753, 0.5470881896148753, 0.5020881896148752, 0.4870881896148752, 0.5670881896148753]
+    epochs_rvmerr_c = [0.008845547722997837, 0.023882125665470988, 0.04023163621912473, 0.05677346393306559, 0.03813009080943314, 0.030000000000000027, 0.017422119852433915]
+    epochs_rvperr_c = [0.009547044243143232, 0.01648039746198937, 0.020437072773469178, 0.011416430549343382, 0.018144881385531497, 0.09520265512307635, 0.011870988646839553]
     epochs_Nexp_c = [17, 7, 10, 2, 2, 1, 3]
 
     #kl 10
     epochs_d =  ['20150720', '20150723', '20150828']
     epochs_rv_d = [0.5520881896148753, 0.6220881896148753, 0.5470881896148753]
-    epochs_rvmerr_d = [0.029599372546365244, 0.027418757298598995, 0.07184297251288135]
-    epochs_rvperr_d = [0.06663649790036053, 0.03500000000000003, 0.03981527313195121]
+    epochs_rvmerr_d = [0.027692237516661833, 0.02644814646131144, 0.06944956188925638]
+    epochs_rvperr_d = [0.07042022207853338, 0.03500000000000003, 0.04099991814166137]
     epochs_Nexp_d = [8, 5, 3]
 
     allepochs = np.unique(np.concatenate([epochs_b,epochs_c,epochs_d]))
@@ -274,7 +274,7 @@ if 1:
 
     plt.gca().text(deltaRV_bc+0.001,1,"${0:.3f}".format(deltaRV_bc)+"^{+"+"{0:.3f}".format(deltaRV_bc_rCI-deltaRV_bc)+"}"+"_{-"+"{0:.3f}".format(deltaRV_bc-deltaRV_bc_lCI)+"}$",ha="center",va="bottom",rotation=0,size=fontsize,color="#003366")
     # plt.gca().text(deltaRV_bc-1,1.0,"${0:.1f}\pm {1:.1f}$ km/s".format(deltaRV_bc,deltaRV_bc_sig),ha="left",va="bottom",rotation=0,size=fontsize,color="#003366")
-    plt.plot(drvsampling,delta_bc_posterior,linestyle="-",linewidth=3,color="#0099cc",label="Data ($RV_b-RV_c$)")
+    plt.plot(drvsampling,delta_bc_posterior,linestyle="-",linewidth=3,color="#0099cc",label="Data ($[C/O]_b-[C/O]_c$)")
 
 
     delta_dc_posterior = np.correlate(posterior_d,posterior_c,mode="same")
@@ -284,12 +284,12 @@ if 1:
 
     plt.gca().text(deltaRV_dc+0.001,1,"${0:.3f}".format(deltaRV_dc)+"^{+"+"{0:.3f}".format(deltaRV_dc_rCI-deltaRV_dc)+"}"+"_{-"+"{0:.3f}".format(deltaRV_dc-deltaRV_dc_lCI)+"}$",ha="center",va="bottom",rotation=0,size=fontsize,color="#660066")
     # plt.gca().text(deltaRV_dc-1,1.0,"${0:.1f}\pm {1:.1f}$ km/s".format(deltaRV_dc,deltaRV_dc_sig),ha="left",va="bottom",rotation=0,size=fontsize,color="#660066")
-    plt.plot(drvsampling,delta_dc_posterior,linestyle="-",linewidth=3,color="#6600ff",label="Data ($RV_d-RV_c$)")
+    plt.plot(drvsampling,delta_dc_posterior,linestyle="-",linewidth=3,color="#6600ff",label="Data ($[C/O]_d-[C/O]_c$)")
 
     plt.xlim([-0.1,0.1])
     plt.ylim([0,1.1])
-    plt.xlabel(r"$RV_{[b,d]}-RV_c$ (km/s)",fontsize=fontsize)
-    plt.ylabel("$\propto \mathcal{P}(RV_b-RV_c|d)$",fontsize=fontsize)
+    plt.xlabel(r"$[C/O]_{[b,d]}-[C/O]_c$ (km/s)",fontsize=fontsize)
+    plt.ylabel("$\propto \mathcal{P}([C/O]_b-[C/O]_c|d)$",fontsize=fontsize)
     plt.gca().spines["right"].set_visible(False)
     plt.gca().spines["top"].set_visible(False)
     plt.gca().spines["left"].set_position(("data",0))

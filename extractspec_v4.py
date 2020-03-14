@@ -38,10 +38,10 @@ if __name__ == "__main__":
         pass
 
     out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
-    # planet = "kap_And"
+    planet = "kap_And"
     # planet = "HR_8799_b"
     # planet = "HR_8799_c"
-    planet = "HR_8799_d"
+    # planet = "HR_8799_d"
     # date = "2010*"
     cutoff = 40
     fontsize = 12
@@ -560,7 +560,10 @@ if __name__ == "__main__":
         _,model_spec = LPFvsHPF(planet_model,40)
         # plt.plot(bincenter,model_spec*np.nansum(final_spec*model_spec)/np.nansum(model_spec*model_spec),color="black",linestyle="-",label="model")
 
-        for it, resnumbasis in enumerate([10]):#np.arange(0,10):#[0,1,2]:
+        pca_list = [10]
+        ax1 = []
+        ax2 = []
+        for it, resnumbasis in enumerate(pca_list):#np.arange(0,10):#[0,1,2]:
             # filename = os.path.join(out_pngs,planet+"_spec_"+"trans"+"_kl{0}.fits".format(resnumbasis))
             # with pyfits.open(filename) as hdulist:
             #     transmission = hdulist[0].data
@@ -601,7 +604,11 @@ if __name__ == "__main__":
 
             nl = np.size(final_spec)
             for sp_id in range(2):
-                plt.subplot2grid((5*2,1),(5*sp_id,0),rowspan=2)
+                if it ==0:
+                    plt.subplot2grid((5*2,1),(5*sp_id,0),rowspan=2)
+                    ax1.append(plt.gca())
+                else:
+                    plt.sca(ax1[sp_id])
                 plt.plot(bincenter[sp_id*(nl//2):(sp_id+1)*(nl//2)],
                          final_spec[sp_id*(nl//2):(sp_id+1)*(nl//2)],
                          linestyle="-",label="data ({0} PCs)".format(resnumbasis),color=color) #["#0099cc","#ff9900","#6600ff"]
@@ -613,30 +620,36 @@ if __name__ == "__main__":
 
                 final_model = (final_model*np.nansum(final_model*final_spec)/np.nansum(final_model**2))
                 # final_model2 = (final_model2*np.nansum(final_model2*final_spec)/np.nansum(final_model2**2))
-                plt.plot(bincenter[sp_id*(nl//2):(sp_id+1)*(nl//2)],
-                         final_model[sp_id*(nl//2):(sp_id+1)*(nl//2)],
-                         linestyle="-",color="black",label="model")
-                # plt.plot(bincenter[sp_id*(nl//4):(sp_id+1)*(nl//4)],
-                #          final_model2[sp_id*(nl//4):(sp_id+1)*(nl//4)],
-                #          linestyle="--",color="grey",label="model from grid")
-                plt.gca().tick_params(axis='y', labelsize=fontsize)
-                plt.ylim([-0.1,0.1])
-                # plt.ylim([-2,2])
-                if sp_id==0:
-                    plt.legend(loc="lower right",frameon=True,fontsize=fontsize)
+                if it+1 ==len(pca_list):
+                    plt.plot(bincenter[sp_id*(nl//2):(sp_id+1)*(nl//2)],
+                             final_model[sp_id*(nl//2):(sp_id+1)*(nl//2)],
+                             linestyle="-",color="black",label="model")
+                    # plt.plot(bincenter[sp_id*(nl//4):(sp_id+1)*(nl//4)],
+                    #          final_model2[sp_id*(nl//4):(sp_id+1)*(nl//4)],
+                    #          linestyle="--",color="grey",label="model from grid")
+                    plt.gca().tick_params(axis='y', labelsize=fontsize)
+                    # plt.ylim([-0.1,0.1])
+                    plt.ylim([-1,1])
+                    if sp_id==0:
+                        plt.legend(loc="lower right",frameon=True,fontsize=fontsize)
 
-                plt.subplot2grid((5*2,1),(5*sp_id+2,0),rowspan=2)
+
+                if it ==0:
+                    plt.subplot2grid((5*2,1),(5*sp_id+2,0),rowspan=2)
+                    ax2.append(plt.gca())
+                else:
+                    plt.sca(ax2[sp_id])
                 plt.plot(bincenter[sp_id*(nl//2):(sp_id+1)*(nl//2)],
                          final_spec[sp_id*(nl//2):(sp_id+1)*(nl//2)]-final_model[sp_id*(nl//2):(sp_id+1)*(nl//2)],
-                         linestyle="-",color="grey",label="residuals")
+                         linestyle="-",label="residuals",color="grey")
                 # plt.plot(bincenter[sp_id*(nl//4):(sp_id+1)*(nl//4)],
                 #          final_spec[sp_id*(nl//4):(sp_id+1)*(nl//4)]-final_model2[sp_id*(nl//4):(sp_id+1)*(nl//4)],
                 #          linestyle="--",color="grey")
                 plt.xlabel(r"$\lambda$ ($\mu$m)",fontsize=fontsize)
                 plt.gca().tick_params(axis='x', labelsize=fontsize)
                 plt.gca().tick_params(axis='y', labelsize=fontsize)
-                plt.ylim([-0.1,0.1])
-                # plt.ylim([-2,2])
+                # plt.ylim([-0.1,0.1])
+                plt.ylim([-0.5,0.5])
                 if sp_id==0:
                     plt.legend(loc="lower right",frameon=True,fontsize=fontsize)
 
@@ -653,6 +666,7 @@ if __name__ == "__main__":
                 plt.gca().spines["top"].set_visible(False)
                 plt.gca().spines["bottom"].set_visible(False)
                 plt.gca().patch.set_alpha(0)
+        # plt.show()
         # plt.plot(bincenter,final_model_notrans,linestyle="-",color="grey",label="{0}: final_model_notrans".format(resnumbasis))
         plt.tight_layout()
         f1.subplots_adjust(wspace=0,hspace=0)
