@@ -145,7 +145,7 @@ if __name__ == "__main__":
 
 
     fitT_list = np.linspace(900,1200,12,endpoint=True)
-    fitlogg_list = np.linspace(-4.5,-3,30,endpoint=True)
+    fitlogg_list = np.linspace(3,4.5,30,endpoint=True)
     fitCtoO_list = np.linspace(10**(8.48 - 8.82),10**(8.33 - 8.51),40,endpoint=True)
     # fitT_list = np.linspace(900,1200,3,endpoint=True)
     # fitlogg_list = np.linspace(-4.5,-3,3,endpoint=True)
@@ -191,7 +191,7 @@ if __name__ == "__main__":
         # gridconv_filelist = gridconv_filelist[::10]
 
         Tlist = np.array([int(float(os.path.basename(grid_filename).split("lte")[-1].split("-")[0])*100) for grid_filename in grid_filelist])
-        logglist = np.array([-float(os.path.basename(grid_filename).split("-")[1]) for grid_filename in grid_filelist])
+        logglist = np.array([float(os.path.basename(grid_filename).split("-")[1]) for grid_filename in grid_filelist])
         Clist = np.array([float(os.path.basename(grid_filename).split("C=")[-1].split("_O")[0]) for grid_filename in grid_filelist])
         Olist = np.array([float(os.path.basename(grid_filename).split("O=")[-1].split("_gs")[0]) for grid_filename in grid_filelist])
         CtoOlist = 10**(Clist-Olist)
