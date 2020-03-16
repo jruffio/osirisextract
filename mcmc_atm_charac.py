@@ -109,8 +109,10 @@ if __name__ == "__main__":
     print(len(sys.argv))
     if len(sys.argv) == 1:
         osiris_data_dir = "/data/osiris_data/"
-        IFSfilter = "Kbb"
-        planet = "HR_8799_d"
+        # IFSfilter = "Kbb"
+        # planet = "HR_8799_d"
+        IFSfilter = "Hbb"
+        planet = "HR_8799_b"
         scale = "*"
         date = "*"
         inputDir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/"
@@ -456,7 +458,7 @@ if __name__ == "__main__":
             for paras_id,out in zip(parasidlist,outlist):
                 temp_id,fitlogg_id,CtoO_id = paras_id
                 logpost[temp_id,fitlogg_id,CtoO_id,:] = out
-        specpool.close()
+        # specpool.close()
 
         # print(logpost.shape)
         # import matplotlib.pyplot as plt
