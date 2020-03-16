@@ -443,6 +443,7 @@ if __name__ == "__main__":
         speclist_list.append(planet_template_func_list[(N_chunks-1)*chunk_size:len(planet_template_func_list)])
 
         specpool = mp.Pool(processes=numthreads)
+        print("starting paral")
         outputs_list = specpool.map(get_rv_logpost, zip(speclist_list,
                                                         itertools.repeat(planetRV_array),
                                                         itertools.repeat(star_flux),
@@ -454,8 +455,11 @@ if __name__ == "__main__":
                                                         itertools.repeat(sigmas_vec),
                                                         itertools.repeat(where_finite_data),
                                                         itertools.repeat(ravelHPFdata)))
-        for parasidlist,outlist in zip(parasidlist_list,outputs_list):
+        print("done paral. retrieving results")
+        for myid,(parasidlist,outlist) in enumerate(zip(parasidlist_list,outputs_list)):
+            print("myid",myid)
             for paras_id,out in zip(parasidlist,outlist):
+                print(paras_id)
                 temp_id,fitlogg_id,CtoO_id = paras_id
                 logpost[temp_id,fitlogg_id,CtoO_id,:] = out
         # specpool.close()
@@ -468,17 +472,23 @@ if __name__ == "__main__":
         #             plt.plot(planetRV_array0,np.exp(logpost[temp_id,fitlogg_id,CtoO_id,:]-np.max(logpost)))
         # plt.show()
 
+        print("creating path")
         if not os.path.exists(os.path.join(os.path.dirname(filename),outputfolder)):
             os.makedirs(os.path.join(os.path.dirname(filename),outputfolder))
+        print("1")
         hdulist = pyfits.HDUList()
         hdulist.append(pyfits.PrimaryHDU(data=logpost))
         hdulist.append(pyfits.ImageHDU(data=fitT_list))
         hdulist.append(pyfits.ImageHDU(data=fitlogg_list))
         hdulist.append(pyfits.ImageHDU(data=fitCtoO_list))
         hdulist.append(pyfits.ImageHDU(data=planetRV_array0))
+        print("2")
         out = os.path.join(os.path.dirname(filename),outputfolder,os.path.basename(filename).replace(".fits","_kl{0}_logpost.fits".format((N_kl))))
+        print("saving" + out)
         try:
             hdulist.writeto(out, overwrite=True)
         except TypeError:
             hdulist.writeto(out, clobber=True)
+        print("3")
         hdulist.close()
+        print("4")
