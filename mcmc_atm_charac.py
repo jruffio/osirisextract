@@ -13,6 +13,71 @@ import os
 import csv
 from scipy.interpolate import interp1d
 from scipy.interpolate import RegularGridInterpolator
+import ctypes
+
+def _arraytonumpy(shared_array, shape=None, dtype=None):
+    """
+    Covert a shared array to a numpy array
+    Args:
+        shared_array: a multiprocessing.Array array
+        shape: a shape for the numpy array. otherwise, will assume a 1d array
+        dtype: data type of the arrays. Should be either ctypes.c_float(default) or ctypes.c_double
+
+    Returns:
+        numpy_array: numpy array for vectorized operation. still points to the same memory!
+                     returns None is shared_array is None
+    """
+    if dtype is None:
+        dtype = ctypes.c_float
+
+    # if you passed in nothing you get nothing
+    if shared_array is None:
+        return None
+
+    numpy_array = np.frombuffer(shared_array.get_obj(), dtype=dtype)
+    if shape is not None:
+        numpy_array.shape = shape
+
+    return numpy_array
+
+def _tpool_init(original_imgs,sigmas_imgs,badpix_imgs,originalLPF_imgs,originalHPF_imgs, original_imgs_shape, output_maps, output_maps_shape,
+                wvs_imgs,psfs_stamps,psfs_stamps_shape,_outres,_outres_shape,_outautocorrres,_outautocorrres_shape,persistence_imgs,_out1dfit,_out1dfit_shape,_estispec,_estispec_shape):
+    """
+    Initializer function for the thread pool that initializes various shared variables. Main things to note that all
+    except the shapes are shared arrays (mp.Array).
+
+    Args:
+    """
+    global original,sigmas,badpix,originalLPF,originalHPF, original_shape, output, output_shape, lambdas, img_center, \
+        psfs, psfs_shape, Npixproc, Npixtot,outres,outres_shape,outautocorrres,outautocorrres_shape,persistence,out1dfit,out1dfit_shape,estispec,estispec_shape
+    # original images from files to read and align&scale. Shape of (N,y,x)
+    original = original_imgs
+    sigmas = sigmas_imgs
+    badpix = badpix_imgs
+    originalLPF = originalLPF_imgs
+    originalHPF = originalHPF_imgs
+    original_shape = original_imgs_shape
+    # output images after KLIP processing (amplitude and ...) (5, y, x)
+    output = output_maps
+    output_shape = output_maps_shape
+    outres = _outres
+    outres_shape = _outres_shape
+    outautocorrres = _outautocorrres
+    outautocorrres_shape = _outautocorrres_shape
+    out1dfit_shape = _out1dfit_shape
+    estispec_shape = _estispec_shape
+
+    out1dfit = _out1dfit
+    estispec = _estispec
+    persistence = persistence_imgs
+
+    # parameters for each image (PA, wavelegnth, image center, image number)
+    lambdas = wvs_imgs
+    psfs = psfs_stamps
+    psfs_shape = psfs_stamps_shape
+    Npixproc= 0
+    Npixtot=0
+
 
 def LPFvsHPF(myvec,cutoff,nansmooth=10):
     myvec_cp = copy(myvec)
@@ -360,7 +425,8 @@ if __name__ == "__main__":
         for out in outputs_list:
             normalized_psfs_func_list.extend(out[1])
             chunks_ids.append(out[0])
-        specpool.close()
+        # specpool.close()
+        # specpool.join()
 
         dx,dy = 0,0
         nospec_planet_model = np.zeros(HPFdata.shape)
@@ -432,6 +498,15 @@ if __name__ == "__main__":
         # print(len(paras_id_list))
         # exit()
 
+        ##############################
+        ## INIT threads and shared memory
+        ##############################
+        # planetRV_array,star_flux,cutoff,logdet_Sigma,transmission_vec,nospec_planet_model,wvs,sigmas_vec,where_finite_data,ravelHPFdata
+        # tpool = mp.Pool(processes=numthreads, initializer=_tpool_init,
+        #                 initargs=(original_imgs,sigmas_imgs,badpix_imgs,originalLPF_imgs,originalHPF_imgs, original_imgs_shape, output_maps,
+        #                           output_maps_shape,wvs_imgs,psfs_stamps, psfs_stamps_shape,outres,outres_shape,outautocorrres,outautocorrres_shape,persistence_imgs,out1dfit,out1dfit_shape,estispec,estispec_shape),
+        #                 maxtasksperchild=50)
+
         chunk_size=200
         N_chunks = len(planet_template_func_list)//chunk_size
         parasidlist_list = []
@@ -442,7 +517,7 @@ if __name__ == "__main__":
         parasidlist_list.append(paras_id_list[(N_chunks-1)*chunk_size:len(planet_template_func_list)])
         speclist_list.append(planet_template_func_list[(N_chunks-1)*chunk_size:len(planet_template_func_list)])
 
-        specpool = mp.Pool(processes=numthreads)
+        # specpool = mp.Pool(processes=numthreads)
         print("starting paral")
         outputs_list = specpool.map(get_rv_logpost, zip(speclist_list,
                                                         itertools.repeat(planetRV_array),
