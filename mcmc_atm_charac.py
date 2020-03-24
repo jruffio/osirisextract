@@ -41,16 +41,16 @@ def _arraytonumpy(shared_array, shape=None, dtype=None):
 
     return numpy_array
 
-def _tpool_init(_transmission_vec,_nospec_planet_model,_wvs,_sigmas_vec,_where_finite_data,_ravelHPFdata,
-                _transmission_vec_shape,_nospec_planet_model_shape,_wvs_shape,_sigmas_vec_shape,_where_finite_data_shape,_ravelHPFdata_shape):
+def _tpool_init(_transmission_vec,_nospec_planet_model,_wvs,_sigmas_vec,_where_finite_data,_ravelHPFdata,_oriplanet_spec_wvs,
+                _transmission_vec_shape,_nospec_planet_model_shape,_wvs_shape,_sigmas_vec_shape,_where_finite_data_shape,_ravelHPFdata_shape,_oriplanet_spec_wvs_shape):
     """
     Initializer function for the thread pool that initializes various shared variables. Main things to note that all
     except the shapes are shared arrays (mp.Array).
 
     Args:
     """
-    global transmission_vec,nospec_planet_model,wvs,sigmas_vec,where_finite_data,ravelHPFdata,transmission_vec_shape,nospec_planet_model_shape,wvs_shape,sigmas_vec_shape,where_finite_data_shape,ravelHPFdata_shape
-
+    global transmission_vec,nospec_planet_model,wvs,sigmas_vec,where_finite_data,ravelHPFdata,oriplanet_spec_wvs, \
+        transmission_vec_shape,nospec_planet_model_shape,wvs_shape,sigmas_vec_shape,where_finite_data_shape,ravelHPFdata_shape,oriplanet_spec_wvs_shape
     # original images from files to read and align&scale. Shape of (N,y,x)
     transmission_vec=_transmission_vec
     nospec_planet_model=_nospec_planet_model
@@ -58,12 +58,15 @@ def _tpool_init(_transmission_vec,_nospec_planet_model,_wvs,_sigmas_vec,_where_f
     sigmas_vec=_sigmas_vec
     where_finite_data=_where_finite_data
     ravelHPFdata=_ravelHPFdata
+    oriplanet_spec_wvs=_oriplanet_spec_wvs
+
     transmission_vec_shape=_transmission_vec_shape
     nospec_planet_model_shape=_nospec_planet_model_shape
     wvs_shape=_wvs_shape
     sigmas_vec_shape=_sigmas_vec_shape
     where_finite_data_shape=_where_finite_data_shape
     ravelHPFdata_shape=_ravelHPFdata_shape
+    oriplanet_spec_wvs_shape=_oriplanet_spec_wvs_shape
 
 
 def LPFvsHPF(myvec,cutoff,nansmooth=10):
@@ -97,11 +100,12 @@ def _spline_psf_model(paras):
 
 
 def get_rv_logpost(paras):
-    global transmission_vec,nospec_planet_model,wvs,sigmas_vec,where_finite_data,ravelHPFdata,\
-        transmission_vec_shape,nospec_planet_model_shape,wvs_shape,sigmas_vec_shape,where_finite_data_shape,ravelHPFdata_shape
-    planet_template_func_list,planetRV_array,star_flux,cutoff,logdet_Sigma= paras
+    global transmission_vec,nospec_planet_model,wvs,sigmas_vec,where_finite_data,ravelHPFdata,oriplanet_spec_wvs, \
+        transmission_vec_shape,nospec_planet_model_shape,wvs_shape,sigmas_vec_shape,where_finite_data_shape,ravelHPFdata_shape,oriplanet_spec_wvs_shape
+    paras_list,myinterpgrid,planetRV_array,star_flux,cutoff,logdet_Sigma= paras
 
 
+    oriplanet_spec_wvs_np =  _arraytonumpy(oriplanet_spec_wvs, oriplanet_spec_wvs_shape,dtype=dtype)
     transmission_vec_np = _arraytonumpy(transmission_vec, transmission_vec_shape,dtype=dtype)
     nospec_planet_model_np = _arraytonumpy(nospec_planet_model, nospec_planet_model_shape,dtype=dtype)
     wvs_np = _arraytonumpy(wvs, wvs_shape,dtype=dtype)
@@ -109,10 +113,12 @@ def get_rv_logpost(paras):
     where_finite_data_np = _arraytonumpy(where_finite_data, where_finite_data_shape,dtype=np.int)
     ravelHPFdata_np = _arraytonumpy(ravelHPFdata, ravelHPFdata_shape,dtype=dtype)
 
-    logpost_rv = np.zeros((len(planet_template_func_list),np.size(planetRV_array)))
-    for temp_id,planet_template_func in enumerate(planet_template_func_list):
+    logpost_rv = np.zeros((len(paras_list),np.size(planetRV_array)))
+    for temp_id,(temp,fitlogg,CtoO) in enumerate(paras_list):
         w = int((nospec_planet_model_np.shape[0]-1)/2)
         c_kms = 299792.458
+        # print(temp,fitlogg,CtoO)
+        planet_template_func = interp1d(oriplanet_spec_wvs,myinterpgrid([temp,fitlogg,CtoO])[0],bounds_error=False,fill_value=np.nan)
 
         for plrv_id,plrv in enumerate(planetRV_array):
             planet_model = copy(nospec_planet_model_np)
@@ -147,6 +153,7 @@ def get_rv_logpost(paras):
             # print(HPFmodel.shape,ravelHPFdata.shape)
             HPFparas,HPFchi2,rank,s = np.linalg.lstsq(HPFmodel,ravelHPFdata_np,rcond=None)
             # print(HPFparas)
+            # print(HPFparas.shape)
             # exit()
             data_model = np.dot(HPFmodel,HPFparas)
             ravelresiduals = ravelHPFdata_np-data_model
@@ -486,13 +493,15 @@ if __name__ == "__main__":
         HPFmodel_H0 = HPFmodel_H0[where_finite_data[0],:]/sigmas_vec[:,None]
 
         paras_id_list = []
-        planet_template_func_list = []
+        paras_list = []
+        # planet_template_func_list = []
         for temp_id, temp in enumerate(fitT_list):
             for fitlogg_id,fitlogg in enumerate(fitlogg_list):
                 for CtoO_id,CtoO in enumerate(fitCtoO_list):
                     paras_id_list.append((temp_id,fitlogg_id,CtoO_id))
-                    planet_template_func = interp1d(oriplanet_spec_wvs,myinterpgrid([temp,fitlogg,CtoO])[0],bounds_error=False,fill_value=np.nan)
-                    planet_template_func_list.append(planet_template_func)
+                    paras_list.append((temp,fitlogg,CtoO))
+                    # planet_template_func = interp1d(oriplanet_spec_wvs,myinterpgrid([temp,fitlogg,CtoO])[0],bounds_error=False,fill_value=np.nan)
+                    # planet_template_func_list.append(planet_template_func)
 
                     # logpost[temp_id,fitlogg_id,CtoO_id,:] = get_rv_logpost((planet_template_func,planetRV_array,star_flux,cutoff,logdet_Sigma,transmission_vec,nospec_planet_model,wvs,sigmas_vec,where_finite_data,ravelHPFdata))
 
@@ -546,29 +555,38 @@ if __name__ == "__main__":
         ravelHPFdata_np = _arraytonumpy(_ravelHPFdata, _ravelHPFdata_shape,dtype=dtype)
         ravelHPFdata_np[:] = ravelHPFdata[:]
 
+        _oriplanet_spec_wvs = mp.Array(dtype, np.size(oriplanet_spec_wvs))
+        _oriplanet_spec_wvs_shape = oriplanet_spec_wvs.shape
+        oriplanet_spec_wvs_np = _arraytonumpy(_oriplanet_spec_wvs, _oriplanet_spec_wvs_shape,dtype=dtype)
+        oriplanet_spec_wvs_np[:] = oriplanet_spec_wvs[:]
+
         # planetRV_array,star_flux,cutoff,logdet_Sigma
         tpool = mp.Pool(processes=numthreads, initializer=_tpool_init,
-                        initargs=(_transmission_vec,_nospec_planet_model,_wvs,_sigmas_vec,_where_finite_data,_ravelHPFdata,
-                _transmission_vec_shape,_nospec_planet_model_shape,_wvs_shape,_sigmas_vec_shape,_where_finite_data_shape,_ravelHPFdata_shape),
+                        initargs=(_transmission_vec,_nospec_planet_model,_wvs,_sigmas_vec,_where_finite_data,_ravelHPFdata,_oriplanet_spec_wvs,
+                _transmission_vec_shape,_nospec_planet_model_shape,_wvs_shape,_sigmas_vec_shape,_where_finite_data_shape,_ravelHPFdata_shape,_oriplanet_spec_wvs_shape),
                         maxtasksperchild=50)
 
         chunk_size=200
-        N_chunks = len(planet_template_func_list)//chunk_size
+        N_chunks = len(paras_id_list)//chunk_size
         parasidlist_list = []
+        paraslist_list = []
         speclist_list = []
         for k in range(N_chunks-1):
             parasidlist_list.append(paras_id_list[k*chunk_size:(k+1)*chunk_size])
-            speclist_list.append(planet_template_func_list[k*chunk_size:(k+1)*chunk_size])
-        parasidlist_list.append(paras_id_list[(N_chunks-1)*chunk_size:len(planet_template_func_list)])
-        speclist_list.append(planet_template_func_list[(N_chunks-1)*chunk_size:len(planet_template_func_list)])
+            paraslist_list.append(paras_list[k*chunk_size:(k+1)*chunk_size])
+            # speclist_list.append(planet_template_func_list[k*chunk_size:(k+1)*chunk_size])
+        parasidlist_list.append(paras_id_list[(N_chunks-1)*chunk_size:len(paras_id_list)])
+        paraslist_list.append(paras_list[(N_chunks-1)*chunk_size:len(paras_id_list)])
+        # speclist_list.append(planet_template_func_list[(N_chunks-1)*chunk_size:len(planet_template_func_list)])
 
         print("starting paral")
-        # _tpool_init(_transmission_vec,_nospec_planet_model,_wvs,_sigmas_vec,_where_finite_data,_ravelHPFdata,
-        #         _transmission_vec_shape,_nospec_planet_model_shape,_wvs_shape,_sigmas_vec_shape,_where_finite_data_shape,_ravelHPFdata_shape)
-        # out = get_rv_logpost(([speclist_list[0][0],speclist_list[-1][-1]],planetRV_array,star_flux,cutoff,logdet_Sigma))
+        # _tpool_init(_transmission_vec,_nospec_planet_model,_wvs,_sigmas_vec,_where_finite_data,_ravelHPFdata,_oriplanet_spec_wvs,
+        #         _transmission_vec_shape,_nospec_planet_model_shape,_wvs_shape,_sigmas_vec_shape,_where_finite_data_shape,_ravelHPFdata_shape,_oriplanet_spec_wvs_shape)
+        # out = get_rv_logpost(([paraslist_list[0][0],paraslist_list[-1][-1]],myinterpgrid,planetRV_array,star_flux,cutoff,logdet_Sigma))
         # print(out)
         # exit()
-        outputs_list = tpool.map(get_rv_logpost, zip(speclist_list,
+        outputs_list = tpool.map(get_rv_logpost, zip(paraslist_list,
+                                                        itertools.repeat(myinterpgrid),
                                                         itertools.repeat(planetRV_array),
                                                         itertools.repeat(star_flux),
                                                         itertools.repeat(cutoff),
