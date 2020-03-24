@@ -214,7 +214,7 @@ if __name__ == "__main__":
         IFSfilter = filename.split("_")[-2]
         planet = filename.split(os.path.sep)[3]
         # date = os.path.basename(filename).split("_")[0].replace("s","")
-
+        
 
     fitT_list = np.linspace(900,1200,12,endpoint=True)
     fitlogg_list = np.linspace(3,4.5,30,endpoint=True)
