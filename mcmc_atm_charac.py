@@ -213,7 +213,7 @@ if __name__ == "__main__":
     fitlogg_list = np.linspace(3,4.5,30,endpoint=True)
     fitCtoO_list = np.linspace(10**(8.48 - 8.82),10**(8.33 - 8.51),40,endpoint=True)
     # fitT_list = np.linspace(900,1200,3,endpoint=True)
-    # fitlogg_list = np.linspace(-4.5,-3,3,endpoint=True)
+    # fitlogg_list = np.linspace(3,4.5,3,endpoint=True)
     # fitCtoO_list = np.linspace(10**(8.48 - 8.82),10**(8.33 - 8.51),4,endpoint=True)
     # fitT_list = np.arange(900,1200,50)
     # fitlogg_list = np.arange(-4.5,-3,0.25)
