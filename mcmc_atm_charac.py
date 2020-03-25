@@ -560,44 +560,50 @@ if __name__ == "__main__":
         oriplanet_spec_wvs_np = _arraytonumpy(_oriplanet_spec_wvs, _oriplanet_spec_wvs_shape,dtype=dtype)
         oriplanet_spec_wvs_np[:] = oriplanet_spec_wvs[:]
 
-        # planetRV_array,star_flux,cutoff,logdet_Sigma
-        tpool = mp.Pool(processes=numthreads, initializer=_tpool_init,
-                        initargs=(_transmission_vec,_nospec_planet_model,_wvs,_sigmas_vec,_where_finite_data,_ravelHPFdata,_oriplanet_spec_wvs,
-                _transmission_vec_shape,_nospec_planet_model_shape,_wvs_shape,_sigmas_vec_shape,_where_finite_data_shape,_ravelHPFdata_shape,_oriplanet_spec_wvs_shape),
-                        maxtasksperchild=50)
-
-        chunk_size=200
-        N_chunks = len(paras_id_list)//chunk_size
-        parasidlist_list = []
-        paraslist_list = []
-        speclist_list = []
-        for k in range(N_chunks-1):
-            parasidlist_list.append(paras_id_list[k*chunk_size:(k+1)*chunk_size])
-            paraslist_list.append(paras_list[k*chunk_size:(k+1)*chunk_size])
-            # speclist_list.append(planet_template_func_list[k*chunk_size:(k+1)*chunk_size])
-        parasidlist_list.append(paras_id_list[(N_chunks-1)*chunk_size:len(paras_id_list)])
-        paraslist_list.append(paras_list[(N_chunks-1)*chunk_size:len(paras_id_list)])
-        # speclist_list.append(planet_template_func_list[(N_chunks-1)*chunk_size:len(planet_template_func_list)])
-
-        print("starting paral")
-        # _tpool_init(_transmission_vec,_nospec_planet_model,_wvs,_sigmas_vec,_where_finite_data,_ravelHPFdata,_oriplanet_spec_wvs,
-        #         _transmission_vec_shape,_nospec_planet_model_shape,_wvs_shape,_sigmas_vec_shape,_where_finite_data_shape,_ravelHPFdata_shape,_oriplanet_spec_wvs_shape)
-        # out = get_rv_logpost(([paraslist_list[0][0],paraslist_list[-1][-1]],myinterpgrid,planetRV_array,star_flux,cutoff,logdet_Sigma))
-        # print(out)
-        # exit()
-        outputs_list = tpool.map(get_rv_logpost, zip(paraslist_list,
-                                                        itertools.repeat(myinterpgrid),
-                                                        itertools.repeat(planetRV_array),
-                                                        itertools.repeat(star_flux),
-                                                        itertools.repeat(cutoff),
-                                                        itertools.repeat(logdet_Sigma)))
-        print("done paral. retrieving results")
-        for myid,(parasidlist,outlist) in enumerate(zip(parasidlist_list,outputs_list)):
-            print("myid",myid)
-            for paras_id,out in zip(parasidlist,outlist):
+        if numthreads==1:
+            _tpool_init(_transmission_vec,_nospec_planet_model,_wvs,_sigmas_vec,_where_finite_data,_ravelHPFdata,_oriplanet_spec_wvs,
+                    _transmission_vec_shape,_nospec_planet_model_shape,_wvs_shape,_sigmas_vec_shape,_where_finite_data_shape,_ravelHPFdata_shape,_oriplanet_spec_wvs_shape)
+            outlist = get_rv_logpost((paras_list,myinterpgrid,planetRV_array,star_flux,cutoff,logdet_Sigma))
+            for paras_id,out in zip(paras_id_list,outlist):
                 print(paras_id)
                 temp_id,fitlogg_id,CtoO_id = paras_id
                 logpost[temp_id,fitlogg_id,CtoO_id,:] = out
+        else:
+            # planetRV_array,star_flux,cutoff,logdet_Sigma
+            tpool = mp.Pool(processes=numthreads, initializer=_tpool_init,
+                            initargs=(_transmission_vec,_nospec_planet_model,_wvs,_sigmas_vec,_where_finite_data,_ravelHPFdata,_oriplanet_spec_wvs,
+                    _transmission_vec_shape,_nospec_planet_model_shape,_wvs_shape,_sigmas_vec_shape,_where_finite_data_shape,_ravelHPFdata_shape,_oriplanet_spec_wvs_shape),
+                            maxtasksperchild=50)
+
+            chunk_size=400
+            N_chunks = len(paras_id_list)//chunk_size
+            parasidlist_list = []
+            paraslist_list = []
+            speclist_list = []
+            for k in range(N_chunks-1):
+                parasidlist_list.append(paras_id_list[k*chunk_size:(k+1)*chunk_size])
+                paraslist_list.append(paras_list[k*chunk_size:(k+1)*chunk_size])
+                # speclist_list.append(planet_template_func_list[k*chunk_size:(k+1)*chunk_size])
+            parasidlist_list.append(paras_id_list[(N_chunks-1)*chunk_size:len(paras_id_list)])
+            paraslist_list.append(paras_list[(N_chunks-1)*chunk_size:len(paras_id_list)])
+            # speclist_list.append(planet_template_func_list[(N_chunks-1)*chunk_size:len(planet_template_func_list)])
+
+            print("starting paral")
+            # print(out)
+            # exit()
+            outputs_list = tpool.map(get_rv_logpost, zip(paraslist_list,
+                                                            itertools.repeat(myinterpgrid),
+                                                            itertools.repeat(planetRV_array),
+                                                            itertools.repeat(star_flux),
+                                                            itertools.repeat(cutoff),
+                                                            itertools.repeat(logdet_Sigma)))
+            print("done paral. retrieving results")
+            for myid,(parasidlist,outlist) in enumerate(zip(parasidlist_list,outputs_list)):
+                print("myid",myid)
+                for paras_id,out in zip(parasidlist,outlist):
+                    print(paras_id)
+                    temp_id,fitlogg_id,CtoO_id = paras_id
+                    logpost[temp_id,fitlogg_id,CtoO_id,:] = out
         #
 
         # print(logpost.shape)
@@ -628,6 +634,7 @@ if __name__ == "__main__":
         print("3")
         hdulist.close()
         print("4")
-        tpool.close()
-        tpool.join()
+        if numthreads!=1:
+            tpool.close()
+            tpool.join()
         print("5")
