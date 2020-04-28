@@ -286,7 +286,7 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
                             transmission4planet_list,
                             hr8799_flux,
                             wvs,planetRV_array,dtype,cutoff,planet_search,centroid_guess,
-                            R_list,numbasis_list,wvsol_offsets,R_calib_arr=None,model_persistence=False,res4model_kl=None,lpf_res_calib=None,fake_paras=None,outputdir=None,filename=None):
+                            R_list,numbasis_list,wvsol_offsets,R_calib_arr=None,model_persistence=False,res4model_kl=None,lpf_res_calib=None,fake_paras=None,outputdir=None,filename=None,inj_fake=None):
     global original,sigmas,badpix,originalLPF,originalHPF, original_shape, output, output_shape, lambdas, img_center, \
         psfs, psfs_shape, Npixproc, Npixtot,outres,outres_shape,outautocorrres,outautocorrres_shape,persistence,out1dfit,out1dfit_shape,estispec,estispec_shape
     original_np = _arraytonumpy(original, original_shape,dtype=dtype)
@@ -319,6 +319,12 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
             w = 4
             # w = 2
 
+        if inj_fake is not None:
+            if k > 64+5-20:
+                k = k-10
+            else:
+                k = k+10
+
         ###################################
         ## Extrac the data
         HPFdata = copy(originalHPF_np[k-w:k+w+1,l-w:l+w+1,:])
@@ -336,71 +342,76 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
         x_grid, y_grid = np.meshgrid(x_vec, y_vec)
         x_data_grid, y_data_grid = x_grid[k-w:k+w+1,l-w:l+w+1], y_grid[k-w:k+w+1,l-w:l+w+1]
 
+        if inj_fake is not None:
+            inj_fake_str = "_fk"
+        else:
+            inj_fake_str = ""
+
         if outputdir is not None: #_corrwvs _LPFdata _HPFdata _badpix _sigmas _trans _starspec _reskl _plrv0
             hdulist = pyfits.HDUList()
             hdulist.append(pyfits.PrimaryHDU(data=wvs[None,None,:]-data_wvsol_offsets[:,:,None]))
             try:
-                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_corrwvs.fits")), overwrite=True)
+                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_corrwvs"+inj_fake_str+".fits")), overwrite=True)
             except TypeError:
-                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_corrwvs.fits")), clobber=True)
+                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_corrwvs"+inj_fake_str+".fits")), clobber=True)
             hdulist.close()
             hdulist = pyfits.HDUList()
             hdulist.append(pyfits.PrimaryHDU(data=LPFdata))
             try:
-                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_LPFdata.fits")), overwrite=True)
+                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_LPFdata"+inj_fake_str+".fits")), overwrite=True)
             except TypeError:
-                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_LPFdata.fits")), clobber=True)
+                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_LPFdata"+inj_fake_str+".fits")), clobber=True)
             hdulist.close()
             hdulist = pyfits.HDUList()
             hdulist.append(pyfits.PrimaryHDU(data=HPFdata))
             try:
-                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_HPFdata.fits")), overwrite=True)
+                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_HPFdata"+inj_fake_str+".fits")), overwrite=True)
             except TypeError:
-                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_HPFdata.fits")), clobber=True)
+                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_HPFdata"+inj_fake_str+".fits")), clobber=True)
             hdulist.close()
             hdulist = pyfits.HDUList()
             hdulist.append(pyfits.PrimaryHDU(data=data_badpix))
             try:
-                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_badpix.fits")), overwrite=True)
+                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_badpix"+inj_fake_str+".fits")), overwrite=True)
             except TypeError:
-                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_badpix.fits")), clobber=True)
+                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_badpix"+inj_fake_str+".fits")), clobber=True)
             hdulist.close()
             hdulist = pyfits.HDUList()
             hdulist.append(pyfits.PrimaryHDU(data=data_sigmas))
             try:
-                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_sigmas.fits")), overwrite=True)
+                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_sigmas"+inj_fake_str+".fits")), overwrite=True)
             except TypeError:
-                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_sigmas.fits")), clobber=True)
+                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_sigmas"+inj_fake_str+".fits")), clobber=True)
             hdulist.close()
             hdulist = pyfits.HDUList()
             hdulist.append(pyfits.PrimaryHDU(data=transmission4planet_list[0](wvs)))
             try:
-                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_trans.fits")), overwrite=True)
+                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_trans"+inj_fake_str+".fits")), overwrite=True)
             except TypeError:
-                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_trans.fits")), clobber=True)
+                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_trans"+inj_fake_str+".fits")), clobber=True)
             hdulist.close()
             hdulist = pyfits.HDUList()
             HR8799_obsspec = transmission4planet_list[0](wvs)[None,None,:]*HR8799pho_spec_func_list[0](wvs[None,None,:]-data_wvsol_offsets[:,:,None])
             hdulist.append(pyfits.PrimaryHDU(data=HR8799_obsspec/np.nansum(HR8799_obsspec,axis=2)[:,:,None]*hr8799_flux))
             try:
-                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_starspec.fits")), overwrite=True)
+                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_starspec"+inj_fake_str+".fits")), overwrite=True)
             except TypeError:
-                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_starspec.fits")), clobber=True)
+                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_starspec"+inj_fake_str+".fits")), clobber=True)
             hdulist.close()
             hdulist = pyfits.HDUList()
             hdulist.append(pyfits.PrimaryHDU(data=res4model_kl))
             try:
-                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_reskl.fits")), overwrite=True)
+                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_reskl"+inj_fake_str+".fits")), overwrite=True)
             except TypeError:
-                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_reskl.fits")), clobber=True)
+                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_reskl"+inj_fake_str+".fits")), clobber=True)
             hdulist.close()
             hdulist = pyfits.HDUList()
             print(planetRV_array[0],planetRV_array)
             hdulist.append(pyfits.PrimaryHDU(data=planetRV_array))
             try:
-                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_plrv0.fits")), overwrite=True)
+                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_plrv0"+inj_fake_str+".fits")), overwrite=True)
             except TypeError:
-                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_plrv0.fits")), clobber=True)
+                hdulist.writeto(os.path.join(outputdir,os.path.basename(filename).replace(".fits","_plrv0"+inj_fake_str+".fits")), clobber=True)
             hdulist.close()
             return 0
 
@@ -751,7 +762,7 @@ if __name__ == "__main__":
     ##############################
     print(len(sys.argv))
     if len(sys.argv) == 1:
-        planet = "HR_8799_b"
+        # planet = "HR_8799_b"
         # date = "090722"
         # date = "090730"
         # date = "090903"
@@ -772,7 +783,7 @@ if __name__ == "__main__":
         # date = "110725"
         # date = "130726"
         # date = "171103"
-        # planet = "HR_8799_d"
+        planet = "HR_8799_d"
         # date = "150720"
         # date = "150722"
         # date = "150723"
@@ -783,24 +794,13 @@ if __name__ == "__main__":
         # planet = "kap_And"
         # date = "161106"
         date = "*"
+        # IFSfilter = "Kbb"
         IFSfilter = "Kbb"
-        # IFSfilter = "Hbb"
         # IFSfilter = "Jbb" # "Kbb" or "Hbb"
-        # scale = "020"
-        scale = "035"
+        scale = "020"
+        # scale = "035"
 
         inputDir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/"
-        # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190520_LPF/"
-        # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190906_HPF_restest2/"
-        # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190923_HPF_restest2/"
-        # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20191120_new_resmodel/"
-        # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20200214_gridtest_kl1/"
-        # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190305_HPF_only_noperscor/"
-        # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190228_mol_temp/"
-        # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20200309_model/"
-
-        # inputDir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb_pairsub/"
-        # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb_pairsub/20190228_HPF_only/"
 
         print(os.path.join(inputDir,"s"+date+"*"+IFSfilter+"_"+scale+".fits"))
         filelist = glob.glob(os.path.join(inputDir,"s"+date+"*"+IFSfilter+"_"+scale+".fits"))
@@ -812,6 +812,7 @@ if __name__ == "__main__":
         # filelist = filelist[4:]
         # filelist = filelist[len(filelist)-3:len(filelist)-2]
 
+        inj_fake = True
         res_numbasis = 15
         numthreads = 10
         planet_search = False
@@ -878,7 +879,8 @@ if __name__ == "__main__":
     for filename in filelist:
         print("Processing "+filename)
         inputDir = os.path.dirname(filename)
-        outputdir = os.path.join(inputDir,"20200309_model")
+        # outputdir = os.path.join(inputDir,"20200309_model")
+        outputdir = os.path.join(inputDir,"20200427_model_fk")
         date = os.path.basename(filename).split("_")[0].replace("s","")
         IFSfilter = filename.split("_")[-2]
         outputdir_res = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/sherlock/20191205_RV/"
@@ -1262,12 +1264,17 @@ if __name__ == "__main__":
                             wmod = out[:,0]/1e4
                             ori_planet_spec = 10**(out[:,1]-np.max(out[:,1]))
 
+                        # print(wvs[0],wvs[-1])
+                        # print(wmod[0],wmod[-1])
                         crop_wvs = np.where((wmod>wvs[0]-(wvs[-1]-wvs[0])/2)*(wmod<wvs[-1]+(wvs[-1]-wvs[0])/2))
                         wmod = wmod[crop_wvs]
                         ori_planet_spec = ori_planet_spec[crop_wvs]
                         print("convolving: "+grid_filename)
+                        # print(wvs[0],wvs[-1])
+                        # print(wmod[0],wmod[-1])
                         planet_convspec = convolve_spectrum(wmod,ori_planet_spec,R,specpool)
 
+                        # exit()
                         with open(gridconv_filename, 'w+') as csvfile:
                             csvwriter = csv.writer(csvfile, delimiter=' ')
                             csvwriter.writerows([["wvs","spectrum"]])
@@ -1721,5 +1728,6 @@ if __name__ == "__main__":
                                         wvs_imgs,planetRV_array,
                                         dtype,cutoff,planet_search,(plcen_k,plcen_l),
                                         R_list,
-                                        numbasis_list,wvsol_offsets,R_calib_arr,model_persistence=model_persistence,res4model_kl=res4model_kl,lpf_res_calib=lpf_res_calib,fake_paras=fake_paras,outputdir=outputdir,filename=filename)
+                                        numbasis_list,wvsol_offsets,R_calib_arr,model_persistence=model_persistence,res4model_kl=res4model_kl,lpf_res_calib=lpf_res_calib,fake_paras=fake_paras,outputdir=outputdir,filename=filename,
+                                        inj_fake=inj_fake)
                 # exit()

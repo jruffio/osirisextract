@@ -25,7 +25,7 @@ planet = "51_Eri_b"
 suffix = "KbbHbb"
 # suffix = "all"
 fontsize = 12
-resnumbasis = 0
+resnumbasis = 10
 # fileinfos_filename = "/data/osiris_data/"+planet+"/fileinfos_Kbb_jb.csv"
 if resnumbasis ==0:
     fileinfos_filename = "/data/osiris_data/"+planet+"/fileinfos_Kbb_jb.csv"
@@ -123,6 +123,7 @@ if 1:
 
     # test = []
     # test2 = []
+    cube_hd_list = []
     for k,item in enumerate(list_data):
         # if item[rvcen_id] == "nan":
         #     continue
@@ -138,8 +139,8 @@ if 1:
         # if "20190324_HPF_only" not in reducfilename:
         #     continue
         print(k,item)
-        # if "20190416" not in reducfilename:
-        #     continue
+        if "20171104" not in reducfilename:
+            continue
         # print(reducfilename)
         # reducfilename = item[cen_filename_id].replace("20190117_HPFonly","20190125_HPFonly").replace("sherlock_v0","sherlock_v1_search")
         # reducfilename = item[cen_filename_id].replace("20190117_HPFonly","20190125_HPFonly_cov").replace("sherlock_v0","sherlock_v1_search_empcov")
@@ -159,6 +160,7 @@ if 1:
             print("Not there")
             continue
         planetRV = hdulist[0].data
+
         if np.size(planetRV) > 1:
             NplanetRV_hd = np.where((planetRV[1::]-planetRV[0:(np.size(planetRV)-1)]) < 0)[0][0]+1
             planetRV_hd = hdulist[0].data[0:NplanetRV_hd]
@@ -177,6 +179,7 @@ if 1:
             offsets = np.nanmedian(cube_cp,axis=0)[None,:,:]
             cube_hd = cube_hd - offsets
             cube = cube - offsets
+            cube_hd_list.append(cube_hd)
 
             bary_rv = -float(item[bary_rv_id])/1000. # RV in km/s
             if "HR_8799" in reducfilename:
@@ -264,8 +267,17 @@ if 1:
             circle = plt.Circle((lcenref,kcenref),1,color="#ff9900", fill=False)
             ax.add_artist(circle)
         else:
-            xoffset0 = 0
-            yoffset0 = 0
+            xoffset0 = xoffset
+            yoffset0 = yoffset
+            lcenref = 9
+            kcenref = 30
+            seqref = sequence
+            circle = plt.Circle((lcenref,kcenref),3,color="#ff9900", fill=False)
+            ax.add_artist(circle)
+            circle = plt.Circle((lcenref,kcenref),1,color="#ff9900", fill=False)
+            ax.add_artist(circle)
+            # xoffset0 = 0
+            # yoffset0 = 0
 
     for ax in ax_list:
         plt.sca(ax)
@@ -290,6 +302,16 @@ if 1:
     # print("Saving "+os.path.join(out_pngs,"HR8799"+planet+"_"+suffix+"_images_tentativedetec.pdf"))
     # plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+suffix+"_images_tentativedetec.pdf"),bbox_inches='tight')
     # plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+suffix+"_images_tentativedetec.png"),bbox_inches='tight')
+
+
+    plt.figure(10)
+    rvcen = bary_rv + rv_star
+    cube_hd = np.nansum(np.array(cube_hd_list),axis=0)
+    zcen = np.argmin(np.abs(planetRV_hd-rvcen))
+    image = copy(cube_hd[zcen,:,:])
+    plt.imshow(image,interpolation="nearest",origin="lower")
+    # plt.clim([0,0])
+    plt.show()
     exit()
 
 # plot CCF

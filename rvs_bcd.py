@@ -94,7 +94,7 @@ if 1:
     epochs_b =  ['20100711', '20100712',  '20100713', '20130725', '20130726', '20130727', '20161106', '20161107' , '20161108', '20180722']
     epochs_rv_b =  [  -10.57920756, -12.35982049 , -3.71445932 , -9.53545184,  -8.44582097,  -9.05172061,   -8.23000863,  -9.71148301,  -3.23729904,  -6.21223367]
     epochs_rverr_b = [ 1.09404719, 1.14231799,  2.21445212 ,0.96492429, 1.34422894, 1.86751255, 2.23673811 ,1.45381564,  2.09713865, 1.29136631]
-    epochs_Nexp_b = [9, 9, 2, 16, 9, 5, 2, 3, 1, 6]
+    epochs_Nexp_b = [8100.0, 8100.0, 1800.0, 9600.0, 5400.0, 3000.0, 1200.0, 1800.0, 600.0, 1800.0]#[9, 9, 2, 16, 9, 5, 2, 3, 1, 6]
 
     # c
     # 0
@@ -130,7 +130,7 @@ if 1:
     epochs_c =  ['20100715' , '20101104' ,'20110723' ,'20110724', '20110725','20130726', '20171103']
     epochs_rv_c = [-11.83538564, -10.95940131, -10.04625721, -10.75684941,-11.01553684 ,-15.81194633,-10.47611131]
     epochs_rverr_c = [0.68949379 ,   0.75613354 ,1.31100169 ,2.08722546, 2.17375194, 3.64578072,  0.90622151]
-    epochs_Nexp_c = [17, 18, 10, 3, 5, 1, 5]
+    epochs_Nexp_c = [10200.0,10800.0, 6000.0, 1800.0, 3000.0, 600.0, 3000.0]#[17, 18, 10, 3, 5, 1, 5]
 
 
     # d
@@ -250,8 +250,9 @@ if 1:
             continue
         formated_date =  c[0:4]+"-"+c[4:6]+"-"+c[6:8]
         print("& {0} & ${1:.1f} \\pm {2:.1f}$ & {3} \\\\".format(formated_date,a,b,int(d)))
-    plt.errorbar(allepochs_rv_b,np.arange(np.size(allepochs)),xerr=allepochs_rverr_b,fmt="none",color="#0099cc")
-    plt.plot(allepochs_rv_b,np.arange(np.size(allepochs)),"x",color="#0099cc",label="b (# exposures)")
+    eb=plt.errorbar(allepochs_rv_b,np.arange(np.size(allepochs)),xerr=allepochs_rverr_b,fmt="none",color="#0099cc",label="b (# exposures)")
+    eb[-1][0].set_linestyle("-")
+    plt.plot(allepochs_rv_b,np.arange(np.size(allepochs)),"x",color="#0099cc")
     wherenotnans = np.where(np.isfinite(allepochs_rv_b))
     for y,(x,date,num) in enumerate(zip(allepochs_rv_b,allepochs,allepochs_Nexp_b)):
         if np.isfinite(x):
@@ -267,8 +268,9 @@ if 1:
             continue
         formated_date =  c[0:4]+"-"+c[4:6]+"-"+c[6:8]
         print("& {0} & ${1:.1f} \\pm {2:.1f}$ & {3} \\\\".format(formated_date,a,b,int(d)))
-    plt.errorbar(allepochs_rv_c,np.arange(np.size(allepochs)),xerr=allepochs_rverr_c,fmt="none",color="#ff9900")
-    plt.plot(allepochs_rv_c,np.arange(np.size(allepochs)),"x",color="#ff9900",label="c (# exposures)")
+    eb=plt.errorbar(allepochs_rv_c,np.arange(np.size(allepochs)),xerr=allepochs_rverr_c,fmt="none",color="#ff9900",label="c (# exposures)")
+    eb[-1][0].set_linestyle("--")
+    plt.plot(allepochs_rv_c,np.arange(np.size(allepochs)),"x",color="#ff9900")
     wherenotnans = np.where(np.isfinite(allepochs_rv_c))
     for y,(x,date,num) in enumerate(zip(allepochs_rv_c,allepochs,allepochs_Nexp_c)):
         if np.isfinite(x):
@@ -284,8 +286,9 @@ if 1:
             continue
         formated_date =  c[0:4]+"-"+c[4:6]+"-"+c[6:8]
         print("& {0} & ${1:.1f} \\pm {2:.1f}$ & {3} \\\\".format(formated_date,a,b,int(d)))
-    plt.errorbar(allepochs_rv_d,np.arange(np.size(allepochs)),xerr=allepochs_rverr_d,fmt="none",color="#6600ff")
-    plt.plot(allepochs_rv_d,np.arange(np.size(allepochs)),"x",color="#6600ff",label="d (# exposures)")
+    eb=plt.errorbar(allepochs_rv_d,np.arange(np.size(allepochs)),xerr=allepochs_rverr_d,fmt="none",color="#6600ff",label="d (# exposures)")
+    eb[-1][0].set_linestyle(":")
+    plt.plot(allepochs_rv_d,np.arange(np.size(allepochs)),"x",color="#6600ff")
     wherenotnans = np.where(np.isfinite(allepochs_rv_d))
     for y,(x,date,num) in enumerate(zip(allepochs_rv_d,allepochs,allepochs_Nexp_d)):
         if np.isfinite(x):
@@ -319,21 +322,21 @@ if 1:
     print(hdulist[0].data.shape)
     rvsampling, posterior_b = hdulist[0].data[0,:],hdulist[0].data[1,:]
     plt.gca().text(rv_b[2]+0.25,1,"${0:.1f}\pm {1:.1f}$ km/s".format(rv_b[2],rverr_b[2]),ha="left",va="bottom",rotation=0,size=fontsize,color="#003366")
-    plt.plot(rvsampling, posterior_b,linestyle="-",linewidth=3,color="#0099cc",label="b: Posterior")
+    plt.plot(rvsampling, posterior_b,linestyle="-",linewidth=3,color="#0099cc",label="b")
 
     myoutfilename = "RV_HR_8799_c_measurements.pdf"
     hdulist = pyfits.open(os.path.join(out_pngs,"HR_8799_c",myoutfilename.replace(".pdf","_posterior.fits")))
     print(hdulist[0].data.shape)
     rvsampling, posterior_c = hdulist[0].data[0,:],hdulist[0].data[1,:]
     plt.gca().text(rv_c[2]+0.25,1,"${0:.1f}\pm {1:.1f}$ km/s".format(rv_c[2],rverr_c[2]),ha="center",va="bottom",rotation=0,size=fontsize,color="#cc3300")
-    plt.plot(rvsampling, posterior_c,linestyle="-",linewidth=3,color="#ff9900",label="c: Posterior")
+    plt.plot(rvsampling, posterior_c,linestyle="--",linewidth=3,color="#ff9900",label="c")
 
     myoutfilename = "RV_HR_8799_d_measurements.pdf"
     hdulist = pyfits.open(os.path.join(out_pngs,"HR_8799_d",myoutfilename.replace(".pdf","_posterior.fits")))
     print(hdulist[0].data.shape)
     rvsampling, posterior_d = hdulist[0].data[0,:],hdulist[0].data[1,:]
     plt.gca().text(rv_d[2]+0.25,1,"${0:.1f}\pm {1:.1f}$ km/s".format(rv_d[2],rverr_d[2]),ha="center",va="bottom",rotation=0,size=fontsize,color="#330099")
-    plt.plot(rvsampling, posterior_d,linestyle="-",linewidth=3,color="#6600ff",label="d: Posterior")
+    plt.plot(rvsampling, posterior_d,linestyle=":",linewidth=3,color="#6600ff",label="d")
 
     plt.xlim([-20,0])
     plt.ylim([0,1.1])
@@ -382,7 +385,7 @@ if 1:
     # plt.plot(final_planetRV_hd,dRV_posterior,linestyle="-",linewidth=1,color="black") #9966ff
     plt.fill_between(rvsampling,
                      rv_bmc_post*0,
-                     rv_bmc_post,alpha=0.4,facecolor="none",edgecolor="#006699",label="Wang 2018 ($RV_b-RV_c$)",hatch="\\") # (Astrometry; bcde coplanar & stable)
+                     rv_bmc_post,alpha=0.4,facecolor="none",edgecolor="#006699",label="Wang et al. 2018 ($RV_b-RV_c$)",hatch="\\") # (Astrometry; bcde coplanar & stable)
     rv_dmc_list_data = np.concatenate([rv_dmc_list_data,-rv_dmc_list_data])
     rv_dmc_hist,bin_edges = np.histogram(rv_dmc_list_data,bins=200,range=[-20,20])
     rv_dmc_hist = rv_dmc_hist/np.max(rv_dmc_hist)
@@ -391,7 +394,7 @@ if 1:
     # plt.plot(final_planetRV_hd,dRV_posterior,linestyle="-",linewidth=1,color="black") #9966ff
     plt.fill_between(rvsampling,
                      rv_dmc_post*0,
-                     rv_dmc_post,alpha=0.4,facecolor="none",edgecolor="#6600ff",label="Wang 2018 ($RV_d-RV_c$)",hatch="/") # (Astrometry; bcde coplanar & stable)
+                     rv_dmc_post,alpha=0.4,facecolor="none",edgecolor="#6600ff",label="Wang et al. 2018 ($RV_d-RV_c$)",hatch="/") # (Astrometry; bcde coplanar & stable)
 
 
     delta_bc_posterior = np.correlate(posterior_b,posterior_c,mode="same")
@@ -400,7 +403,7 @@ if 1:
     confidence_interval = (1-np.cumsum(delta_bc_posterior)[np.argmin(np.abs(rvsampling))]/np.sum(delta_bc_posterior))
 
     plt.gca().text(deltaRV_bc-1,1.0,"${0:.1f}\pm {1:.1f}$ km/s".format(deltaRV_bc,deltaRV_bc_sig),ha="left",va="bottom",rotation=0,size=fontsize,color="#003366")
-    plt.plot(rvsampling,delta_bc_posterior,linestyle="-",linewidth=3,color="#0099cc",label="Data ($RV_b-RV_c$)")
+    plt.plot(rvsampling,delta_bc_posterior,linestyle="-",linewidth=3,color="#0099cc",label="This work ($RV_b-RV_c$)")
 
 
     delta_dc_posterior = np.correlate(posterior_d,posterior_c,mode="same")
@@ -409,7 +412,7 @@ if 1:
     confidence_interval = (1-np.cumsum(delta_dc_posterior)[np.argmin(np.abs(rvsampling))]/np.sum(delta_dc_posterior))
 
     plt.gca().text(deltaRV_dc-1,1.0,"${0:.1f}\pm {1:.1f}$ km/s".format(deltaRV_dc,deltaRV_dc_sig),ha="left",va="bottom",rotation=0,size=fontsize,color="#660066")
-    plt.plot(rvsampling,delta_dc_posterior,linestyle="-",linewidth=3,color="#6600ff",label="Data ($RV_d-RV_c$)")
+    plt.plot(rvsampling,delta_dc_posterior,linestyle=":",linewidth=3,color="#6600ff",label="This work ($RV_d-RV_c$)")
 
     plt.xlim([-10,10])
     plt.ylim([0,1.1])

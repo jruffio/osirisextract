@@ -41,16 +41,16 @@ def _arraytonumpy(shared_array, shape=None, dtype=None):
 
     return numpy_array
 
-def _tpool_init(_transmission_vec,_nospec_planet_model,_wvs,_sigmas_vec,_where_finite_data,_ravelHPFdata,_oriplanet_spec_wvs,
-                _transmission_vec_shape,_nospec_planet_model_shape,_wvs_shape,_sigmas_vec_shape,_where_finite_data_shape,_ravelHPFdata_shape,_oriplanet_spec_wvs_shape):
+def _tpool_init(_transmission_vec,_nospec_planet_model,_wvs,_sigmas_vec,_where_finite_data,_ravelHPFdata,_oriplanet_spec_wvs,_HPFmodel_H0,
+                _transmission_vec_shape,_nospec_planet_model_shape,_wvs_shape,_sigmas_vec_shape,_where_finite_data_shape,_ravelHPFdata_shape,_oriplanet_spec_wvs_shape,_HPFmodel_H0_shape):
     """
     Initializer function for the thread pool that initializes various shared variables. Main things to note that all
     except the shapes are shared arrays (mp.Array).
 
     Args:
     """
-    global transmission_vec,nospec_planet_model,wvs,sigmas_vec,where_finite_data,ravelHPFdata,oriplanet_spec_wvs, \
-        transmission_vec_shape,nospec_planet_model_shape,wvs_shape,sigmas_vec_shape,where_finite_data_shape,ravelHPFdata_shape,oriplanet_spec_wvs_shape
+    global transmission_vec,nospec_planet_model,wvs,sigmas_vec,where_finite_data,ravelHPFdata,oriplanet_spec_wvs,HPFmodel_H0, \
+        transmission_vec_shape,nospec_planet_model_shape,wvs_shape,sigmas_vec_shape,where_finite_data_shape,ravelHPFdata_shape,oriplanet_spec_wvs_shape,HPFmodel_H0_shape
     # original images from files to read and align&scale. Shape of (N,y,x)
     transmission_vec=_transmission_vec
     nospec_planet_model=_nospec_planet_model
@@ -59,6 +59,7 @@ def _tpool_init(_transmission_vec,_nospec_planet_model,_wvs,_sigmas_vec,_where_f
     where_finite_data=_where_finite_data
     ravelHPFdata=_ravelHPFdata
     oriplanet_spec_wvs=_oriplanet_spec_wvs
+    HPFmodel_H0=_HPFmodel_H0
 
     transmission_vec_shape=_transmission_vec_shape
     nospec_planet_model_shape=_nospec_planet_model_shape
@@ -67,6 +68,7 @@ def _tpool_init(_transmission_vec,_nospec_planet_model,_wvs,_sigmas_vec,_where_f
     where_finite_data_shape=_where_finite_data_shape
     ravelHPFdata_shape=_ravelHPFdata_shape
     oriplanet_spec_wvs_shape=_oriplanet_spec_wvs_shape
+    HPFmodel_H0_shape=_HPFmodel_H0_shape
 
 
 def LPFvsHPF(myvec,cutoff,nansmooth=10):
@@ -100,8 +102,8 @@ def _spline_psf_model(paras):
 
 
 def get_rv_logpost(paras):
-    global transmission_vec,nospec_planet_model,wvs,sigmas_vec,where_finite_data,ravelHPFdata,oriplanet_spec_wvs, \
-        transmission_vec_shape,nospec_planet_model_shape,wvs_shape,sigmas_vec_shape,where_finite_data_shape,ravelHPFdata_shape,oriplanet_spec_wvs_shape
+    global transmission_vec,nospec_planet_model,wvs,sigmas_vec,where_finite_data,ravelHPFdata,oriplanet_spec_wvs,HPFmodel_H0, \
+        transmission_vec_shape,nospec_planet_model_shape,wvs_shape,sigmas_vec_shape,where_finite_data_shape,ravelHPFdata_shape,oriplanet_spec_wvs_shape,HPFmodel_H0_shape
     paras_list,myinterpgrid,planetRV_array,star_flux,cutoff,logdet_Sigma= paras
 
 
@@ -112,6 +114,11 @@ def get_rv_logpost(paras):
     sigmas_vec_np = _arraytonumpy(sigmas_vec, sigmas_vec_shape,dtype=dtype)
     where_finite_data_np = _arraytonumpy(where_finite_data, where_finite_data_shape,dtype=np.int)
     ravelHPFdata_np = _arraytonumpy(ravelHPFdata, ravelHPFdata_shape,dtype=dtype)
+    HPFmodel_H0_np = _arraytonumpy(HPFmodel_H0, HPFmodel_H0_shape,dtype=dtype)
+
+    cp_HPFmodel_H0 = copy(HPFmodel_H0_np)
+    cp_HPFmodel_H0[np.where(np.isnan(HPFmodel_H0_np))] = 0
+
 
     logpost_rv = np.zeros((len(paras_list),np.size(planetRV_array)))
     for temp_id,(temp,fitlogg,CtoO) in enumerate(paras_list):
@@ -138,14 +145,13 @@ def get_rv_logpost(paras):
 
             HPFmodel_H1only = HPFmodel_H1only[where_finite_data_np,:]/sigmas_vec_np[:,None] # where_finite_data[0]
             HPFmodel_H1only[np.where(np.isnan(HPFmodel_H1only))] = 0
-            HPFmodel_H0[np.where(np.isnan(HPFmodel_H0))] = 0
 
             # print(HPFmodel_H1only.shape,HPFmodel_H0.shape)
             # print(HPFmodel_H1only[0:5])
             # print(HPFmodel_H0[0:5,0:5])
             # print(plrv)
             # exit()
-            HPFmodel = np.concatenate([HPFmodel_H1only,HPFmodel_H0],axis=1)
+            HPFmodel = np.concatenate([HPFmodel_H1only,cp_HPFmodel_H0],axis=1)
 
             where_valid_parameters = np.where(np.nansum(np.abs(HPFmodel)>0,axis=0)>=50)
             HPFmodel = HPFmodel[:,where_valid_parameters[0]]
@@ -181,19 +187,22 @@ if __name__ == "__main__":
         osiris_data_dir = "/data/osiris_data/"
         # IFSfilter = "Kbb"
         # planet = "HR_8799_d"
-        IFSfilter = "Hbb"
-        planet = "HR_8799_b"
+        IFSfilter = "Kbb"
+        planet = "HR_8799_c"
         scale = "*"
         date = "*"
         inputDir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/"
         filelist = glob.glob(os.path.join(inputDir,"s"+date+"*"+IFSfilter+"_"+scale+".fits"))
         filelist.sort()
-        modelfolder = "20200309_model"
-        outputfolder = "20200309_model"
+        # modelfolder = "20200309_model"
+        # outputfolder = "20200309_model"
+        modelfolder = "20200427_model_fk"
+        outputfolder = "20200427_model_fk"
         gridname = os.path.join("/data/osiris_data/","hr8799b_modelgrid")
         N_kl = 10
-        numthreads = 16
+        numthreads = 16#16
         small = True
+        inj_fake = 2e-5  #2e-5 #None
         # for filename in filelist:
         #     print(filename)
         # print(outputdir)
@@ -209,12 +218,17 @@ if __name__ == "__main__":
         gridname = sys.argv[6]
         N_kl = int(sys.argv[7])
         small = bool(int(sys.argv[8]))
+        try:
+            inj_fake = float(sys.argv[9])
+        except:
+            inj_fake = None
 
         filelist = [filename]
         IFSfilter = filename.split("_")[-2]
         planet = filename.split(os.path.sep)[3]
         # date = os.path.basename(filename).split("_")[0].replace("s","")
-        
+
+    Tfk,loggfk,ctoOfk = 1000,3.75,0.7
 
     fitT_list = np.linspace(800,1200,21,endpoint=True)
     fitlogg_list = np.linspace(3,4.5,46,endpoint=True)
@@ -222,9 +236,9 @@ if __name__ == "__main__":
     # fitCtoO_list = np.linspace(10**(8.48 - 8.82),10**(8.33 - 8.51),40,endpoint=True)
     print(fitCtoO_list)
     # exit()
-    # fitT_list = np.linspace(900,1200,3,endpoint=True)
-    # fitlogg_list = np.linspace(3,4.5,3,endpoint=True)
-    # fitCtoO_list = np.linspace(10**(8.48 - 8.82),10**(8.33 - 8.51),4,endpoint=True)
+    fitT_list = np.linspace(1000,1200,2,endpoint=True)
+    fitlogg_list = np.linspace(3.75,4.5,2,endpoint=True)
+    fitCtoO_list = np.linspace(0.7,0.89125094,2,endpoint=True)
     # fitT_list = np.arange(900,1200,50)
     # fitlogg_list = np.arange(-4.5,-3,0.25)
     # fitCtoO_list = np.arange(10**(8.48 - 8.82),10**(8.33 - 8.51),0.005)
@@ -237,6 +251,7 @@ if __name__ == "__main__":
 #     fitlogg_list = np.array([-4])
 #     fitCtoO_list = np.array([0.7079457843841374])
     planetRV_array0 = np.arange(-20,20,1)
+    # planetRV_array0 = np.arange(-1,1,1)
 
     c_kms = 299792.458
     cutoff = 40
@@ -368,7 +383,12 @@ if __name__ == "__main__":
 
         #_corrwvs _LPFdata _HPFdata _badpix _sigmas _trans _starspec _reskl _plrv0
 
-        tmpfilename = os.path.join(os.path.dirname(filename),modelfolder,os.path.basename(filename).replace(".fits","_corrwvs.fits"))
+        if inj_fake is not None:
+            inj_fake_str = "_fk"
+        else:
+            inj_fake_str = ""
+
+        tmpfilename = os.path.join(os.path.dirname(filename),modelfolder,os.path.basename(filename).replace(".fits","_corrwvs"+inj_fake_str+".fits"))
         if len(glob.glob(tmpfilename))!=1:
             print("No data on "+filename)
             continue
@@ -376,50 +396,50 @@ if __name__ == "__main__":
         wvs =  hdulist[0].data
         hdulist.close()
 
-        tmpfilename = os.path.join(os.path.dirname(filename),modelfolder,os.path.basename(filename).replace(".fits","_LPFdata.fits"))
+        tmpfilename = os.path.join(os.path.dirname(filename),modelfolder,os.path.basename(filename).replace(".fits","_LPFdata"+inj_fake_str+".fits"))
         hdulist = pyfits.open(tmpfilename)
         if small:
             LPFdata =  hdulist[0].data[1:6,1:6,:]
         else:
             LPFdata =  hdulist[0].data
         hdulist.close()
-        tmpfilename = os.path.join(os.path.dirname(filename),modelfolder,os.path.basename(filename).replace(".fits","_HPFdata.fits"))
+        tmpfilename = os.path.join(os.path.dirname(filename),modelfolder,os.path.basename(filename).replace(".fits","_HPFdata"+inj_fake_str+".fits"))
         hdulist = pyfits.open(tmpfilename)
         if small:
             HPFdata =  hdulist[0].data[1:6,1:6,:]
         else:
             HPFdata =  hdulist[0].data
         hdulist.close()
-        tmpfilename = os.path.join(os.path.dirname(filename),modelfolder,os.path.basename(filename).replace(".fits","_badpix.fits"))
+        tmpfilename = os.path.join(os.path.dirname(filename),modelfolder,os.path.basename(filename).replace(".fits","_badpix"+inj_fake_str+".fits"))
         hdulist = pyfits.open(tmpfilename)
         if small:
             data_badpix =  hdulist[0].data[1:6,1:6,:]
         else:
             data_badpix =  hdulist[0].data
         hdulist.close()
-        tmpfilename = os.path.join(os.path.dirname(filename),modelfolder,os.path.basename(filename).replace(".fits","_sigmas.fits"))
+        tmpfilename = os.path.join(os.path.dirname(filename),modelfolder,os.path.basename(filename).replace(".fits","_sigmas"+inj_fake_str+".fits"))
         hdulist = pyfits.open(tmpfilename)
         if small:
             data_sigmas =  hdulist[0].data[1:6,1:6,:]
         else:
             data_sigmas =  hdulist[0].data
         hdulist.close()
-        tmpfilename = os.path.join(os.path.dirname(filename),modelfolder,os.path.basename(filename).replace(".fits","_trans.fits"))
+        tmpfilename = os.path.join(os.path.dirname(filename),modelfolder,os.path.basename(filename).replace(".fits","_trans"+inj_fake_str+".fits"))
         hdulist = pyfits.open(tmpfilename)
         transmission_vec =  hdulist[0].data
         hdulist.close()
-        tmpfilename = os.path.join(os.path.dirname(filename),modelfolder,os.path.basename(filename).replace(".fits","_starspec.fits"))
+        tmpfilename = os.path.join(os.path.dirname(filename),modelfolder,os.path.basename(filename).replace(".fits","_starspec"+inj_fake_str+".fits"))
         hdulist = pyfits.open(tmpfilename)
         if small:
             star_obsspec =  hdulist[0].data[1:6,1:6,:]
         else:
             star_obsspec =  hdulist[0].data
         hdulist.close()
-        tmpfilename = os.path.join(os.path.dirname(filename),modelfolder,os.path.basename(filename).replace(".fits","_reskl.fits"))
+        tmpfilename = os.path.join(os.path.dirname(filename),modelfolder,os.path.basename(filename).replace(".fits","_reskl"+inj_fake_str+".fits"))
         hdulist = pyfits.open(tmpfilename)
         res4model_kl =  hdulist[0].data[:,0:N_kl]
         hdulist.close()
-        tmpfilename = os.path.join(os.path.dirname(filename),modelfolder,os.path.basename(filename).replace(".fits","_plrv0.fits"))
+        tmpfilename = os.path.join(os.path.dirname(filename),modelfolder,os.path.basename(filename).replace(".fits","_plrv0"+inj_fake_str+".fits"))
         hdulist = pyfits.open(tmpfilename)
         plrv0 =  hdulist[0].data
         data_ny,data_nx,data_nz = HPFdata.shape
@@ -539,6 +559,34 @@ if __name__ == "__main__":
         # print(len(paras_id_list))
         # exit()
 
+        if inj_fake is not None:
+            planet_template_func = interp1d(oriplanet_spec_wvs,myinterpgrid([Tfk,loggfk,ctoOfk])[0],bounds_error=False,fill_value=np.nan)
+
+            planet_model = copy(nospec_planet_model)
+            for bkg_k in range(2*w+1):
+                for bkg_l in range(2*w+1):
+                    # print(wvs.shape,plrv,c_kms)
+                    wvs4planet_model = wvs[bkg_k,bkg_l,:]*(1-(plrv0)/c_kms)
+                    planet_model[bkg_k,bkg_l,:] *= planet_template_func(wvs4planet_model) * transmission_vec
+
+            planet_model = planet_model/np.nansum(planet_model)*star_flux*inj_fake
+            HPF_planet_model = np.zeros(planet_model.shape)
+            for bkg_k in range(2*w+1):
+                for bkg_l in range(2*w+1):
+                    HPF_planet_model[bkg_k,bkg_l,:]  = LPFvsHPF(planet_model[bkg_k,bkg_l,:] ,cutoff)[1]
+
+            HPFmodel_H1only = (HPF_planet_model.ravel())[:,None]
+
+            HPFmodel_H1only = HPFmodel_H1only[where_finite_data[0],:]/sigmas_vec[:,None] # where_finite_data[0]
+            HPFmodel_H1only[np.where(np.isnan(HPFmodel_H1only))] = 0
+
+            # print(ravelHPFdata.shape,HPFmodel_H1only.shape)
+            ravelHPFdata = ravelHPFdata+ HPFmodel_H1only[:,0]
+            # print("YOUHOU")
+            # print(ravelHPFdata.shape)
+            # exit()
+
+
         ##############################
         ## INIT threads and shared memory
         #############################
@@ -591,9 +639,14 @@ if __name__ == "__main__":
         oriplanet_spec_wvs_np = _arraytonumpy(_oriplanet_spec_wvs, _oriplanet_spec_wvs_shape,dtype=dtype)
         oriplanet_spec_wvs_np[:] = oriplanet_spec_wvs[:]
 
+        _HPFmodel_H0 = mp.Array(dtype, np.size(HPFmodel_H0))
+        _HPFmodel_H0_shape = HPFmodel_H0.shape
+        HPFmodel_H0_np = _arraytonumpy(_HPFmodel_H0, _HPFmodel_H0_shape,dtype=dtype)
+        HPFmodel_H0_np[:] = HPFmodel_H0[:]
+
         if numthreads==1:
-            _tpool_init(_transmission_vec,_nospec_planet_model,_wvs,_sigmas_vec,_where_finite_data,_ravelHPFdata,_oriplanet_spec_wvs,
-                    _transmission_vec_shape,_nospec_planet_model_shape,_wvs_shape,_sigmas_vec_shape,_where_finite_data_shape,_ravelHPFdata_shape,_oriplanet_spec_wvs_shape)
+            _tpool_init(_transmission_vec,_nospec_planet_model,_wvs,_sigmas_vec,_where_finite_data,_ravelHPFdata,_oriplanet_spec_wvs,_HPFmodel_H0,
+                    _transmission_vec_shape,_nospec_planet_model_shape,_wvs_shape,_sigmas_vec_shape,_where_finite_data_shape,_ravelHPFdata_shape,_oriplanet_spec_wvs_shape,_HPFmodel_H0_shape)
             outlist = get_rv_logpost((paras_list,myinterpgrid,planetRV_array,star_flux,cutoff,logdet_Sigma))
             for paras_id,out in zip(paras_id_list,outlist):
                 print(paras_id)
@@ -602,8 +655,8 @@ if __name__ == "__main__":
         else:
             # planetRV_array,star_flux,cutoff,logdet_Sigma
             tpool = mp.Pool(processes=numthreads, initializer=_tpool_init,
-                            initargs=(_transmission_vec,_nospec_planet_model,_wvs,_sigmas_vec,_where_finite_data,_ravelHPFdata,_oriplanet_spec_wvs,
-                    _transmission_vec_shape,_nospec_planet_model_shape,_wvs_shape,_sigmas_vec_shape,_where_finite_data_shape,_ravelHPFdata_shape,_oriplanet_spec_wvs_shape),
+                            initargs=(_transmission_vec,_nospec_planet_model,_wvs,_sigmas_vec,_where_finite_data,_ravelHPFdata,_oriplanet_spec_wvs,_HPFmodel_H0,
+                    _transmission_vec_shape,_nospec_planet_model_shape,_wvs_shape,_sigmas_vec_shape,_where_finite_data_shape,_ravelHPFdata_shape,_oriplanet_spec_wvs_shape,_HPFmodel_H0_shape),
                             maxtasksperchild=50)
 
             chunk_size=400
@@ -656,7 +709,7 @@ if __name__ == "__main__":
         hdulist.append(pyfits.ImageHDU(data=fitCtoO_list))
         hdulist.append(pyfits.ImageHDU(data=planetRV_array0))
         print("2")
-        out = os.path.join(os.path.dirname(filename),outputfolder,os.path.basename(filename).replace(".fits","_kl{0}_logpost.fits".format((N_kl))))
+        out = os.path.join(os.path.dirname(filename),outputfolder,os.path.basename(filename).replace(".fits","_kl{0}_logpost{1}.fits".format(N_kl,inj_fake_str)))
         print("saving" + out)
         try:
             hdulist.writeto(out, overwrite=True)

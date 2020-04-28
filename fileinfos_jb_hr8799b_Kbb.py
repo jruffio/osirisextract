@@ -354,6 +354,29 @@ if 1: # add filename
                 new_list_data[k][status_id] = status_it
 
 if 0:
+    Htime = 0
+    Ktime = 0
+    Htime_detec = 0
+    Ktime_detec = 0
+    status_id = new_colnames.index("status")
+    itime_id = new_colnames.index("itime")
+    filename_id = new_colnames.index("filename")
+    for k,item in enumerate(new_list_data):
+        if "Kbb" in os.path.basename(item[filename_id]):
+            Ktime += float(item[itime_id])
+        if "Hbb" in os.path.basename(item[filename_id]):
+            Htime += float(item[itime_id])
+        if int(item[status_id]) != 1:
+            continue
+        if "Kbb" in os.path.basename(item[filename_id]):
+            Ktime_detec += float(item[itime_id])
+        if "Hbb" in os.path.basename(item[filename_id]):
+            Htime_detec += float(item[itime_id])
+    print(Ktime_detec/3600,Ktime/3600,Htime_detec/3600,Htime/3600)
+
+    exit()
+
+if 0:
     def determine_mosaic_offsets_from_header(prihdr_list):
         OBFMXIM_list = []
         OBFMYIM_list = []
