@@ -30,7 +30,7 @@ def get_err_from_posterior(x,posterior):
 
 if 1:
     out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
-    fontsize=12
+    fontsize=15
     numbasis_list = np.array([0,1,2])
     # rv_c = [-11.608945710803633, -11.207188499440162, -11.130158122796846]
     # rverr_c = [0.39995957140655475, 0.4005435461700829, 0.40263553957115733]
@@ -94,7 +94,7 @@ if 1:
     epochs_b =  ['20100711', '20100712',  '20100713', '20130725', '20130726', '20130727', '20161106', '20161107' , '20161108', '20180722']
     epochs_rv_b =  [  -10.57920756, -12.35982049 , -3.71445932 , -9.53545184,  -8.44582097,  -9.05172061,   -8.23000863,  -9.71148301,  -3.23729904,  -6.21223367]
     epochs_rverr_b = [ 1.09404719, 1.14231799,  2.21445212 ,0.96492429, 1.34422894, 1.86751255, 2.23673811 ,1.45381564,  2.09713865, 1.29136631]
-    epochs_Nexp_b = [8100.0, 8100.0, 1800.0, 9600.0, 5400.0, 3000.0, 1200.0, 1800.0, 600.0, 1800.0]#[9, 9, 2, 16, 9, 5, 2, 3, 1, 6]
+    epochs_Nexp_b = [9, 9, 2, 16, 9, 5, 2, 3, 1, 6]#[8100.0, 8100.0, 1800.0, 9600.0, 5400.0, 3000.0, 1200.0, 1800.0, 600.0, 1800.0]#[9, 9, 2, 16, 9, 5, 2, 3, 1, 6]
 
     # c
     # 0
@@ -130,7 +130,7 @@ if 1:
     epochs_c =  ['20100715' , '20101104' ,'20110723' ,'20110724', '20110725','20130726', '20171103']
     epochs_rv_c = [-11.83538564, -10.95940131, -10.04625721, -10.75684941,-11.01553684 ,-15.81194633,-10.47611131]
     epochs_rverr_c = [0.68949379 ,   0.75613354 ,1.31100169 ,2.08722546, 2.17375194, 3.64578072,  0.90622151]
-    epochs_Nexp_c = [10200.0,10800.0, 6000.0, 1800.0, 3000.0, 600.0, 3000.0]#[17, 18, 10, 3, 5, 1, 5]
+    epochs_Nexp_c = [17, 18, 10, 3, 5, 1, 5]#[10200.0,10800.0, 6000.0, 1800.0, 3000.0, 600.0, 3000.0]#[17, 18, 10, 3, 5, 1, 5]
 
 
     # d
@@ -199,7 +199,7 @@ if 1:
     def convertdates(date_list):
         return [date[4:6]+"-"+date[6:8]+"-"+date[0:4] for date in date_list ]
 
-    plt.figure(1,figsize=(6,6))
+    plt.figure(1,figsize=(4,3.7))
     if 1:
         plt.plot(rv_b,linestyle="",color="#0099cc",marker="x") #"#ff9900" "#0099cc" "#6600ff"
         plt.errorbar(numbasis_list,rv_b,yerr=rverr_b,color="#0099cc",label="b: RV")
@@ -220,7 +220,7 @@ if 1:
         # eb[-1][0].set_linestyle("--")
 
 
-    plt.legend(loc="bottom left",frameon=True,fontsize=fontsize)
+    plt.legend(loc="lower right",frameon=True,fontsize=fontsize)
     plt.xlabel("# PCA modes",fontsize=fontsize)
     plt.xticks([0,1,2],[0,1,10])
     plt.ylabel("RV (km/s)",fontsize=fontsize)
@@ -228,11 +228,12 @@ if 1:
     plt.tick_params(axis="y",labelsize=fontsize)
     # plt.gca().spines["right"].set_visible(False)
     # plt.gca().spines["top"].set_visible(False)
+    plt.tight_layout()
     if 1:
         print("Saving "+os.path.join(out_pngs,"RV_HR_8799_bcd_PCA.pdf"))
         plt.savefig(os.path.join(out_pngs,"RV_HR_8799_bcd_PCA.pdf"))
         plt.savefig(os.path.join(out_pngs,"RV_HR_8799_bcd_PCA.png"))
-
+    # plt.show()
 
     plt.figure(2,figsize=(12,12))
     plt.subplot2grid((4,1),(0,0),rowspan=2)
@@ -250,13 +251,13 @@ if 1:
             continue
         formated_date =  c[0:4]+"-"+c[4:6]+"-"+c[6:8]
         print("& {0} & ${1:.1f} \\pm {2:.1f}$ & {3} \\\\".format(formated_date,a,b,int(d)))
-    eb=plt.errorbar(allepochs_rv_b,np.arange(np.size(allepochs)),xerr=allepochs_rverr_b,fmt="none",color="#0099cc",label="b (# exposures)")
+    eb=plt.errorbar(allepochs_rv_b,np.arange(np.size(allepochs)),xerr=allepochs_rverr_b,fmt="none",color="#0099cc",label="b w/ exp. time (min)")
     eb[-1][0].set_linestyle("-")
     plt.plot(allepochs_rv_b,np.arange(np.size(allepochs)),"x",color="#0099cc")
     wherenotnans = np.where(np.isfinite(allepochs_rv_b))
     for y,(x,date,num) in enumerate(zip(allepochs_rv_b,allepochs,allepochs_Nexp_b)):
         if np.isfinite(x):
-            plt.gca().text(x,y,"{0}".format(int(num)),ha="center",va="bottom",rotation=0,size=fontsize,color="#003366",alpha=1)
+            plt.gca().text(x,y,"{0}".format(int(num)*10),ha="center",va="bottom",rotation=0,size=fontsize,color="#003366",alpha=1)
     # plt.plot([rv_b[2]-rverr_b[2],rv_b[2]-rverr_b[2]],[0,np.size(allepochs)],linestyle="--",linewidth=2,color="#006699",alpha=0.4)
     plt.plot([rv_b[2],rv_b[2]],[0,np.size(allepochs)],linestyle="-",linewidth=2,color="#003366",alpha=0.4)
     # plt.plot([rv_b[2]+rverr_b[2],rv_b[2]+rverr_b[2]],[0,np.size(allepochs)],linestyle="--",linewidth=2,color="#006699",alpha=0.4)
@@ -268,13 +269,13 @@ if 1:
             continue
         formated_date =  c[0:4]+"-"+c[4:6]+"-"+c[6:8]
         print("& {0} & ${1:.1f} \\pm {2:.1f}$ & {3} \\\\".format(formated_date,a,b,int(d)))
-    eb=plt.errorbar(allepochs_rv_c,np.arange(np.size(allepochs)),xerr=allepochs_rverr_c,fmt="none",color="#ff9900",label="c (# exposures)")
+    eb=plt.errorbar(allepochs_rv_c,np.arange(np.size(allepochs)),xerr=allepochs_rverr_c,fmt="none",color="#ff9900",label="c")
     eb[-1][0].set_linestyle("--")
     plt.plot(allepochs_rv_c,np.arange(np.size(allepochs)),"x",color="#ff9900")
     wherenotnans = np.where(np.isfinite(allepochs_rv_c))
     for y,(x,date,num) in enumerate(zip(allepochs_rv_c,allepochs,allepochs_Nexp_c)):
         if np.isfinite(x):
-            plt.gca().text(x,y,"{0}".format(int(num)),ha="center",va="bottom",rotation=0,size=fontsize,color="#cc3300",alpha=1)
+            plt.gca().text(x,y,"{0}".format(int(num)*10),ha="center",va="bottom",rotation=0,size=fontsize,color="#cc3300",alpha=1)
     # plt.plot([rv_c[2]-rverr_c[2],rv_c[2]-rverr_c[2]],[0,np.size(allepochs)],linestyle="--",linewidth=2,color="#cc6600",alpha=0.4)
     plt.plot([rv_c[2],rv_c[2]],[0,np.size(allepochs)],linestyle="-",linewidth=2,color="#cc3300",alpha=0.4)
     # plt.plot([rv_c[2]+rverr_c[2],rv_c[2]+rverr_c[2]],[0,np.size(allepochs)],linestyle="--",linewidth=2,color="#cc6600",alpha=0.4)
@@ -286,13 +287,13 @@ if 1:
             continue
         formated_date =  c[0:4]+"-"+c[4:6]+"-"+c[6:8]
         print("& {0} & ${1:.1f} \\pm {2:.1f}$ & {3} \\\\".format(formated_date,a,b,int(d)))
-    eb=plt.errorbar(allepochs_rv_d,np.arange(np.size(allepochs)),xerr=allepochs_rverr_d,fmt="none",color="#6600ff",label="d (# exposures)")
+    eb=plt.errorbar(allepochs_rv_d,np.arange(np.size(allepochs)),xerr=allepochs_rverr_d,fmt="none",color="#6600ff",label="d")
     eb[-1][0].set_linestyle(":")
     plt.plot(allepochs_rv_d,np.arange(np.size(allepochs)),"x",color="#6600ff")
     wherenotnans = np.where(np.isfinite(allepochs_rv_d))
     for y,(x,date,num) in enumerate(zip(allepochs_rv_d,allepochs,allepochs_Nexp_d)):
         if np.isfinite(x):
-            plt.gca().text(x,y,"{0}".format(int(num)),ha="center",va="bottom",rotation=0,size=fontsize,color="#330099",alpha=1)
+            plt.gca().text(x,y,"{0}".format(int(num)*10),ha="center",va="bottom",rotation=0,size=fontsize,color="#330099",alpha=1)
     # plt.plot([rv_d[2]-rverr_d[2],rv_d[2]-rverr_d[2]],[0,np.size(allepochs)],linestyle="--",linewidth=2,color="#6600cc",alpha=0.4)
     plt.plot([rv_d[2],rv_d[2]],[0,np.size(allepochs)],linestyle="-",linewidth=2,color="#330099",alpha=0.4)
     # plt.plot([rv_d[2]+rverr_d[2],rv_d[2]+rverr_d[2]],[0,np.size(allepochs)],linestyle="--",linewidth=2,color="#6600cc",alpha=0.4)
@@ -372,9 +373,11 @@ if 1:
     with open("/data/osiris_data/rv_bcd_2015.csv", 'r') as csvfile:
         csv_reader = csv.reader(csvfile, delimiter=',')
         rv_bcd_list_table = np.array(list(csv_reader)[1::]).astype(np.float)
+        rv_bcd_list_table = np.concatenate([rv_bcd_list_table,-rv_bcd_list_table],axis=0)
+        rv_bcd_list_table = rv_bcd_list_table[np.where(rv_bcd_list_table[:,0]>0)[0],:]
         rv_bmc_list_data = rv_bcd_list_table[:,0]-rv_bcd_list_table[:,1]
         rv_dmc_list_data = rv_bcd_list_table[:,2]-rv_bcd_list_table[:,1]
-    rv_bmc_list_data = np.concatenate([rv_bmc_list_data,-rv_bmc_list_data])
+    # rv_bmc_list_data = np.concatenate([rv_bmc_list_data,-rv_bmc_list_data])
     rv_bmc_hist,bin_edges = np.histogram(rv_bmc_list_data,bins=400,range=[-20,20])
     rv_bmc_hist = rv_bmc_hist/np.max(rv_bmc_hist)
     # plt.figure(10)
@@ -386,7 +389,7 @@ if 1:
     plt.fill_between(rvsampling,
                      rv_bmc_post*0,
                      rv_bmc_post,alpha=0.4,facecolor="none",edgecolor="#006699",label="Wang et al. 2018 ($RV_b-RV_c$)",hatch="\\") # (Astrometry; bcde coplanar & stable)
-    rv_dmc_list_data = np.concatenate([rv_dmc_list_data,-rv_dmc_list_data])
+    # rv_dmc_list_data = np.concatenate([rv_dmc_list_data,-rv_dmc_list_data])
     rv_dmc_hist,bin_edges = np.histogram(rv_dmc_list_data,bins=200,range=[-20,20])
     rv_dmc_hist = rv_dmc_hist/np.max(rv_dmc_hist)
     bin_center = (bin_edges[1::]+bin_edges[0:np.size(bin_edges)-1])/2
@@ -416,6 +419,7 @@ if 1:
 
     plt.xlim([-10,10])
     plt.ylim([0,1.1])
+    plt.yticks([0.25,0.5,0.75,1.0])
     plt.xlabel(r"$RV_{[b,d]}-RV_c$ (km/s)",fontsize=fontsize)
     plt.ylabel("$\propto \mathcal{P}(RV_b-RV_c|d)$",fontsize=fontsize)
     plt.gca().spines["right"].set_visible(False)
@@ -423,7 +427,7 @@ if 1:
     plt.gca().spines["left"].set_position(("data",0))
     plt.tick_params(axis="x",labelsize=fontsize)
     plt.tick_params(axis="y",labelsize=fontsize)
-    plt.legend(loc="upper right",frameon=True,fontsize=fontsize)#
+    plt.legend(loc="center right",frameon=True,fontsize=12)#
 
     if 0:
         print("Saving "+os.path.join(out_pngs,"RV_HR_8799_bcd_relRVpost.pdf"))

@@ -6,7 +6,7 @@ import csv
 import astropy.io.fits as pyfits
 import numpy as np
 import multiprocessing as mp
-from reduce_HPFonly_diagcov import convolve_spectrum
+from reduce_HPFonly_diagcov_resmodel_v2 import convolve_spectrum
 # from reduce_HPFonly_diagcov import LPFvsHPF
 from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
@@ -49,11 +49,11 @@ if __name__ == "__main__":
     fontsize = 12
     fakes = True
     R=4000
-    IFSfilter = "Kbb"
+    IFSfilter = "Hbb"
     c_kms = 299792.458
 
 
-    if 0:
+    if 1:
         planetcolor_list = ["#0099cc","#ff9900","#6600ff"]
         # for planet,planetcolor in zip(["b","c","d"],planetcolor_list):
             # for IFSfilter in ["Kbb","Hbb"]:
@@ -136,16 +136,16 @@ if __name__ == "__main__":
                     planet_spec_func_list = []
                     from scipy.interpolate import RegularGridInterpolator
                     myinterpgrid = RegularGridInterpolator((Tlistunique,logglistunique,CtoOlistunique),planet_model_grid,method="linear",bounds_error=False,fill_value=0.0)
-                    # plT,pllogg,plCtoO =1160.0, 4.266666666666667,  0.5724985412658228
-                    plT,pllogg,plCtoO = 1200.0, 3.8, 0.5615070792405064
-                    planet_spec_func = interp1d(oriplanet_spec_wvs,myinterpgrid([plT,pllogg,plCtoO])[0],bounds_error=False,fill_value=np.nan)
-                    planet_spec_func_list.append(planet_spec_func)
+                    plT,pllogg,plCtoO =1160.0, 3.25,  0.5724985412658228#1160.0, 4.266666666666667,  0.5724985412658228
                     # plT,pllogg,plCtoO = 1200.0, 3.8, 0.5615070792405064
-                    plT,pllogg,plCtoO = 1000.0, 3.8, 0.5615070792405064
                     planet_spec_func = interp1d(oriplanet_spec_wvs,myinterpgrid([plT,pllogg,plCtoO])[0],bounds_error=False,fill_value=np.nan)
                     planet_spec_func_list.append(planet_spec_func)
-                    # plT,pllogg,plCtoO = 1200.0, 3.0, 0.5450198862025316
-                    plT,pllogg,plCtoO = 800.0, 3.8, 0.5615070792405064
+                    plT,pllogg,plCtoO = 1200.0, 3.7, 0.5615070792405064#1200.0, 3.8, 0.5615070792405064
+                    # plT,pllogg,plCtoO = 1000.0, 3.8, 0.5615070792405064
+                    planet_spec_func = interp1d(oriplanet_spec_wvs,myinterpgrid([plT,pllogg,plCtoO])[0],bounds_error=False,fill_value=np.nan)
+                    planet_spec_func_list.append(planet_spec_func)
+                    plT,pllogg,plCtoO = 1200.0, 4.5, 0.5450198862025316#1200.0, 3.0, 0.5450198862025316
+                    # plT,pllogg,plCtoO = 800.0, 3.8, 0.5615070792405064
                     planet_spec_func = interp1d(oriplanet_spec_wvs,myinterpgrid([plT,pllogg,plCtoO])[0],bounds_error=False,fill_value=np.nan)
                     planet_spec_func_list.append(planet_spec_func)
 
@@ -241,6 +241,7 @@ if __name__ == "__main__":
                     myspecwvs_conca = np.concatenate(myspecwvs_list)
                     myspec_conca = np.concatenate(myspec_list)
                     myspec_std_conca = np.concatenate(myspec_std_list)
+                    trans_conca = np.concatenate(trans_list)
                     nbins = nl
                     binedges = np.linspace(wvs[0]-dwv/4,wvs[-1]+dwv/4,nbins+1,endpoint=True)
                     bincenter = np.linspace(wvs[0],wvs[-1],nbins,endpoint=True)
@@ -248,6 +249,7 @@ if __name__ == "__main__":
                     final_spec = np.zeros(nbins)+np.nan
                     final_model = np.zeros((len(planet_spec_func_list),nbins))+np.nan
                     final_spec_std = np.zeros(nbins)+np.nan
+                    final_trans = np.zeros(nbins)+np.nan
                     for k in np.arange(2,nbins):
                         where_digit = np.where((k==digitized)*(np.isfinite(myspec_conca)))
                         if np.size(where_digit[0]) > 0.2*len(myspecwvs_list):
@@ -256,11 +258,20 @@ if __name__ == "__main__":
                             for modid in range(len(planet_spec_func_list)):
                                 final_model[modid,k]=np.nansum((mymodel_conca[modid,where_digit[0]])/myspec_std_conca[where_digit]**2)/sumvar
                             final_spec_std[k]=np.sqrt(1/sumvar)
+                            final_trans[k] = np.nanmean(trans_conca[where_digit])
                         else:
                             final_spec[k]=np.nan
                             final_model[:,k]=np.nan
                             final_spec_std[k]=np.nan
+                            final_trans[k] = np.nan
 
+                    hdulist = pyfits.HDUList()
+                    hdulist.append(pyfits.PrimaryHDU(data=final_trans))
+                    try:
+                        hdulist.writeto(os.path.join(out_pngs,planet+"_spec"+"_trans"+"_kl{0}_{1}.fits".format(resnumbasis,IFSfilter)), overwrite=True)
+                    except TypeError:
+                        hdulist.writeto(os.path.join(out_pngs,planet+"_spec"+"_trans"+"_kl{0}_{1}.fits".format(resnumbasis,IFSfilter)), clobber=True)
+                    hdulist.close()
                     hdulist = pyfits.HDUList()
                     hdulist.append(pyfits.PrimaryHDU(data=bincenter))
                     try:
@@ -300,21 +311,71 @@ if __name__ == "__main__":
         sky_transmission_folder = os.path.join(osiris_data_dir,"sky_transmission")
         fileinfos_refstars_filename = os.path.join(osiris_data_dir,"fileinfos_refstars_jb.csv")
 
+
+        planet_spec_func_list = []
+        mol_name_list = ["CO",r"H2O","CH4"]
+        mol_label_list = ["CO",r"H$_2$O","CH$_4$"]
+        for molid,molecule in enumerate(mol_name_list):
+        # for molid,(molecule,mol_linestyle) in enumerate(zip(["CO","H2O"],mol_linestyle_list)):
+            print(molecule)
+            travis_mol_filename=os.path.join(molecular_template_folder,
+                                          "lte11-4.0_hr8799c_pgs=4d6_Kzz=1d8_gs=5um."+molecule+"only.7")
+            travis_mol_filename_D2E=os.path.join(molecular_template_folder,
+                                          "lte11-4.0_hr8799c_pgs=4d6_Kzz=1d8_gs=5um."+molecule+"only.7_D2E")
+            mol_template_filename=travis_mol_filename+"_gaussconv_R{0}_{1}.csv".format(R,IFSfilter)
+
+            with open(mol_template_filename, 'r') as csvfile:
+                csv_reader = csv.reader(csvfile, delimiter=' ')
+                list_starspec = list(csv_reader)
+                oriplanet_spec_str_arr = np.array(list_starspec, dtype=np.str)
+                col_names = oriplanet_spec_str_arr[0]
+                oriplanet_spec = oriplanet_spec_str_arr[1::3,1].astype(np.float)
+                oriplanet_spec_wvs = oriplanet_spec_str_arr[1::3,0].astype(np.float)
+                oriplanet_spec = oriplanet_spec/np.mean(oriplanet_spec)
+                planet_spec_func = interp1d(oriplanet_spec_wvs,oriplanet_spec,bounds_error=False,fill_value=np.nan)
+                planet_spec_func_list.append(planet_spec_func)
+
+
+        tmpfilename = os.path.join(osiris_data_dir,"hr8799b_modelgrid/","hr8799b_modelgrid_R{0}_{1}.fits".format(R,IFSfilter))
+        hdulist = pyfits.open(tmpfilename)
+        planet_model_grid =  hdulist[0].data
+        oriplanet_spec_wvs =  hdulist[1].data
+        Tlistunique =  hdulist[2].data
+        logglistunique =  hdulist[3].data
+        CtoOlistunique =  hdulist[4].data
+        hdulist.close()
+        from scipy.interpolate import RegularGridInterpolator
+        myinterpgrid = RegularGridInterpolator((Tlistunique,logglistunique,CtoOlistunique),planet_model_grid,method="linear",bounds_error=False,fill_value=0.0)
+
+
+
         if planet == "HR_8799_b":
             travis_spec_filename=os.path.join(planet_template_folder,
                                           "HR8799b_"+IFSfilter[0:1]+"_3Oct2018.save")
             pl_rv = -9.0
             color = "#0099cc"
+            plT,pllogg,plCtoO =1160.0, 4.266666666666667,  0.5724985412658228
+            # plT,pllogg,plCtoO = 1200.0, 3.8, 0.5615070792405064
+            planet_spec_func = interp1d(oriplanet_spec_wvs,myinterpgrid([plT,pllogg,plCtoO])[0],bounds_error=False,fill_value=np.nan)
+            planet_spec_func_list.append(planet_spec_func)
         if planet == "HR_8799_c":
             travis_spec_filename=os.path.join(planet_template_folder,
                                           "HR8799c_"+IFSfilter[0:1]+"_3Oct2018.save")
             pl_rv = -11.1
             color = "#ff9900"
+            plT,pllogg,plCtoO = 1200.0, 3.8, 0.5615070792405064
+            # plT,pllogg,plCtoO = 1000.0, 3.8, 0.5615070792405064
+            planet_spec_func = interp1d(oriplanet_spec_wvs,myinterpgrid([plT,pllogg,plCtoO])[0],bounds_error=False,fill_value=np.nan)
+            planet_spec_func_list.append(planet_spec_func)
         if planet == "HR_8799_d":
             travis_spec_filename=os.path.join(planet_template_folder,
                                           "HR8799c_"+IFSfilter[0:1]+"_3Oct2018.save")
             pl_rv = -15.7
             color = "#6600ff"
+            plT,pllogg,plCtoO = 1200.0, 3.0, 0.5450198862025316
+            # plT,pllogg,plCtoO = 800.0, 3.8, 0.5615070792405064
+            planet_spec_func = interp1d(oriplanet_spec_wvs,myinterpgrid([plT,pllogg,plCtoO])[0],bounds_error=False,fill_value=np.nan)
+            planet_spec_func_list.append(planet_spec_func)
         if "HR_8799" in planet:
             phoenix_model_host_filename = glob.glob(os.path.join(phoenix_folder,"HR_8799"+"*.fits"))[0]
             host_rv = -12.6 #+-1.4
@@ -341,6 +402,7 @@ if __name__ == "__main__":
             pl_rv = -13.9
         planet_template_filename=travis_spec_filename.replace(".save",
                                                               "_gaussconv_R{0}_{1}.csv".format(R,IFSfilter))
+        print(planet_template_filename)
 
         with open(planet_template_filename, 'r') as csvfile:
             csv_reader = csv.reader(csvfile, delimiter=' ')
@@ -350,6 +412,7 @@ if __name__ == "__main__":
             oriplanet_spec = oriplanet_spec_str_arr[1::,1].astype(np.float)
             oriplanet_spec_wvs = oriplanet_spec_str_arr[1::,0].astype(np.float)
             planet_spec_func = interp1d(oriplanet_spec_wvs,oriplanet_spec,bounds_error=False,fill_value=np.nan)
+
 
         f1 = plt.figure(1,figsize=(12,6))
         # filename = os.path.join(out_pngs,planet+"_spec_"+"wvs"+"_kl{0}.fits".format(0))
@@ -366,10 +429,19 @@ if __name__ == "__main__":
         pca_list = [10]
         ax1 = []
         ax2 = []
+        ax3 = []
         for it, resnumbasis in enumerate(pca_list):
             filename = os.path.join(out_pngs,planet+"_spec_"+"wvs"+"_kl{0}_{1}.fits".format(resnumbasis,IFSfilter))
             with pyfits.open(filename) as hdulist:
                 bincenter = hdulist[0].data
+
+            # oriplanet_spec = LPFvsHPF(planet_spec_func(bincenter),5)[1]
+            # plt.plot(bincenter,oriplanet_spec/np.nanmax(oriplanet_spec),label="atm model")
+            # tmp = planet_spec_func_list[1](bincenter)
+            # tmp = LPFvsHPF(tmp,5)[1]
+            # plt.plot(bincenter,tmp/np.nanmax(tmp)/2,label="CH4")
+            # plt.legend()
+            # plt.show()
             filename = os.path.join(out_pngs,planet+"_spec"+"_kl{0}_{1}.fits".format(resnumbasis,IFSfilter))
             with pyfits.open(filename) as hdulist:
                 final_spec = hdulist[0].data
@@ -381,6 +453,26 @@ if __name__ == "__main__":
             filename = os.path.join(out_pngs,planet+"_specstd"+"_kl{0}_{1}.fits".format(resnumbasis,IFSfilter))
             with pyfits.open(filename) as hdulist:
                 final_spec_std = hdulist[0].data
+
+            filename = os.path.join(out_pngs,planet+"_spec_"+"trans"+"_kl{0}_{1}.fits".format(resnumbasis,IFSfilter))
+            with pyfits.open(filename) as hdulist:
+                trans = LPFvsHPF(hdulist[0].data*LPFvsHPF(planet_spec_func_list[-1](bincenter),cutoff)[0],cutoff)[1]
+                # trans = LPFvsHPF(hdulist[0].data,cutoff)[1]
+                # trans = 10*(trans*np.nansum(trans*final_spec)/np.nansum(trans**2))
+                trans /= np.nanmax(np.abs(trans))
+                trans_lpf = LPFvsHPF(hdulist[0].data,cutoff)[0]
+
+                # plt.figure(2)
+                # plt.plot(bincenter,trans/np.nanmax(trans),color="black")
+                # # plt.ylim([0,1])
+                # for planet_spec_func,label in zip(planet_spec_func_list,mol_label_list+["model"]):
+                #     # modelspec = LPFvsHPF(planet_spec_func(bincenter),cutoff)[1] #* trans_lpf
+                #     modelspec = planet_spec_func(bincenter)
+                #     plt.plot(bincenter,modelspec/np.nanmax(modelspec),linestyle="--",label=label) #,color="black"
+                #
+                # plt.legend()
+                # plt.show()
+                # plt.figure(1)
 
             # mylabel_list= ["T=1200K","T=1000K","T=800K","model RV"]
             # mylim=0.1
@@ -402,7 +494,7 @@ if __name__ == "__main__":
             nl = np.size(final_spec)
             for sp_id in range(2):
                 if it ==0:
-                    plt.subplot2grid((5*2,1),(5*sp_id,0),rowspan=2)
+                    plt.subplot2grid((7*2,1),(7*sp_id+2,0),rowspan=2)
                     ax1.append(plt.gca())
                 else:
                     plt.sca(ax1[sp_id])
@@ -421,11 +513,33 @@ if __name__ == "__main__":
                             plt.ylim([-mylim,mylim])
                             # plt.ylim([-1,1])
                 if sp_id==0:
-                    plt.legend(loc="lower right",frameon=True,fontsize=fontsize)
+                    plt.legend(loc="lower right",frameon=True,fontsize=fontsize*0.9)
+
+                if it ==0:
+                    plt.subplot2grid((7*2,1),(7*sp_id,0),rowspan=2)
+                    ax3.append(plt.gca())
+                    plt.plot(bincenter[sp_id*(nl//2):(sp_id+1)*(nl//2)],
+                             trans[sp_id*(nl//2):(sp_id+1)*(nl//2)],color="black",linestyle="-",label="Tellurics")
+                    # plt.ylim([0,1])
+                    for molec_id,(molec_spec_func,label,linestyle,colo) in enumerate(zip(planet_spec_func_list,mol_label_list,["--","-",":"],["red","blue","green"])):
+                        modelspec = LPFvsHPF(molec_spec_func(bincenter),cutoff)[1] * trans_lpf
+                        modelspec /= np.nanmax(np.abs(modelspec))
+                        plt.plot(bincenter[sp_id*(nl//2):(sp_id+1)*(nl//2)],
+                                 (molec_id+1)*0.5+modelspec[sp_id*(nl//2):(sp_id+1)*(nl//2)],linestyle=linestyle,label=label,color=colo) #,color="black"
+                    plt.ylim([-1,1+0.5*len(mol_label_list)])
+                    if sp_id==0:
+                        plt.legend(loc="lower right",frameon=True,fontsize=fontsize*0.9,ncol=2)
+                    plt.tick_params(axis="x",which="both",labelleft=False,right=False,left=False)
+                    plt.tick_params(axis="y",which="both",labelleft=False,right=False,left=False)
+                    plt.xticks([])
+                    plt.yticks([])
+                    # plt.plot(bincenter[sp_id*(nl//2):(sp_id+1)*(nl//2)],
+                    #          trans[sp_id*(nl//2):(sp_id+1)*(nl//2)],
+                    #          linestyle="-",label="Transmission",color="gray",linewidth=1.5)
 
 
                 if it ==0:
-                    plt.subplot2grid((5*2,1),(5*sp_id+2,0),rowspan=2)
+                    plt.subplot2grid((7*2,1),(7*sp_id+4,0),rowspan=2)
                     ax2.append(plt.gca())
                 else:
                     plt.sca(ax2[sp_id])
@@ -436,7 +550,8 @@ if __name__ == "__main__":
                 # plt.plot(bincenter[sp_id*(nl//4):(sp_id+1)*(nl//4)],
                 #          final_spec[sp_id*(nl//4):(sp_id+1)*(nl//4)]-final_model2[sp_id*(nl//4):(sp_id+1)*(nl//4)],
                 #          linestyle="--",color="grey")
-                plt.xlabel(r"$\lambda$ ($\mu$m)",fontsize=fontsize)
+                if sp_id==1:
+                    plt.xlabel(r"$\lambda$ ($\mu$m)",fontsize=fontsize)
                 plt.gca().tick_params(axis='x', labelsize=fontsize)
                 plt.gca().tick_params(axis='y', labelsize=fontsize)
                 # plt.ylim([-0.1,0.1])
@@ -445,7 +560,7 @@ if __name__ == "__main__":
                 # if sp_id==0:
                 #     plt.legend(loc="lower right",frameon=True,fontsize=fontsize)
 
-                plt.subplot2grid((5*2,1),(5*sp_id+4,0))
+                plt.subplot2grid((7*2,1),(7*sp_id+6,0))
                 plt.plot([-1],[-1])
                 plt.xlim([0,1])
                 plt.ylim([0,1])
@@ -462,10 +577,9 @@ if __name__ == "__main__":
         # plt.plot(bincenter,final_model_notrans,linestyle="-",color="grey",label="{0}: final_model_notrans".format(resnumbasis))
         plt.tight_layout()
         f1.subplots_adjust(wspace=0,hspace=0)
-        plt.legend()
+        # plt.show()
         print("Saving "+os.path.join(out_pngs,planet,planet+"_"+IFSfilter+"_spec_kl{0}_{1}.png".format(resnumbasis,IFSfilter)))
         plt.savefig(os.path.join(out_pngs,planet,planet+"_"+IFSfilter+"_spec_kl{0}_{1}.png".format(resnumbasis,IFSfilter)),bbox_inches='tight')
         plt.savefig(os.path.join(out_pngs,planet,planet+"_"+IFSfilter+"_spec_kl{0}_{1}.pdf".format(resnumbasis,IFSfilter)),bbox_inches='tight')
-        plt.show()
 
 

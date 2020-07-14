@@ -968,9 +968,9 @@ if __name__ == "__main__":
         # date = "161106"
         # date = "180722"
         planet = "HR_8799_c"
-        date = "100715"
+        # date = "100715"
         # date = "101028"
-        # date = "101104"
+        date = "101104"
         # date = "110723"
         # date = "110724"
         # date = "110725"
@@ -986,8 +986,8 @@ if __name__ == "__main__":
         # date = "171104"
         # planet = "kap_And"
         # date = "161106"
-        IFSfilter = "Kbb"
-        # IFSfilter = "Hbb"
+        # IFSfilter = "Kbb"
+        IFSfilter = "Hbb"
         # IFSfilter = "Jbb" # "Kbb" or "Hbb"
         scale = "020"
         # scale = "035"
@@ -1022,7 +1022,7 @@ if __name__ == "__main__":
         plt_psfs = False
         plot_persistence = False
         # planet_model_string = "model"
-        planet_model_string = "CO"#"CO2 CO H2O CH4"
+        planet_model_string = "CO2 CO H2O CH4"#"CO"#
         # planet_model_string = "CO2 CO H2O CH4 joint"
         # planet_model_string = "CO joint"
         inject_fakes = False
@@ -1440,14 +1440,16 @@ if __name__ == "__main__":
                             crop_moltemp = np.where((wmod>wvs[0]-(wvs[-1]-wvs[0])/2)*(wmod<wvs[-1]+(wvs[-1]-wvs[0])/2))
                             wmod = wmod[crop_moltemp]
                             mol_temp = data[wmod_argsort,1][crop_moltemp]
+                            mol_temp = 10**(mol_temp-np.max(mol_temp))
+
+                            print("convolving: "+mol_template_filename)
+                            planet_convspec = convolve_spectrum(wmod,mol_temp,R,specpool)
 
                             # import matplotlib.pyplot as plt
-                            # plt.plot(wmod,mol_temp)#,data[::100,1])
+                            # plt.plot(wmod,planet_convspec)#,data[::100,1])
                             # print(mol_temp.shape)
                             # plt.show()
                             # exit()
-                            print("convolving: "+mol_template_filename)
-                            planet_convspec = convolve_spectrum(wmod,mol_temp,R,specpool)
 
                             with open(mol_template_filename, 'w+') as csvfile:
                                 csvwriter = csv.writer(csvfile, delimiter=' ')
@@ -1468,7 +1470,6 @@ if __name__ == "__main__":
                         # import matplotlib.pyplot as plt
                         # plt.plot(wvs,planet_spec_func(wvs))#,data[::100,1])
                         # plt.show()
-                        # exit()
                     if len(molecules_list) >= 2 or joint_fit:
                         suffix = suffix+"_"+"joint"
                         # print("uh...")

@@ -1506,17 +1506,17 @@ if __name__ == "__main__":
                             ori_planet_spec = 10**(out[:,1]-np.max(out[:,1]))
 
                         # import matplotlib.pyplot as plt
-                        # planet_convspec = convolve_spectrum(wmod,10**(ori_planet_spec-np.max(ori_planet_spec)),R,specpool)
-                        # plt.plot(wmod,planet_convspec/np.max(planet_convspec),label="new 10")
-                        # # plt.plot(wmod,np.exp(ori_planet_spec-np.max(ori_planet_spec)),label="new exp")
-                        # testfilename = grid_filename.replace(".7.D2e.sorted",".7.filter_new.save")
-                        # travis_spectrum = scio.readsav(testfilename)
-                        # print(travis_spec_filename)
-                        # print(travis_spectrum)
-                        # # exit()
-                        # wv = np.array(travis_spectrum["wobs_b"])
-                        # f = np.array(travis_spectrum["FMOD_B"])
-                        # plt.plot(wv,f/np.max(f),label="new but comp",linestyle="--")
+                        # # planet_convspec = convolve_spectrum(wmod,10**(ori_planet_spec-np.max(ori_planet_spec)),R,specpool)
+                        # # plt.plot(wmod,planet_convspec/np.max(planet_convspec),label="new 10")
+                        # # # plt.plot(wmod,np.exp(ori_planet_spec-np.max(ori_planet_spec)),label="new exp")
+                        # # testfilename = grid_filename.replace(".7.D2e.sorted",".7.filter_new.save")
+                        # # travis_spectrum = scio.readsav(testfilename)
+                        # # print(travis_spec_filename)
+                        # # print(travis_spectrum)
+                        # # # exit()
+                        # # wv = np.array(travis_spectrum["wobs_b"])
+                        # # f = np.array(travis_spectrum["FMOD_B"])
+                        # # plt.plot(wv,f/np.max(f),label="new but comp",linestyle="--")
                         #
                         #
                         # # travis_spec_filename=os.path.join(planet_template_folder,
@@ -1525,7 +1525,7 @@ if __name__ == "__main__":
                         # # ori_planet_spec = np.array(travis_spectrum["fmod"])
                         # # ori_planet_convspec = np.array(travis_spectrum["fmods"])
                         # # wmod = np.array(travis_spectrum["wmod"])/1.e4
-                        # # plt.plot(wmod,ori_planet_spec/np.max(ori_planet_spec),label="old")
+                        # plt.plot(wmod,ori_planet_spec/np.max(ori_planet_spec),label="old")
                         #
                         # plt.legend()
                         # plt.show()
@@ -1533,6 +1533,8 @@ if __name__ == "__main__":
 
                         crop_wvs = np.where((wmod>wvs[0]-(wvs[-1]-wvs[0])/2)*(wmod<wvs[-1]+(wvs[-1]-wvs[0])/2))
                         wmod = wmod[crop_wvs]
+                        # print(wmod[np.size(wmod)//2:np.size(wmod)//2+10])
+                        # exit()
                         ori_planet_spec = ori_planet_spec[crop_wvs]
                         print("convolving: "+grid_filename)
                         planet_convspec = convolve_spectrum(wmod,ori_planet_spec,R,specpool)

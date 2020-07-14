@@ -16,6 +16,45 @@ from scipy.interpolate import RegularGridInterpolator
 import ctypes
 import pandas as pd
 
+def _task_convolve_spectrum(paras):
+    indices,wvs,spectrum,R = paras
+
+    conv_spectrum = np.zeros(np.size(indices))
+    dwvs = wvs[1::]-wvs[0:(np.size(wvs)-1)]
+    med_dwv = np.median(dwvs)
+    for l,k in enumerate(indices):
+        pwv = wvs[k]
+        FWHM = pwv/R
+        sig = FWHM/(2*np.sqrt(2*np.log(2)))
+        w = int(np.round(sig/med_dwv*10.))
+        stamp_spec = spectrum[np.max([0,k-w]):np.min([np.size(spectrum),k+w])]
+        stamp_wvs = wvs[np.max([0,k-w]):np.min([np.size(wvs),k+w])]
+        stamp_dwvs = stamp_wvs[1::]-stamp_wvs[0:(np.size(stamp_spec)-1)]
+        gausskernel = 1/(np.sqrt(2*np.pi)*sig)*np.exp(-0.5*(stamp_wvs-pwv)**2/sig**2)
+        conv_spectrum[l] = np.sum(gausskernel[1::]*stamp_spec[1::]*stamp_dwvs)
+    return conv_spectrum
+
+def convolve_spectrum(wvs,spectrum,R,mypool=None):
+    if mypool is None:
+        return _task_convolve_spectrum((np.arange(np.size(spectrum)).astype(np.int),wvs,spectrum,R))
+    else:
+        conv_spectrum = np.zeros(spectrum.shape)
+
+        chunk_size=100
+        N_chunks = np.size(spectrum)//chunk_size
+        indices_list = []
+        for k in range(N_chunks-1):
+            indices_list.append(np.arange(k*chunk_size,(k+1)*chunk_size).astype(np.int))
+        indices_list.append(np.arange((N_chunks-1)*chunk_size,np.size(spectrum)).astype(np.int))
+        outputs_list = mypool.map(_task_convolve_spectrum, zip(indices_list,
+                                                               itertools.repeat(wvs),
+                                                               itertools.repeat(spectrum),
+                                                               itertools.repeat(R)))
+        for indices,out in zip(indices_list,outputs_list):
+            conv_spectrum[indices] = out
+
+        return conv_spectrum
+
 def _arraytonumpy(shared_array, shape=None, dtype=None):
     """
     Covert a shared array to a numpy array
@@ -127,6 +166,29 @@ def get_rv_logpost(paras):
         # print(temp,fitlogg,CtoO)
         planet_template_func = interp1d(oriplanet_spec_wvs,myinterpgrid([temp,fitlogg,CtoO])[0],bounds_error=False,fill_value=np.nan)
 
+        if 0:
+            # tmp1_filename = os.path.join(gridname,"lte11-4.0-0.0.aces_hr8799b_pgs=4d6_Kzz=1d8_C=8.38_O=8.64_gs=5um.exoCH4_hiresHK.7.D2e.sorted")
+            tmp1_filename = os.path.join("/data/osiris_data/","clouds_modelgrid","lte1100-4.0-0.0.aces_pgs=5d5_Kzz=1d8_gs=1um_4osiris.7.D2e.sorted")
+            print(tmp1_filename)
+            wvmin,wvmax = 2.0,2.5
+            out = np.loadtxt(tmp1_filename,skiprows=0)
+            oriplanet_spec_wvs1 = out[:,0]/1e4
+            oriplanet_spec1 = 10**(out[:,1]-np.max(out[:,1]))
+            # oriplanet_spec1 = out[:,1]
+            crop_wvs = np.where((oriplanet_spec_wvs1>wvmin)*(oriplanet_spec_wvs1<wvmax))
+            oriplanet_spec_wvs1 = oriplanet_spec_wvs1[crop_wvs]
+            oriplanet_spec1 =oriplanet_spec1[crop_wvs]
+            oriplanet_spec1 /= np.nanmean(oriplanet_spec1)
+            oriplanet_spec1 = convolve_spectrum(oriplanet_spec_wvs1,oriplanet_spec1,R)
+            oriplanet_spec1 /= np.nanmean(oriplanet_spec1)
+
+            import matplotlib.pyplot as plt
+            plt.plot(oriplanet_spec_wvs1,oriplanet_spec1)
+            plt.plot(oriplanet_spec_wvs1,planet_template_func(oriplanet_spec_wvs1)/np.mean(planet_template_func(oriplanet_spec_wvs1)),"--")
+            plt.show()
+            exit()
+
+
         for plrv_id,plrv in enumerate(planetRV_array):
             planet_model = copy(nospec_planet_model_np)
             for bkg_k in range(2*w+1):
@@ -194,22 +256,21 @@ if __name__ == "__main__":
         inputDir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/"
         filelist = glob.glob(os.path.join(inputDir,"s"+date+"*"+IFSfilter+"_"+scale+".fits"))
         filelist.sort()
-        # modelfolder = "20200309_model"
-        # outputfolder = "20200309_model"
-        modelfolder = "20200427_model_fk"
-        outputfolder = "20200427_model_fk"
-        gridname = os.path.join("/data/osiris_data/","hr8799b_modelgrid")
+        modelfolder = "20200309_model"
+        outputfolder = "20200713_model_test"
+        # modelfolder = "20200427_model_fk"
+        # outputfolder = "20200427_model_fk"
+        # gridname = os.path.join("/data/osiris_data/","hr8799b_modelgrid")
+        gridname = os.path.join("/data/osiris_data/","clouds_modelgrid")
         N_kl = 10
-        numthreads = 16#16
+        numthreads = 32#16
         small = True
-        inj_fake = 2e-5  #2e-5 #None
+        inj_fake = None#2e-5  #2e-5 #None
         # for filename in filelist:
         #     print(filename)
         # print(outputdir)
         # exit()
     else:
-        #
-
         osiris_data_dir = sys.argv[1]
         modelfolder = sys.argv[2]
         outputfolder = sys.argv[3]
@@ -230,9 +291,15 @@ if __name__ == "__main__":
 
     Tfk,loggfk,ctoOfk = 1000,3.75,0.7
 
-    fitT_list = np.linspace(800,1200,21,endpoint=True)
-    fitlogg_list = np.linspace(3,4.5,46,endpoint=True)
-    fitCtoO_list = np.linspace(0.45708819,0.89125094,80,endpoint=True)
+    if "clouds_modelgrid" in gridname:
+        fitT_list = np.linspace(800,1300,25,endpoint=True)
+        fitlogg_list = np.linspace(3.,5.,15,endpoint=True)
+        fitCtoO_list = np.linspace(1e6,5e5,10,endpoint=True)
+
+    else:
+        fitT_list = np.linspace(800,1200,21,endpoint=True)
+        fitlogg_list = np.linspace(3,4.5,46,endpoint=True)
+        fitCtoO_list = np.linspace(0.45708819,0.89125094,80,endpoint=True)
     # fitCtoO_list = np.linspace(10**(8.48 - 8.82),10**(8.33 - 8.51),40,endpoint=True)
     print(fitCtoO_list)
     # exit()
@@ -248,8 +315,9 @@ if __name__ == "__main__":
     # exit()
 # /data/osiris_data/hr8799b_modelgrid/lte11-4.0-0.0.aces_hr8799b_pgs=4d6_Kzz=1d8_C=8.31_O=8.46_gs=5um.exoCH4_hiresHK.7.D2e.sorted_gaussconv_R4000_Kbb.csv
 #     fitT_list = np.array([1100])
-#     fitlogg_list = np.array([-4])
-#     fitCtoO_list = np.array([0.7079457843841374])
+#     fitlogg_list = np.array([4.0])
+#     # fitCtoO_list = np.array([0.55])
+#     fitCtoO_list = np.array([5e5])
     planetRV_array0 = np.arange(-20,20,1)
     # planetRV_array0 = np.arange(-1,1,1)
 
@@ -258,103 +326,343 @@ if __name__ == "__main__":
     R= 4000
 
     if 0:
-        planet_model_list = []
+        if "hr8799b_modelgrid" in gridname:
+            planet_model_list = []
+            grid_filelist = glob.glob(os.path.join(gridname,"lte*-*-0.0.aces_hr8799b_pgs=4d6_Kzz=1d8_C=*_O=*_gs=5um.exoCH4_hiresHK.7.D2e.sorted"))
+            # grid_filelist = glob.glob(os.path.join(gridname,"lte12-4.5-0.0.aces_hr8799b_pgs=4d6_Kzz=1d8_C=8.38_O=*_gs=5um.exoCH4_hiresHK.7.D2e.sorted"))
+            gridconv_filelist = [grid_filename.replace("hiresHK.7.D2e.sorted","hiresHK.7.D2e.sorted_gaussconv_R{0}_{1}.csv".format(R,IFSfilter)) for grid_filename in grid_filelist]
 
-        if "interpolated" not in  gridname:
-            if "sonora" in gridname:
-                grid_filelist = glob.glob(os.path.join(gridname,"sp_t*g*nc_m[0-9].[0-9]"))
-                gridconv_filelist = [grid_filename+"_gaussconv_R{0}_{1}.csv".format(R,IFSfilter) for grid_filename in grid_filelist]
-            elif "BTsettl" in gridname:
-                grid_filelist = glob.glob(os.path.join(gridname,"lte*BT-Settl.spec.fits"))
-                gridconv_filelist = [grid_filename.replace(".fits","_gaussconv_R{0}_{1}.csv".format(R,IFSfilter)) for grid_filename in grid_filelist]
-            elif "hr8799b_modelgrid" in gridname:
-                grid_filelist = glob.glob(os.path.join(gridname,"lte*-*-0.0.aces_hr8799b_pgs=4d6_Kzz=1d8_C=*_O=*_gs=5um.exoCH4_hiresHK.7.D2e.sorted"))
-                gridconv_filelist = [grid_filename.replace("hiresHK.7.D2e.sorted","hiresHK.7.D2e.sorted_gaussconv_R{0}_{1}.csv".format(R,IFSfilter)) for grid_filename in grid_filelist]
-        else:
-            if "sonora" in gridname:
-                gridconv_filelist = glob.glob(os.path.join(gridname,"sp_t*g*nc_m[0-9].[0-9]"+"_gaussconv_R{0}_{1}.csv".format(R,IFSfilter)))
-            elif "BTsettl" in gridname:
-                gridconv_filelist = glob.glob(os.path.join(gridname,"lte*BT-Settl.spec"+"_gaussconv_R{0}_{1}.csv".format(R,IFSfilter)))
-            grid_filelist = ["",]*len(gridconv_filelist)
+            # grid_filelist = grid_filelist[::10]
+            # gridconv_filelist = gridconv_filelist[::10]
 
-        # grid_filelist = grid_filelist[::10]
-        # gridconv_filelist = gridconv_filelist[::10]
+            Tlist = np.array([int(float(os.path.basename(grid_filename).split("lte")[-1].split("-")[0])*100) for grid_filename in grid_filelist])
+            logglist = np.array([float(os.path.basename(grid_filename).split("-")[1]) for grid_filename in grid_filelist])
+            Clist = np.array([float(os.path.basename(grid_filename).split("C=")[-1].split("_O")[0]) for grid_filename in grid_filelist])
+            Olist = np.array([float(os.path.basename(grid_filename).split("O=")[-1].split("_gs")[0]) for grid_filename in grid_filelist])
+            CtoOlist = 10**(Clist-Olist)
+            Tlistunique = np.unique(Tlist)
+            logglistunique = np.unique(logglist)
+            CtoOlistunique = np.unique(CtoOlist)
+            print(Tlistunique)
+            print(logglistunique)
+            print(CtoOlistunique,CtoOlistunique[1::]-CtoOlistunique[0:len(CtoOlistunique)-1])
+            print(np.unique(Clist))
+            print(np.unique(Olist))
+            print(os.path.basename(grid_filelist[0]))
 
-        Tlist = np.array([int(float(os.path.basename(grid_filename).split("lte")[-1].split("-")[0])*100) for grid_filename in grid_filelist])
-        logglist = np.array([float(os.path.basename(grid_filename).split("-")[1]) for grid_filename in grid_filelist])
-        Clist = np.array([float(os.path.basename(grid_filename).split("C=")[-1].split("_O")[0]) for grid_filename in grid_filelist])
-        Olist = np.array([float(os.path.basename(grid_filename).split("O=")[-1].split("_gs")[0]) for grid_filename in grid_filelist])
-        CtoOlist = 10**(Clist-Olist)
-        Tlistunique = np.unique(Tlist)
-        logglistunique = np.unique(logglist)
-        CtoOlistunique = np.unique(CtoOlist)
-        print(Tlistunique)
-        print(logglistunique)
-        print(CtoOlistunique)
-        # exit()
 
-        #print(gridname)
-        for file_id,(grid_filename,gridconv_filename) in enumerate(zip(grid_filelist,gridconv_filelist)):
-            print(gridconv_filename)
-            with open(gridconv_filename, 'r') as csvfile:
-                csv_reader = csv.reader(csvfile, delimiter=' ')
-                list_starspec = list(csv_reader)
-                oriplanet_spec_str_arr = np.array(list_starspec, dtype=np.str)
-                col_names = oriplanet_spec_str_arr[0]
-                oriplanet_spec = oriplanet_spec_str_arr[1::,1].astype(np.float)
-                oriplanet_spec /= np.nanmean(oriplanet_spec)
-                oriplanet_spec_wvs = oriplanet_spec_str_arr[1::,0].astype(np.float)
-                # where_IFSfilter = np.where((oriplanet_spec_wvs>wvs[0])*(oriplanet_spec_wvs<wvs[-1]))
-                # oriplanet_spec = oriplanet_spec/np.mean(oriplanet_spec[where_IFSfilter])
-                # planet_spec_func = interp1d(oriplanet_spec_wvs,oriplanet_spec,bounds_error=False,fill_value=np.nan)
-                # planet_partial_template_func_list.append(planet_spec_func)
-                planet_model_list.append(oriplanet_spec)
-                if 0:
-                    tmpfilename = os.path.join(osiris_data_dir,"hr8799b_modelgrid/","hr8799b_modelgrid_R{0}_{1}.fits".format(R,IFSfilter))
-                    hdulist = pyfits.open(tmpfilename)
-                    planet_model_grid =  hdulist[0].data
-                    oriplanet_spec_wvs =  hdulist[1].data
-                    Tlistunique =  hdulist[2].data
-                    logglistunique =  hdulist[3].data
-                    CtoOlistunique =  hdulist[4].data
-                    # Tlistunique =  hdulist[1].data
-                    # logglistunique =  hdulist[2].data
-                    # CtoOlistunique =  hdulist[3].data
-                    hdulist.close()
+            # exit()
+            # import matplotlib.pyplot as plt
+            # fontsize=12
+            # f = plt.figure(2,figsize=(4,3.5))
+            # color = "#0099cc"
+            # plt.scatter(np.unique(Olist),np.unique(Clist),c=color)
+            # plt.ylabel(r"log$_{10}($N$_\mathrm{C}$/N$_\mathrm{H})+12$", color=color, fontsize=fontsize)
+            # plt.xlabel(r"log$_{10}($N$_\mathrm{O}$/N$_\mathrm{H})+12$", fontsize=fontsize)
+            # ax=plt.gca()
+            # ax.tick_params(axis='x', labelsize=fontsize)
+            # ax.tick_params(axis='y', labelsize=fontsize,labelcolor=color)
+            #
+            # ax2 = ax.twinx()
+            # plt.sca(ax2)
+            # color = "#ff9900"
+            # plt.ylabel("C/O",color=color, fontsize=fontsize)
+            # plt.scatter(np.unique(Olist),10**(np.unique(Clist)-np.unique(Olist)),c=color)
+            # ax2.tick_params(axis='y', labelsize=fontsize,labelcolor=color)
+            #
+            # plt.tight_layout()
+            # plt.show()
+            # exit()
 
-                    print(planet_model_grid.shape,np.size(Tlistunique),np.size(logglistunique),np.size(CtoOlistunique),np.size(oriplanet_spec_wvs))
-                    from scipy.interpolate import RegularGridInterpolator
-                    myinterpgrid = RegularGridInterpolator((Tlistunique,logglistunique,CtoOlistunique),planet_model_grid,method="linear",bounds_error=False,fill_value=0.0)
+            # tmp1_filename = os.path.join("/data/osiris_data/","clouds_modelgrid","lte1100-4.0-0.0.aces_pgs=4d6_Kzz=1d8_gs=1um_4osiris.7.D2e.sorted")
+            # # tmp1_filename = os.path.join(gridname,"lte11-4.0-0.0.aces_hr8799b_pgs=4d6_Kzz=1d8_C=8.25_O=8.30_gs=5um.exoCH4_hiresHK.7.D2e.sorted")
+            # tmp2_filename = os.path.join(gridname,"lte11-4.0-0.0.aces_hr8799b_pgs=4d6_Kzz=1d8_C=8.38_O=8.64_gs=5um.exoCH4_hiresHK.7.D2e.sorted")
+            # specpool = mp.Pool(processes=numthreads)
+            # print(tmp1_filename)
+            # wvmin,wvmax = 2.0,2.5
+            # out = np.loadtxt(tmp1_filename,skiprows=0)
+            # oriplanet_spec_wvs1 = out[:,0]/1e4
+            # oriplanet_spec1 = 10**(out[:,1]-np.max(out[:,1]))
+            # # oriplanet_spec1 = out[:,1]
+            # crop_wvs = np.where((oriplanet_spec_wvs1>wvmin)*(oriplanet_spec_wvs1<wvmax))
+            # oriplanet_spec_wvs1 = oriplanet_spec_wvs1[crop_wvs]
+            # oriplanet_spec1 =oriplanet_spec1[crop_wvs]
+            # oriplanet_spec1 /= np.nanmean(oriplanet_spec1)
+            # oriplanet_spec1 = convolve_spectrum(oriplanet_spec_wvs1,oriplanet_spec1,R,specpool)
+            #
+            # out = np.loadtxt(tmp2_filename,skiprows=0)
+            # oriplanet_spec_wvs2 = out[:,0]/1e4
+            # oriplanet_spec2 = 10**(out[:,1]-np.max(out[:,1]))
+            # # oriplanet_spec2 = out[:,1]
+            # crop_wvs = np.where((oriplanet_spec_wvs2>wvmin)*(oriplanet_spec_wvs2<wvmax))
+            # oriplanet_spec_wvs2 = oriplanet_spec_wvs2[crop_wvs]
+            # oriplanet_spec2 =oriplanet_spec2[crop_wvs]
+            # oriplanet_spec2 /= np.nanmean(oriplanet_spec2)
+            # oriplanet_spec2 = convolve_spectrum(oriplanet_spec_wvs2,oriplanet_spec2,R,specpool)
+            #
+            # import matplotlib.pyplot as plt
+            # plt.plot(oriplanet_spec_wvs1,oriplanet_spec1,label="new grid (clouds)")
+            # plt.plot(oriplanet_spec_wvs2,oriplanet_spec2,label="old grid (C/O)")
+            # plt.legend()
+            # plt.show()
+            # exit()
 
-                    import matplotlib.pyplot as plt
-                    print(Tlist[file_id],logglist[file_id],CtoOlist[file_id])
-                    plt.plot(oriplanet_spec_wvs,myinterpgrid([Tlist[file_id],logglist[file_id],CtoOlist[file_id]])[0],label="interp")
-                    plt.plot(oriplanet_spec_wvs,oriplanet_spec,label="ori",linestyle="--")
-                    plt.legend()
-                    plt.show()
+            #print(gridname)
+            for file_id,(grid_filename,gridconv_filename) in enumerate(zip(grid_filelist,gridconv_filelist)):
+                print(gridconv_filename)
+                with open(gridconv_filename, 'r') as csvfile:
+                    csv_reader = csv.reader(csvfile, delimiter=' ')
+                    list_starspec = list(csv_reader)
+                    oriplanet_spec_str_arr = np.array(list_starspec, dtype=np.str)
+                    col_names = oriplanet_spec_str_arr[0]
+                    oriplanet_spec = oriplanet_spec_str_arr[1::,1].astype(np.float)
+                    oriplanet_spec /= np.nanmean(oriplanet_spec)
+                    oriplanet_spec_wvs = oriplanet_spec_str_arr[1::,0].astype(np.float)
+                    # where_IFSfilter = np.where((oriplanet_spec_wvs>wvs[0])*(oriplanet_spec_wvs<wvs[-1]))
+                    # oriplanet_spec = oriplanet_spec/np.mean(oriplanet_spec[where_IFSfilter])
+                    # planet_spec_func = interp1d(oriplanet_spec_wvs,oriplanet_spec,bounds_error=False,fill_value=np.nan)
+                    # planet_partial_template_func_list.append(planet_spec_func)
+                    planet_model_list.append(oriplanet_spec)
+                    if 0:
+                        tmpfilename = os.path.join(gridname,"hr8799b_modelgrid_R{0}_{1}.fits".format(R,IFSfilter))
+                        hdulist = pyfits.open(tmpfilename)
+                        planet_model_grid =  hdulist[0].data
+                        oriplanet_spec_wvs =  hdulist[1].data
+                        Tlistunique =  hdulist[2].data
+                        logglistunique =  hdulist[3].data
+                        CtoOlistunique =  hdulist[4].data
+                        # Tlistunique =  hdulist[1].data
+                        # logglistunique =  hdulist[2].data
+                        # CtoOlistunique =  hdulist[3].data
+                        hdulist.close()
 
-        print(len(planet_model_list),np.size(Tlistunique)*np.size(logglistunique)*np.size(CtoOlistunique))
-        print((np.size(Tlistunique),np.size(logglistunique),np.size(CtoOlistunique),np.size(oriplanet_spec_wvs)))
-        if len(planet_model_list) != np.size(Tlistunique)*np.size(logglistunique)*np.size(CtoOlistunique):
-            raise Exception("Missing model(s) to complete the grid")
-        planet_model_grid = np.zeros((np.size(Tlistunique),np.size(logglistunique),np.size(CtoOlistunique),np.size(oriplanet_spec_wvs)))
-        for T_id,T in enumerate(Tlistunique):
-            for logg_id,logg in enumerate(logglistunique):
-                for CtoO_id,CtoO in enumerate(CtoOlistunique):
-                    planet_model_grid[T_id,logg_id,CtoO_id,:] = planet_model_list[np.where((Tlist==T)*(logglist==logg)*(CtoOlist==CtoO))[0][0]]
-        hdulist = pyfits.HDUList()
-        hdulist.append(pyfits.PrimaryHDU(data=planet_model_grid))
-        hdulist.append(pyfits.ImageHDU(data=oriplanet_spec_wvs))
-        hdulist.append(pyfits.ImageHDU(data=Tlistunique))
-        hdulist.append(pyfits.ImageHDU(data=logglistunique))
-        hdulist.append(pyfits.ImageHDU(data=CtoOlistunique))
-        try:
-            hdulist.writeto(os.path.join(osiris_data_dir,"hr8799b_modelgrid/","hr8799b_modelgrid_R{0}_{1}.fits".format(R,IFSfilter)), overwrite=True)
-        except TypeError:
-            hdulist.writeto(os.path.join(osiris_data_dir,"hr8799b_modelgrid/","hr8799b_modelgrid_R{0}_{1}.fits".format(R,IFSfilter)), clobber=True)
-        hdulist.close()
+                        print(planet_model_grid.shape,np.size(Tlistunique),np.size(logglistunique),np.size(CtoOlistunique),np.size(oriplanet_spec_wvs))
+                        from scipy.interpolate import RegularGridInterpolator
+                        myinterpgrid = RegularGridInterpolator((Tlistunique,logglistunique,CtoOlistunique),planet_model_grid,method="linear",bounds_error=False,fill_value=0.0)
+
+                        import matplotlib.pyplot as plt
+                        print(Tlist[file_id],logglist[file_id],CtoOlist[file_id])
+                        # a = myinterpgrid([Tlist[file_id],logglist[file_id],CtoOlist[file_id]])[0]
+                        print(Tlist[file_id],logglist[file_id])
+                        a = myinterpgrid([1200,3.0,0.54954087])[0]
+                        plt.plot(oriplanet_spec_wvs,a/np.mean(a),label="interp3.0",linestyle="--")
+                        a = myinterpgrid([1200,4.5,0.54954087])[0]
+                        plt.plot(oriplanet_spec_wvs,a/np.mean(a),label="interp4.5",linestyle="-")
+                        # a = planet_model_grid[3,2,2,:]
+                        # plt.plot(oriplanet_spec_wvs,a/np.mean(a),label="interp2",linestyle="--")
+                        b = oriplanet_spec
+                        plt.plot(oriplanet_spec_wvs,b/np.mean(b),label="ori "+os.path.basename(grid_filename),linestyle="--")
+                        plt.legend()
+                        plt.show()
+
+            print(len(planet_model_list),np.size(Tlistunique)*np.size(logglistunique)*np.size(CtoOlistunique))
+            print((np.size(Tlistunique),np.size(logglistunique),np.size(CtoOlistunique),np.size(oriplanet_spec_wvs)))
+            if len(planet_model_list) != np.size(Tlistunique)*np.size(logglistunique)*np.size(CtoOlistunique):
+                raise Exception("Missing model(s) to complete the grid")
+            planet_model_grid = np.zeros((np.size(Tlistunique),np.size(logglistunique),np.size(CtoOlistunique),np.size(oriplanet_spec_wvs)))
+            for T_id,T in enumerate(Tlistunique):
+                for logg_id,logg in enumerate(logglistunique):
+                    for CtoO_id,CtoO in enumerate(CtoOlistunique):
+                        planet_model_grid[T_id,logg_id,CtoO_id,:] = planet_model_list[np.where((Tlist==T)*(logglist==logg)*(CtoOlist==CtoO))[0][0]]
+            hdulist = pyfits.HDUList()
+            hdulist.append(pyfits.PrimaryHDU(data=planet_model_grid))
+            hdulist.append(pyfits.ImageHDU(data=oriplanet_spec_wvs))
+            hdulist.append(pyfits.ImageHDU(data=Tlistunique))
+            hdulist.append(pyfits.ImageHDU(data=logglistunique))
+            hdulist.append(pyfits.ImageHDU(data=CtoOlistunique))
+            try:
+                hdulist.writeto(os.path.join(gridname,"hr8799b_modelgrid_R{0}_{1}.fits".format(R,IFSfilter)), overwrite=True)
+            except TypeError:
+                hdulist.writeto(os.path.join(gridname,"hr8799b_modelgrid_R{0}_{1}.fits".format(R,IFSfilter)), clobber=True)
+            hdulist.close()
+            exit()
+        if "clouds_modelgrid" in gridname:
+            planet_model_list = []
+            #lte0800-3.0-0.0.aces_pgs=4d6_Kzz=1d8_gs=1um_4osiris.7
+            grid_filelist = glob.glob(os.path.join(gridname,"lte*-*-0.0.aces_pgs=*_Kzz=1d8_gs=1um_4osiris.7"))
+            # grid_filelist = glob.glob(os.path.join(gridname,"lte1200-4.5-0.0.aces_pgs=4d6_Kzz=1d8_gs=1um_4osiris.7"))
+            grid_filelist.sort()
+            # gridconv_filelist = [grid_filename.replace("hiresHK.7.D2e.sorted","hiresHK.7.D2e.sorted_gaussconv_R{0}_{1}.csv".format(R,IFSfilter)) for grid_filename in grid_filelist]
+
+            # grid_filelist = grid_filelist[::10]
+            # gridconv_filelist = gridconv_filelist[::10]
+
+            Tlist = np.array([int(float(os.path.basename(grid_filename).split("lte")[-1].split("-")[0])) for grid_filename in grid_filelist])
+            logglist = np.array([float(os.path.basename(grid_filename).split("-")[1]) for grid_filename in grid_filelist])
+            pgslist = np.array([float(os.path.basename(grid_filename).split("pgs=")[-1].split("_Kzz")[0].replace("d","e")) for grid_filename in grid_filelist])
+            Tlistunique = np.unique(Tlist)
+            logglistunique = np.unique(logglist)
+            pgslistunique = np.unique(pgslist)
+            print(Tlistunique,len(Tlistunique))
+            print(logglistunique,len(logglistunique))
+            print(pgslistunique,len(pgslistunique))
+            print(len(Tlist),len(Tlistunique)*len(logglistunique)*len(pgslistunique))
+            print(os.path.basename(grid_filelist[0]))
+            # exit()
+
+            #print(gridname)
+            specpool = mp.Pool(processes=numthreads)
+            for file_id,grid_filename in enumerate(grid_filelist):
+                # if os.path.basename(grid_filename) == "lte0800-3.0-0.0.aces_pgs=1d6_Kzz=1d8_gs=1um_4osiris.7":
+                #     continue
+                print(os.path.basename(grid_filename))
+                # exit()
+                if len(glob.glob(grid_filename.replace(".7",".7.D2e.sorted"))) == 0:
+                    with open(grid_filename, 'r') as txtfile:
+                        D2e = []
+                        for s in txtfile.readlines():
+                            tmp_s = s.strip().replace("D","e")
+                            tmp_s = tmp_s[:87]+" "+tmp_s[87::]
+                            D2e.append(tmp_s)
+                    with open(grid_filename.replace(".7",".7.D2e"), 'w+') as txtfile:
+                        txtfile.writelines([s+"\n" for s in D2e])
+
+                    out = np.loadtxt(grid_filename.replace(".7",".7.D2e"),skiprows=0)
+                    wvs = out[:,0]
+                    argsort_wvs = np.argsort(wvs)
+                    np.savetxt(grid_filename.replace(".7",".7.D2e.sorted"),out[argsort_wvs,:])
+                    os.system("rm "+grid_filename.replace(".7",".7.D2e"))
+
+                # out = np.loadtxt(grid_filename.replace(".7",".7.D2e.sorted"),skiprows=0)
+                # wvs = out[:,0]
+                # import matplotlib.pyplot as plt
+                # plt.plot(wvs,out[:,1])
+                # plt.show()
+
+                print(grid_filename.replace(".7",".7.D2e.sorted"))
+                with open(grid_filename.replace(".7",".7.D2e.sorted"), 'r') as csvfile:
+                    out = np.loadtxt(grid_filename.replace(".7",".7.D2e.sorted"),skiprows=0)
+                    # print(np.size(oriplanet_spec_wvs))
+                    oriplanet_spec_wvs = out[:,0]/1e4
+                    oriplanet_spec = 10**(out[:,1]-np.max(out[:,1]))
+                    # oriplanet_spec = out[:,1]
+                    oriplanet_spec /= np.nanmean(oriplanet_spec)
+
+                    if IFSfilter == "Kbb":
+                        wvmin,wvmax = 1.95,2.4
+                    elif IFSfilter == "Hbb":
+                        wvmin,wvmax = 1.45,1.80
+                    crop_wvs = np.where((oriplanet_spec_wvs>wvmin-(wvmax-wvmin)/2)*(oriplanet_spec_wvs<wvmax+(wvmax-wvmin)/2))
+                    oriplanet_spec_wvs = oriplanet_spec_wvs[crop_wvs]
+                    # print(np.size(oriplanet_spec_wvs))
+                    # print(wmod[np.size(wmod)//2:np.size(wmod)//2+10])
+                    # exit()
+                    oriplanet_spec = oriplanet_spec[crop_wvs]
+                    print("convolving: "+grid_filename)
+                    planet_convspec = convolve_spectrum(oriplanet_spec_wvs,oriplanet_spec,R,specpool)
+                    planet_model_list.append(planet_convspec)
+                    if 0:
+                        tmpfilename = os.path.join(gridname,"hr8799b_modelgrid_R{0}_{1}.fits".format(R,IFSfilter))
+                        hdulist = pyfits.open(tmpfilename)
+                        planet_model_grid =  hdulist[0].data
+                        oriplanet_spec_wvs =  hdulist[1].data
+                        Tlistunique =  hdulist[2].data
+                        logglistunique =  hdulist[3].data
+                        CtoOlistunique =  hdulist[4].data
+                        # Tlistunique =  hdulist[1].data
+                        # logglistunique =  hdulist[2].data
+                        # CtoOlistunique =  hdulist[3].data
+                        hdulist.close()
+
+                        print(planet_model_grid.shape,np.size(Tlistunique),np.size(logglistunique),np.size(CtoOlistunique),np.size(oriplanet_spec_wvs))
+                        from scipy.interpolate import RegularGridInterpolator
+                        myinterpgrid = RegularGridInterpolator((Tlistunique,logglistunique,CtoOlistunique),planet_model_grid,method="linear",bounds_error=False,fill_value=0.0)
+
+                        import matplotlib.pyplot as plt
+                        # a = myinterpgrid([Tlist[file_id],logglist[file_id],CtoOlist[file_id]])[0]
+                        print(Tlist[file_id],logglist[file_id])
+                        a = myinterpgrid([1200,3.0,4e6])[0]
+                        plt.plot(oriplanet_spec_wvs,a/np.mean(a),label="interp3.0",linestyle="--")
+                        a = myinterpgrid([1200,4.5,4e6])[0]
+                        plt.plot(oriplanet_spec_wvs,a/np.mean(a),label="interp4.5",linestyle="-")
+                        # a = planet_model_grid[3,2,2,:]
+                        # plt.plot(oriplanet_spec_wvs,a/np.mean(a),label="interp2",linestyle="--")
+                        b = planet_convspec
+                        plt.plot(oriplanet_spec_wvs,b/np.mean(b),label="ori "+os.path.basename(grid_filename),linestyle="--")
+                        plt.legend()
+                        plt.show()
+
+            #         if file_id == 0:
+            #             tmpfilename = os.path.join(gridname,"..","hr8799b_modelgrid","hr8799b_modelgrid_R{0}_{1}.fits".format(R,IFSfilter))
+            #             hdulist = pyfits.open(tmpfilename)
+            #             planet_model_grid =  hdulist[0].data
+            #             oriplanet_spec_wvs2 =  hdulist[1].data
+            #             Tlistunique =  hdulist[2].data
+            #             logglistunique =  hdulist[3].data
+            #             CtoOlistunique =  hdulist[4].data
+            #             # Tlistunique =  hdulist[1].data
+            #             # logglistunique =  hdulist[2].data
+            #             # CtoOlistunique =  hdulist[3].data
+            #             hdulist.close()
+            #
+            #             print(planet_model_grid.shape,np.size(Tlistunique),np.size(logglistunique),np.size(CtoOlistunique),np.size(oriplanet_spec_wvs))
+            #             from scipy.interpolate import RegularGridInterpolator
+            #             myinterpgrid = RegularGridInterpolator((Tlistunique,logglistunique,CtoOlistunique),planet_model_grid,method="linear",bounds_error=False,fill_value=0.0)
+            #
+            #             import matplotlib.pyplot as plt
+            #             print(Tlist[file_id],logglist[file_id],0.55)
+            #             print(logglistunique)
+            #             plt.plot(oriplanet_spec_wvs2,myinterpgrid([1100,3.5,0.55])[0],label="ref3.5")
+            #             plt.plot(oriplanet_spec_wvs2,myinterpgrid([1100,4.0,0.55])[0],label="ref4.0")
+            #             #
+            #             # tmp1_filename = os.path.join("/data/osiris_data/","hr8799b_modelgrid","lte11-4.0-0.0.aces_hr8799b_pgs=4d6_Kzz=1d8_C=8.38_O=8.64_gs=5um.exoCH4_hiresHK.7.D2e.sorted")
+            #             # tmp2_filename = os.path.join("/data/osiris_data/","clouds_modelgrid","lte1100-4.0-0.0.aces_pgs=4d6_Kzz=1d8_gs=1um_4osiris.7.D2e.sorted")
+            #             #
+            #             # print(tmp1_filename)
+            #             # wvmin,wvmax = 2.0,2.5
+            #             # out = np.loadtxt(tmp1_filename,skiprows=0)
+            #             # oriplanet_spec_wvs1 = out[:,0]/1e4
+            #             # oriplanet_spec1 = 10**(out[:,1]-np.max(out[:,1]))
+            #             # # oriplanet_spec1 = out[:,1]
+            #             # crop_wvs = np.where((oriplanet_spec_wvs1>wvmin-(wvmax-wvmin)/2)*(oriplanet_spec_wvs1<wvmax+(wvmax-wvmin)/2))
+            #             # oriplanet_spec_wvs1 = oriplanet_spec_wvs1[crop_wvs]
+            #             # oriplanet_spec1 =oriplanet_spec1[crop_wvs]
+            #             # oriplanet_spec1 /= np.nanmean(oriplanet_spec1)
+            #             #
+            #             # out = np.loadtxt(tmp2_filename,skiprows=0)
+            #             # oriplanet_spec_wvs2 = out[:,0]/1e4
+            #             # oriplanet_spec2 = 10**(out[:,1]-np.max(out[:,1]))
+            #             # # oriplanet_spec2 = out[:,1]
+            #             # crop_wvs = np.where((oriplanet_spec_wvs2>wvmin-(wvmax-wvmin)/2)*(oriplanet_spec_wvs2<wvmax+(wvmax-wvmin)/2))
+            #             # oriplanet_spec_wvs2 = oriplanet_spec_wvs2[crop_wvs]
+            #             # oriplanet_spec2 =oriplanet_spec2[crop_wvs]
+            #             # oriplanet_spec2 /= np.nanmean(oriplanet_spec2)
+            #             #
+            #             # import matplotlib.pyplot as plt
+            #             # plt.plot(oriplanet_spec_wvs1,oriplanet_spec1,label="1")
+            #             # plt.plot(oriplanet_spec_wvs2,oriplanet_spec2,label="2")
+            #         plt.plot(oriplanet_spec_wvs,planet_convspec,label=os.path.basename(grid_filename),linestyle="--")
+            #
+            #
+            # plt.legend()
+            # plt.show()
+            # exit()
+            # print("coucou2")
+            # exit()
+
+            print(len(planet_model_list),np.size(Tlistunique)*np.size(logglistunique)*np.size(pgslistunique))
+            print((np.size(Tlistunique),np.size(logglistunique),np.size(pgslistunique),np.size(oriplanet_spec_wvs)))
+            # if len(planet_model_list) != np.size(Tlistunique)*np.size(logglistunique)*np.size(pgslistunique):
+            #     raise Exception("Missing model(s) to complete the grid")
+            planet_model_grid = np.zeros((np.size(Tlistunique),np.size(logglistunique),np.size(pgslistunique),np.size(oriplanet_spec_wvs)))
+            for T_id,T in enumerate(Tlistunique):
+                for logg_id,logg in enumerate(logglistunique):
+                    for pgs_id,pgs in enumerate(pgslistunique):
+                        planet_model_grid[T_id,logg_id,pgs_id,:] = planet_model_list[np.where((Tlist==T)*(logglist==logg)*(pgslist==pgs))[0][0]]
+            hdulist = pyfits.HDUList()
+            hdulist.append(pyfits.PrimaryHDU(data=planet_model_grid))
+            hdulist.append(pyfits.ImageHDU(data=oriplanet_spec_wvs))
+            hdulist.append(pyfits.ImageHDU(data=Tlistunique))
+            hdulist.append(pyfits.ImageHDU(data=logglistunique))
+            hdulist.append(pyfits.ImageHDU(data=pgslistunique))
+            try:
+                hdulist.writeto(os.path.join(gridname,"hr8799b_modelgrid_R{0}_{1}.fits".format(R,IFSfilter)), overwrite=True)
+            except TypeError:
+                hdulist.writeto(os.path.join(gridname,"hr8799b_modelgrid_R{0}_{1}.fits".format(R,IFSfilter)), clobber=True)
+            hdulist.close()
+            exit()
     else:
-        tmpfilename = os.path.join(osiris_data_dir,"hr8799b_modelgrid/","hr8799b_modelgrid_R{0}_{1}.fits".format(R,IFSfilter))
+        tmpfilename = os.path.join(gridname,"hr8799b_modelgrid_R{0}_{1}.fits".format(R,IFSfilter))
         hdulist = pyfits.open(tmpfilename)
         planet_model_grid =  hdulist[0].data
         oriplanet_spec_wvs =  hdulist[1].data
@@ -373,6 +681,9 @@ if __name__ == "__main__":
         # import matplotlib.pyplot as plt
         # print(Tlistunique[0],logglistunique[0],CtoOlistunique[0])
         # plt.plot(oriplanet_spec_wvs,myinterpgrid([Tlistunique[0],logglistunique[0],CtoOlistunique[0]])[0])
+        # plt.plot(oriplanet_spec_wvs,planet_model_grid[0,0,0,:])
+        # plt.plot(oriplanet_spec_wvs,planet_model_grid[0,0,1,:])
+        # plt.plot(oriplanet_spec_wvs,planet_model_grid[0,0,2,:])
         # plt.show()
 
     # exit()
@@ -673,8 +984,6 @@ if __name__ == "__main__":
             # speclist_list.append(planet_template_func_list[(N_chunks-1)*chunk_size:len(planet_template_func_list)])
 
             print("starting paral")
-            # print(out)
-            # exit()
             outputs_list = tpool.map(get_rv_logpost, zip(paraslist_list,
                                                             itertools.repeat(myinterpgrid),
                                                             itertools.repeat(planetRV_array),

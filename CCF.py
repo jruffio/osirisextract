@@ -10,7 +10,7 @@ import astropy.io.fits as pyfits
 import numpy as np
 from copy import copy
 from scipy.interpolate import interp1d
-from reduce_HPFonly_diagcov import LPFvsHPF
+from reduce_HPFonly_diagcov_resmodel_v2 import LPFvsHPF
 
 out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
 
@@ -501,9 +501,9 @@ if 0:
         plt.gca().tick_params(axis='y', labelsize=fontsize)
         f1.subplots_adjust(wspace=0,hspace=0)
         # plt.show()
-        print("Saving "+os.path.join(out_pngs,"HR_8799_"+IFSfilter+"_templates_CCF.png"))
-        plt.savefig(os.path.join(out_pngs,"HR_8799_"+IFSfilter+"_templates_CCF.png"),bbox_inches='tight')
-        plt.savefig(os.path.join(out_pngs,"HR_8799_"+IFSfilter+"_templates_CCF.pdf"),bbox_inches='tight')
+        print("Saving "+os.path.join(out_pngs,"HR_8799_"+IFSfilter+"_templates_CCF_v2.png"))
+        plt.savefig(os.path.join(out_pngs,"HR_8799_"+IFSfilter+"_templates_CCF_v2.png"),bbox_inches='tight')
+        plt.savefig(os.path.join(out_pngs,"HR_8799_"+IFSfilter+"_templates_CCF_v2.pdf"),bbox_inches='tight')
 
 
     # plt.show()
@@ -767,8 +767,8 @@ if 0:
 
                 plt.figure(f1.number)
                 plt.sca(ax_CCF_list[molid][plid])
-                colids_choice = np.random.choice(where_valid[0],size = 500,replace=False)
-                rowids_choice = np.random.choice(where_valid[1],size = 500,replace=False)
+                colids_choice = np.random.choice(where_valid[0],size = 100,replace=False)
+                rowids_choice = np.random.choice(where_valid[1],size = 100,replace=False)
                 for k,l in zip(colids_choice,rowids_choice):
                     plt.plot(planetRV,noise1[:,k,l],alpha=0.1,linestyle="--",linewidth=0.2,color="grey") #006699
                     # plt.plot(planetRV,noise2[:,k,l],alpha=0.5,linestyle="--",linewidth=1,color="cyan")
@@ -904,7 +904,7 @@ if 0:
 if 1:
     resnumbasis = 10
     fontsize = 12
-    for IFSfilter in ["Hbb"]:#,"Hbb"]:
+    for IFSfilter in ["Kbb"]:#,"Hbb"]:
         if IFSfilter=="Kbb": #Kbb 1965.0 0.25
             CRVAL1 = 1965.
             CDELT1 = 0.25
@@ -1016,7 +1016,8 @@ if 1:
                     # reducfilename = item[cen_filename_id].replace("search","search_CO_H2O_CH4_joint")
                     # print(item[cen_filename_id].replace("search","search_CO2_CO_H2O_CH4"))
                     if molecule != "":
-                        reducfilename = item[cen_filename_id].replace("20191205_RV","20200213_molecules").replace("search","search_"+molecule_str)
+                        # reducfilename = item[cen_filename_id].replace("20191205_RV","20200213_molecules").replace("search","search_"+molecule_str)
+                        reducfilename = item[cen_filename_id].replace("20191205_RV","20200518_molecules").replace("search","search_"+molecule_str)
                     else:
                         reducfilename = item[cen_filename_id]
                     # print(reducfilename)
@@ -1197,10 +1198,10 @@ if 1:
 
                 plt.figure(f1.number)
                 plt.sca(ax_CCF_list[molid][plid])
-                colids_choice = np.random.choice(where_valid[0],size = 500,replace=False)
-                rowids_choice = np.random.choice(where_valid[1],size = 500,replace=False)
+                colids_choice = np.random.choice(where_valid[0],size = 50,replace=False)
+                rowids_choice = np.random.choice(where_valid[1],size = 50,replace=False)
                 for k,l in zip(colids_choice,rowids_choice):
-                    plt.plot(planetRV,noise1[:,k,l],alpha=0.1,linestyle="--",linewidth=0.2,color="grey") #006699
+                    plt.plot(planetRV,noise1[:,k,l],alpha=0.5,linestyle="--",linewidth=0.5,color="grey") #006699
                     # plt.plot(planetRV,noise2[:,k,l],alpha=0.5,linestyle="--",linewidth=1,color="cyan")
                 plt.plot(planetRV,summed_wideRV[200:400,(64*3)//2,(19*3)//2],linestyle="-",linewidth=2,color=color)
                 Nvalid_hdRV = np.sum(Nvalid_hdRV[400:800,:,:],axis=(1,2))

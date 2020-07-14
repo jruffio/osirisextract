@@ -78,18 +78,18 @@ if __name__ == "__main__":
     if not useprior:
         priorTeff,priorTeff_sig = 1000,1e+4#1e-9
         priorlogg,priorlogg_sig = 4,1e+3#1e-9
-    # planet,color = "HR_8799_b","#0099cc"
-    # if useprior:
-    #     priorTeff,priorTeff_sig = 1000,1e-9#1e-9
-    #     priorlogg,priorlogg_sig = 4,1e+3#1e-9
-    # planet,color = "HR_8799_c","#ff9900"
-    # if useprior:
-    #     priorTeff,priorTeff_sig = 1100,1e-9#1e-9
-    #     priorlogg,priorlogg_sig = 4,1e+3#1e-9
-    planet,color = "HR_8799_d","#6600ff"
+    planet,color = "HR_8799_b","#0099cc"
     if useprior:
-        priorTeff,priorTeff_sig = 1100,1e-9#1e-9
-        priorlogg,priorlogg_sig = 4,1e+3#1e-9
+        priorTeff,priorTeff_sig = 900,1e-9#1e-9
+        priorlogg,priorlogg_sig = 3.9,1e-9#1e-9
+    planet,color = "HR_8799_c","#ff9900"
+    if useprior:
+        priorTeff,priorTeff_sig = 1060,1e-9#1e-9
+        priorlogg,priorlogg_sig = 4.1,1e-9#1e-9
+    # planet,color = "HR_8799_d","#6600ff"
+    # if useprior:
+    #     priorTeff,priorTeff_sig = 1060,1e-9#1e-9
+    #     priorlogg,priorlogg_sig = 4.1,1e-9#1e-9
     IFSfilter = "*"
     scale = "*"
     date = "*"
@@ -106,11 +106,14 @@ if __name__ == "__main__":
     # filelist = glob.glob(os.path.join(inputDir,"s"+date+"*"+"*"+"_"+scale+".fits"))
     filelist = glob.glob(os.path.join(inputDir,"s"+date+"*"+IFSfilter+"_"+scale+".fits"))
     filelist.sort()
-    outputfolder = "20200309_model"
+    # outputfolder = "20200309_model"
     outputfolder = "sherlock/20200312_travisgridpost"
+    fake_str = ""
+    # outputfolder = "sherlock/20200427_travisgridpost"
+    # fake_str = "_fk"
     gridname = os.path.join("/data/osiris_data/","hr8799b_modelgrid")
     out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
-    myoutfilename = "CtoO_"+planet+"_measurements_kl{0}_{1}.pdf".format(kl,suffix)
+    myoutfilename = "CtoO_"+planet+"_measurements_kl{0}_{1}{2}.pdf".format(kl,suffix,fake_str)
 
     c_kms = 299792.458
     R= 4000
@@ -127,8 +130,6 @@ if __name__ == "__main__":
     # logglistunique =  hdulist[2].data
     # CtoOlistunique =  hdulist[3].data
     hdulist.close()
-    # print(CtoOlistunique)
-    # exit()
 
     print(planet_model_grid.shape,np.size(Tlistunique),np.size(logglistunique),np.size(CtoOlistunique),np.size(oriplanet_spec_wvs))
     myinterpgrid = RegularGridInterpolator((Tlistunique,logglistunique,CtoOlistunique),planet_model_grid,method="linear",bounds_error=False,fill_value=0.0)
@@ -139,7 +140,7 @@ if __name__ == "__main__":
     new_file_list = []
     rawlogpost_list = []
     for file_id, filename in enumerate(filelist):
-        tmpfilename = os.path.join(os.path.dirname(filename),outputfolder,os.path.basename(filename).replace(".fits","_kl{0}_logpost.fits".format(kl)))
+        tmpfilename = os.path.join(os.path.dirname(filename),outputfolder,os.path.basename(filename).replace(".fits","_kl{0}_logpost".format(kl)+fake_str+".fits"))
         # if "20100715" not in tmpfilename:
         #     continue
         # if "2009" in tmpfilename:
@@ -166,6 +167,10 @@ if __name__ == "__main__":
         planetRV_array0 =  hdulist[4].data
         hdulist.close()
         filter_list.append(os.path.basename(filename).split("_")[2])
+        # print(fitT_list)
+        # print(fitlogg_list)
+        # print(fitCtoO_list)
+        # exit()
     filter_list = np.array(filter_list)
     # print(filter_list)
     # exit()
@@ -220,7 +225,7 @@ if __name__ == "__main__":
     unique_dates = np.unique(date_list)
     combined_nightly_logpost = {}
     for file_id, (filename,date) in enumerate(zip(new_file_list,date_list)):
-        tmpfilename = os.path.join(os.path.dirname(filename),outputfolder,os.path.basename(filename).replace(".fits","_kl{0}_logpost.fits".format(kl)))
+        tmpfilename = os.path.join(os.path.dirname(filename),outputfolder,os.path.basename(filename).replace(".fits","_kl{0}_logpost".format(kl)+fake_str+".fits"))
         print(tmpfilename)
         hdulist = pyfits.open(tmpfilename)
         logpost =  hdulist[0].data
@@ -274,6 +279,7 @@ if __name__ == "__main__":
         # CtoO_post = np.nansum(post[-1,-2,:,:],axis=1)
         CtoO_post = np.nansum(post,axis=(0,1,3))
         CtoO_post /= np.nanmax(CtoO_post)
+        # CtoO_post /= np.nanmean(CtoO_post)
         leftCI,argmaxpost,rightCI,_ = get_err_from_posterior(fitCtoO_list,CtoO_post)
         # print(leftCI,argmaxpost,rightCI)
         CtoO_CI_list.append([leftCI,argmaxpost,rightCI])
@@ -332,28 +338,29 @@ if __name__ == "__main__":
     plt.figure(1,figsize=(12,4))
     print(len(filter_list),len(CtoO_CI_list))
     wherefilter = np.where("Kbb" == filter_list)
-    plt.errorbar(np.arange(len(CtoO_CI_list))[wherefilter],yval[wherefilter],yerr=[m_yerr[wherefilter],p_yerr[wherefilter] ],fmt="none",color=color)
-    plt.plot(np.arange(len(CtoO_CI_list))[wherefilter],yval[wherefilter],"x",color=color) # #0099cc  #ff9900
+    # plt.errorbar(np.arange(len(CtoO_CI_list))[wherefilter],yval[wherefilter],yerr=[m_yerr[wherefilter],p_yerr[wherefilter] ],fmt="none",color=color)
+    # plt.plot(np.arange(len(CtoO_CI_list))[wherefilter],yval[wherefilter],"x",color=color) # #0099cc  #ff9900
+    maxCtoOpost = 1#np.nanmax(np.array(CtoO_post_list))
     for k in wherefilter[0]:
         CtoO_post = CtoO_post_list[k]
         filename = new_file_list[k]
         if k == wherefilter[0][0]:
-            plt.fill_betweenx(fitCtoO_list,k-CtoO_post/2.,k+CtoO_post/2.,alpha=0.5,color=color,label="K-band")
+            plt.fill_betweenx(fitCtoO_list,k-CtoO_post/maxCtoOpost/2.,k+CtoO_post/maxCtoOpost/2.,alpha=0.5,color=color,label="K-band")
         else:
-            plt.fill_betweenx(fitCtoO_list,k-CtoO_post/2.,k+CtoO_post/2.,alpha=0.5,color=color)
+            plt.fill_betweenx(fitCtoO_list,k-CtoO_post/maxCtoOpost/2.,k+CtoO_post/maxCtoOpost/2.,alpha=0.5,color=color)
         if addfilename:
             plt.gca().text(k,fitCtoO_list[-1],os.path.basename(filename),ha="left",va="top",rotation=-90,size=fontsize/2)
     wherefilter = np.where("Hbb" == filter_list)
-    eb = plt.errorbar(np.arange(len(CtoO_CI_list))[wherefilter],yval[wherefilter],yerr=[m_yerr[wherefilter],p_yerr[wherefilter] ],fmt="none",color=color)
-    eb[-1][0].set_linestyle("--")
-    plt.plot(np.arange(len(CtoO_CI_list))[wherefilter],yval[wherefilter],"o",color=color) # #0099cc  #ff9900
+    # eb = plt.errorbar(np.arange(len(CtoO_CI_list))[wherefilter],yval[wherefilter],yerr=[m_yerr[wherefilter],p_yerr[wherefilter] ],fmt="none",color=color)
+    # eb[-1][0].set_linestyle("--")
+    # plt.plot(np.arange(len(CtoO_CI_list))[wherefilter],yval[wherefilter],"o",color=color) # #0099cc  #ff9900
     for k in wherefilter[0]:
         CtoO_post = CtoO_post_list[k]
         filename = new_file_list[k]
         if k == wherefilter[0][0]:
-            plt.fill_betweenx(fitCtoO_list,k-CtoO_post/2.,k+CtoO_post/2.,alpha=0.5,hatch="/",facecolor="none",edgecolor=color,label="H-band")
+            plt.fill_betweenx(fitCtoO_list,k-CtoO_post/maxCtoOpost/2.,k+CtoO_post/maxCtoOpost/2.,alpha=0.5,hatch="/",facecolor="none",edgecolor=color,label="H-band")
         else:
-            plt.fill_betweenx(fitCtoO_list,k-CtoO_post/2.,k+CtoO_post/2.,alpha=0.5,hatch="/",facecolor="none",edgecolor=color)
+            plt.fill_betweenx(fitCtoO_list,k-CtoO_post/maxCtoOpost/2.,k+CtoO_post/maxCtoOpost/2.,alpha=0.5,hatch="/",facecolor="none",edgecolor=color)
         if addfilename:
             plt.gca().text(k,fitCtoO_list[-1],os.path.basename(filename),ha="left",va="top",rotation=-90,size=fontsize/2)
 
@@ -462,10 +469,10 @@ if __name__ == "__main__":
         hdulist.writeto(os.path.join(out_pngs,planet,myoutfilename.replace(".pdf","_data4plotting.fits")), clobber=True)
     hdulist.close()
 
-    f = plt.figure(2,figsize=(8,8))
+    f = plt.figure(2,figsize=(6,6))
     para_vec_list = [hr_fitT_list,hr_fitlogg_list,hr_fitCtoO_list]
-    xlabel_list = ["T [K]", "log(g [cm/$\mathrm{s}^2$])","C/O"]
-    xticks_list = [[800,900,1000,1100,1200], [3.5,4.0,4.5],[0.5,0.6,0.7,0.8,0.9]]
+    xlabel_list = ["T [K]", "log(g/[1 cm/$\mathrm{s}^2$])","C/O"]
+    xticks_list = [[800,1000,1200], [3.5,4.0,4.5],[0.5,0.7,0.9]]
     Nparas = len(para_vec_list)
 
     myargmax = np.unravel_index(np.nanargmax(combined_post_rvmargi),combined_post_rvmargi.shape)

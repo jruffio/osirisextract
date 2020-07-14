@@ -44,145 +44,194 @@ if 1:
         priorsuffix = "_prior"
     else:
         priorsuffix = ""
+    # priorsuffix = priorsuffix+"__fk"
     # rv_b = [0.4770881896148752]
     # rvmerr_b = [0.009366900980685822]
     # rvperr_b = [0.007481767555257368]
-    # rv_c = [0.5520881896148753  ]
+    # rv_c = [0.5520881896148753]
     # rvmerr_c = [0.008513334049441879]
     # rvperr_c = [0.005541985372088609]
     # rv_d = [0.5870881896148753]
     # rvmerr_d = [0.03407766692871694]
     # rvperr_d = [0.03155199331507741]
 
-
-
-
-
-    myoutfilename = "CtoO_HR_8799_b_measurements_kl{0}_HK".format(numbasis_list[0])+priorsuffix+".pdf"
-    hdulist = pyfits.open(os.path.join(out_pngs,"HR_8799_b",myoutfilename.replace(".pdf","_logposterior.fits")))
-    print(hdulist[0].data.shape)
-    T_sampling,logg_sampling, CtoO_sampling, posterior_b = hdulist[1].data,hdulist[2].data,hdulist[3].data,hdulist[0].data
-
-    myoutfilename = "CtoO_HR_8799_c_measurements_kl{0}_HK".format(numbasis_list[0])+priorsuffix+".pdf"
-    hdulist = pyfits.open(os.path.join(out_pngs,"HR_8799_c",myoutfilename.replace(".pdf","_logposterior.fits")))
-    print(hdulist[0].data.shape)
-    T_sampling,logg_sampling, CtoO_sampling, posterior_c = hdulist[1].data,hdulist[2].data,hdulist[3].data,hdulist[0].data
-
-    myoutfilename = "CtoO_HR_8799_d_measurements_kl{0}_HK".format(numbasis_list[0])+priorsuffix+".pdf"
-    hdulist = pyfits.open(os.path.join(out_pngs,"HR_8799_d",myoutfilename.replace(".pdf","_logposterior.fits")))
-    print(hdulist[0].data.shape)
-    T_sampling,logg_sampling, CtoO_sampling, posterior_d = hdulist[1].data,hdulist[2].data,hdulist[3].data,hdulist[0].data
-
-    # plt.plot(T_sampling,CtoO_sampling[np.argmax(max(posterior_b,axis=1))])
-    # plt.plot(T_sampling,np.max(posterior_c,axis=1))
-    # plt.plot(T_sampling,np.max(posterior_d,axis=1))
-    # plt.show()
-
-    dCtoO_sampling = CtoO_sampling - CtoO_sampling[len(CtoO_sampling)//2]
-    dCtoO_bc = np.zeros((np.size(logg_sampling),np.size(logg_sampling)))
-    dCtoO_dc = np.zeros((np.size(logg_sampling),np.size(logg_sampling)))
-    CtoO_b = np.zeros((np.size(logg_sampling),3))
-    CtoO_c = np.zeros((np.size(logg_sampling),3))
-    CtoO_d = np.zeros((np.size(logg_sampling),3))
-    for k,Tb in enumerate(logg_sampling):
-        prof_posterior_b = np.sum(np.exp(posterior_b[:,k,:,:] - np.max(posterior_b[:,k,:,:])),axis=(0,2))
-        prof_posterior_d = np.sum(np.exp(posterior_d[:,k,:,:] - np.max(posterior_d[:,k,:,:])),axis=(0,2))
-        for l,Tc in enumerate(logg_sampling):
-            prof_posterior_c = np.sum(np.exp(posterior_c[:,l,:,:] - np.max(posterior_c[:,l,:,:])),axis=(0,2))
-            if l==0:
-                CtoO_b[k,0],CtoO_b[k,1],CtoO_b[k,2],_ = get_err_from_posterior(CtoO_sampling,prof_posterior_b)
-                CtoO_d[k,0],CtoO_d[k,1],CtoO_d[k,2],_ = get_err_from_posterior(CtoO_sampling,prof_posterior_d)
-            if k==0:
-                CtoO_c[l,0],CtoO_c[l,1],CtoO_c[l,2],_ = get_err_from_posterior(CtoO_sampling,prof_posterior_c)
-            # exit()
-    #
-            delta_bc_posterior = np.correlate(prof_posterior_b,prof_posterior_c,mode="same")
-            delta_bc_posterior = delta_bc_posterior/np.max(delta_bc_posterior)
-            deltaRV_bc_lCI,deltaCtoO_bc,deltaRV_bc_rCI,_ = get_err_from_posterior(dCtoO_sampling,delta_bc_posterior)
-            dCtoO_bc[k,l] = deltaCtoO_bc
-
-            delta_dc_posterior = np.correlate(prof_posterior_d,prof_posterior_c,mode="same")
-            delta_dc_posterior = delta_dc_posterior/np.max(delta_dc_posterior)
-            deltaRV_dc_lCI,deltaCtoO_dc,deltaRV_dc_rCI,_ = get_err_from_posterior(dCtoO_sampling,delta_dc_posterior)
-            dCtoO_dc[k,l] = deltaCtoO_dc
-    #
-    plt.figure(3,figsize=(12,6))
-
-    plt.subplot(1,2,1)
-    plt.fill_between(logg_sampling, CtoO_b[:,0],CtoO_b[:,2],color="#0099cc",alpha=0.5)
-    plt.fill_between(logg_sampling, CtoO_c[:,0],CtoO_c[:,2],color="#ff9900",alpha=0.5)
-    plt.fill_between(logg_sampling, CtoO_d[:,0],CtoO_d[:,2],color="#6600ff",alpha=0.5)
-    plt.plot(logg_sampling, CtoO_b[:,1],linestyle="-",linewidth=3,color="#0099cc",label="b")
-    plt.plot(logg_sampling, CtoO_c[:,1],linestyle="--",linewidth=3,color="#ff9900",label="c")
-    plt.plot(logg_sampling, CtoO_d[:,1],linestyle=":",linewidth=3,color="#6600ff",label="d")
-    plt.legend(loc='upper left',frameon=True,fontsize=fontsize)
-    plt.ylabel("C/O",fontsize=fontsize)
-    plt.xlabel(r"log(g [cm/s]) (K)",fontsize=fontsize)
-
-    plt.subplot(1,2,2)
-    for k,Tb in enumerate(logg_sampling):
-        plt.plot(logg_sampling,dCtoO_bc[k,:],linestyle="-",linewidth=3,color="#0099cc",alpha=0.5)
-        plt.plot(logg_sampling,dCtoO_dc[k,:],linestyle=":",linewidth=3,color="#6600ff",alpha=0.5)
-    plt.ylabel(r"$[C/O]_{[b,d]}-[C/O]_c$",fontsize=fontsize)
-    plt.xlabel(r"log(g$_c$ [cm/s]) (K)",fontsize=fontsize)
     if 1:
-        print("Saving "+os.path.join(out_pngs,"CtoO_HR_8799_bcd_loggvariability"+priorsuffix+".pdf"))
-        plt.savefig(os.path.join(out_pngs,"CtoO_HR_8799_bcd_loggvariability"+priorsuffix+".pdf"))
-        plt.savefig(os.path.join(out_pngs,"CtoO_HR_8799_bcd_loggvariability"+priorsuffix+".png"))
+        myoutfilename = "CtoO_HR_8799_b_measurements_kl{0}_HK".format(numbasis_list[0])+priorsuffix+".pdf"
+        print(myoutfilename)
+        hdulist = pyfits.open(os.path.join(out_pngs,"HR_8799_b",myoutfilename.replace(".pdf","_logposterior.fits")))
+        print(hdulist[0].data.shape)
+        T_sampling,logg_sampling, CtoO_sampling, RV_sampling, posterior_b = hdulist[1].data,hdulist[2].data,hdulist[3].data,hdulist[4].data,hdulist[0].data
+        posterior_b = np.exp(posterior_b - np.max(posterior_b))
+        print(posterior_b.shape)
+        final_leftCI,final_yval,final_rightCI,_ = get_err_from_posterior(T_sampling,np.nansum(posterior_b,axis=(1,2,3)))
+        print("T",final_yval,final_rightCI - final_yval,final_yval - final_leftCI)
+        final_leftCI,final_yval,final_rightCI,_ = get_err_from_posterior(logg_sampling,np.nansum(posterior_b,axis=(0,2,3)))
+        print("logg",final_yval,final_rightCI - final_yval,final_yval - final_leftCI)
+        final_leftCI,final_yval,final_rightCI,_ = get_err_from_posterior(CtoO_sampling,np.nansum(posterior_b,axis=(0,1,3)))
+        print("C/O",final_yval,final_rightCI - final_yval,final_yval - final_leftCI)
+        final_leftCI,final_yval,final_rightCI,_ = get_err_from_posterior(RV_sampling,np.nansum(posterior_b,axis=(0,1,2)))
+        print("RV",final_yval,final_rightCI - final_yval,final_yval - final_leftCI)
 
-    dCtoO_sampling = CtoO_sampling - CtoO_sampling[len(CtoO_sampling)//2]
-    dCtoO_bc = np.zeros((np.size(T_sampling),np.size(T_sampling)))
-    dCtoO_dc = np.zeros((np.size(T_sampling),np.size(T_sampling)))
-    CtoO_b = np.zeros((np.size(T_sampling),3))
-    CtoO_c = np.zeros((np.size(T_sampling),3))
-    CtoO_d = np.zeros((np.size(T_sampling),3))
-    for k,Tb in enumerate(T_sampling):
-        prof_posterior_b = np.sum(np.exp(posterior_b[k,:,:,:] - np.max(posterior_b[k,:,:,:])),axis=(0,2))
-        prof_posterior_d = np.sum(np.exp(posterior_d[k,:,:,:] - np.max(posterior_d[k,:,:,:])),axis=(0,2))
-        for l,Tc in enumerate(T_sampling):
-            prof_posterior_c = np.sum(np.exp(posterior_c[l,:,:,:] - np.max(posterior_c[l,:,:,:])),axis=(0,2))
-            if l==0:
-                CtoO_b[k,0],CtoO_b[k,1],CtoO_b[k,2],_ = get_err_from_posterior(CtoO_sampling,prof_posterior_b)
-                CtoO_d[k,0],CtoO_d[k,1],CtoO_d[k,2],_ = get_err_from_posterior(CtoO_sampling,prof_posterior_d)
-            if k==0:
-                CtoO_c[l,0],CtoO_c[l,1],CtoO_c[l,2],_ = get_err_from_posterior(CtoO_sampling,prof_posterior_c)
-            # exit()
-    #
-            delta_bc_posterior = np.correlate(prof_posterior_b,prof_posterior_c,mode="same")
-            delta_bc_posterior = delta_bc_posterior/np.max(delta_bc_posterior)
-            deltaRV_bc_lCI,deltaCtoO_bc,deltaRV_bc_rCI,_ = get_err_from_posterior(dCtoO_sampling,delta_bc_posterior)
-            dCtoO_bc[k,l] = deltaCtoO_bc
+        myoutfilename = "CtoO_HR_8799_c_measurements_kl{0}_HK".format(numbasis_list[0])+priorsuffix+".pdf"
+        hdulist = pyfits.open(os.path.join(out_pngs,"HR_8799_c",myoutfilename.replace(".pdf","_logposterior.fits")))
+        print(hdulist[0].data.shape)
+        T_sampling,logg_sampling, CtoO_sampling, posterior_c = hdulist[1].data,hdulist[2].data,hdulist[3].data,hdulist[0].data
+        posterior_c = np.exp(posterior_c - np.max(posterior_c))
+        final_leftCI,final_yval,final_rightCI,_ = get_err_from_posterior(T_sampling,np.nansum(posterior_c,axis=(1,2,3)))
+        print("T",final_yval,final_rightCI - final_yval,final_yval - final_leftCI)
+        final_leftCI,final_yval,final_rightCI,_ = get_err_from_posterior(logg_sampling,np.nansum(posterior_c,axis=(0,2,3)))
+        print("logg",final_yval,final_rightCI - final_yval,final_yval - final_leftCI)
+        final_leftCI,final_yval,final_rightCI,_ = get_err_from_posterior(CtoO_sampling,np.nansum(posterior_c,axis=(0,1,3)))
+        print("C/O",final_yval,final_rightCI - final_yval,final_yval - final_leftCI)
+        final_leftCI,final_yval,final_rightCI,_ = get_err_from_posterior(RV_sampling,np.nansum(posterior_c,axis=(0,1,2)))
+        print("RV",final_yval,final_rightCI - final_yval,final_yval - final_leftCI)
 
-            delta_dc_posterior = np.correlate(prof_posterior_d,prof_posterior_c,mode="same")
-            delta_dc_posterior = delta_dc_posterior/np.max(delta_dc_posterior)
-            deltaRV_dc_lCI,deltaCtoO_dc,deltaRV_dc_rCI,_ = get_err_from_posterior(dCtoO_sampling,delta_dc_posterior)
-            dCtoO_dc[k,l] = deltaCtoO_dc
-    #
-    plt.figure(4,figsize=(12,6))
+        myoutfilename = "CtoO_HR_8799_d_measurements_kl{0}_HK".format(numbasis_list[0])+priorsuffix+".pdf"
+        hdulist = pyfits.open(os.path.join(out_pngs,"HR_8799_d",myoutfilename.replace(".pdf","_logposterior.fits")))
+        print(hdulist[0].data.shape)
+        T_sampling,logg_sampling, CtoO_sampling, posterior_d = hdulist[1].data,hdulist[2].data,hdulist[3].data,hdulist[0].data
+        posterior_d = np.exp(posterior_d - np.max(posterior_d))
+        final_leftCI,final_yval,final_rightCI,_ = get_err_from_posterior(T_sampling,np.nansum(posterior_d,axis=(1,2,3)))
+        print("T",final_yval,final_rightCI - final_yval,final_yval - final_leftCI)
+        final_leftCI,final_yval,final_rightCI,_ = get_err_from_posterior(logg_sampling,np.nansum(posterior_d,axis=(0,2,3)))
+        print("logg",final_yval,final_rightCI - final_yval,final_yval - final_leftCI)
+        final_leftCI,final_yval,final_rightCI,_ = get_err_from_posterior(CtoO_sampling,np.nansum(posterior_d,axis=(0,1,3)))
+        print("C/O",final_yval,final_rightCI - final_yval,final_yval - final_leftCI)
+        final_leftCI,final_yval,final_rightCI,_ = get_err_from_posterior(RV_sampling,np.nansum(posterior_d,axis=(0,1,2)))
+        print("RV",final_yval,final_rightCI - final_yval,final_yval - final_leftCI)
+        exit()
 
-    plt.subplot(1,2,1)
-    plt.fill_between(T_sampling, CtoO_b[:,0],CtoO_b[:,2],color="#0099cc",alpha=0.5)
-    plt.fill_between(T_sampling, CtoO_c[:,0],CtoO_c[:,2],color="#ff9900",alpha=0.5)
-    plt.fill_between(T_sampling, CtoO_d[:,0],CtoO_d[:,2],color="#6600ff",alpha=0.5)
-    plt.plot(T_sampling, CtoO_b[:,1],linestyle="-",linewidth=3,color="#0099cc",label="b")
-    plt.plot(T_sampling, CtoO_c[:,1],linestyle="--",linewidth=3,color="#ff9900",label="c")
-    plt.plot(T_sampling, CtoO_d[:,1],linestyle=":",linewidth=3,color="#6600ff",label="d")
-    plt.legend(loc='upper left',frameon=True,fontsize=fontsize)
-    plt.ylabel("C/O",fontsize=fontsize)
-    plt.xlabel("T (K)",fontsize=fontsize)
 
-    plt.subplot(1,2,2)
-    for k,Tb in enumerate(T_sampling):
-        plt.plot(T_sampling,dCtoO_bc[k,:],linestyle="-",linewidth=3,color="#0099cc",alpha=0.5)
-        plt.plot(T_sampling,dCtoO_dc[k,:],linestyle=":",linewidth=3,color="#6600ff",alpha=0.5)
-    plt.ylabel(r"$[C/O]_{[b,d]}-[C/O]_c$",fontsize=fontsize)
-    plt.xlabel(r"T$_c$ (K)",fontsize=fontsize)
-    if 1:
-        print("Saving "+os.path.join(out_pngs,"CtoO_HR_8799_bcd_Tvariability"+priorsuffix+".pdf"))
-        plt.savefig(os.path.join(out_pngs,"CtoO_HR_8799_bcd_Tvariability"+priorsuffix+".pdf"))
-        plt.savefig(os.path.join(out_pngs,"CtoO_HR_8799_bcd_Tvariability"+priorsuffix+".png"))
-    # plt.show()
-    # exit()
+
+
+    if not useprior:
+        myoutfilename = "CtoO_HR_8799_b_measurements_kl{0}_HK".format(numbasis_list[0])+priorsuffix+".pdf"
+        hdulist = pyfits.open(os.path.join(out_pngs,"HR_8799_b",myoutfilename.replace(".pdf","_logposterior.fits")))
+        print(hdulist[0].data.shape)
+        T_sampling,logg_sampling, CtoO_sampling, posterior_b = hdulist[1].data,hdulist[2].data,hdulist[3].data,hdulist[0].data
+
+        myoutfilename = "CtoO_HR_8799_c_measurements_kl{0}_HK".format(numbasis_list[0])+priorsuffix+".pdf"
+        hdulist = pyfits.open(os.path.join(out_pngs,"HR_8799_c",myoutfilename.replace(".pdf","_logposterior.fits")))
+        print(hdulist[0].data.shape)
+        T_sampling,logg_sampling, CtoO_sampling, posterior_c = hdulist[1].data,hdulist[2].data,hdulist[3].data,hdulist[0].data
+
+        myoutfilename = "CtoO_HR_8799_d_measurements_kl{0}_HK".format(numbasis_list[0])+priorsuffix+".pdf"
+        hdulist = pyfits.open(os.path.join(out_pngs,"HR_8799_d",myoutfilename.replace(".pdf","_logposterior.fits")))
+        print(hdulist[0].data.shape)
+        T_sampling,logg_sampling, CtoO_sampling, posterior_d = hdulist[1].data,hdulist[2].data,hdulist[3].data,hdulist[0].data
+
+        # plt.plot(T_sampling,CtoO_sampling[np.argmax(max(posterior_b,axis=1))])
+        # plt.plot(T_sampling,np.max(posterior_c,axis=1))
+        # plt.plot(T_sampling,np.max(posterior_d,axis=1))
+        # plt.show()
+
+        dCtoO_sampling = CtoO_sampling - CtoO_sampling[len(CtoO_sampling)//2]
+        dCtoO_bc = np.zeros((np.size(logg_sampling),np.size(logg_sampling)))
+        dCtoO_dc = np.zeros((np.size(logg_sampling),np.size(logg_sampling)))
+        CtoO_b = np.zeros((np.size(logg_sampling),3))
+        CtoO_c = np.zeros((np.size(logg_sampling),3))
+        CtoO_d = np.zeros((np.size(logg_sampling),3))
+        for k,Tb in enumerate(logg_sampling):
+            prof_posterior_b = np.sum(np.exp(posterior_b[:,k,:,:] - np.max(posterior_b[:,k,:,:])),axis=(0,2))
+            prof_posterior_d = np.sum(np.exp(posterior_d[:,k,:,:] - np.max(posterior_d[:,k,:,:])),axis=(0,2))
+            for l,Tc in enumerate(logg_sampling):
+                prof_posterior_c = np.sum(np.exp(posterior_c[:,l,:,:] - np.max(posterior_c[:,l,:,:])),axis=(0,2))
+                if l==0:
+                    CtoO_b[k,0],CtoO_b[k,1],CtoO_b[k,2],_ = get_err_from_posterior(CtoO_sampling,prof_posterior_b)
+                    CtoO_d[k,0],CtoO_d[k,1],CtoO_d[k,2],_ = get_err_from_posterior(CtoO_sampling,prof_posterior_d)
+                if k==0:
+                    CtoO_c[l,0],CtoO_c[l,1],CtoO_c[l,2],_ = get_err_from_posterior(CtoO_sampling,prof_posterior_c)
+                # exit()
+        #
+                delta_bc_posterior = np.correlate(prof_posterior_b,prof_posterior_c,mode="same")
+                delta_bc_posterior = delta_bc_posterior/np.max(delta_bc_posterior)
+                deltaRV_bc_lCI,deltaCtoO_bc,deltaRV_bc_rCI,_ = get_err_from_posterior(dCtoO_sampling,delta_bc_posterior)
+                dCtoO_bc[k,l] = deltaCtoO_bc
+
+                delta_dc_posterior = np.correlate(prof_posterior_d,prof_posterior_c,mode="same")
+                delta_dc_posterior = delta_dc_posterior/np.max(delta_dc_posterior)
+                deltaRV_dc_lCI,deltaCtoO_dc,deltaRV_dc_rCI,_ = get_err_from_posterior(dCtoO_sampling,delta_dc_posterior)
+                dCtoO_dc[k,l] = deltaCtoO_dc
+        #
+        # plt.figure(3,figsize=(12,6))
+        plt.figure(3,figsize=(6,6))
+
+        # plt.subplot(1,2,1)
+        plt.fill_between(logg_sampling, CtoO_b[:,0],CtoO_b[:,2],color="#0099cc",alpha=0.5)
+        plt.fill_between(logg_sampling, CtoO_c[:,0],CtoO_c[:,2],color="#ff9900",alpha=0.5)
+        plt.fill_between(logg_sampling, CtoO_d[:,0],CtoO_d[:,2],color="#6600ff",alpha=0.5)
+        plt.plot(logg_sampling, CtoO_b[:,1],linestyle="-",linewidth=3,color="#0099cc",label="b")
+        plt.plot(logg_sampling, CtoO_c[:,1],linestyle="--",linewidth=3,color="#ff9900",label="c")
+        plt.plot(logg_sampling, CtoO_d[:,1],linestyle=":",linewidth=3,color="#6600ff",label="d")
+        plt.legend(loc='upper left',frameon=True,fontsize=fontsize)
+        plt.ylabel("C/O",fontsize=fontsize)
+        plt.xlabel(r"log(g [cm/s]) (K)",fontsize=fontsize)
+
+        # plt.subplot(1,2,2)
+        # for k,Tb in enumerate(logg_sampling):
+        #     plt.plot(logg_sampling,dCtoO_bc[k,:],linestyle="-",linewidth=3,color="#0099cc",alpha=0.5)
+        #     plt.plot(logg_sampling,dCtoO_dc[k,:],linestyle=":",linewidth=3,color="#6600ff",alpha=0.5)
+        # plt.ylabel(r"$[C/O]_{[b,d]}-[C/O]_c$",fontsize=fontsize)
+        # plt.xlabel(r"log(g$_c$ [cm/s]) (K)",fontsize=fontsize)
+        if 1:
+            print("Saving "+os.path.join(out_pngs,"CtoO_HR_8799_bcd_loggvariability"+priorsuffix+".pdf"))
+            plt.savefig(os.path.join(out_pngs,"CtoO_HR_8799_bcd_loggvariability"+priorsuffix+".pdf"))
+            plt.savefig(os.path.join(out_pngs,"CtoO_HR_8799_bcd_loggvariability"+priorsuffix+".png"))
+
+        dCtoO_sampling = CtoO_sampling - CtoO_sampling[len(CtoO_sampling)//2]
+        dCtoO_bc = np.zeros((np.size(T_sampling),np.size(T_sampling)))
+        dCtoO_dc = np.zeros((np.size(T_sampling),np.size(T_sampling)))
+        CtoO_b = np.zeros((np.size(T_sampling),3))
+        CtoO_c = np.zeros((np.size(T_sampling),3))
+        CtoO_d = np.zeros((np.size(T_sampling),3))
+        for k,Tb in enumerate(T_sampling):
+            prof_posterior_b = np.sum(np.exp(posterior_b[k,:,:,:] - np.max(posterior_b[k,:,:,:])),axis=(0,2))
+            prof_posterior_d = np.sum(np.exp(posterior_d[k,:,:,:] - np.max(posterior_d[k,:,:,:])),axis=(0,2))
+            for l,Tc in enumerate(T_sampling):
+                prof_posterior_c = np.sum(np.exp(posterior_c[l,:,:,:] - np.max(posterior_c[l,:,:,:])),axis=(0,2))
+                if l==0:
+                    CtoO_b[k,0],CtoO_b[k,1],CtoO_b[k,2],_ = get_err_from_posterior(CtoO_sampling,prof_posterior_b)
+                    CtoO_d[k,0],CtoO_d[k,1],CtoO_d[k,2],_ = get_err_from_posterior(CtoO_sampling,prof_posterior_d)
+                if k==0:
+                    CtoO_c[l,0],CtoO_c[l,1],CtoO_c[l,2],_ = get_err_from_posterior(CtoO_sampling,prof_posterior_c)
+                # exit()
+        #
+                delta_bc_posterior = np.correlate(prof_posterior_b,prof_posterior_c,mode="same")
+                delta_bc_posterior = delta_bc_posterior/np.max(delta_bc_posterior)
+                deltaRV_bc_lCI,deltaCtoO_bc,deltaRV_bc_rCI,_ = get_err_from_posterior(dCtoO_sampling,delta_bc_posterior)
+                dCtoO_bc[k,l] = deltaCtoO_bc
+
+                delta_dc_posterior = np.correlate(prof_posterior_d,prof_posterior_c,mode="same")
+                delta_dc_posterior = delta_dc_posterior/np.max(delta_dc_posterior)
+                deltaRV_dc_lCI,deltaCtoO_dc,deltaRV_dc_rCI,_ = get_err_from_posterior(dCtoO_sampling,delta_dc_posterior)
+                dCtoO_dc[k,l] = deltaCtoO_dc
+        #
+        # plt.figure(4,figsize=(12,6))
+        plt.figure(4,figsize=(6,6))
+
+        # plt.subplot(1,2,1)
+        plt.fill_between(T_sampling, CtoO_b[:,0],CtoO_b[:,2],color="#0099cc",alpha=0.5)
+        plt.fill_between(T_sampling, CtoO_c[:,0],CtoO_c[:,2],color="#ff9900",alpha=0.5)
+        plt.fill_between(T_sampling, CtoO_d[:,0],CtoO_d[:,2],color="#6600ff",alpha=0.5)
+        plt.plot(T_sampling, CtoO_b[:,1],linestyle="-",linewidth=3,color="#0099cc",label="b")
+        plt.plot(T_sampling, CtoO_c[:,1],linestyle="--",linewidth=3,color="#ff9900",label="c")
+        plt.plot(T_sampling, CtoO_d[:,1],linestyle=":",linewidth=3,color="#6600ff",label="d")
+        plt.legend(loc='upper left',frameon=True,fontsize=fontsize)
+        plt.ylabel("C/O",fontsize=fontsize)
+        plt.xlabel("T (K)",fontsize=fontsize)
+
+        # plt.subplot(1,2,2)
+        # for k,Tb in enumerate(T_sampling):
+        #     plt.plot(T_sampling,dCtoO_bc[k,:],linestyle="-",linewidth=3,color="#0099cc",alpha=0.5)
+        #     plt.plot(T_sampling,dCtoO_dc[k,:],linestyle=":",linewidth=3,color="#6600ff",alpha=0.5)
+        # plt.ylabel(r"$[C/O]_{[b,d]}-[C/O]_c$",fontsize=fontsize)
+        # plt.xlabel(r"T$_c$ (K)",fontsize=fontsize)
+        if 1:
+            print("Saving "+os.path.join(out_pngs,"CtoO_HR_8799_bcd_Tvariability"+priorsuffix+".pdf"))
+            plt.savefig(os.path.join(out_pngs,"CtoO_HR_8799_bcd_Tvariability"+priorsuffix+".pdf"))
+            plt.savefig(os.path.join(out_pngs,"CtoO_HR_8799_bcd_Tvariability"+priorsuffix+".png"))
+        plt.show()
+        exit()
 
 
 

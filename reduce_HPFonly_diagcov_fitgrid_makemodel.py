@@ -829,7 +829,7 @@ if __name__ == "__main__":
         # gridname = os.path.join("/data/osiris_data/","sonora","spectra","interpolated_1700-1895_750-1250")
         # gridname = os.path.join("/data/osiris_data/","BTsettl")
         # gridname = os.path.join("/data/osiris_data/","BTsettl","interpolated_1300-1495_-3.80--3.25")
-        gridname = os.path.join("/data/osiris_data/","hr8799b_modelgrid")
+        # gridname = os.path.join("/data/osiris_data/","hr8799b_modelgrid")
         # gridname = "BTsettl"#"BTsettl"#"sonora"
 
         osiris_data_dir = "/data/osiris_data"
