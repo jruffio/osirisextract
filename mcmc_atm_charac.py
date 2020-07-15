@@ -294,7 +294,7 @@ if __name__ == "__main__":
     if "clouds_modelgrid" in gridname:
         fitT_list = np.linspace(800,1300,25,endpoint=True)
         fitlogg_list = np.linspace(3.,5.,15,endpoint=True)
-        fitCtoO_list = np.linspace(1e6,5e5,10,endpoint=True)
+        fitCtoO_list = np.linspace(5e5,4e6,10,endpoint=True)
 
     else:
         fitT_list = np.linspace(800,1200,21,endpoint=True)
