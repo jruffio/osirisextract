@@ -1337,7 +1337,7 @@ if __name__ == "__main__":
                     hdulist = pyfits.open(os.path.join(osiris_data_dir,"stellar_fits","{0}_{1}_{2}_{3}_vsini_samples.fits".format(star_name,IFSfilter,date,imtype)))
                     vsini_samples = hdulist[0].data
                     with open(os.path.join(osiris_data_dir,"stellar_fits","{0}_{1}_{2}_{3}_models.txt".format(star_name,IFSfilter,date,imtype)), 'r') as txtfile:
-                        grid_refstar_filelist = [s.strip().replace(os.path.dirname(s),osiris_data_dir) for s in txtfile.readlines()]
+                        grid_refstar_filelist = [s.strip().replace("/data/osiris_data",osiris_data_dir) for s in txtfile.readlines()]
                 else:
                     print(glob.glob(os.path.join(osiris_data_dir,"stellar_fits","{0}_*_*_{1}_rv_samples.fits".format(star_name,imtype)))[0])
                     hdulist = pyfits.open(glob.glob(os.path.join(osiris_data_dir,"stellar_fits","{0}_*_*_{1}_rv_samples.fits".format(star_name,imtype)))[0])
@@ -1347,7 +1347,7 @@ if __name__ == "__main__":
                     print(os.path.join(osiris_data_dir,"stellar_fits","{0}_*_*_{1}_models.fits".format(star_name,imtype)))
                     print(glob.glob(os.path.join(osiris_data_dir,"stellar_fits","{0}_*_*_{1}_models.txt".format(star_name,imtype))))
                     with open(glob.glob(os.path.join(osiris_data_dir,"stellar_fits","{0}_*_*_{1}_models.txt".format(star_name,imtype)))[0], 'r') as txtfile:
-                        grid_refstar_filelist = [s.strip().replace(os.path.dirname(s),osiris_data_dir) for s in txtfile.readlines()]
+                        grid_refstar_filelist = [s.strip().replace("/data/osiris_data",osiris_data_dir) for s in txtfile.readlines()]
                 post_filename = os.path.join(osiris_data_dir,"stellar_fits","{0}_{1}_{2}_{3}_posterior.fits".format(star_name,IFSfilter,date,imtype))
                 if len(glob.glob(post_filename))>0:
                     print(post_filename)
