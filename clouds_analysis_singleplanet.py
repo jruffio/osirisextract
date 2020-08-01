@@ -82,10 +82,10 @@ if __name__ == "__main__":
     if useprior:
         priorTeff,priorTeff_sig = 900,1e-9#1e-9
         priorlogg,priorlogg_sig = 3.9,1e-9#1e-9
-    planet,color = "HR_8799_c","#ff9900"
-    if useprior:
-        priorTeff,priorTeff_sig = 1060,1e-9#1e-9
-        priorlogg,priorlogg_sig = 4.1,1e-9#1e-9
+    # planet,color = "HR_8799_c","#ff9900"
+    # if useprior:
+    #     priorTeff,priorTeff_sig = 1060,1e-9#1e-9
+    #     priorlogg,priorlogg_sig = 4.1,1e-9#1e-9
     # planet,color = "HR_8799_d","#6600ff"
     # if useprior:
     #     priorTeff,priorTeff_sig = 1060,1e-9#1e-9
@@ -156,16 +156,18 @@ if __name__ == "__main__":
             continue
         hdulist = pyfits.open(tmpfilename)
         logpost =  hdulist[0].data
+        fitT_list =  hdulist[1].data
+        fitlogg_list =  hdulist[2].data
+        fitpgs_list =  hdulist[3].data
+        planetRV_array0 =  hdulist[4].data
         if logpost.shape[0] != 25:
+            continue
+        if np.max(fitpgs_list) <= 1e6:
             continue
         rawlogpost_list.append(logpost)
         date = os.path.basename(filename).split("_a")[0].split("s")[1]
         date_list.append(date)
         new_file_list.append(filename)
-        fitT_list =  hdulist[1].data
-        fitlogg_list =  hdulist[2].data
-        fitpgs_list =  hdulist[3].data
-        planetRV_array0 =  hdulist[4].data
         hdulist.close()
         filter_list.append(os.path.basename(filename).split("_")[2])
         # print(fitT_list)
@@ -235,10 +237,7 @@ if __name__ == "__main__":
         fitpgs_list =  hdulist[3].data
         planetRV_array0 =  hdulist[4].data
         hdulist.close()
-        print(fitT_list)
-        print(fitlogg_list)
-        print(fitpgs_list)
-
+        # print(fitpgs_list)
         myinterpgrid = RegularGridInterpolator((fitT_list,fitlogg_list,fitpgs_list,planetRV_array0),logpost,method="linear",bounds_error=False,fill_value=np.nanmin(logpost))
         hr_logpost = myinterpgrid(pts).reshape((np.size(hr_fitT_list),np.size(hr_fitlogg_list),np.size(hr_fitpgs_list),np.size(hr_planetRV_array0)))
         # hr_logpost = logpost
@@ -474,8 +473,8 @@ if __name__ == "__main__":
 
     f = plt.figure(2,figsize=(6,6))
     para_vec_list = [hr_fitT_list,hr_fitlogg_list,hr_fitpgs_list]
-    xlabel_list = ["T [K]", "log(g/[1 cm/$\mathrm{s}^2$])","C/O"]
-    xticks_list = [[800,1000,1200], [3.5,4.0,4.5],[0.5,0.7,0.9]]
+    xlabel_list = ["T [K]", "log(g/[1 cm/$\mathrm{s}^2$])","pgs"]
+    xticks_list = [[800,1000,1200], [3.5,4.0,4.5,5.0],[5e5,1e6,4e6]]
     Nparas = len(para_vec_list)
 
     myargmax = np.unravel_index(np.nanargmax(combined_post_rvmargi),combined_post_rvmargi.shape)
@@ -495,25 +494,25 @@ if __name__ == "__main__":
         if k != 0:
             ax.yaxis.tick_right()
             ax.yaxis.set_label_position("right")
-        if k != Nparas-1:
-            # ax.xaxis.tick_top()
-            # ax.xaxis.set_label_position("top")
-            ax.yaxis.set_ticks([0.5,1.0])
-        else:
-            ax.yaxis.set_ticks([0.0,0.5,1.0])
         ax.xaxis.tick_top()
         ax.xaxis.set_label_position("top")
         ax.tick_params(axis='x', labelsize=fontsize)
         ax.tick_params(axis='y', labelsize=fontsize)
         plt.ylim([0.0,1.1])
-        ax.xaxis.set_ticks(xticks_list[k])
-        plt.xlim([para_vec_list[k][0],para_vec_list[k][-1]+1e-2])
+        # print(xticks_list[k])
+        plt.xlim([para_vec_list[k][0],para_vec_list[k][-1]])
+        if k != Nparas-1:
+            # ax.xaxis.tick_top()
+            # ax.xaxis.set_label_position("top")
+            ax.yaxis.set_ticks([0.5,1.0])
+            ax.xaxis.set_ticks(xticks_list[k])
+        else:
+            ax.yaxis.set_ticks([0.0,0.5,1.0])
+            plt.xticks(xticks_list[k],["5e5","1e6","4e6"])
             # ax.spines['right'].set_visible(False)
             # ax.spines['top'].set_visible(False)
             # ax.xaxis.set_ticks_position('bottom')
             # ax.yaxis.set_ticks_position('left')
-
-
         for l in np.arange(k+1,Nparas):
             plt.subplot(Nparas,Nparas,k+1+(l)*Nparas)
             ax = plt.gca()
@@ -534,19 +533,19 @@ if __name__ == "__main__":
             # dl = para_vec_list[l][1]-para_vec_list[l][0]
             extent = [para_vec_list[k][0],para_vec_list[k][-1],para_vec_list[l][0],para_vec_list[l][-1]]
             # tmppost[np.where(cum_posterior<1-0.6827)] = np.nan
-            if k == 0 and l == Nparas-1:
-                a = -8
-            else:
-                a=0
-            plt.imshow(np.log10(tmppost),origin="lower",cmap="gray",extent=extent,aspect=float(a+para_vec_list[k][-1]-para_vec_list[k][0])/float(para_vec_list[l][-1]-para_vec_list[l][0]))
+            plt.imshow(np.log10(tmppost),origin="lower",cmap="gray",extent=extent,aspect=float(para_vec_list[k][-1]-para_vec_list[k][0])/float(para_vec_list[l][-1]-para_vec_list[l][0]))
+            # plt.figure(4)
             plt.contour(para_vec_list[k],para_vec_list[l],cum_posterior,levels=[1-0.9973,1-0.9545,1-0.6827],linestyles=[":","--","-"],colors=color)
+            # plt.show()
             # plt.xlim([para_vec_list[k][0],para_vec_list[k][-1]])
             # plt.ylim([para_vec_list[l][0],para_vec_list[l][-1]])
             if k!=0:
                 ax.yaxis.set_ticks([])
             else:
-                ax.yaxis.set_ticks(xticks_list[l])
+                plt.yticks(xticks_list[l])
                 plt.ylabel(xlabel_list[l], fontsize=fontsize)
+            if k==0 and l==Nparas-1:
+                plt.yticks(xticks_list[l],["5e5","1e6","4e6"])
             if l!=Nparas-1:
                 ax.xaxis.set_ticks([])
             else:

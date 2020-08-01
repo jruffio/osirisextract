@@ -232,21 +232,21 @@ if __name__ == "__main__":
     if 1:
         OSIRISDATA = "/data/osiris_data/"
         # IFSfilter = "Jbb"
-        IFSfilter = "Hbb"
-        # IFSfilter = "Kbb"
-        # refstar_name = "HD_210501"
+        # IFSfilter = "Hbb"
+        IFSfilter = "Kbb"
+        refstar_name = "HD_210501"
         # refstar_name = "HR_8799"
         # refstar_name = "HIP_1123"
-        refstar_name = "BD+14_4774"
+        # refstar_name = "BD+14_4774"
         cutoff = 20
 
         filelist = []
         date = "*"
-        date = "20090730"
+        date = "20200729"
         # date=   "20100711"
         # date = "20100713"
-        # filename_filter = "s*"+IFSfilter+"*020_psfs_repaired_spec_v2.fits"
-        # filelist.extend(glob.glob(os.path.join(OSIRISDATA,"HR_8799_*",date,"reduced_telluric_jb",refstar_name,filename_filter)))
+        filename_filter = "s*"+IFSfilter+"*020_psfs_repaired_spec_v2.fits"
+        filelist.extend(glob.glob(os.path.join(OSIRISDATA,"HR_8799_*",date,"reduced_telluric_jb",refstar_name,filename_filter)))
         filename_filter = "ao_off_s*"+IFSfilter+"*020_spec_v2.fits"
         filelist.extend(glob.glob(os.path.join(OSIRISDATA,"HR_8799_*",date,"reduced_telluric_jb",refstar_name,filename_filter)))
         print(filelist)

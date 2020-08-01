@@ -16,8 +16,8 @@ out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
 # planet = "HR_8799_b"
 # planet = "HR_8799_c"
 # planet = "HR_8799_d"
-# planet = "kap_And"
-planet = "51_Eri_b"
+planet = "kap_And"
+# planet = "51_Eri_b"
 
 # IFSfilter = "Kbb"
 # IFSfilter = "Hbb"
@@ -139,8 +139,8 @@ if 1:
         # if "20190324_HPF_only" not in reducfilename:
         #     continue
         print(k,item)
-        if "20171104" not in reducfilename:
-            continue
+        # if "20171104" not in reducfilename:
+        #     continue
         # print(reducfilename)
         # reducfilename = item[cen_filename_id].replace("20190117_HPFonly","20190125_HPFonly").replace("sherlock_v0","sherlock_v1_search")
         # reducfilename = item[cen_filename_id].replace("20190117_HPFonly","20190125_HPFonly_cov").replace("sherlock_v0","sherlock_v1_search_empcov")
@@ -294,11 +294,12 @@ if 1:
 
     f.subplots_adjust(wspace=0,hspace=0)
     # plt.show()
-    if not os.path.exists(os.path.join(out_pngs,planet)):
-        os.makedirs(os.path.join(out_pngs,planet))
-    print("Saving "+os.path.join(out_pngs,planet,planet+"_"+suffix+"_images_kl{0}.pdf".format(resnumbasis)))
-    plt.savefig(os.path.join(out_pngs,planet,planet+"_"+suffix+"_images_kl{0}.png".format(resnumbasis)),bbox_inches='tight')
-    plt.savefig(os.path.join(out_pngs,planet,planet+"_"+suffix+"_images_kl{0}.pdf".format(resnumbasis)),bbox_inches='tight')
+    # if not os.path.exists(os.path.join(out_pngs,planet)):
+    #     os.makedirs(os.path.join(out_pngs,planet))
+    # print("Saving "+os.path.join(out_pngs,planet,planet+"_"+suffix+"_images_kl{0}.pdf".format(resnumbasis)))
+    # plt.savefig(os.path.join(out_pngs,planet,planet+"_"+suffix+"_images_kl{0}.png".format(resnumbasis)),bbox_inches='tight')
+    # plt.savefig(os.path.join(out_pngs,planet,planet+"_"+suffix+"_images_kl{0}.pdf".format(resnumbasis)),bbox_inches='tight')
+
     # print("Saving "+os.path.join(out_pngs,"HR8799"+planet+"_"+suffix+"_images_tentativedetec.pdf"))
     # plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+suffix+"_images_tentativedetec.pdf"),bbox_inches='tight')
     # plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+suffix+"_images_tentativedetec.png"),bbox_inches='tight')

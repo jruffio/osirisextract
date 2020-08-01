@@ -12,7 +12,7 @@ import multiprocessing as mp
 from scipy.signal import correlate2d
 from scipy.ndimage.filters import median_filter
 from astropy.stats import mad_std
-from reduce_HPFonly_diagcov import return_64x19
+from reduce_HPFonly_diagcov_resmodel_v2 import return_64x19
 
 def convolve_spectrum(wvs,spectrum,R):
     conv_spectrum = np.zeros(spectrum.shape)
@@ -212,8 +212,10 @@ if 0:
     # filelist = glob.glob(os.path.join(inputdir,"2017*/reduced_sky_jb/s*_"+IFSfilter+"_[0-9][0-9][0-9].fits"))
     # inputdir = "/data/osiris_data/51_Eri_b"
     # filelist = glob.glob(os.path.join(inputdir,"2017*/reduced_sky_jb/s*_"+IFSfilter+"_[0-9][0-9][0-9].fits"))
-    inputdir = "/data/osiris_data/HR_8799_b"
-    filelist = glob.glob(os.path.join(inputdir,"2009*/reduced_sky_jb/s*_"+IFSfilter+"_[0-9][0-9][0-9].fits"))
+    # inputdir = "/data/osiris_data/HR_8799_b"
+    # filelist = glob.glob(os.path.join(inputdir,"2009*/reduced_sky_jb/s*_"+IFSfilter+"_[0-9][0-9][0-9].fits"))
+    inputdir = "/data/osiris_data/HR_8799_d"
+    filelist = glob.glob(os.path.join(inputdir,"202007*/reduced_sky_jb/s*_"+IFSfilter+"_[0-9][0-9][0-9].fits"))
     # filelist = [filelist[1]]
     print(filelist)
     # exit()
@@ -235,9 +237,9 @@ if 0:
 
     cutoff = 40
     medwindowsize=200
-    nccf = 201 #11
+    nccf = 401 #11
     # nccf = 41
-    dwvs_CCF = np.linspace(-dwv*1,dwv*1,nccf)
+    dwvs_CCF = np.linspace(-dwv*2,dwv*2,nccf)
     # dwvs_CCF = np.linspace(-dwv*0.1,dwv*0.1,nccf)
     # R_list = np.linspace(1000,5000,16+1)
     # R_list = np.linspace(2000,6000,4+1)
@@ -575,7 +577,7 @@ if 1:
     suffix="_Rfixed"
     IFSfilter = "Kbb"
     # IFSfilter = "Hbb"
-    year = 2018
+    year = 2020
     # inputdir = "/data/osiris_data/HR_8799_*"
     filename_filter_list = []
     # filename_filter = os.path.join(inputdir,"2010*/reduced_sky_jb/s*_"+IFSfilter+"_020.fits")
@@ -585,7 +587,7 @@ if 1:
     inputdir = "/data/osiris_data/51_Eri_b"
     filename_filter_list.append(os.path.join(inputdir,"{0}*/reduced_sky_jb/s*_".format(year)+IFSfilter+"_020.fits"))
     inputdir = "/data/osiris_data/HR_8799_*"
-    filename_filter_list.append(os.path.join(inputdir,"{0}*/reduced_sky_jb/s*_".format(year)+IFSfilter+"_035.fits"))
+    filename_filter_list.append(os.path.join(inputdir,"{0}*/reduced_sky_jb/s*_".format(year)+IFSfilter+"_020.fits"))
     inputdir = "/data/osiris_data/kap_And"
     filename_filter_list.append(os.path.join(inputdir,"{0}*/reduced_sky_jb/s*_".format(year)+IFSfilter+"_020.fits"))
     filelist = []
@@ -604,7 +606,7 @@ if 1:
     for fstr in filelist:
         print(fstr)
     # print(filelist)
-    exit()
+    # exit()
     filelist_out.sort()
     filelist_R.sort()
     filelist_dwv.sort()
@@ -684,7 +686,7 @@ if 1:
         plt.subplot(3,len(filelist_R),k+1)
         hdulist = pyfits.open(filename_dwv)
         dwv_map = return_64x19(hdulist[0].data)
-        dwv_map[np.where(np.abs(dwv_map)>0.9)] = np.nan
+        dwv_map[np.where(np.abs(dwv_map-np.nanmedian(dwv_map))>0.9)] = np.nan
             # wvshift_arr = np.zeros(output.shape[3::])
             # for row in range(output.shape[3]):
             #     for col in range(output.shape[4]):
@@ -716,7 +718,7 @@ if 1:
         plt.subplot(2,len(filelist_R),k+1)
         plt.hist(dwv_map[np.isfinite(dwv_map)],bins=100,range=[-1,1])
         plt.title("{0:.2f}".format(np.nanstd(dwv_map)))
-        plt.xlim([-1,1])
+        # plt.xlim([-1,1])
 
         plt.subplot(2,len(filelist_R),k+1+len(filelist_R))
         plt.hist(diff[np.where(np.isfinite(diff))],bins=100,range=[-1,1])
@@ -757,6 +759,7 @@ if 1:
     # print(len(temp_list))
     # print(len(cst_offset_list))
     # exit()
+    master_wvshift[np.isnan(master_wvshift)] = 0
     for filename,epoch,temp in zip(filelist,epoch_list,temp_list):
         # pass
         print(os.path.join(os.path.dirname(filename),"..","master_wvshifts_"+IFSfilter+".fits"))
@@ -776,8 +779,8 @@ if 1:
 if 0: # plot master sky calibrations
     fontsize=12
     k = 0
-    f,axes = plt.subplots(1,10,sharex="col",sharey="row",figsize=(12,4))
-    for year in np.arange(2009,2019,1):
+    f,axes = plt.subplots(1,15,sharex="col",sharey="row",figsize=(12,4))
+    for year in np.arange(2009,2021,1):
         for ifsfilter in ["Kbb","Hbb"]:
             if ifsfilter=="Kbb": #Kbb 1965.0 0.25
                 CRVAL1 = 1965.
@@ -828,7 +831,7 @@ if 0: # plot master sky calibrations
     plt.subplots_adjust(wspace=0,hspace=0)
 
 
-    if 1:
+    if 0:
         print("Saving "+os.path.join(out_pngs,"master_wavcal.pdf"))
         plt.savefig(os.path.join(out_pngs,"master_wavcal.pdf"),bbox_inches='tight')
         plt.savefig(os.path.join(out_pngs,"master_wavcal.png"),bbox_inches='tight')

@@ -82,10 +82,10 @@ if __name__ == "__main__":
     if useprior:
         priorTeff,priorTeff_sig = 900,1e-9#1e-9
         priorlogg,priorlogg_sig = 3.9,1e-9#1e-9
-    planet,color = "HR_8799_c","#ff9900"
-    if useprior:
-        priorTeff,priorTeff_sig = 1060,1e-9#1e-9
-        priorlogg,priorlogg_sig = 4.1,1e-9#1e-9
+    # planet,color = "HR_8799_c","#ff9900"
+    # if useprior:
+    #     priorTeff,priorTeff_sig = 1060,1e-9#1e-9
+    #     priorlogg,priorlogg_sig = 4.1,1e-9#1e-9
     # planet,color = "HR_8799_d","#6600ff"
     # if useprior:
     #     priorTeff,priorTeff_sig = 1060,1e-9#1e-9
@@ -107,7 +107,8 @@ if __name__ == "__main__":
     filelist = glob.glob(os.path.join(inputDir,"s"+date+"*"+IFSfilter+"_"+scale+".fits"))
     filelist.sort()
     # outputfolder = "20200309_model"
-    outputfolder = "sherlock/20200312_travisgridpost"
+    # outputfolder = "sherlock/20200312_travisgridpost"
+    outputfolder = "sherlock/20200714_CtoO_gridpost"
     fake_str = ""
     # outputfolder = "sherlock/20200427_travisgridpost"
     # fake_str = "_fk"
@@ -211,7 +212,7 @@ if __name__ == "__main__":
 
     hr_fitT_list = np.linspace(fitT_list[0],fitT_list[-1],(len(fitT_list)-1)*1+1,endpoint=True)
     hr_fitlogg_list = np.linspace(fitlogg_list[0],fitlogg_list[-1],(len(fitlogg_list)-1)*1+1,endpoint=True)
-    hr_fitCtoO_list = np.linspace(fitCtoO_list[0],fitCtoO_list[-1],(len(fitCtoO_list)-1)*2+1,endpoint=True)
+    hr_fitCtoO_list = np.linspace(fitCtoO_list[0],fitCtoO_list[-1],(len(fitCtoO_list)-1)*1+1,endpoint=True)
     hr_planetRV_array0 = np.linspace(planetRV_array0[0],planetRV_array0[-1],(len(planetRV_array0)-1)+1,endpoint=True)
     Npts = np.size(hr_fitT_list)*np.size(hr_fitlogg_list)*np.size(hr_fitCtoO_list)*np.size(hr_planetRV_array0)
     pts = np.rollaxis( np.rollaxis(np.array(np.meshgrid(hr_fitT_list,hr_fitlogg_list,hr_fitCtoO_list,hr_planetRV_array0)),0,5),0,2).reshape(Npts,4)

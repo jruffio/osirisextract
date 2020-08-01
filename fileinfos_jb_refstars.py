@@ -10,6 +10,18 @@ import numpy as np
 import csv
 from copy import copy
 
+from astropy.time import Time
+from astropy.coordinates import SkyCoord, EarthLocation
+from astropy import units as u
+from astropy.utils import iers
+from astropy.utils.iers import conf as iers_conf
+print(iers_conf.iers_auto_url)
+#default_iers = iers_conf.iers_auto_url
+#print(default_iers)
+iers_conf.iers_auto_url = 'https://datacenter.iers.org/data/9/finals2000A.all'
+iers_conf.iers_auto_url_mirror = 'ftp://cddis.gsfc.nasa.gov/pub/products/iers/finals2000A.all'
+iers.IERS_Auto.open()  # Note the URL
+
 fileinfos_filename = "/data/osiris_data/fileinfos_refstars_jb.csv"
 
 # create file if none exists
@@ -47,7 +59,7 @@ new_list_data = copy(old_list_data)
 for item in old_list_table:
     print(item)
 
-if 0: # add filename
+if 1: # add filename
     filename_id = new_colnames.index("filename")
     old_filelist = [item[filename_id] for item in new_list_data]
 
@@ -63,7 +75,7 @@ if 0: # add filename
     # print(new_list_data)
     # exit()
 
-if 0: # add filename for ao off
+if 1: # add filename for ao off
     filename_id = new_colnames.index("filename")
     old_filelist = [item[filename_id] for item in new_list_data]
 
@@ -78,7 +90,7 @@ if 0: # add filename for ao off
     # print(new_list_data)
 
 #sort files
-if 0:
+if 1:
     filename_id = new_colnames.index("filename")
     filelist = [item[filename_id] for item in new_list_data]
     filelist_sorted = copy(filelist)
@@ -91,7 +103,7 @@ if 0:
 
     new_list_data = new_new_list_data
 
-if 0: # add MJD-OBS
+if 1: # add MJD-OBS
     filename_id = new_colnames.index("filename")
     MJDOBS_id = new_colnames.index("MJD-OBS")
 
@@ -101,7 +113,7 @@ if 0: # add MJD-OBS
         new_list_data[k][MJDOBS_id] = prihdr0["MJD-OBS"]
 
 
-if 0: # add spectral band
+if 1: # add spectral band
     filename_id = new_colnames.index("filename")
     try:
         ifs_filter_id = new_colnames.index("IFS filter")
@@ -119,7 +131,7 @@ if 0: # add spectral band
             new_list_data[k][ifs_filter_id] = "Kbb"
 
 # Add star Simbad info
-if 0:
+if 1:
     try:
         type_id = old_colnames.index("type")
     except:
@@ -258,7 +270,7 @@ if 0:
             new_list_data[k][Kmag_id] = np.nan
             new_list_data[k][hipnum_id] = np.nan
 
-if 0: # add barycenter RV
+if 1: # add barycenter RV
         # hip_id : Hipparcos Catalog ID. (Integer). Epoch will be taken to be Catalogue Epoch or J1991.25
         #         If specified then ra,dec,pmra,pmdec,px, and epoch need not be specified.
         #                         OR / AND
@@ -278,13 +290,26 @@ if 0: # add barycenter RV
         bary_rv_id = new_colnames.index("barycenter rv")
 
     for k,item in enumerate(new_list_data):
+        print(item[bary_rv_id])
+        if np.isfinite(float(item[bary_rv_id])):
+            continue
         MJDOBS = float(item[MJDOBS_id])
-        if item[starname_id] == "BD+14_4774":
-            result = get_BC_vel(MJDOBS+2400000.5,ra=334.9042083,dec=14.7468861,pmra=13.3,pmdec=2.370,px=2.3269,obsname="Keck Observatory",ephemeris="de430")
-        else:
-            print(item[hipnum_id])
-            result = get_BC_vel(MJDOBS+2400000.5,hip_id=int(item[hipnum_id]),obsname="Keck Observatory",ephemeris="de430")
-        new_list_data[k][bary_rv_id] = result[0][0]
+        # print(MJDOBS)
+        # if item[starname_id] == "BD+14_4774":
+        #     result = get_BC_vel(MJDOBS+2400000.5,ra=334.9042083,dec=14.7468861,pmra=13.3,pmdec=2.370,px=2.3269,obsname="Keck Observatory",ephemeris="de430")
+        # else:
+        #     print(item[hipnum_id])
+        #     result = get_BC_vel(MJDOBS+2400000.5,hip_id=int(item[hipnum_id]),obsname="Keck Observatory",ephemeris="de430")
+        # new_list_data[k][bary_rv_id] = result[0][0]
+
+        hdulist = pyfits.open(item[filename_id])
+        prihdr0 = hdulist[0].header
+        print(float(prihdr0["RA"]),float(prihdr0["DEC"]))
+        keck = EarthLocation.from_geodetic(lat=19.8283*u.deg, lon=-155.4783*u.deg, height=4160*u.m)
+        sc = SkyCoord(float(prihdr0["RA"]) * u.deg, float(prihdr0["DEC"]) * u.deg)
+        barycorr = sc.radial_velocity_correction(obstime=Time(MJDOBS, format="mjd", scale="utc"), location=keck)
+        new_list_data[k][bary_rv_id] = barycorr.to(u.m/u.s).value
+
 
 
 from scipy.interpolate import interp1d
@@ -471,6 +496,8 @@ if 1:
             item[rv_err_id] = np.nan
             item[limbdark_id] = np.nan
             item[limbdark_err_id] = np.nan
+
+
 print("NEW")
 for item in new_list_data:
     print(item)

@@ -17,7 +17,7 @@ from pyklip.fakes import gaussfit2d
 from scipy import interpolate
 from astropy.stats import mad_std
 from copy import copy
-from reduce_HPFonly_diagcov import _remove_bad_pixels_z, _remove_edges,_tpool_init,_arraytonumpy,_spline_psf_model,convolve_spectrum
+from reduce_HPFonly_diagcov_resmodel_v2 import _remove_bad_pixels_z, _remove_edges,_tpool_init,_arraytonumpy,_spline_psf_model,convolve_spectrum
 import ctypes
 try:
     import mkl
@@ -69,10 +69,10 @@ if __name__ == "__main__":
     # OSIRISDATA = "/scratch/groups/bmacint/osiris_data/"
     OSIRISDATA = "/data/osiris_data/"
     if 1:
-        IFSfilter = "Hbb"#"Jbb"#"Hbb"#"Kbb"
+        IFSfilter = "Kbb"#"Jbb"#"Hbb"#"Kbb"
         # planet = "HR_8799_b"
-        planet = "HR_8799_c"
-        # planet = "HR_8799_d"
+        # planet = "HR_8799_c"
+        planet = "HR_8799_d"
         # planet = "kap_And"
         # planet = "51_Eri_b"
         # extra_filter = "a013001"
@@ -87,17 +87,18 @@ if __name__ == "__main__":
             # date_list = [date_list[1],]
         elif "HR_8799_c" in planet:
             if "Kbb" in IFSfilter:
-                date_list = ["20100715","20101104","20110723","20110724","20110725","20130726","20171103"] #Kbb
+                date_list = ["20100715","20101104","20110723","20110724","20110725","20130726","20171103","20200729"] #Kbb
             elif "Hbb" in IFSfilter:
                 date_list = ["20101028","20101104","20110724","20110725","20171103"] # Hbb
             elif "Jbb" in IFSfilter:
                 date_list = ["20130726","20131029", "20131030", "20131031"] #Jbb
             # date_list = [date_list[0],]
-            # date_list = ["20101104"] #Hbb
+            date_list = ["20200729"] #Kbb
         elif "HR_8799_d" in planet:
             if "Kbb" in IFSfilter:
-                date_list = ["20130727","20150720","20150722","20150723","20150828"] #Kbb
+                date_list = ["20130727","20150720","20150722","20150723","20150828","20200729","20200730","20200731"] #Kbb
             # date_list = [date_list[0],]
+            date_list = ["20200729","20200730","20200731"] #Kbb
         elif "51_Eri_b" in planet:
             if "Kbb" in IFSfilter:
                 date_list = ["20171103","20171104"] #Kbb
@@ -1037,6 +1038,7 @@ if __name__ == "__main__":
     print("STEP 9")
     # Plot transmission
     if 1 or run_all:
+        print("coucou")
         filename_filter = "*/*"+IFSfilter+"*[0-9][0-9][0-9]*"+"_transmission_v3.fits"
 
         for date in date_list:

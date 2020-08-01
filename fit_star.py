@@ -622,11 +622,13 @@ if __name__ == "__main__":
     # exit()
 
     if 0:
+        istest = ""#"_test"
         degpoly = 4
         print(uni_starname_list)
         # delta_teff = 50
         # uni_starname_list = ['kap_And','HIP_111538','51_Eri','HIP_25453','HD_7215','HIP_1123','HIP_116886','HR_8799','HD_210501','BD+14_4774']
-        uni_starname_list = ['HD_210501',]
+        uni_starname_list = ['HR_8799',]
+        # uni_starname_list = ['HD_210501',]
         print(ref_unique_dates)
         # exit()
         print(uni_starname_list)
@@ -807,8 +809,8 @@ if __name__ == "__main__":
             type_list = []
 
             plt.figure(2)
-            for date in ['100715']:#ref_unique_dates:
-                for IFSfilter in ["Hbb","Kbb"]:
+            for date in ['200729','200730','200731']:#ref_unique_dates:
+                for IFSfilter in ["Kbb"]:#["Hbb","Kbb"]:
                     where_files = np.where((starname == ref_starname_list) *\
                                            np.array(["ao_off_" not in a for a in ref_stars_filelist])*\
                                            (date == ref_dates_list)*\
@@ -816,13 +818,15 @@ if __name__ == "__main__":
 
 
                     if len(where_files[0]) != 0:
-                        print(ref_stars_filelist[where_files])
-
                         _spec_list = []
+                        basename_list = []
                         for fid,filename in enumerate(np.unique(ref_stars_filelist[where_files])):
+                            if os.path.basename(filename) in basename_list:
+                                continue
                             hdulist = pyfits.open(filename.replace(".fits","_psfs_repaired_spec_v2.fits"))
                             _spec_list.append(hdulist[0].data[1,:])
                             hdulist.close()
+                            basename_list.append(os.path.basename(filename))
                         # _spec = np.nanmean(_spec_list, axis=0)
                         _spec = combine_spectra(_spec_list)
 
@@ -851,10 +855,14 @@ if __name__ == "__main__":
                         print(ref_stars_filelist[where_files])
 
                         _spec_list = []
+                        basename_list = []
                         for fid,filename in enumerate(np.unique(ref_stars_filelist[where_files])):
+                            if os.path.basename(filename) in basename_list:
+                                continue
                             hdulist = pyfits.open(filename.replace(".fits","_spec_v2.fits"))
                             _spec_list.append(hdulist[0].data[1,:])
                             hdulist.close()
+                            basename_list.append(os.path.basename(filename))
                         _spec = combine_spectra(_spec_list)
 
                         wvsol_offsets_filename = os.path.join(os.path.dirname(ref_stars_filelist[where_files][0]),
@@ -946,10 +954,10 @@ if __name__ == "__main__":
                 best_tr_id = get_best_telluric_model(wvs_corr,spec,phoenix_refstar_broad0_func,transmission_list,(np.concatenate(where_lines_list),),rv0,bary_rv,cutoff=5)
                 print("Done optimizing transmission", best_tr_id,IFSfilter,bary_rv,date,type)
 
-                # rv_samples = np.arange(-100,100,0.5)
-                # vsini_samples = np.arange(10,500,10)
-                rv_samples = np.arange(-30,30,10)
-                vsini_samples = np.arange(100,300,50)
+                rv_samples = np.arange(-100,100,0.5)
+                vsini_samples = np.arange(10,500,10)
+                # rv_samples = np.arange(-30,30,10)
+                # vsini_samples = np.arange(100,300,50)
 
                 print(len(grid_refstar_func_list))
                 chi2_arr, logpost_arr = fit_rv_vsin_model(rv_samples, vsini_samples,wvs_corr,spec,
@@ -967,25 +975,25 @@ if __name__ == "__main__":
                 hdulist = pyfits.HDUList()
                 hdulist.append(pyfits.PrimaryHDU(data=np.concatenate((posterior[None,:,:,:],logpost_arr[None,:,:,:],chi2_arr[None,:,:,:]))))
                 try:
-                    hdulist.writeto(os.path.join(osiris_data_dir,"stellar_fits","{0}_{1}_{2}_{3}_posterior_test.fits".format(starname,IFSfilter,date,type)), overwrite=True)
+                    hdulist.writeto(os.path.join(osiris_data_dir,"stellar_fits","{0}_{1}_{2}_{3}_posterior{4}.fits".format(starname,IFSfilter,date,type,istest)), overwrite=True)
                 except TypeError:
-                    hdulist.writeto(os.path.join(osiris_data_dir,"stellar_fits","{0}_{1}_{2}_{3}_posterior_test.fits".format(starname,IFSfilter,date,type)), clobber=True)
+                    hdulist.writeto(os.path.join(osiris_data_dir,"stellar_fits","{0}_{1}_{2}_{3}_posterior{4}.fits".format(starname,IFSfilter,date,type,istest)), clobber=True)
                 hdulist.close()
                 hdulist = pyfits.HDUList()
                 hdulist.append(pyfits.PrimaryHDU(data=vsini_samples))
                 try:
-                    hdulist.writeto(os.path.join(osiris_data_dir,"stellar_fits","{0}_{1}_{2}_{3}_vsini_samples_test.fits".format(starname,IFSfilter,date,type)), overwrite=True)
+                    hdulist.writeto(os.path.join(osiris_data_dir,"stellar_fits","{0}_{1}_{2}_{3}_vsini_samples{4}.fits".format(starname,IFSfilter,date,type,istest)), overwrite=True)
                 except TypeError:
-                    hdulist.writeto(os.path.join(osiris_data_dir,"stellar_fits","{0}_{1}_{2}_{3}_vsini_samples_test.fits".format(starname,IFSfilter,date,type)), clobber=True)
+                    hdulist.writeto(os.path.join(osiris_data_dir,"stellar_fits","{0}_{1}_{2}_{3}_vsini_samples{4}.fits".format(starname,IFSfilter,date,type,istest)), clobber=True)
                 hdulist.close()
                 hdulist = pyfits.HDUList()
                 hdulist.append(pyfits.PrimaryHDU(data=rv_samples))
                 try:
-                    hdulist.writeto(os.path.join(osiris_data_dir,"stellar_fits","{0}_{1}_{2}_{3}_rv_samples_test.fits".format(starname,IFSfilter,date,type)), overwrite=True)
+                    hdulist.writeto(os.path.join(osiris_data_dir,"stellar_fits","{0}_{1}_{2}_{3}_rv_samples{4}.fits".format(starname,IFSfilter,date,type,istest)), overwrite=True)
                 except TypeError:
-                    hdulist.writeto(os.path.join(osiris_data_dir,"stellar_fits","{0}_{1}_{2}_{3}_rv_samples_test.fits".format(starname,IFSfilter,date,type)), clobber=True)
+                    hdulist.writeto(os.path.join(osiris_data_dir,"stellar_fits","{0}_{1}_{2}_{3}_rv_samples{4}.fits".format(starname,IFSfilter,date,type,istest)), clobber=True)
                 hdulist.close()
-                with open(os.path.join(osiris_data_dir,"stellar_fits","{0}_{1}_{2}_{3}_models_test.txt".format(starname,IFSfilter,date,type)), 'w+') as txtfile:
+                with open(os.path.join(osiris_data_dir,"stellar_fits","{0}_{1}_{2}_{3}_models{4}.txt".format(starname,IFSfilter,date,type,istest)), 'w+') as txtfile:
                     txtfile.writelines([s+"\n" for s in grid_refstar_filelist])
 
                 rv_posterior = np.nansum(posterior_rv_vsini,axis=1)
@@ -1007,9 +1015,9 @@ if __name__ == "__main__":
                 hdulist = pyfits.HDUList()
                 hdulist.append(pyfits.PrimaryHDU(data=np.concatenate((d_wvs[None,:],d[None,:],m[None,:],res[None,:],m_m10[None,:],m_p10[None,:]),axis=0)))
                 try:
-                    hdulist.writeto(os.path.join(osiris_data_dir,"stellar_fits","{0}_{1}_{2}_{3}_best_data_fit_test.fits".format(starname,IFSfilter,date,type)), overwrite=True)
+                    hdulist.writeto(os.path.join(osiris_data_dir,"stellar_fits","{0}_{1}_{2}_{3}_best_data_fit{4}.fits".format(starname,IFSfilter,date,type,istest)), overwrite=True)
                 except TypeError:
-                    hdulist.writeto(os.path.join(osiris_data_dir,"stellar_fits","{0}_{1}_{2}_{3}_best_data_fit_test.fits".format(starname,IFSfilter,date,type)), clobber=True)
+                    hdulist.writeto(os.path.join(osiris_data_dir,"stellar_fits","{0}_{1}_{2}_{3}_best_data_fit{4}.fits".format(starname,IFSfilter,date,type,istest)), clobber=True)
                 hdulist.close()
 
                 spec_trans = spec/transmission_list[best_tr_id](wvs_corr)
@@ -1020,16 +1028,17 @@ if __name__ == "__main__":
                 hdulist = pyfits.HDUList()
                 hdulist.append(pyfits.PrimaryHDU(data=np.concatenate((wvs_corr[None,:],spec[None,:],spec_trans[None,:],spec_trans_model[None,:]),axis=0)))
                 try:
-                    hdulist.writeto(os.path.join(osiris_data_dir,"stellar_fits","{0}_{1}_{2}_{3}_whole_spec_band_test.fits".format(starname,IFSfilter,date,type)), overwrite=True)
+                    hdulist.writeto(os.path.join(osiris_data_dir,"stellar_fits","{0}_{1}_{2}_{3}_whole_spec_band{4}.fits".format(starname,IFSfilter,date,type,istest)), overwrite=True)
                 except TypeError:
-                    hdulist.writeto(os.path.join(osiris_data_dir,"stellar_fits","{0}_{1}_{2}_{3}_whole_spec_band_test.fits".format(starname,IFSfilter,date,type)), clobber=True)
+                    hdulist.writeto(os.path.join(osiris_data_dir,"stellar_fits","{0}_{1}_{2}_{3}_whole_spec_band{4}.fits".format(starname,IFSfilter,date,type,istest)), clobber=True)
                 hdulist.close()
 
         exit()
     if 1:
         istest = ""#"_test"
-        for starname in ['kap_And','HIP_111538','51_Eri','HIP_25453','HD_7215','HIP_1123','HIP_116886','HR_8799','HD_210501','BD+14_4774']:
+        # for starname in ['kap_And','HIP_111538','51_Eri','HIP_25453','HD_7215','HIP_1123','HIP_116886','HR_8799','HD_210501','BD+14_4774']:
         # for starname in ['HD_210501']:
+        for starname in ['HR_8799']:
             #
             # filter_postfilename = "kap_And_*_posterior.fits"
             # filter_postfilename = "HIP_111538_*_posterior.fits"
@@ -1041,6 +1050,7 @@ if __name__ == "__main__":
             # filter_postfilename = starname+"_*_posterior_test.fits"
 
             postfilelist = glob.glob(os.path.join(osiris_data_dir,"stellar_fits",filter_postfilename))
+            postfilelist.sort()
 
             dates = []
             rvs = np.zeros(len(postfilelist))

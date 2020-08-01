@@ -84,21 +84,80 @@ if __name__ == "__main__":
                     molecular_template_folder = os.path.join(osiris_data_dir,"molecular_templates")
                     sky_transmission_folder = os.path.join(osiris_data_dir,"sky_transmission")
 
+                    tmpfilename = os.path.join(osiris_data_dir,"hr8799b_modelgrid/","hr8799b_modelgrid_R{0}_{1}.fits".format(R,IFSfilter))
+                    hdulist = pyfits.open(tmpfilename)
+                    planet_model_grid =  hdulist[0].data
+                    oriplanet_spec_wvs =  hdulist[1].data
+                    Tlistunique =  hdulist[2].data
+                    logglistunique =  hdulist[3].data
+                    CtoOlistunique =  hdulist[4].data
+                    hdulist.close()
+                    planet_spec_func_list = []
+                    from scipy.interpolate import RegularGridInterpolator
+                    myinterpgrid_CtoO = RegularGridInterpolator((Tlistunique,logglistunique,CtoOlistunique),planet_model_grid,method="linear",bounds_error=False,fill_value=0.0)
+                    tmpfilename = os.path.join(osiris_data_dir,"clouds_modelgrid/","hr8799b_modelgrid_R{0}_{1}.fits".format(R,IFSfilter))
+                    hdulist = pyfits.open(tmpfilename)
+                    planet_model_grid =  hdulist[0].data
+                    oriplanet_spec_wvs_clouds =  hdulist[1].data
+                    Tlistunique =  hdulist[2].data
+                    logglistunique =  hdulist[3].data
+                    CtoOlistunique =  hdulist[4].data
+                    hdulist.close()
+                    planet_spec_func_list = []
+                    from scipy.interpolate import RegularGridInterpolator
+                    myinterpgrid_clouds = RegularGridInterpolator((Tlistunique,logglistunique,CtoOlistunique),planet_model_grid,method="linear",bounds_error=False,fill_value=0.0)
+                    
+                    
                     if planet == "HR_8799_b":
                         travis_spec_filename=os.path.join(planet_template_folder,
                                                       "HR8799b_"+IFSfilter[0:1]+"_3Oct2018.save")
-                        plT,pllogg,plCtoO = 1200,3.8,0.56
                         plrv = -9.
+
+                        plT,pllogg,plCtoO =1180.0,3.1666666666666665,0.577994272278481
+                        planet_spec_func = interp1d(oriplanet_spec_wvs,myinterpgrid_CtoO([plT,pllogg,plCtoO])[0],bounds_error=False,fill_value=np.nan)
+                        planet_spec_func_list.append(planet_spec_func)
+                        planet_spec_func = interp1d(oriplanet_spec_wvs,myinterpgrid_CtoO([plT-200,pllogg,plCtoO])[0],bounds_error=False,fill_value=np.nan)
+                        planet_spec_func_list.append(planet_spec_func)
+                        planet_spec_func = interp1d(oriplanet_spec_wvs,myinterpgrid_CtoO([plT,pllogg+0.5,plCtoO])[0],bounds_error=False,fill_value=np.nan)
+                        planet_spec_func_list.append(planet_spec_func)
+                        planet_spec_func = interp1d(oriplanet_spec_wvs,myinterpgrid_CtoO([plT,pllogg,plCtoO+0.2])[0],bounds_error=False,fill_value=np.nan)
+                        planet_spec_func_list.append(planet_spec_func)
+                        planet_spec_func = interp1d(oriplanet_spec_wvs_clouds,myinterpgrid_clouds([1154.1666666666665, 3.0, 2833333.333333333])[0],bounds_error=False,fill_value=np.nan)
+                        planet_spec_func_list.append(planet_spec_func)
+
                     if planet == "HR_8799_c":
                         travis_spec_filename=os.path.join(planet_template_folder,
                                                       "HR8799c_"+IFSfilter[0:1]+"_3Oct2018.save")
-                        plT,pllogg,plCtoO = 1200,3.8,0.56
                         plrv = -11.1
+                        plT,pllogg,plCtoO = 1200.0,3.6333333333333333,0.5670028102531646
+                        planet_spec_func = interp1d(oriplanet_spec_wvs,myinterpgrid_CtoO([plT,pllogg,plCtoO])[0],bounds_error=False,fill_value=np.nan)
+                        planet_spec_func_list.append(planet_spec_func)
+                        planet_spec_func = interp1d(oriplanet_spec_wvs,myinterpgrid_CtoO([plT-200,pllogg,plCtoO])[0],bounds_error=False,fill_value=np.nan)
+                        planet_spec_func_list.append(planet_spec_func)
+                        planet_spec_func = interp1d(oriplanet_spec_wvs,myinterpgrid_CtoO([plT,pllogg+0.5,plCtoO])[0],bounds_error=False,fill_value=np.nan)
+                        planet_spec_func_list.append(planet_spec_func)
+                        planet_spec_func = interp1d(oriplanet_spec_wvs,myinterpgrid_CtoO([plT,pllogg,plCtoO+0.2])[0],bounds_error=False,fill_value=np.nan)
+                        planet_spec_func_list.append(planet_spec_func)
+                        planet_spec_func = interp1d(oriplanet_spec_wvs_clouds,myinterpgrid_clouds([1279.1666666666665,3.571428571428571, 4000000.0])[0],bounds_error=False,fill_value=np.nan)
+                        planet_spec_func_list.append(planet_spec_func)
+
+
                     if planet == "HR_8799_d":
                         travis_spec_filename=os.path.join(planet_template_folder,
                                                       "HR8799c_"+IFSfilter[0:1]+"_3Oct2018.save")
-                        plT,pllogg,plCtoO = 1200,3.8,0.56
                         plrv = -15.7
+                        plT,pllogg,plCtoO = 1200.0, 4.5, 0.5505156172151899
+                        planet_spec_func = interp1d(oriplanet_spec_wvs,myinterpgrid_CtoO([plT,pllogg,plCtoO])[0],bounds_error=False,fill_value=np.nan)
+                        planet_spec_func_list.append(planet_spec_func)
+                        planet_spec_func = interp1d(oriplanet_spec_wvs,myinterpgrid_CtoO([plT-200,pllogg,plCtoO])[0],bounds_error=False,fill_value=np.nan)
+                        planet_spec_func_list.append(planet_spec_func)
+                        planet_spec_func = interp1d(oriplanet_spec_wvs,myinterpgrid_CtoO([plT,pllogg-0.5,plCtoO])[0],bounds_error=False,fill_value=np.nan)
+                        planet_spec_func_list.append(planet_spec_func)
+                        planet_spec_func = interp1d(oriplanet_spec_wvs,myinterpgrid_CtoO([plT,pllogg,plCtoO+0.2])[0],bounds_error=False,fill_value=np.nan)
+                        planet_spec_func_list.append(planet_spec_func)
+                        planet_spec_func = interp1d(oriplanet_spec_wvs_clouds,myinterpgrid_clouds([1300.0, 3.2857142857142856, 888888.8888888889])[0],bounds_error=False,fill_value=np.nan)
+                        planet_spec_func_list.append(planet_spec_func)
+
                     if "HR_8799" in planet:
                         phoenix_model_host_filename = glob.glob(os.path.join(phoenix_folder,"HR_8799"+"*.fits"))[0]
                         host_rv = -12.6 #+-1.4
@@ -121,44 +180,19 @@ if __name__ == "__main__":
                         host_limbdark = 0.5
                         host_vsini = 150 #unknown
                         star_name = "kap_And"
-                    planet_template_filename=travis_spec_filename.replace(".save",
-                                                                          "_gaussconv_R{0}_{1}.csv".format(R,IFSfilter))
-
-                    tmpfilename = os.path.join(osiris_data_dir,"hr8799b_modelgrid/","hr8799b_modelgrid_R{0}_{1}.fits".format(R,IFSfilter))
-                    hdulist = pyfits.open(tmpfilename)
-                    planet_model_grid =  hdulist[0].data
-                    oriplanet_spec_wvs =  hdulist[1].data
-                    Tlistunique =  hdulist[2].data
-                    logglistunique =  hdulist[3].data
-                    CtoOlistunique =  hdulist[4].data
-                    hdulist.close()
-
-                    planet_spec_func_list = []
-                    from scipy.interpolate import RegularGridInterpolator
-                    myinterpgrid = RegularGridInterpolator((Tlistunique,logglistunique,CtoOlistunique),planet_model_grid,method="linear",bounds_error=False,fill_value=0.0)
-                    plT,pllogg,plCtoO =1160.0, 3.25,  0.5724985412658228#1160.0, 4.266666666666667,  0.5724985412658228
-                    # plT,pllogg,plCtoO = 1200.0, 3.8, 0.5615070792405064
-                    planet_spec_func = interp1d(oriplanet_spec_wvs,myinterpgrid([plT,pllogg,plCtoO])[0],bounds_error=False,fill_value=np.nan)
-                    planet_spec_func_list.append(planet_spec_func)
-                    plT,pllogg,plCtoO = 1200.0, 3.7, 0.5615070792405064#1200.0, 3.8, 0.5615070792405064
-                    # plT,pllogg,plCtoO = 1000.0, 3.8, 0.5615070792405064
-                    planet_spec_func = interp1d(oriplanet_spec_wvs,myinterpgrid([plT,pllogg,plCtoO])[0],bounds_error=False,fill_value=np.nan)
-                    planet_spec_func_list.append(planet_spec_func)
-                    plT,pllogg,plCtoO = 1200.0, 4.5, 0.5450198862025316#1200.0, 3.0, 0.5450198862025316
-                    # plT,pllogg,plCtoO = 800.0, 3.8, 0.5615070792405064
-                    planet_spec_func = interp1d(oriplanet_spec_wvs,myinterpgrid([plT,pllogg,plCtoO])[0],bounds_error=False,fill_value=np.nan)
-                    planet_spec_func_list.append(planet_spec_func)
-
-
-                    with open(planet_template_filename, 'r') as csvfile:
-                        csv_reader = csv.reader(csvfile, delimiter=' ')
-                        list_starspec = list(csv_reader)
-                        oriplanet_spec_str_arr = np.array(list_starspec, dtype=np.str)
-                        col_names = oriplanet_spec_str_arr[0]
-                        oriplanet_spec = oriplanet_spec_str_arr[1::,1].astype(np.float)
-                        oriplanet_spec_wvs = oriplanet_spec_str_arr[1::,0].astype(np.float)
-                        planet_spec_func = interp1d(oriplanet_spec_wvs,oriplanet_spec,bounds_error=False,fill_value=np.nan)
-                    planet_spec_func_list.append(planet_spec_func)
+                    # planet_template_filename=travis_spec_filename.replace(".save",
+                    #                                                       "_gaussconv_R{0}_{1}.csv".format(R,IFSfilter))
+                    #
+                    #
+                    # with open(planet_template_filename, 'r') as csvfile:
+                    #     csv_reader = csv.reader(csvfile, delimiter=' ')
+                    #     list_starspec = list(csv_reader)
+                    #     oriplanet_spec_str_arr = np.array(list_starspec, dtype=np.str)
+                    #     col_names = oriplanet_spec_str_arr[0]
+                    #     oriplanet_spec = oriplanet_spec_str_arr[1::,1].astype(np.float)
+                    #     oriplanet_spec_wvs = oriplanet_spec_str_arr[1::,0].astype(np.float)
+                    #     planet_spec_func = interp1d(oriplanet_spec_wvs,oriplanet_spec,bounds_error=False,fill_value=np.nan)
+                    # planet_spec_func_list.append(planet_spec_func)
 
                 for resnumbasis in [10]:#np.arange(0,20):#np.array([0,1,5]):
                     ## file specific info
@@ -345,7 +379,7 @@ if __name__ == "__main__":
         CtoOlistunique =  hdulist[4].data
         hdulist.close()
         from scipy.interpolate import RegularGridInterpolator
-        myinterpgrid = RegularGridInterpolator((Tlistunique,logglistunique,CtoOlistunique),planet_model_grid,method="linear",bounds_error=False,fill_value=0.0)
+        myinterpgrid_CtoO = RegularGridInterpolator((Tlistunique,logglistunique,CtoOlistunique),planet_model_grid,method="linear",bounds_error=False,fill_value=0.0)
 
 
 
@@ -356,7 +390,7 @@ if __name__ == "__main__":
             color = "#0099cc"
             plT,pllogg,plCtoO =1160.0, 4.266666666666667,  0.5724985412658228
             # plT,pllogg,plCtoO = 1200.0, 3.8, 0.5615070792405064
-            planet_spec_func = interp1d(oriplanet_spec_wvs,myinterpgrid([plT,pllogg,plCtoO])[0],bounds_error=False,fill_value=np.nan)
+            planet_spec_func = interp1d(oriplanet_spec_wvs,myinterpgrid_CtoO([plT,pllogg,plCtoO])[0],bounds_error=False,fill_value=np.nan)
             planet_spec_func_list.append(planet_spec_func)
         if planet == "HR_8799_c":
             travis_spec_filename=os.path.join(planet_template_folder,
@@ -365,7 +399,7 @@ if __name__ == "__main__":
             color = "#ff9900"
             plT,pllogg,plCtoO = 1200.0, 3.8, 0.5615070792405064
             # plT,pllogg,plCtoO = 1000.0, 3.8, 0.5615070792405064
-            planet_spec_func = interp1d(oriplanet_spec_wvs,myinterpgrid([plT,pllogg,plCtoO])[0],bounds_error=False,fill_value=np.nan)
+            planet_spec_func = interp1d(oriplanet_spec_wvs,myinterpgrid_CtoO([plT,pllogg,plCtoO])[0],bounds_error=False,fill_value=np.nan)
             planet_spec_func_list.append(planet_spec_func)
         if planet == "HR_8799_d":
             travis_spec_filename=os.path.join(planet_template_folder,
@@ -374,7 +408,7 @@ if __name__ == "__main__":
             color = "#6600ff"
             plT,pllogg,plCtoO = 1200.0, 3.0, 0.5450198862025316
             # plT,pllogg,plCtoO = 800.0, 3.8, 0.5615070792405064
-            planet_spec_func = interp1d(oriplanet_spec_wvs,myinterpgrid([plT,pllogg,plCtoO])[0],bounds_error=False,fill_value=np.nan)
+            planet_spec_func = interp1d(oriplanet_spec_wvs,myinterpgrid_CtoO([plT,pllogg,plCtoO])[0],bounds_error=False,fill_value=np.nan)
             planet_spec_func_list.append(planet_spec_func)
         if "HR_8799" in planet:
             phoenix_model_host_filename = glob.glob(os.path.join(phoenix_folder,"HR_8799"+"*.fits"))[0]
@@ -487,7 +521,7 @@ if __name__ == "__main__":
                 mylabel_list = ["Best fit model"]
                 mylim=0.1
             if planet == "HR_8799_d":
-                final_model_arr = final_model_arr[2,:][None,:]
+                final_model_arr = final_model_arr[0,:][None,:]
                 mylabel_list = ["Best fit model"]
                 mylim=0.2
 

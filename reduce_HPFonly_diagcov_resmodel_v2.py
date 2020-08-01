@@ -800,6 +800,7 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
                         if HPFparas[0]>0:
                             output_maps_np[numbasis_id,model_id,0,row,col,plrv_id] = AIC_HPF_H0-AIC_HPF
                         else:
+                            # output_maps_np[numbasis_id,model_id,0,row,col,plrv_id] = AIC_HPF_H0-AIC_HPF
                             output_maps_np[numbasis_id,model_id,0,row,col,plrv_id] = 0
                         # AIC for planet + star model
                         output_maps_np[numbasis_id,model_id,1,row,col,plrv_id] = AIC_HPF
@@ -970,24 +971,28 @@ if __name__ == "__main__":
         planet = "HR_8799_c"
         # date = "100715"
         # date = "101028"
-        date = "101104"
+        # date = "101104"
         # date = "110723"
         # date = "110724"
         # date = "110725"
         # date = "130726"
         # date = "171103"
+        date = "200729"
         # planet = "HR_8799_d"
         # date = "150720"
         # date = "150722"
         # date = "150723"
         # date = "150828"
+        # date = "200729"
+        # date = "200730"
+        # date = "200731"
         # planet = "51_Eri_b"
         # date = "171103"
         # date = "171104"
         # planet = "kap_And"
         # date = "161106"
         # IFSfilter = "Kbb"
-        IFSfilter = "Hbb"
+        IFSfilter = "Kbb"
         # IFSfilter = "Jbb" # "Kbb" or "Hbb"
         scale = "020"
         # scale = "035"
@@ -997,9 +1002,10 @@ if __name__ == "__main__":
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190906_HPF_restest2/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190923_HPF_restest2/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20191120_new_resmodel/"
-        outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20200213_molectest/"
+        # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20200213_molectest/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190305_HPF_only_noperscor/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190228_mol_temp/"
+        outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20200731_livereduc/"
 
         # inputDir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb_pairsub/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb_pairsub/20190228_HPF_only/"
@@ -1007,11 +1013,11 @@ if __name__ == "__main__":
         print(os.path.join(inputDir,"s"+date+"*"+IFSfilter+"_"+scale+".fits"))
         filelist = glob.glob(os.path.join(inputDir,"s"+date+"*"+IFSfilter+"_"+scale+".fits"))
         filelist.sort()
+        filelist = [filelist[-1],]
         print(filelist)
         # exit()
-        filelist = [filelist[0]]
         # print(os.path.join(inputDir,"s"+date+"*"+IFSfilter+"_020.fits"))
-        # filelist = filelist[4:]
+        # filelist = filelist[1:]
         # filelist = filelist[len(filelist)-3:len(filelist)-2]
 
         res_numbasis = 1
@@ -1021,8 +1027,8 @@ if __name__ == "__main__":
         plot_transmissions = False
         plt_psfs = False
         plot_persistence = False
-        # planet_model_string = "model"
-        planet_model_string = "CO2 CO H2O CH4"#"CO"#
+        planet_model_string = "model"
+        # planet_model_string = "CO2 CO H2O CH4"#"CO"#
         # planet_model_string = "CO2 CO H2O CH4 joint"
         # planet_model_string = "CO joint"
         inject_fakes = False
@@ -1601,80 +1607,6 @@ if __name__ == "__main__":
 
 
             ##############################
-            ## Persistence model
-            ##############################
-            if model_persistence:
-                persistence_arr = np.zeros((ny,nx,nz))
-                persistence_filelist = glob.glob(os.path.join(ref_star_folder,"*","s*"+IFSfilter+"_"+scale+".fits"))
-                persistence_filelist.extend(glob.glob(os.path.join(ref_star_folder,"*","*persistence*"+IFSfilter+"_"+scale+".fits")))
-                for spdc_refstar_filename in persistence_filelist:
-                    # print(spdc_refstar_filename)
-
-                    if 0: # Hack to include a Jbb header into a Kbb raw file
-                        # with pyfits.open("/data/osiris_data/HR_8799_b/20130726/raw_telluric_Jbb/HR_8799/bad/s130726_a050001.fits") as hdulist1:
-                        # with pyfits.open("/data/osiris_data/HR_8799_c/20130726/raw_telluric_Jbb/HR_8799/s130726_a050001.fits") as hdulist1:
-                        # with pyfits.open("/data/osiris_data/HR_8799_c/20130726/raw_telluric_Jbb/HR_8799/s130726_a051001.fits") as hdulist1:
-                        with pyfits.open("/data/osiris_data/HR_8799_c/20130726/raw_telluric_Jbb/HR_8799/s130726_a052001.fits") as hdulist1:
-                            tmphdr0 = hdulist1[0].header
-                            tmphdr1 = hdulist1[1].header
-                            tmphdr2 = hdulist1[2].header
-                        # with pyfits.open("/data/osiris_data/HR_8799_b/20130726/raw_telluric_Kbb/HD_210501/s130726_a033001.fits") as hdulist:
-                        # with pyfits.open("/data/osiris_data/HR_8799_c/20130726/raw_telluric_Kbb/HD_210501/s130726_a031001.fits") as hdulist:
-                        # with pyfits.open("/data/osiris_data/HR_8799_c/20130726/raw_telluric_Kbb/HD_210501/s130726_a032001.fits") as hdulist:
-                        with pyfits.open("/data/osiris_data/HR_8799_c/20130726/raw_telluric_Kbb/HD_210501/s130726_a033001.fits") as hdulist:
-                            data0 = hdulist[0].data
-                            data1 = hdulist[1].data
-                            data2 = hdulist[2].data
-                        hdulist = pyfits.HDUList()
-                        hdulist.append(pyfits.PrimaryHDU(data=data0,header=tmphdr0))
-                        hdulist.append(pyfits.PrimaryHDU(data=data1,header=tmphdr1))
-                        hdulist.append(pyfits.PrimaryHDU(data=data2,header=tmphdr2))
-                        try:
-                            hdulist.writeto("/data/osiris_data/HR_8799_c/20130726/test/s130726_a033001_fakeJbb.fits", overwrite=True)
-                        except TypeError:
-                            hdulist.writeto("/data/osiris_data/HR_8799_c/20130726/test/s130726_a033001_fakeJbb.fits", clobber=True)
-                        hdulist.close()
-                        exit()
-
-                    with pyfits.open(spdc_refstar_filename) as hdulist:
-                        spdc_refstar_prihdr = hdulist[0].header
-                        print(spdc_refstar_prihdr["MJD-OBS"],spdc_refstar_prihdr["MJD-OBS"] < curr_mjdobs,spdc_refstar_filename)
-                        if spdc_refstar_prihdr["MJD-OBS"] < curr_mjdobs:
-                            spdc_refstar_cube = np.rollaxis(np.rollaxis(hdulist[0].data,2),2,1)
-                            spdc_refstar_cube = return_64x19(spdc_refstar_cube)
-                            spdc_refstar_cube = np.moveaxis(spdc_refstar_cube,0,2)
-
-                            spdc_refstar_im = np.nansum(spdc_refstar_cube,axis=2)
-                            persis_where2mask = np.where(spdc_refstar_im<np.nanmax(spdc_refstar_im)/4)
-                            spdc_refstar_cube[persis_where2mask[0],persis_where2mask[1],:] = 0
-                            # persis_where2mask = np.where(spdc_refstar_cube<np.nanmax(spdc_refstar_cube)/2)
-                            # spdc_refstar_cube[persis_where2mask] = 0
-                            persistence_arr += spdc_refstar_cube
-
-                window_size=100
-                threshold=7
-                for m in range(ny):
-                    for n in range(nx):
-                        myvec = copy(persistence_arr[m,n,:])
-                        smooth_vec = median_filter(myvec,footprint=np.ones(window_size),mode="reflect")
-                        myvec = myvec - smooth_vec
-                        wherefinite = np.where(np.isfinite(myvec))
-                        mad = mad_std(myvec[wherefinite])
-                        whereoutliers = np.where(np.abs(myvec)>threshold*mad)[0]
-                        persistence_arr[m,n,whereoutliers] = np.nan
-                        widen_badpix_vec = np.correlate(persistence_arr[m,n,:],np.ones(nan_mask_boxsize),mode="same")
-                        widen_nans = np.where(np.isnan(widen_badpix_vec))[0]
-                        persistence_arr[m,n,widen_nans] = np.nan
-                        persistence_arr[m,n,widen_nans] = smooth_vec[widen_nans]
-
-                if plot_persistence:
-                    import matplotlib.pyplot as plt
-                    plt.imshow(np.nansum(persistence_arr,axis=2))
-                    plt.clim([0,10])
-                    plt.show()
-
-
-            ##############################
             ## Reference star*transmission spectrum
             ##############################
             with open(fileinfos_refstars_filename, 'r') as csvfile:
@@ -1704,14 +1636,17 @@ if __name__ == "__main__":
             for Rid,R in enumerate(R_list):
                 # refstar_name_filter = "HIP_1123"
                 # refstar_name_filter = "HD_210501"
-                refstar_name_filter = "*"
+                if float(date) > 200000 and star_name == "HR_8799":
+                    refstar_name_filter = "HR_8799"
+                else:
+                    refstar_name_filter = "*"
                 transmission_filelist = []
                 transmission_filelist.extend(glob.glob(os.path.join(ref_star_folder,refstar_name_filter,"s*"+IFSfilter+"_"+scale+"_psfs_repaired_spec_v2_transmission_v3.fits")))
                 transmission_filelist.extend(glob.glob(os.path.join(ref_star_folder,refstar_name_filter,"ao_off_s*"+IFSfilter+"_"+scale+"_spec_v2_transmission_v3.fits")))
                 transmission_filelist.sort()
-                print(transmission_filelist)
                 transmission_list = []
                 for transmission_filename in transmission_filelist:
+                    print(transmission_filename)
                     with pyfits.open(transmission_filename) as hdulist:
                         transmission_wvs = hdulist[0].data[0,:]
                         transmission_spec = hdulist[0].data[1,:]
@@ -1778,7 +1713,7 @@ if __name__ == "__main__":
                 #         transmission_list.append(transmission_spec/np.nanmean(transmission_spec))
                 # mean_transmission_func2 = interp1d(wvs,np.nanmean(np.array(transmission_list),axis=0),bounds_error=False,fill_value=np.nan)
 
-                if plot_transmissions:
+                if 0 or plot_transmissions:
                     import matplotlib.pyplot as plt
                     print(R)
                     print(transmission_list)

@@ -10,6 +10,18 @@ import numpy as np
 import csv
 from copy import copy
 
+from astropy.time import Time
+from astropy.coordinates import SkyCoord, EarthLocation
+from astropy import units as u
+from astropy.utils import iers
+from astropy.utils.iers import conf as iers_conf
+print(iers_conf.iers_auto_url)
+#default_iers = iers_conf.iers_auto_url
+#print(default_iers)
+iers_conf.iers_auto_url = 'https://datacenter.iers.org/data/9/finals2000A.all'
+iers_conf.iers_auto_url_mirror = 'ftp://cddis.gsfc.nasa.gov/pub/products/iers/finals2000A.all'
+iers.IERS_Auto.open()  # Note the URL
+
 # planet = "c"
 IFSfilter = "Kbb"
 planet = "d"
@@ -53,7 +65,7 @@ new_list_data = copy(old_list_data)
 for item in old_list_table:
     print(item)
 
-if 0: # add filename
+if 1: # add filename
     filename_id = new_colnames.index("filename")
     old_filelist = [item[filename_id] for item in new_list_data]
 
@@ -65,7 +77,7 @@ if 0: # add filename
             new_list_data.append([filename,]+[np.nan,]*(N_col-1))
     print(new_list_data)
 
-if 0: # add spectral band
+if 1: # add spectral band
     filename_id = new_colnames.index("filename")
     try:
         ifs_filter_id = new_colnames.index("IFS filter")
@@ -100,7 +112,7 @@ if 0:
 
     new_list_data = new_new_list_data
 
-if 0: # add MJD-OBS
+if 1: # add MJD-OBS
     filename_id = new_colnames.index("filename")
     MJDOBS_id = new_colnames.index("MJD-OBS")
 
@@ -109,7 +121,7 @@ if 0: # add MJD-OBS
         prihdr0 = hdulist[0].header
         new_list_data[k][MJDOBS_id] = prihdr0["MJD-OBS"]
 
-if 0: # add Temperature
+if 1: # add Temperature
     filename_id = new_colnames.index("filename")
     try:
         DTMP6_id = new_colnames.index("DTMP6")
@@ -123,7 +135,7 @@ if 0: # add Temperature
         prihdr0 = hdulist[0].header
         new_list_data[k][DTMP6_id] = prihdr0["DTMP7"]
 
-if 0: # add exposure time
+if 1: # add exposure time
     filename_id = new_colnames.index("filename")
     try:
         itime_id = new_colnames.index("itime")
@@ -140,8 +152,22 @@ if 0: # add exposure time
         else:
             new_list_data[k][itime_id] = float(prihdr0["ITIME"])
 
-if 0: # add barycenter RV
-    from barycorrpy import get_BC_vel
+if 1: # add barycenter RV
+    # from barycorrpy import get_BC_vel
+    # filename_id = new_colnames.index("filename")
+    # MJDOBS_id = new_colnames.index("MJD-OBS")
+    # try:
+    #     bary_rv_id = new_colnames.index("barycenter rv")
+    # except:
+    #     new_colnames.append("barycenter rv")
+    #     new_list_data = [item+[np.nan,] for item in new_list_data]
+    #     bary_rv_id = new_colnames.index("barycenter rv")
+    #
+    # for k,item in enumerate(new_list_data):
+    #     MJDOBS = float(item[MJDOBS_id])
+    #     result = get_BC_vel(MJDOBS+2400000.5,hip_id=114189,obsname="Keck Observatory",ephemeris="de430")
+    #     new_list_data[k][bary_rv_id] = result[0][0]
+
     filename_id = new_colnames.index("filename")
     MJDOBS_id = new_colnames.index("MJD-OBS")
     try:
@@ -152,9 +178,25 @@ if 0: # add barycenter RV
         bary_rv_id = new_colnames.index("barycenter rv")
 
     for k,item in enumerate(new_list_data):
+        print(item[bary_rv_id])
+        if np.isfinite(float(item[bary_rv_id])):
+            continue
         MJDOBS = float(item[MJDOBS_id])
-        result = get_BC_vel(MJDOBS+2400000.5,hip_id=114189,obsname="Keck Observatory",ephemeris="de430")
-        new_list_data[k][bary_rv_id] = result[0][0]
+        # print(MJDOBS)
+        # if item[starname_id] == "BD+14_4774":
+        #     result = get_BC_vel(MJDOBS+2400000.5,ra=334.9042083,dec=14.7468861,pmra=13.3,pmdec=2.370,px=2.3269,obsname="Keck Observatory",ephemeris="de430")
+        # else:
+        #     print(item[hipnum_id])
+        #     result = get_BC_vel(MJDOBS+2400000.5,hip_id=int(item[hipnum_id]),obsname="Keck Observatory",ephemeris="de430")
+        # new_list_data[k][bary_rv_id] = result[0][0]
+
+        hdulist = pyfits.open(item[filename_id])
+        prihdr0 = hdulist[0].header
+        print(float(prihdr0["RA"]),float(prihdr0["DEC"]))
+        keck = EarthLocation.from_geodetic(lat=19.8283*u.deg, lon=-155.4783*u.deg, height=4160*u.m)
+        sc = SkyCoord(float(prihdr0["RA"]) * u.deg, float(prihdr0["DEC"]) * u.deg)
+        barycorr = sc.radial_velocity_correction(obstime=Time(MJDOBS, format="mjd", scale="utc"), location=keck)
+        new_list_data[k][bary_rv_id] = barycorr.to(u.m/u.s).value
 
 if 1: # add filename
     if 0:
@@ -241,7 +283,48 @@ if 1: # add filename
                         ["/data/osiris_data/HR_8799_d/20150828/reduced_jb/s150828_a031001_Kbb_020.fits",8,14,0],
                         ["/data/osiris_data/HR_8799_d/20150828/reduced_jb/s150828_a032001_Kbb_020.fits",8,15,0],
                         ["/data/osiris_data/HR_8799_d/20150828/reduced_jb/s150828_a033001_Kbb_020.fits",8,16,0],
-                        ["/data/osiris_data/HR_8799_d/20150828/reduced_jb/s150828_a034001_Kbb_020.fits",8,17,0]]
+                        ["/data/osiris_data/HR_8799_d/20150828/reduced_jb/s150828_a034001_Kbb_020.fits",8,17,0],
+                        ["/data/osiris_data/HR_8799_d/20200729/reduced_jb/s200729_a046002_Kbb_020.fits",9,0,0],
+                        ["/data/osiris_data/HR_8799_d/20200729/reduced_jb/s200729_a047002_Kbb_020.fits",9,1,0],
+                        ["/data/osiris_data/HR_8799_d/20200729/reduced_jb/s200729_a048002_Kbb_020.fits",9,2,0],
+                        ["/data/osiris_data/HR_8799_d/20200729/reduced_jb/s200729_a049002_Kbb_020.fits",9,3,0],
+                        ["/data/osiris_data/HR_8799_d/20200729/reduced_jb/s200729_a050002_Kbb_020.fits",9,4,0],
+                        ["/data/osiris_data/HR_8799_d/20200729/reduced_jb/s200729_a051002_Kbb_020.fits",9,5,0],
+                        ["/data/osiris_data/HR_8799_d/20200729/reduced_jb/s200729_a060002_Kbb_020.fits",10,0,0],
+                        ["/data/osiris_data/HR_8799_d/20200729/reduced_jb/s200729_a061002_Kbb_020.fits",10,1,0],
+                        ["/data/osiris_data/HR_8799_d/20200729/reduced_jb/s200729_a062002_Kbb_020.fits",10,2,0],
+                        ["/data/osiris_data/HR_8799_d/20200729/reduced_jb/s200729_a063002_Kbb_020.fits",10,3,0],
+                        ["/data/osiris_data/HR_8799_d/20200730/reduced_jb/s200730_a035002_Kbb_020.fits",11,0,0],
+                        ["/data/osiris_data/HR_8799_d/20200730/reduced_jb/s200730_a036002_Kbb_020.fits",11,1,0],
+                        ["/data/osiris_data/HR_8799_d/20200730/reduced_jb/s200730_a037002_Kbb_020.fits",11,2,0],
+                        ["/data/osiris_data/HR_8799_d/20200730/reduced_jb/s200730_a038002_Kbb_020.fits",11,3,0],
+                        ["/data/osiris_data/HR_8799_d/20200730/reduced_jb/s200730_a039002_Kbb_020.fits",11,4,0],
+                        ["/data/osiris_data/HR_8799_d/20200730/reduced_jb/s200730_a040002_Kbb_020.fits",11,5,0],
+                        ["/data/osiris_data/HR_8799_d/20200730/reduced_jb/s200730_a047002_Kbb_020.fits",12,0,0],
+                        ["/data/osiris_data/HR_8799_d/20200730/reduced_jb/s200730_a048002_Kbb_020.fits",12,1,0],
+                        ["/data/osiris_data/HR_8799_d/20200730/reduced_jb/s200730_a049002_Kbb_020.fits",12,2,0],
+                        ["/data/osiris_data/HR_8799_d/20200730/reduced_jb/s200730_a050002_Kbb_020.fits",12,3,0],
+                        ["/data/osiris_data/HR_8799_d/20200730/reduced_jb/s200730_a063002_Kbb_020.fits",13,0,0],
+                        ["/data/osiris_data/HR_8799_d/20200730/reduced_jb/s200730_a064002_Kbb_020.fits",13,1,0],
+                        ["/data/osiris_data/HR_8799_d/20200730/reduced_jb/s200730_a065002_Kbb_020.fits",13,2,0],
+                        ["/data/osiris_data/HR_8799_d/20200731/reduced_jb/s200731_a015002_Kbb_020.fits",14,0,0],
+                        ["/data/osiris_data/HR_8799_d/20200731/reduced_jb/s200731_a016002_Kbb_020.fits",14,1,0],
+                        ["/data/osiris_data/HR_8799_d/20200731/reduced_jb/s200731_a017002_Kbb_020.fits",14,2,0],
+                        ["/data/osiris_data/HR_8799_d/20200731/reduced_jb/s200731_a018002_Kbb_020.fits",14,3,0],
+                        ["/data/osiris_data/HR_8799_d/20200731/reduced_jb/s200731_a019002_Kbb_020.fits",14,4,0],
+                        ["/data/osiris_data/HR_8799_d/20200731/reduced_jb/s200731_a020002_Kbb_020.fits",14,5,0],
+                        ["/data/osiris_data/HR_8799_d/20200731/reduced_jb/s200731_a027002_Kbb_020.fits",15,0,0],
+                        ["/data/osiris_data/HR_8799_d/20200731/reduced_jb/s200731_a028002_Kbb_020.fits",15,1,0],
+                        ["/data/osiris_data/HR_8799_d/20200731/reduced_jb/s200731_a029002_Kbb_020.fits",15,2,0],
+                        ["/data/osiris_data/HR_8799_d/20200731/reduced_jb/s200731_a030002_Kbb_020.fits",15,3,0],
+                        ["/data/osiris_data/HR_8799_d/20200731/reduced_jb/s200731_a031002_Kbb_020.fits",15,4,0],
+                        ["/data/osiris_data/HR_8799_d/20200731/reduced_jb/s200731_a036002_Kbb_020.fits",16,0,0],
+                        ["/data/osiris_data/HR_8799_d/20200731/reduced_jb/s200731_a037002_Kbb_020.fits",16,1,0],
+                        ["/data/osiris_data/HR_8799_d/20200731/reduced_jb/s200731_a038002_Kbb_020.fits",16,2,0],
+                        ["/data/osiris_data/HR_8799_d/20200731/reduced_jb/s200731_a039002_Kbb_020.fits",16,3,0],
+                        ["/data/osiris_data/HR_8799_d/20200731/reduced_jb/s200731_a040002_Kbb_020.fits",16,4,0],
+                        ["/data/osiris_data/HR_8799_d/20200731/reduced_jb/s200731_a041002_Kbb_020.fits",16,5,0],
+                        ["/data/osiris_data/HR_8799_d/20200731/reduced_jb/s200731_a042002_Kbb_020.fits",16,6,0]]
 
     try:
         sequence_id = old_colnames.index("sequence")
@@ -294,7 +377,7 @@ if 0:
 
     exit()
 
-if 0:
+if 1:
     def determine_mosaic_offsets_from_header(prihdr_list):
         OBFMXIM_list = []
         OBFMYIM_list = []
@@ -377,7 +460,7 @@ if 0:
             new_list_data[seq_ind][yoffset_id] = dy
 
 
-if 0: # wavelength solution error
+if 1: # wavelength solution error
     try:
         wvsolerr_id = old_colnames.index("wv sol err")
     except:
@@ -410,6 +493,8 @@ if 0: # wavelength solution error
             #20171103 c
             #20180722 b
             elif (58060.<MJDOBS) and (MJDOBS<58322.):
+                wvsolerr = 1.0
+            elif (58322.<MJDOBS):
                 wvsolerr = 1.0
         elif item[ifs_filter_id] == "Hbb":
             pass
@@ -446,7 +531,7 @@ def get_err_from_posterior(x,posterior):
     return x[argmax_post],(rx-lx)/2.,argmax_post
 
 numbasis=0
-if 1:
+if 0:
     from scipy.signal import correlate2d
     try:
         cen_filename_id = old_colnames.index("cen filename")

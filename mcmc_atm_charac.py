@@ -260,8 +260,8 @@ if __name__ == "__main__":
         outputfolder = "20200713_model_test"
         # modelfolder = "20200427_model_fk"
         # outputfolder = "20200427_model_fk"
-        # gridname = os.path.join("/data/osiris_data/","hr8799b_modelgrid")
-        gridname = os.path.join("/data/osiris_data/","clouds_modelgrid")
+        gridname = os.path.join("/data/osiris_data/","hr8799b_modelgrid")
+        # gridname = os.path.join("/data/osiris_data/","clouds_modelgrid")
         N_kl = 10
         numthreads = 32#16
         small = True
@@ -325,7 +325,7 @@ if __name__ == "__main__":
     cutoff = 40
     R= 4000
 
-    if 0:
+    if 1:
         if "hr8799b_modelgrid" in gridname:
             planet_model_list = []
             grid_filelist = glob.glob(os.path.join(gridname,"lte*-*-0.0.aces_hr8799b_pgs=4d6_Kzz=1d8_C=*_O=*_gs=5um.exoCH4_hiresHK.7.D2e.sorted"))
@@ -403,6 +403,7 @@ if __name__ == "__main__":
             # import matplotlib.pyplot as plt
             # plt.plot(oriplanet_spec_wvs1,oriplanet_spec1,label="new grid (clouds)")
             # plt.plot(oriplanet_spec_wvs2,oriplanet_spec2,label="old grid (C/O)")
+            # plt.title("T=1100K logg=4.0 pgs=4e6")
             # plt.legend()
             # plt.show()
             # exit()

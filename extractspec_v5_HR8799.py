@@ -100,7 +100,7 @@ if __name__ == "__main__":
         xmax = np.max(bincenter[np.where(np.isfinite(final_spec))])
         filename = os.path.join(out_pngs,planet+"_spec_"+"trans"+"_kl{0}_{1}.fits".format(resnumbasis,IFSfilter))
         with pyfits.open(filename) as hdulist:
-            trans = LPFvsHPF(hdulist[0].data*LPFvsHPF(planet_spec_func_list[-1](bincenter),cutoff)[0],cutoff)[1]
+            trans = LPFvsHPF(hdulist[0].data*LPFvsHPF(planet_spec_func_list[0](bincenter),cutoff)[0],cutoff)[1]
             # trans = 10*(trans*np.nansum(trans*final_spec)/np.nansum(trans**2))
             trans /= np.nanmax(np.abs(trans))
             trans_lpf = LPFvsHPF(hdulist[0].data,cutoff)[0]
@@ -137,7 +137,7 @@ if __name__ == "__main__":
             #     from scipy.signal import medfilt
             #     final_spec = medfilt(final_spec,kernel_size=3)
             plt.plot(bincenter,final_spec, linestyle="-",label="{0}".format(planet.replace("_"," ")),color=color,linewidth=1.5) #["#0099cc","#ff9900","#6600ff"]
-            final_model = final_model_arr[planet_id,:]
+            final_model = final_model_arr[0,:]
             final_model = (final_model*np.nansum(final_model*final_spec)/np.nansum(final_model**2))
             plt.plot(bincenter,final_model,linestyle=linestyle,color="black",label="Best fit",linewidth=1)
             plt.ylim([-mylim,mylim])
@@ -243,7 +243,7 @@ if __name__ == "__main__":
 
             plt.subplot2grid((30,1),(17+4+planet_id*4,0),rowspan=2)
             plt.plot(bincenter,final_spec, linestyle="-",label="{0}".format(planet.replace("_"," ")),color=color,linewidth=1.5) #["#0099cc","#ff9900","#6600ff"]
-            final_model = final_model_arr[planet_id,:]
+            final_model = final_model_arr[0,:]
             final_model = (final_model*np.nansum(final_model*final_spec)/np.nansum(final_model**2))
             plt.plot(bincenter,final_model,linestyle=linestyle,color="black",label="Best fit",linewidth=1)
             plt.ylim([-mylim,mylim])
