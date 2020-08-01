@@ -10,18 +10,6 @@ import numpy as np
 import csv
 from copy import copy
 
-from astropy.time import Time
-from astropy.coordinates import SkyCoord, EarthLocation
-from astropy import units as u
-from astropy.utils import iers
-from astropy.utils.iers import conf as iers_conf
-print(iers_conf.iers_auto_url)
-#default_iers = iers_conf.iers_auto_url
-#print(default_iers)
-iers_conf.iers_auto_url = 'https://datacenter.iers.org/data/9/finals2000A.all'
-iers_conf.iers_auto_url_mirror = 'ftp://cddis.gsfc.nasa.gov/pub/products/iers/finals2000A.all'
-iers.IERS_Auto.open()  # Note the URL
-
 
 planet = "c"
 IFSfilter = "Kbb"
@@ -152,7 +140,7 @@ if 1: # add exposure time
         else:
             new_list_data[k][itime_id] = float(prihdr0["ITIME"])
 
-if 1: # add barycenter RV
+if 0: # add barycenter RV
     # from barycorrpy import get_BC_vel
     # filename_id = new_colnames.index("filename")
     # MJDOBS_id = new_colnames.index("MJD-OBS")
@@ -167,7 +155,18 @@ if 1: # add barycenter RV
     #     result = get_BC_vel(MJDOBS+2400000.5,hip_id=114189,obsname="Keck Observatory",ephemeris="de430")
     #     new_list_data[k][bary_rv_id] = result[0][0]
 
-    from barycorrpy import get_BC_vel
+    from astropy.time import Time
+    from astropy.coordinates import SkyCoord, EarthLocation
+    from astropy import units as u
+    from astropy.utils import iers
+    from astropy.utils.iers import conf as iers_conf
+    print(iers_conf.iers_auto_url)
+    #default_iers = iers_conf.iers_auto_url
+    #print(default_iers)
+    iers_conf.iers_auto_url = 'https://datacenter.iers.org/data/9/finals2000A.all'
+    iers_conf.iers_auto_url_mirror = 'ftp://cddis.gsfc.nasa.gov/pub/products/iers/finals2000A.all'
+    iers.IERS_Auto.open()  # Note the URL
+
     filename_id = new_colnames.index("filename")
     MJDOBS_id = new_colnames.index("MJD-OBS")
     try:
@@ -355,10 +354,10 @@ if 1: # add filename
                         ["/data/osiris_data/HR_8799_c/20171103/reduced_jb/s171103_a036002_Hbb_020.fits",27,10,0],
                         ["/data/osiris_data/HR_8799_c/20171103/reduced_jb/s171103_a037002_Hbb_020.fits",27,11,0],
                         ["/data/osiris_data/HR_8799_c/20171103/reduced_jb/s171103_a038002_Hbb_020.fits",27,12,0],
-                        ["/data/osiris_data/HR_8799_c/20200729/reduced_jb/s200729_a036002_Kbb_020.fits",28,0,0],
-                        ["/data/osiris_data/HR_8799_c/20200729/reduced_jb/s200729_a037002_Kbb_020.fits",28,1,0],
-                        ["/data/osiris_data/HR_8799_c/20200729/reduced_jb/s200729_a038002_Kbb_020.fits",28,2,0],
-                        ["/data/osiris_data/HR_8799_c/20200729/reduced_jb/s200729_a039002_Kbb_020.fits",28,3,0]]
+                        ["/data/osiris_data/HR_8799_c/20200729/reduced_jb/s200729_a036002_Kbb_020.fits",28,0,1],
+                        ["/data/osiris_data/HR_8799_c/20200729/reduced_jb/s200729_a037002_Kbb_020.fits",28,1,1],
+                        ["/data/osiris_data/HR_8799_c/20200729/reduced_jb/s200729_a038002_Kbb_020.fits",28,2,1],
+                        ["/data/osiris_data/HR_8799_c/20200729/reduced_jb/s200729_a039002_Kbb_020.fits",28,3,1]]
 
     try:
         sequence_id = new_colnames.index("sequence")
@@ -567,7 +566,7 @@ def get_err_from_posterior(x,posterior):
     return x[argmax_post],(rx-lx)/2.,argmax_post
 
 numbasis=0
-if 0:
+if 1:
     from scipy.signal import correlate2d
     try:
         cen_filename_id = old_colnames.index("cen filename")
@@ -627,6 +626,7 @@ if 0:
     filename_id = new_colnames.index("filename")
     bary_rv_id = new_colnames.index("barycenter rv")
     ifs_filter_id_id = new_colnames.index("IFS filter")
+    MJDOBS_id = new_colnames.index("MJD-OBS")
 
     # if IFSfilter=="Kbb": #Kbb 1965.0 0.25
     #     CRVAL1 = 1965.
@@ -657,6 +657,10 @@ if 0:
     #     suffix = "_outputHPF_cutoff40_sherlock_v1_search_resinmodel_kl{0}".format(numbasis)
     for k,item in enumerate(old_list_data):
         filename = item[filename_id]
+        # if new_list_data[k][cen_filename_id] != "nan":
+        #     continue
+        # if float(item[MJDOBS_id]) < 59059:
+        #     continue
         print(filename)
         # if not (filename == '/data/osiris_data/HR_8799_c/20171103/reduced_jb/s171103_a023002_Hbb_020.fits' or \
         #     filename == '/data/osiris_data/HR_8799_c/20171103/reduced_jb/s171103_a024002_Hbb_020.fits' or \

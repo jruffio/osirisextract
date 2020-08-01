@@ -15,8 +15,8 @@ out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
 
 # planet = "HR_8799_b"
 # planet = "HR_8799_c"
-# planet = "HR_8799_d"
-planet = "kap_And"
+planet = "HR_8799_d"
+# planet = "kap_And"
 # planet = "51_Eri_b"
 
 # IFSfilter = "Kbb"
@@ -25,7 +25,7 @@ planet = "kap_And"
 suffix = "KbbHbb"
 # suffix = "all"
 fontsize = 12
-resnumbasis = 10
+resnumbasis = 0
 # fileinfos_filename = "/data/osiris_data/"+planet+"/fileinfos_Kbb_jb.csv"
 if resnumbasis ==0:
     fileinfos_filename = "/data/osiris_data/"+planet+"/fileinfos_Kbb_jb.csv"
@@ -58,6 +58,7 @@ with open(fileinfos_filename, 'r') as csvfile:
     sequence_id = colnames.index("sequence")
     status_id = colnames.index("status")
     wvsolerr_id = colnames.index("wv sol err")
+    ifs_filter_id = colnames.index("IFS filter")
 
 filelist = [item[filename_id] for item in list_data]
 filelist_sorted = copy(filelist)
@@ -128,6 +129,8 @@ if 1:
         # if item[rvcen_id] == "nan":
         #     continue
         ax = ax_list[k]
+        # if item[ifs_filter_id] != IFSfilter:
+        #     continue
 
         # reducfilename = os.path.join(os.path.dirname(item[filename_id]),"sherlock","20190309_HPF_only",os.path.basename(item[filename_id]).replace(".fits","_outputHPF_cutoff40_sherlock_v1_search.fits"))
         # reducfilename = item[cen_filename_id].replace("20190324_HPF_only","20190401_HPF_only")
@@ -224,7 +227,7 @@ if 1:
                 plt.clim([0,np.max([np.nanstd(cube_hd)*10,30])])
             except:
                 plt.clim([0,np.max([np.nanstd(image)*10,30])])
-            plt.clim([0,30])
+            plt.clim([0,60])
             plt.xticks([0,10])
 
 
@@ -294,24 +297,24 @@ if 1:
 
     f.subplots_adjust(wspace=0,hspace=0)
     # plt.show()
-    # if not os.path.exists(os.path.join(out_pngs,planet)):
-    #     os.makedirs(os.path.join(out_pngs,planet))
-    # print("Saving "+os.path.join(out_pngs,planet,planet+"_"+suffix+"_images_kl{0}.pdf".format(resnumbasis)))
-    # plt.savefig(os.path.join(out_pngs,planet,planet+"_"+suffix+"_images_kl{0}.png".format(resnumbasis)),bbox_inches='tight')
-    # plt.savefig(os.path.join(out_pngs,planet,planet+"_"+suffix+"_images_kl{0}.pdf".format(resnumbasis)),bbox_inches='tight')
+    if not os.path.exists(os.path.join(out_pngs,planet)):
+        os.makedirs(os.path.join(out_pngs,planet))
+    print("Saving "+os.path.join(out_pngs,planet,planet+"_"+suffix+"_images_kl{0}.pdf".format(resnumbasis)))
+    plt.savefig(os.path.join(out_pngs,planet,planet+"_"+suffix+"_images_kl{0}.png".format(resnumbasis)),bbox_inches='tight')
+    plt.savefig(os.path.join(out_pngs,planet,planet+"_"+suffix+"_images_kl{0}.pdf".format(resnumbasis)),bbox_inches='tight')
 
     # print("Saving "+os.path.join(out_pngs,"HR8799"+planet+"_"+suffix+"_images_tentativedetec.pdf"))
     # plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+suffix+"_images_tentativedetec.pdf"),bbox_inches='tight')
     # plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+suffix+"_images_tentativedetec.png"),bbox_inches='tight')
 
 
-    plt.figure(10)
-    rvcen = bary_rv + rv_star
-    cube_hd = np.nansum(np.array(cube_hd_list),axis=0)
-    zcen = np.argmin(np.abs(planetRV_hd-rvcen))
-    image = copy(cube_hd[zcen,:,:])
-    plt.imshow(image,interpolation="nearest",origin="lower")
-    # plt.clim([0,0])
+    # plt.figure(10)
+    # rvcen = bary_rv + rv_star
+    # cube_hd = np.nansum(np.array(cube_hd_list),axis=0)
+    # zcen = np.argmin(np.abs(planetRV_hd-rvcen))
+    # image = copy(cube_hd[zcen,:,:])
+    # plt.imshow(image,interpolation="nearest",origin="lower")
+    # # plt.clim([0,0])
     plt.show()
     exit()
 

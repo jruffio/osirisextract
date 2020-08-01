@@ -42,14 +42,15 @@ if __name__ == "__main__":
     out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
     # planet = "kap_And"
     # planet = "HR_8799_b"
-    planet = "HR_8799_c"
-    # planet = "HR_8799_d"
+    # planet = "HR_8799_c"
+    planet = "HR_8799_d"
     # date = "2010*"
     cutoff = 40
     fontsize = 12
     fakes = True
     R=4000
-    IFSfilter = "Hbb"
+    IFSfilter = "Kbb"
+    # IFSfilter = "Hbb"
     c_kms = 299792.458
 
 
@@ -145,8 +146,9 @@ if __name__ == "__main__":
                     if planet == "HR_8799_d":
                         travis_spec_filename=os.path.join(planet_template_folder,
                                                       "HR8799c_"+IFSfilter[0:1]+"_3Oct2018.save")
-                        plrv = -15.7
-                        plT,pllogg,plCtoO = 1200.0, 4.5, 0.5505156172151899
+                        plrv = -14
+                        # plT,pllogg,plCtoO = 1200.0, 4.5, 0.5505156172151899
+                        plT,pllogg,plCtoO = 1200.0, 3.5, 0.5505156172151899
                         planet_spec_func = interp1d(oriplanet_spec_wvs,myinterpgrid_CtoO([plT,pllogg,plCtoO])[0],bounds_error=False,fill_value=np.nan)
                         planet_spec_func_list.append(planet_spec_func)
                         planet_spec_func = interp1d(oriplanet_spec_wvs,myinterpgrid_CtoO([plT-200,pllogg,plCtoO])[0],bounds_error=False,fill_value=np.nan)
@@ -235,13 +237,16 @@ if __name__ == "__main__":
                         reduc_filename = fileitem[cen_filename_id]
                         if int(fileitem[status_id]) != 1:
                             continue
+                        print("1")
                         if IFSfilter not in os.path.basename(filename):
                             continue
+                        print("2")
                         # if "100715" not in os.path.basename(filename):
                         #     continue
                         data_filename = reduc_filename.replace(".fits","_estispec.fits")
                         if len(glob.glob(data_filename)) == 0:
                             continue
+                        print("3")
 
                         print(data_filename)
                         with pyfits.open(data_filename) as hdulist:

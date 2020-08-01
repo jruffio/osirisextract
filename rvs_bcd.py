@@ -56,6 +56,36 @@ if 1:
     rverr_d = [1.7946953690541445, 1.8628739788951396, 1.9279952452381766]
     rv_fake_d = [-16.877812968828138, -13.937322887147857, -15.637606267711284]
     rverr_fake_d = [1.5994389329638912, 1.9054168236452247, 1.9561937931198887]
+
+    rv_b = []
+    rv_c = []
+    rv_d = []
+    rverr_b = []
+    rverr_c = []
+    rverr_d = []
+    for kl in [0,1,10]:
+        myoutfilename = "RV_HR_8799_b_measurements_kl10.pdf"
+        hdulist = pyfits.open(os.path.join(out_pngs,"HR_8799_b",myoutfilename.replace(".pdf","_posterior.fits")))
+        rvsampling, posterior_b = hdulist[0].data[0,:],hdulist[0].data[1,:]
+        rv,rverr,_ = get_err_from_posterior(rvsampling, posterior_b)
+        rv_b.append(rv)
+        rverr_b.append(rverr)
+
+        myoutfilename = "RV_HR_8799_c_measurements_kl10.pdf"
+        hdulist = pyfits.open(os.path.join(out_pngs,"HR_8799_c",myoutfilename.replace(".pdf","_posterior.fits")))
+        rvsampling, posterior_c = hdulist[0].data[0,:],hdulist[0].data[1,:]
+        rv,rverr,_ = get_err_from_posterior(rvsampling, posterior_c)
+        rv_c.append(rv)
+        rverr_c.append(rverr)
+
+        myoutfilename = "RV_HR_8799_d_measurements_kl10.pdf"
+        hdulist = pyfits.open(os.path.join(out_pngs,"HR_8799_d",myoutfilename.replace(".pdf","_posterior.fits")))
+        rvsampling, posterior_d = hdulist[0].data[0,:],hdulist[0].data[1,:]
+        rv,rverr,_ = get_err_from_posterior(rvsampling, posterior_d)
+        rv_d.append(rv)
+        rverr_d.append(rverr)
+
+
     # b
     # 0
     # yrs_b = ['2009' '2010' '2013' '2016' '2018']
@@ -94,7 +124,7 @@ if 1:
     epochs_b =  ['20100711', '20100712',  '20100713', '20130725', '20130726', '20130727', '20161106', '20161107' , '20161108', '20180722']
     epochs_rv_b =  [  -10.57920756, -12.35982049 , -3.71445932 , -9.53545184,  -8.44582097,  -9.05172061,   -8.23000863,  -9.71148301,  -3.23729904,  -6.21223367]
     epochs_rverr_b = [ 1.09404719, 1.14231799,  2.21445212 ,0.96492429, 1.34422894, 1.86751255, 2.23673811 ,1.45381564,  2.09713865, 1.29136631]
-    epochs_Nexp_b = [9, 9, 2, 16, 9, 5, 2, 3, 1, 6]#[8100.0, 8100.0, 1800.0, 9600.0, 5400.0, 3000.0, 1200.0, 1800.0, 600.0, 1800.0]#[9, 9, 2, 16, 9, 5, 2, 3, 1, 6]
+    epochs_Nexp_b = [8100.0, 8100.0, 1800.0, 9600.0, 5400.0, 3000.0, 1200.0, 1800.0, 600.0, 1800.0]#[9, 9, 2, 16, 9, 5, 2, 3, 1, 6]
 
     # c
     # 0
@@ -127,10 +157,10 @@ if 1:
     # [0.68697538        nan 0.74275716 1.31189968 2.08184032 2.09739146
     #  3.66514447        nan        nan        nan 0.91748099]
     # 10
-    epochs_c =  ['20100715' , '20101104' ,'20110723' ,'20110724', '20110725','20130726', '20171103']
-    epochs_rv_c = [-11.83538564, -10.95940131, -10.04625721, -10.75684941,-11.01553684 ,-15.81194633,-10.47611131]
-    epochs_rverr_c = [0.68949379 ,   0.75613354 ,1.31100169 ,2.08722546, 2.17375194, 3.64578072,  0.90622151]
-    epochs_Nexp_c = [17, 18, 10, 3, 5, 1, 5]#[10200.0,10800.0, 6000.0, 1800.0, 3000.0, 600.0, 3000.0]#[17, 18, 10, 3, 5, 1, 5]
+    epochs_c =  ['20100715' , '20101104' ,'20110723' ,'20110724', '20110725','20130726', '20171103','20200729']
+    epochs_rv_c = [-11.83538564, -10.95940131, -10.04625721, -10.75684941,-11.01553684 ,-15.81194633,-10.47611131,-10.59403037]
+    epochs_rverr_c = [0.68949379 ,   0.75613354 ,1.31100169 ,2.08722546, 2.17375194, 3.64578072,  0.90622151, 1.50326013]
+    epochs_Nexp_c = [10200.0,10800.0, 6000.0, 1800.0, 3000.0, 600.0, 3000.0, 2400.0]#[17, 18, 10, 3, 5, 1, 5]
 
 
     # d
@@ -156,10 +186,12 @@ if 1:
     # [         nan -10.15767679          nan -17.01463235 -14.33700864]
     # [       nan 2.65915811        nan 2.64729949 3.41567384]
     # 10
-    epochs_d =  ['20150720', '20150723', '20150828']
-    epochs_rv_d = [-13.81186852, -18.30012132, -13.60937274]
-    epochs_rverr_d = [2.79074779,2.69400271, 3.48607747]
-    epochs_Nexp_d = [ 8, 5, 3]
+    epochs_d =  ['20150720', '20150723', '20150828','20200729', '20200730', '20200731']
+    epochs_rv_d = [-13.81186852, -18.30012132, -13.60937274, -14.42853693 ,-17.69367862, -13.55751892]
+    epochs_rverr_d = [2.79074779,2.69400271, 3.48607747,  1.81554366, 2.04721357, 1.17071597]
+    epochs_Nexp_d = [ 4800.0, 3000.0, 1800.0, 4800.0, 4800.0, 9600.0]
+
+
 
     allepochs = np.unique(np.concatenate([epochs_b,epochs_c,epochs_d]))
     allepochs_rv_b = np.zeros(allepochs.shape) + np.nan
@@ -250,14 +282,14 @@ if 1:
         if np.isnan(a):
             continue
         formated_date =  c[0:4]+"-"+c[4:6]+"-"+c[6:8]
-        print("& {0} & ${1:.1f} \\pm {2:.1f}$ & {3} \\\\".format(formated_date,a,b,int(d)))
+        print("& {0} & ${1:.1f} \\pm {2:.1f}$ & {3} \\\\".format(formated_date,a,b,int(d)//60))
     eb=plt.errorbar(allepochs_rv_b,np.arange(np.size(allepochs)),xerr=allepochs_rverr_b,fmt="none",color="#0099cc",label="b w/ exp. time (min)")
     eb[-1][0].set_linestyle("-")
     plt.plot(allepochs_rv_b,np.arange(np.size(allepochs)),"x",color="#0099cc")
     wherenotnans = np.where(np.isfinite(allepochs_rv_b))
     for y,(x,date,num) in enumerate(zip(allepochs_rv_b,allepochs,allepochs_Nexp_b)):
         if np.isfinite(x):
-            plt.gca().text(x,y,"{0}".format(int(num)*10),ha="center",va="bottom",rotation=0,size=fontsize,color="#003366",alpha=1)
+            plt.gca().text(x,y,"{0}".format(int(num)//60),ha="center",va="bottom",rotation=0,size=fontsize,color="#003366",alpha=1)
     # plt.plot([rv_b[2]-rverr_b[2],rv_b[2]-rverr_b[2]],[0,np.size(allepochs)],linestyle="--",linewidth=2,color="#006699",alpha=0.4)
     plt.plot([rv_b[2],rv_b[2]],[0,np.size(allepochs)],linestyle="-",linewidth=2,color="#003366",alpha=0.4)
     # plt.plot([rv_b[2]+rverr_b[2],rv_b[2]+rverr_b[2]],[0,np.size(allepochs)],linestyle="--",linewidth=2,color="#006699",alpha=0.4)
@@ -268,14 +300,14 @@ if 1:
         if np.isnan(a):
             continue
         formated_date =  c[0:4]+"-"+c[4:6]+"-"+c[6:8]
-        print("& {0} & ${1:.1f} \\pm {2:.1f}$ & {3} \\\\".format(formated_date,a,b,int(d)))
+        print("& {0} & ${1:.1f} \\pm {2:.1f}$ & {3} \\\\".format(formated_date,a,b,int(d)//60))
     eb=plt.errorbar(allepochs_rv_c,np.arange(np.size(allepochs)),xerr=allepochs_rverr_c,fmt="none",color="#ff9900",label="c")
     eb[-1][0].set_linestyle("--")
     plt.plot(allepochs_rv_c,np.arange(np.size(allepochs)),"x",color="#ff9900")
     wherenotnans = np.where(np.isfinite(allepochs_rv_c))
     for y,(x,date,num) in enumerate(zip(allepochs_rv_c,allepochs,allepochs_Nexp_c)):
         if np.isfinite(x):
-            plt.gca().text(x,y,"{0}".format(int(num)*10),ha="center",va="bottom",rotation=0,size=fontsize,color="#cc3300",alpha=1)
+            plt.gca().text(x,y,"{0}".format(int(num)//60),ha="center",va="bottom",rotation=0,size=fontsize,color="#cc3300",alpha=1)
     # plt.plot([rv_c[2]-rverr_c[2],rv_c[2]-rverr_c[2]],[0,np.size(allepochs)],linestyle="--",linewidth=2,color="#cc6600",alpha=0.4)
     plt.plot([rv_c[2],rv_c[2]],[0,np.size(allepochs)],linestyle="-",linewidth=2,color="#cc3300",alpha=0.4)
     # plt.plot([rv_c[2]+rverr_c[2],rv_c[2]+rverr_c[2]],[0,np.size(allepochs)],linestyle="--",linewidth=2,color="#cc6600",alpha=0.4)
@@ -286,14 +318,14 @@ if 1:
         if np.isnan(a):
             continue
         formated_date =  c[0:4]+"-"+c[4:6]+"-"+c[6:8]
-        print("& {0} & ${1:.1f} \\pm {2:.1f}$ & {3} \\\\".format(formated_date,a,b,int(d)))
+        print("& {0} & ${1:.1f} \\pm {2:.1f}$ & {3} \\\\".format(formated_date,a,b,int(d)//60))
     eb=plt.errorbar(allepochs_rv_d,np.arange(np.size(allepochs)),xerr=allepochs_rverr_d,fmt="none",color="#6600ff",label="d")
     eb[-1][0].set_linestyle(":")
     plt.plot(allepochs_rv_d,np.arange(np.size(allepochs)),"x",color="#6600ff")
     wherenotnans = np.where(np.isfinite(allepochs_rv_d))
     for y,(x,date,num) in enumerate(zip(allepochs_rv_d,allepochs,allepochs_Nexp_d)):
         if np.isfinite(x):
-            plt.gca().text(x,y,"{0}".format(int(num)*10),ha="center",va="bottom",rotation=0,size=fontsize,color="#330099",alpha=1)
+            plt.gca().text(x,y,"{0}".format(int(num)//60),ha="center",va="bottom",rotation=0,size=fontsize,color="#330099",alpha=1)
     # plt.plot([rv_d[2]-rverr_d[2],rv_d[2]-rverr_d[2]],[0,np.size(allepochs)],linestyle="--",linewidth=2,color="#6600cc",alpha=0.4)
     plt.plot([rv_d[2],rv_d[2]],[0,np.size(allepochs)],linestyle="-",linewidth=2,color="#330099",alpha=0.4)
     # plt.plot([rv_d[2]+rverr_d[2],rv_d[2]+rverr_d[2]],[0,np.size(allepochs)],linestyle="--",linewidth=2,color="#6600cc",alpha=0.4)
@@ -318,21 +350,21 @@ if 1:
 
     # plt.figure(3,figsize=(12,3))
     plt.subplot2grid((4,1),(2,0),rowspan=1)
-    myoutfilename = "RV_HR_8799_b_measurements.pdf"
+    myoutfilename = "RV_HR_8799_b_measurements_kl10.pdf"
     hdulist = pyfits.open(os.path.join(out_pngs,"HR_8799_b",myoutfilename.replace(".pdf","_posterior.fits")))
     print(hdulist[0].data.shape)
     rvsampling, posterior_b = hdulist[0].data[0,:],hdulist[0].data[1,:]
     plt.gca().text(rv_b[2]+0.25,1,"${0:.1f}\pm {1:.1f}$ km/s".format(rv_b[2],rverr_b[2]),ha="left",va="bottom",rotation=0,size=fontsize,color="#003366")
     plt.plot(rvsampling, posterior_b,linestyle="-",linewidth=3,color="#0099cc",label="b")
 
-    myoutfilename = "RV_HR_8799_c_measurements.pdf"
+    myoutfilename = "RV_HR_8799_c_measurements_kl10.pdf"
     hdulist = pyfits.open(os.path.join(out_pngs,"HR_8799_c",myoutfilename.replace(".pdf","_posterior.fits")))
     print(hdulist[0].data.shape)
     rvsampling, posterior_c = hdulist[0].data[0,:],hdulist[0].data[1,:]
     plt.gca().text(rv_c[2]+0.25,1,"${0:.1f}\pm {1:.1f}$ km/s".format(rv_c[2],rverr_c[2]),ha="center",va="bottom",rotation=0,size=fontsize,color="#cc3300")
     plt.plot(rvsampling, posterior_c,linestyle="--",linewidth=3,color="#ff9900",label="c")
 
-    myoutfilename = "RV_HR_8799_d_measurements.pdf"
+    myoutfilename = "RV_HR_8799_d_measurements_kl10.pdf"
     hdulist = pyfits.open(os.path.join(out_pngs,"HR_8799_d",myoutfilename.replace(".pdf","_posterior.fits")))
     print(hdulist[0].data.shape)
     rvsampling, posterior_d = hdulist[0].data[0,:],hdulist[0].data[1,:]

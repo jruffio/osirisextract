@@ -247,12 +247,12 @@ if __name__ == "__main__":
     print(len(sys.argv))
     if len(sys.argv) == 1:
         osiris_data_dir = "/data/osiris_data/"
-        # IFSfilter = "Kbb"
-        # planet = "HR_8799_d"
         IFSfilter = "Kbb"
-        planet = "HR_8799_c"
+        planet = "HR_8799_d"
+        # IFSfilter = "Kbb"
+        # planet = "HR_8799_c"
         scale = "*"
-        date = "*"
+        date = "20*"
         inputDir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/"
         filelist = glob.glob(os.path.join(inputDir,"s"+date+"*"+IFSfilter+"_"+scale+".fits"))
         filelist.sort()
@@ -325,7 +325,7 @@ if __name__ == "__main__":
     cutoff = 40
     R= 4000
 
-    if 1:
+    if 0:
         if "hr8799b_modelgrid" in gridname:
             planet_model_list = []
             grid_filelist = glob.glob(os.path.join(gridname,"lte*-*-0.0.aces_hr8799b_pgs=4d6_Kzz=1d8_C=*_O=*_gs=5um.exoCH4_hiresHK.7.D2e.sorted"))

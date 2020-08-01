@@ -793,7 +793,7 @@ if __name__ == "__main__":
         # date = "171104"
         # planet = "kap_And"
         # date = "161106"
-        date = "*"
+        date = "2007*"
         # IFSfilter = "Kbb"
         IFSfilter = "Kbb"
         # IFSfilter = "Jbb" # "Kbb" or "Hbb"
@@ -812,7 +812,7 @@ if __name__ == "__main__":
         # filelist = filelist[4:]
         # filelist = filelist[len(filelist)-3:len(filelist)-2]
 
-        inj_fake = True
+        inj_fake = None
         res_numbasis = 15
         numthreads = 10
         planet_search = False
@@ -829,7 +829,7 @@ if __name__ == "__main__":
         # gridname = os.path.join("/data/osiris_data/","sonora","spectra","interpolated_1700-1895_750-1250")
         # gridname = os.path.join("/data/osiris_data/","BTsettl")
         # gridname = os.path.join("/data/osiris_data/","BTsettl","interpolated_1300-1495_-3.80--3.25")
-        # gridname = os.path.join("/data/osiris_data/","hr8799b_modelgrid")
+        gridname = os.path.join("/data/osiris_data/","hr8799b_modelgrid")
         # gridname = "BTsettl"#"BTsettl"#"sonora"
 
         osiris_data_dir = "/data/osiris_data"
@@ -879,8 +879,8 @@ if __name__ == "__main__":
     for filename in filelist:
         print("Processing "+filename)
         inputDir = os.path.dirname(filename)
-        # outputdir = os.path.join(inputDir,"20200309_model")
-        outputdir = os.path.join(inputDir,"20200427_model_fk")
+        outputdir = os.path.join(inputDir,"20200309_model")
+        # outputdir = os.path.join(inputDir,"20200427_model_fk")
         date = os.path.basename(filename).split("_")[0].replace("s","")
         IFSfilter = filename.split("_")[-2]
         outputdir_res = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/sherlock/20191205_RV/"

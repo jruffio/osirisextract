@@ -69,7 +69,7 @@ if __name__ == "__main__":
         out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
         osiris_data_dir = "/data/osiris_data/"
         IFSfilter = "Kbb"
-        planet = "HR_8799_b"
+        planet = "HR_8799_d"
         fit_folder = os.path.join(osiris_data_dir,"low_res",planet,"fit_test")
         gridname = os.path.join(osiris_data_dir,"hr8799b_modelgrid")
         # gridname = os.path.join(osiris_data_dir,"clouds_modelgrid")
@@ -205,13 +205,16 @@ if __name__ == "__main__":
     print(fitT_list[myargmax[0]],fitlogg_list[myargmax[1]],fitpara_list[myargmax[2]])
 
 
-    plt.figure(1)
-    plt.errorbar(spectra_wvs, spectra, yerr = spectra_err, color = color, capsize=5,
-        elinewidth=1, markeredgewidth=1, label = 'spectra')
+    plt.figure(1,figsize=(35,5))
+    # plt.errorbar(spectra_wvs, spectra, yerr = spectra_err, color = color, capsize=5,
+    #     elinewidth=1, markeredgewidth=1, label = 'spectra')
+    plt.fill_between(spectra_wvs, spectra-spectra_err,spectra+spectra_err, color = color, label = 'spectra',alpha=0.5)
+    plt.plot(spectra_wvs, spectra, color = color)
 
     planet_spec_func = interp1d(oriplanet_spec_wvs, myinterpgrid([fitT_list[myargmax[0]],fitlogg_list[myargmax[1]],fitpara_list[myargmax[2]]])[0],bounds_error=False,fill_value=np.nan)
     model = LPFvsHPF(planet_spec_func(spectra_wvs*(1-(plrv)/c_kms))*trans,cutoff=cutoff)[1]
-    plt.scatter(spectra_wvs,model*ampl[myargmax[0],myargmax[1],myargmax[2]],label="model",color="black")
+    plt.plot(spectra_wvs,model*ampl[myargmax[0],myargmax[1],myargmax[2]],label="model",color="black")
+    plt.legend()
     # plt.show()
 
 
