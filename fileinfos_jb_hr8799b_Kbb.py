@@ -55,7 +55,7 @@ new_list_data = copy(old_list_data)
 for item in old_list_table:
     print(item)
 
-if 0: # add filename
+if 1: # add filename
     filename_id = new_colnames.index("filename")
     old_filelist = [item[filename_id] for item in new_list_data]
 
@@ -65,9 +65,9 @@ if 0: # add filename
     for filename in filelist:
         if filename not in old_filelist:
             new_list_data.append([filename,]+[np.nan,]*(N_col-1))
-    print(new_list_data)
+    # print(new_list_data)
 
-if 0: # add spectral band
+if 1: # add spectral band
     filename_id = new_colnames.index("filename")
     try:
         ifs_filter_id = new_colnames.index("IFS filter")
@@ -102,7 +102,7 @@ if 0:
 
     new_list_data = new_new_list_data
 
-if 0: # add MJD-OBS
+if 1: # add MJD-OBS
     filename_id = new_colnames.index("filename")
     MJDOBS_id = new_colnames.index("MJD-OBS")
 
@@ -111,7 +111,7 @@ if 0: # add MJD-OBS
         prihdr0 = hdulist[0].header
         new_list_data[k][MJDOBS_id] = prihdr0["MJD-OBS"]
 
-if 0: # add Temperature
+if 1: # add Temperature
     filename_id = new_colnames.index("filename")
     try:
         DTMP6_id = new_colnames.index("DTMP6")
@@ -125,7 +125,7 @@ if 0: # add Temperature
         prihdr0 = hdulist[0].header
         new_list_data[k][DTMP6_id] = prihdr0["DTMP7"]
 
-if 0: # add exposure time
+if 1: # add exposure time
     filename_id = new_colnames.index("filename")
     try:
         itime_id = new_colnames.index("itime")
@@ -142,8 +142,34 @@ if 0: # add exposure time
         else:
             new_list_data[k][itime_id] = float(prihdr0["ITIME"])
 
-if 0: # add barycenter RV
-    from barycorrpy import get_BC_vel
+if 1: # add barycenter RV
+    # from barycorrpy import get_BC_vel
+    # filename_id = new_colnames.index("filename")
+    # MJDOBS_id = new_colnames.index("MJD-OBS")
+    # try:
+    #     bary_rv_id = new_colnames.index("barycenter rv")
+    # except:
+    #     new_colnames.append("barycenter rv")
+    #     new_list_data = [item+[np.nan,] for item in new_list_data]
+    #     bary_rv_id = new_colnames.index("barycenter rv")
+    #
+    # for k,item in enumerate(new_list_data):
+    #     MJDOBS = float(item[MJDOBS_id])
+    #     result = get_BC_vel(MJDOBS+2400000.5,hip_id=114189,obsname="Keck Observatory",ephemeris="de430")
+    #     new_list_data[k][bary_rv_id] = result[0][0]
+
+    from astropy.time import Time
+    from astropy.coordinates import SkyCoord, EarthLocation
+    from astropy import units as u
+    from astropy.utils import iers
+    from astropy.utils.iers import conf as iers_conf
+    print(iers_conf.iers_auto_url)
+    #default_iers = iers_conf.iers_auto_url
+    #print(default_iers)
+    iers_conf.iers_auto_url = 'https://datacenter.iers.org/data/9/finals2000A.all'
+    iers_conf.iers_auto_url_mirror = 'ftp://cddis.gsfc.nasa.gov/pub/products/iers/finals2000A.all'
+    iers.IERS_Auto.open()  # Note the URL
+
     filename_id = new_colnames.index("filename")
     MJDOBS_id = new_colnames.index("MJD-OBS")
     try:
@@ -154,9 +180,25 @@ if 0: # add barycenter RV
         bary_rv_id = new_colnames.index("barycenter rv")
 
     for k,item in enumerate(new_list_data):
+        print(item[bary_rv_id])
+        if np.isfinite(float(item[bary_rv_id])):
+            continue
         MJDOBS = float(item[MJDOBS_id])
-        result = get_BC_vel(MJDOBS+2400000.5,hip_id=114189,obsname="Keck Observatory",ephemeris="de430")
-        new_list_data[k][bary_rv_id] = result[0][0]
+        # print(MJDOBS)
+        # if item[starname_id] == "BD+14_4774":
+        #     result = get_BC_vel(MJDOBS+2400000.5,ra=334.9042083,dec=14.7468861,pmra=13.3,pmdec=2.370,px=2.3269,obsname="Keck Observatory",ephemeris="de430")
+        # else:
+        #     print(item[hipnum_id])
+        #     result = get_BC_vel(MJDOBS+2400000.5,hip_id=int(item[hipnum_id]),obsname="Keck Observatory",ephemeris="de430")
+        # new_list_data[k][bary_rv_id] = result[0][0]
+
+        hdulist = pyfits.open(item[filename_id])
+        prihdr0 = hdulist[0].header
+        print(float(prihdr0["RA"]),float(prihdr0["DEC"]))
+        keck = EarthLocation.from_geodetic(lat=19.8283*u.deg, lon=-155.4783*u.deg, height=4160*u.m)
+        sc = SkyCoord(float(prihdr0["RA"]) * u.deg, float(prihdr0["DEC"]) * u.deg)
+        barycorr = sc.radial_velocity_correction(obstime=Time(MJDOBS, format="mjd", scale="utc"), location=keck)
+        new_list_data[k][bary_rv_id] = barycorr.to(u.m/u.s).value
 
 if 1: # add filename
     if 0:
@@ -323,7 +365,9 @@ if 1: # add filename
                         ["/data/osiris_data/HR_8799_b/20180722/reduced_jb/s180722_a040002_Jbb_035.fits",30,8,-1],
                         ["/data/osiris_data/HR_8799_b/20180722/reduced_jb/s180722_a041002_Kbb_035.fits",30,9,1],
                         ["/data/osiris_data/HR_8799_b/20180722/reduced_jb/s180722_a042002_Kbb_035.fits",30,10,1],
-                        ["/data/osiris_data/HR_8799_b/20180722/reduced_jb/s180722_a043002_Jbb_035.fits",30,11,-1]]
+                        ["/data/osiris_data/HR_8799_b/20180722/reduced_jb/s180722_a043002_Jbb_035.fits",30,11,-1],
+                        ["/data/osiris_data/HR_8799_b/20200803/reduced_jb/s200803_a034002_Kbb_020.fits",31,0,0],
+                        ["/data/osiris_data/HR_8799_b/20200803/reduced_jb/s200803_a035002_Kbb_020.fits",31,1,0]]
 
     try:
         sequence_id = old_colnames.index("sequence")
@@ -491,6 +535,8 @@ if 0: # wavelength solution error
             #20161106 b = 20161107 b= 20161108 b
             elif (57698.<MJDOBS) and (MJDOBS<57701.):
                 wvsolerr = 0.6
+            elif (57701.<MJDOBS):
+                wvsolerr = 2
             #20171103 c
             #20180722 b
             elif (58060.<MJDOBS) and (MJDOBS<58322.):
@@ -532,7 +578,7 @@ def get_err_from_posterior(x,posterior):
     return x[argmax_post],(rx-lx)/2.,argmax_post
 
 numbasis=0
-if 1:
+if 0:
     from scipy.signal import correlate2d
     try:
         cen_filename_id = old_colnames.index("cen filename")

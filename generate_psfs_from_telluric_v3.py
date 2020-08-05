@@ -98,7 +98,8 @@ if __name__ == "__main__":
             if "Kbb" in IFSfilter:
                 date_list = ["20130727","20150720","20150722","20150723","20150828","20200729","20200730","20200731"] #Kbb
             # date_list = [date_list[0],]
-            date_list = ["20200729","20200730","20200731"] #Kbb
+            # date_list = ["20200729","20200730","20200731"] #Kbb
+            date_list = ["20200803"] #Kbb
         elif "51_Eri_b" in planet:
             if "Kbb" in IFSfilter:
                 date_list = ["20171103","20171104"] #Kbb
@@ -132,9 +133,10 @@ if __name__ == "__main__":
         psf_cube_size = 15
         for date in date_list:
             refstar_filelist = glob.glob(os.path.join(OSIRISDATA,foldername,date,"reduced_telluric_jb",filename_filter))
-            for refstar_filename in refstar_filelist:
+            refstar_filelist.sort()
+            for refstar_filename in refstar_filelist:#[14:]:
                 print(refstar_filename)
-        #         continue
+                # continue
         # exit()
         # if 1:
         #     if 1:

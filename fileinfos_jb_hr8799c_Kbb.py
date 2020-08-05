@@ -528,7 +528,7 @@ if 1: # wavelength solution error
             elif (58060.<MJDOBS) and (MJDOBS<58322.):
                 wvsolerr = 1.0
             elif (58322.<MJDOBS):
-                wvsolerr = 1.0
+                wvsolerr = 2.0
         elif item[ifs_filter_id] == "Hbb":
             pass
             #20100713 b  = 20101028 c = 20101104 c

@@ -215,7 +215,7 @@ if 0:
     # inputdir = "/data/osiris_data/HR_8799_b"
     # filelist = glob.glob(os.path.join(inputdir,"2009*/reduced_sky_jb/s*_"+IFSfilter+"_[0-9][0-9][0-9].fits"))
     inputdir = "/data/osiris_data/HR_8799_d"
-    filelist = glob.glob(os.path.join(inputdir,"202007*/reduced_sky_jb/s*_"+IFSfilter+"_[0-9][0-9][0-9].fits"))
+    filelist = glob.glob(os.path.join(inputdir,"202008*/reduced_sky_jb/s*_"+IFSfilter+"_[0-9][0-9][0-9].fits"))
     # filelist = [filelist[1]]
     print(filelist)
     # exit()
@@ -590,6 +590,7 @@ if 1:
     filename_filter_list.append(os.path.join(inputdir,"{0}*/reduced_sky_jb/s*_".format(year)+IFSfilter+"_020.fits"))
     inputdir = "/data/osiris_data/kap_And"
     filename_filter_list.append(os.path.join(inputdir,"{0}*/reduced_sky_jb/s*_".format(year)+IFSfilter+"_020.fits"))
+    filename_filter_list.sort()
     filelist = []
     filelist_out = []
     filelist_R = []
@@ -631,6 +632,8 @@ if 1:
     dwv_map_list = []
     for k,(filename_R,filename_dwv,filename_model,filename_out) in enumerate(zip(filelist_R,filelist_dwv,filelist_model,filelist_out)):
         print(filename_dwv)
+        if k in [3,4,5,7,8]:
+            continue
         hdulist = pyfits.open(filename_dwv)
         dwv_map = hdulist[0].data
         dwv_map[np.where(np.abs(dwv_map)>0.75)] = np.nan

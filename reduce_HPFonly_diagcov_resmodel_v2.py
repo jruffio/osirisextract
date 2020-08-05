@@ -956,7 +956,7 @@ if __name__ == "__main__":
     ##############################
     print(len(sys.argv))
     if len(sys.argv) == 1:
-        # planet = "HR_8799_b"
+        planet = "HR_8799_b"
         # date = "090722"
         # date = "090730"
         # date = "090903"
@@ -968,7 +968,7 @@ if __name__ == "__main__":
         # date = "130727"
         # date = "161106"
         # date = "180722"
-        planet = "HR_8799_c"
+        # planet = "HR_8799_c"
         # date = "100715"
         # date = "101028"
         # date = "101104"
@@ -977,7 +977,7 @@ if __name__ == "__main__":
         # date = "110725"
         # date = "130726"
         # date = "171103"
-        date = "200729"
+        # date = "200729"
         # planet = "HR_8799_d"
         # date = "150720"
         # date = "150722"
@@ -986,6 +986,7 @@ if __name__ == "__main__":
         # date = "200729"
         # date = "200730"
         # date = "200731"
+        date = "200803"
         # planet = "51_Eri_b"
         # date = "171103"
         # date = "171104"
@@ -1020,14 +1021,15 @@ if __name__ == "__main__":
         # filelist = filelist[1:]
         # filelist = filelist[len(filelist)-3:len(filelist)-2]
 
-        res_numbasis = 1
+        res_numbasis = 0
         numthreads = 10
         planet_search = True
         debug_paras = True
         plot_transmissions = False
         plt_psfs = False
         plot_persistence = False
-        planet_model_string = "model"
+        # planet_model_string = "model"
+        planet_model_string = "CO"
         # planet_model_string = "CO2 CO H2O CH4"#"CO"#
         # planet_model_string = "CO2 CO H2O CH4 joint"
         # planet_model_string = "CO joint"
@@ -1324,12 +1326,15 @@ if __name__ == "__main__":
             phoenix_db_folder = os.path.join(osiris_data_dir,"phoenix","PHOENIX-ACES-AGSS-COND-2011")
             if 1:
                 splitpostfilename = os.path.basename(filelist[0]).split("_")
-                imtype = "science"
+                imtype = "psf"
                 # print(date,star_name)
                 # exit()
                 # phoenix_wv_filename = os.path.join(phoenix_folder,"WAVE_PHOENIX-ACES-AGSS-COND-2011_R{0}.fits".format(R0))
                 # with pyfits.open(phoenix_wv_filename) as hdulist:
                 #     phoenix_wvs = hdulist[0].data
+                # print(os.path.join(osiris_data_dir,"stellar_fits","{0}_{1}_{2}_{3}_rv_samples.fits".format(star_name,IFSfilter,date,imtype)))
+                # print(len(glob.glob(os.path.join(osiris_data_dir,"stellar_fits","{0}_{1}_{2}_{3}_rv_samples.fits".format(star_name,IFSfilter,date,imtype)))))
+                # exit()
                 if len(glob.glob(os.path.join(osiris_data_dir,"stellar_fits","{0}_{1}_{2}_{3}_rv_samples.fits".format(star_name,IFSfilter,date,imtype)))) >0:
                     print(os.path.join(osiris_data_dir,"stellar_fits","{0}_{1}_{2}_{3}_rv_samples.fits".format(star_name,IFSfilter,date,imtype)))
                     hdulist = pyfits.open(os.path.join(osiris_data_dir,"stellar_fits","{0}_{1}_{2}_{3}_rv_samples.fits".format(star_name,IFSfilter,date,imtype)))
@@ -1476,7 +1481,7 @@ if __name__ == "__main__":
                         # import matplotlib.pyplot as plt
                         # plt.plot(wvs,planet_spec_func(wvs))#,data[::100,1])
                         # plt.show()
-                    exit()
+                    # exit()
                     if len(molecules_list) >= 2 or joint_fit:
                         suffix = suffix+"_"+"joint"
                         # print("uh...")

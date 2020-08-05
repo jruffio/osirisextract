@@ -809,7 +809,7 @@ if __name__ == "__main__":
             type_list = []
 
             plt.figure(2)
-            for date in ['200729','200730','200731']:#ref_unique_dates:
+            for date in ["200803"]:#['200729','200730','200731']:#ref_unique_dates:
                 for IFSfilter in ["Kbb"]:#["Hbb","Kbb"]:
                     where_files = np.where((starname == ref_starname_list) *\
                                            np.array(["ao_off_" not in a for a in ref_stars_filelist])*\

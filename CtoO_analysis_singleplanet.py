@@ -78,18 +78,18 @@ if __name__ == "__main__":
     if not useprior:
         priorTeff,priorTeff_sig = 1000,1e+4#1e-9
         priorlogg,priorlogg_sig = 4,1e+3#1e-9
-    planet,color = "HR_8799_b","#0099cc"
-    if useprior:
-        priorTeff,priorTeff_sig = 900,1e-9#1e-9
-        priorlogg,priorlogg_sig = 3.9,1e-9#1e-9
+    # planet,color = "HR_8799_b","#0099cc"
+    # if useprior:
+    #     priorTeff,priorTeff_sig = 900,1e-9#1e-9
+    #     priorlogg,priorlogg_sig = 3.9,1e-9#1e-9
     # planet,color = "HR_8799_c","#ff9900"
     # if useprior:
     #     priorTeff,priorTeff_sig = 1060,1e-9#1e-9
     #     priorlogg,priorlogg_sig = 4.1,1e-9#1e-9
-    # planet,color = "HR_8799_d","#6600ff"
-    # if useprior:
-    #     priorTeff,priorTeff_sig = 1060,1e-9#1e-9
-    #     priorlogg,priorlogg_sig = 4.1,1e-9#1e-9
+    planet,color = "HR_8799_d","#6600ff"
+    if useprior:
+        priorTeff,priorTeff_sig = 1060,1e-9#1e-9
+        priorlogg,priorlogg_sig = 4.1,1e-9#1e-9
     IFSfilter = "*"
     scale = "*"
     date = "*"

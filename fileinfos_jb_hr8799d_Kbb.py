@@ -141,7 +141,7 @@ if 1: # add exposure time
         else:
             new_list_data[k][itime_id] = float(prihdr0["ITIME"])
 
-if 0: # add barycenter RV
+if 1: # add barycenter RV
     # from barycorrpy import get_BC_vel
     # filename_id = new_colnames.index("filename")
     # MJDOBS_id = new_colnames.index("MJD-OBS")
@@ -325,7 +325,22 @@ if 1: # add filename
                         ["/data/osiris_data/HR_8799_d/20200731/reduced_jb/s200731_a039002_Kbb_020.fits",16,3,1],
                         ["/data/osiris_data/HR_8799_d/20200731/reduced_jb/s200731_a040002_Kbb_020.fits",16,4,1],
                         ["/data/osiris_data/HR_8799_d/20200731/reduced_jb/s200731_a041002_Kbb_020.fits",16,5,1],
-                        ["/data/osiris_data/HR_8799_d/20200731/reduced_jb/s200731_a042002_Kbb_020.fits",16,6,0]]
+                        ["/data/osiris_data/HR_8799_d/20200731/reduced_jb/s200731_a042002_Kbb_020.fits",16,6,0],
+                        ["/data/osiris_data/HR_8799_d/20200803/reduced_jb/s200803_a043002_Kbb_020.fits",17,0,0],
+                        ["/data/osiris_data/HR_8799_d/20200803/reduced_jb/s200803_a044002_Kbb_020.fits",17,1,0],
+                        ["/data/osiris_data/HR_8799_d/20200803/reduced_jb/s200803_a045002_Kbb_020.fits",17,2,0],
+                        ["/data/osiris_data/HR_8799_d/20200803/reduced_jb/s200803_a046002_Kbb_020.fits",17,3,0],
+                        ["/data/osiris_data/HR_8799_d/20200803/reduced_jb/s200803_a051002_Kbb_020.fits",18,0,0],
+                        ["/data/osiris_data/HR_8799_d/20200803/reduced_jb/s200803_a052002_Kbb_020.fits",18,1,0],
+                        ["/data/osiris_data/HR_8799_d/20200803/reduced_jb/s200803_a053002_Kbb_020.fits",18,2,0],
+                        ["/data/osiris_data/HR_8799_d/20200803/reduced_jb/s200803_a054002_Kbb_020.fits",18,3,0],
+                        ["/data/osiris_data/HR_8799_d/20200803/reduced_jb/s200803_a060002_Kbb_020.fits",19,0,0],
+                        ["/data/osiris_data/HR_8799_d/20200803/reduced_jb/s200803_a061002_Kbb_020.fits",19,1,0],
+                        ["/data/osiris_data/HR_8799_d/20200803/reduced_jb/s200803_a062002_Kbb_020.fits",19,2,0],
+                        ["/data/osiris_data/HR_8799_d/20200803/reduced_jb/s200803_a063002_Kbb_020.fits",19,3,0],
+                        ["/data/osiris_data/HR_8799_d/20200803/reduced_jb/s200803_a070002_Kbb_020.fits",19,0,0],
+                        ["/data/osiris_data/HR_8799_d/20200803/reduced_jb/s200803_a071002_Kbb_020.fits",19,1,0],
+                        ["/data/osiris_data/HR_8799_d/20200803/reduced_jb/s200803_a072002_Kbb_020.fits",19,2,0]]
 
     try:
         sequence_id = old_colnames.index("sequence")
@@ -496,7 +511,7 @@ if 1: # wavelength solution error
             elif (58060.<MJDOBS) and (MJDOBS<58322.):
                 wvsolerr = 1.0
             elif (58322.<MJDOBS):
-                wvsolerr = 1.0
+                wvsolerr = 2
         elif item[ifs_filter_id] == "Hbb":
             pass
             #20100713 b  = 20101028 c = 20101104 c
