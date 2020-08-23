@@ -252,7 +252,7 @@ if __name__ == "__main__":
         # IFSfilter = "Kbb"
         # planet = "HR_8799_c"
         scale = "*"
-        date = "20*"
+        date = "200731"
         inputDir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/"
         filelist = glob.glob(os.path.join(inputDir,"s"+date+"*"+IFSfilter+"_"+scale+".fits"))
         filelist.sort()
@@ -417,7 +417,7 @@ if __name__ == "__main__":
                     oriplanet_spec_str_arr = np.array(list_starspec, dtype=np.str)
                     col_names = oriplanet_spec_str_arr[0]
                     oriplanet_spec = oriplanet_spec_str_arr[1::,1].astype(np.float)
-                    oriplanet_spec /= np.nanmean(oriplanet_spec)
+                    # oriplanet_spec /= np.nanmean(oriplanet_spec)
                     oriplanet_spec_wvs = oriplanet_spec_str_arr[1::,0].astype(np.float)
                     # where_IFSfilter = np.where((oriplanet_spec_wvs>wvs[0])*(oriplanet_spec_wvs<wvs[-1]))
                     # oriplanet_spec = oriplanet_spec/np.mean(oriplanet_spec[where_IFSfilter])
@@ -705,7 +705,11 @@ if __name__ == "__main__":
             print("No data on "+filename)
             continue
         hdulist = pyfits.open(tmpfilename)
-        wvs =  hdulist[0].data
+        # wvs =  hdulist[0].data
+        if small:
+            wvs =  hdulist[0].data[1:6,1:6,:]
+        else:
+            wvs =  hdulist[0].data
         hdulist.close()
 
         tmpfilename = os.path.join(os.path.dirname(filename),modelfolder,os.path.basename(filename).replace(".fits","_LPFdata"+inj_fake_str+".fits"))
@@ -758,6 +762,14 @@ if __name__ == "__main__":
         w = int((data_nx-1)//2)
         star_flux = np.nansum(star_obsspec[w,w,:])
         hdulist.close()
+
+        #hacks
+        print(wvs.shape)
+        print(data_sigmas.shape)
+        data_sigmas[np.where(wvs>2.28)] /= 3.
+        # import matplotlib.pyplot as plt
+        # plt.plot(data_sigmas[2,2,:])
+        # plt.show()
 
         ##############################
         ## Create PSF model
