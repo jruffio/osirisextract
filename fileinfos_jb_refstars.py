@@ -112,6 +112,22 @@ if 1: # add MJD-OBS
         prihdr0 = hdulist[0].header
         new_list_data[k][MJDOBS_id] = prihdr0["MJD-OBS"]
 
+if 1: # add exposure time
+    filename_id = new_colnames.index("filename")
+    try:
+        itime_id = new_colnames.index("itime")
+    except:
+        new_colnames.append("itime")
+        new_list_data = [item+[np.nan,] for item in new_list_data]
+        itime_id = new_colnames.index("itime")
+
+    for k,item in enumerate(new_list_data):
+        hdulist = pyfits.open(item[filename_id])
+        prihdr0 = hdulist[0].header
+        if prihdr0["MJD-OBS"]>57698:
+            new_list_data[k][itime_id] = float(prihdr0["ITIME"])/1000
+        else:
+            new_list_data[k][itime_id] = float(prihdr0["ITIME"])
 
 if 1: # add spectral band
     filename_id = new_colnames.index("filename")

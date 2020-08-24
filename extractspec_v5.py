@@ -41,16 +41,16 @@ if __name__ == "__main__":
 
     out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
     # planet = "kap_And"
-    # planet = "HR_8799_b"
+    planet = "HR_8799_b"
     # planet = "HR_8799_c"
-    planet = "HR_8799_d"
+    # planet = "HR_8799_d"
     # date = "2010*"
     cutoff = 40
     fontsize = 12
     fakes = True
     R=4000
-    IFSfilter = "Kbb"
-    # IFSfilter = "Hbb"
+    # IFSfilter = "Kbb"
+    IFSfilter = "Hbb"
     c_kms = 299792.458
 
 
@@ -130,7 +130,7 @@ if __name__ == "__main__":
                         travis_spec_filename=os.path.join(planet_template_folder,
                                                       "HR8799c_"+IFSfilter[0:1]+"_3Oct2018.save")
                         plrv = -11.1
-                        plT,pllogg,plCtoO = 1200.0,3.6333333333333333,0.5670028102531646
+                        plT,pllogg,plCtoO = 1200.0,3.667,0.561507
                         planet_spec_func = interp1d(oriplanet_spec_wvs,myinterpgrid_CtoO([plT,pllogg,plCtoO])[0],bounds_error=False,fill_value=np.nan)
                         planet_spec_func_list.append(planet_spec_func)
                         planet_spec_func = interp1d(oriplanet_spec_wvs,myinterpgrid_CtoO([plT-200,pllogg,plCtoO])[0],bounds_error=False,fill_value=np.nan)
@@ -146,9 +146,9 @@ if __name__ == "__main__":
                     if planet == "HR_8799_d":
                         travis_spec_filename=os.path.join(planet_template_folder,
                                                       "HR8799c_"+IFSfilter[0:1]+"_3Oct2018.save")
-                        plrv = -14
+                        plrv = -14.2
                         # plT,pllogg,plCtoO = 1200.0, 4.5, 0.5505156172151899
-                        plT,pllogg,plCtoO = 1200.0, 3.5, 0.5505156172151899
+                        plT,pllogg,plCtoO = 1200.0, 4.43, 0.523
                         planet_spec_func = interp1d(oriplanet_spec_wvs,myinterpgrid_CtoO([plT,pllogg,plCtoO])[0],bounds_error=False,fill_value=np.nan)
                         planet_spec_func_list.append(planet_spec_func)
                         planet_spec_func = interp1d(oriplanet_spec_wvs,myinterpgrid_CtoO([plT-200,pllogg,plCtoO])[0],bounds_error=False,fill_value=np.nan)
@@ -237,22 +237,19 @@ if __name__ == "__main__":
                         reduc_filename = fileitem[cen_filename_id]
                         if int(fileitem[status_id]) != 1:
                             continue
-                        print("1")
                         if IFSfilter not in os.path.basename(filename):
                             continue
-                        print("2")
                         # if "100715" not in os.path.basename(filename):
                         #     continue
                         data_filename = reduc_filename.replace(".fits","_estispec.fits")
                         if len(glob.glob(data_filename)) == 0:
                             continue
-                        print("3")
 
                         print(data_filename)
                         with pyfits.open(data_filename) as hdulist:
                             esti_spec_arr = hdulist[0].data
 
-                        print(esti_spec_arr.shape)
+                        # print(esti_spec_arr.shape)
 
                         plcen_k,plcen_l = int(fileitem[kcen_id]),int(fileitem[lcen_id])
                         host_bary_rv = -float(fileitem[baryrv_id])/1000

@@ -48,7 +48,11 @@ if __name__ == "__main__":
     if len(sys.argv) == 1:
         out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
         osiris_data_dir = "/data/osiris_data/"
-        fit_folder = os.path.join(osiris_data_dir,"low_res","HR_8799_d","fit_test")
+        planet = "c"
+        # fit_folder = os.path.join(osiris_data_dir,"low_res","HR_8799_"+planet,"fit_test")
+        fit_folder = os.path.join(osiris_data_dir,"low_res","HR_8799_"+planet,"fit_lowresspec")
+        # fit_folder = os.path.join(osiris_data_dir,"low_res","HR_8799_"+planet,"fit_lowresspec_sphere")
+        # fit_folder = os.path.join(osiris_data_dir,"low_res","HR_8799_"+planet,"fit_lowresspec_p1640")
         gridname = os.path.join(osiris_data_dir,"hr8799b_modelgrid")
         # gridname = os.path.join("/data/osiris_data/","clouds_modelgrid")
         numthreads=32
@@ -66,6 +70,7 @@ if __name__ == "__main__":
     spectra_R = []
     for data_filename in glob.glob(os.path.join(fit_folder,"*.txt")):
         print(data_filename)
+        # exit()
         if "_R" in os.path.basename(data_filename):
             print("coucou")
             R = float(os.path.basename(data_filename).split("_R=")[-1].replace(".txt",""))
@@ -76,7 +81,11 @@ if __name__ == "__main__":
             spectra_R.extend([R,]*np.size(t[:,0]))
             # out = os.path.join(os.path.dirname(data_filename),os.path.basename(data_filename).split("_R=")[0]+"_skip"+"_R={0}.txt".format(R))
             # print(out)
-            # np.savetxt(out,np.concatenate([t[2::4,0][:,None],t[2::4,1][:,None],t[2::4,2][:,None]],axis=1),delimiter=" ")
+            # ## for GPI
+            # # np.savetxt(out,np.concatenate([t[2::4,0][:,None],t[2::4,1][:,None],t[2::4,2][:,None]],axis=1),delimiter=" ")
+            # ## for Sphere
+            # np.savetxt(out,np.concatenate([t[1::2,0][:,None]/1000,t[1::2,1][:,None],t[1::2,2][:,None]],axis=1),delimiter=" ")
+            # exit()
         else:
             t = np.loadtxt(data_filename,dtype=np.str)
             if np.size(t.shape) == 1:
@@ -175,7 +184,7 @@ if __name__ == "__main__":
                 dwvs = np.insert(dwvs,0,dwvs[0])
                 oriplanet_spec = 10**(out[:,1]-np.max(out[:,1]))
                 # oriplanet_spec = out[:,1]
-                oriplanet_spec /= np.nanmean(oriplanet_spec)
+                # oriplanet_spec /= np.nanmean(oriplanet_spec)
 
             model = []
             for flux, err, wv,filt,xerr in zip(fluxes,errors,microns,filters,xerrors.T):
@@ -189,12 +198,14 @@ if __name__ == "__main__":
                 trans_f = interp1d(wvs,trans,bounds_error=False,fill_value=0)
                 model.append(np.sum(oriplanet_spec*trans_f(oriplanet_spec_wvs)*dwvs)/np.sum(trans_f(oriplanet_spec_wvs)*dwvs))
             for spec,spec_err, spec_wv,spec_R in zip(spectra,spectra_err,spectra_wvs,spectra_R):
-                if spec_wv < oriplanet_spec_wvs[0] or spec_wv > oriplanet_spec_wvs[-1]:
+                if spec_wv-spec_wv/spec_R < oriplanet_spec_wvs[0] or spec_wv+spec_wv/spec_R > oriplanet_spec_wvs[-1]:
                     model.append(np.nan)
                     continue
                 trans_f = lambda x: np.exp(-0.5*(x-spec_wv)**2/(spec_wv/spec_R/2.634)**2)
                 model.append(np.sum(oriplanet_spec*trans_f(oriplanet_spec_wvs)*dwvs)/np.sum(trans_f(oriplanet_spec_wvs)*dwvs))
             model = np.array(model)
+            # print(model)
+            # exit(0)
             model_wvs = np.concatenate([microns,spectra_wvs])
             # print(model)
             # # plt.plot(oriplanet_spec_wvs,oriplanet_spec)
@@ -244,12 +255,12 @@ if __name__ == "__main__":
         fitpara_list = np.linspace(5e5,4e6,10,endpoint=True)
 
     else:
-        # fitT_list = np.linspace(800,1200,21,endpoint=True)
-        # fitlogg_list = np.linspace(3,4.5,46,endpoint=True)
-        # fitpara_list = np.linspace(0.45708819,0.89125094,80,endpoint=True)
-        fitT_list = np.linspace(800,1200,8,endpoint=True)
-        fitlogg_list = np.linspace(3,4.5,12,endpoint=True)
-        fitpara_list = np.linspace(0.45708819,0.89125094,20,endpoint=True)
+        fitT_list = np.linspace(800,1200,21,endpoint=True)
+        fitlogg_list = np.linspace(3,4.5,46,endpoint=True)
+        fitpara_list = np.linspace(0.45708819,0.89125094,80,endpoint=True)
+        # fitT_list = np.linspace(800,1200,8,endpoint=True)
+        # fitlogg_list = np.linspace(3,4.5,12,endpoint=True)
+        # fitpara_list = np.linspace(0.45708819,0.89125094,20,endpoint=True)
 
     print(np.size(fluxes),np.size(spectra))
     print(np.size(errors),np.size(spectra_err))
@@ -259,6 +270,7 @@ if __name__ == "__main__":
     variances = sigmas**2
 
     logpost = np.zeros((len(fitT_list),len(fitlogg_list),len(fitpara_list)))
+    logpost2 = np.zeros((len(fitT_list),len(fitlogg_list),len(fitpara_list)))
     ampl = np.zeros((len(fitT_list),len(fitlogg_list),len(fitpara_list)))
     ampl_err = np.zeros((len(fitT_list),len(fitlogg_list),len(fitpara_list)))
     for Tid,T in enumerate(fitT_list):
@@ -266,8 +278,11 @@ if __name__ == "__main__":
             for paraid,para in enumerate(fitpara_list):
 
                 model = myinterpgrid([T,logg,para])[0]
+                # model = myinterpgrid([1200,3.5,0.55])[0]
+                # print(model)
+                # exit()
 
-                wherefinite = np.where(np.isfinite(model))
+                wherefinite = np.where(np.isfinite(model)*(variances !=0.0))
 
                 _model = model[wherefinite]
                 _data = data[wherefinite]
@@ -281,8 +296,14 @@ if __name__ == "__main__":
                 # print(chi2)
 
                 logpost[Tid,loggid,paraid] = -0.5*chi2
+                logdet_Sigma = np.nansum(np.log(_variances))
+                slogdet_icovphi0 = np.log(ampl_err[Tid,loggid,paraid])
+                logpost2[Tid,loggid,paraid] = -0.5*logdet_Sigma - 0.5*slogdet_icovphi0-(np.size(_data)-1+2-1) / 2 *np.log(chi2)
 
+                # print(np.nanmean(_model),ampl[Tid,loggid,paraid],np.nanmean(_data))
                 # plt.scatter(model_wvs[wherefinite],_model*ampl[Tid,loggid,paraid])
+                # plt.scatter(model_wvs[wherefinite],_data)
+                # plt.ylim([-1e-15,1e-15])
                 # # print(len(spectra_wvs),len(spectra),xerrors.shape,spectra_err.shape)
                 # # plt.errorbar(spectra_wvs,spectra,xerr=xerrors,yerr=spectra_err,color="red")
                 # # plt.errorbar(microns,fluxes,yerr=errors,color="blue")
@@ -293,6 +314,8 @@ if __name__ == "__main__":
 
     post = np.exp(logpost -np.nanmax(logpost))
     post[np.where(np.isnan(post))] = 0
+    post2 = np.exp(logpost2 -np.nanmax(logpost2))
+    post2[np.where(np.isnan(post2))] = 0
 
     fontsize = 15
     para_vec_list = [fitT_list,fitlogg_list,fitpara_list]
@@ -310,6 +333,41 @@ if __name__ == "__main__":
         planet,color = "HR_8799_d","#6600ff"
     Nparas = len(para_vec_list)
 
+    # postfilename = planet+"_"+os.path.basename(gridname)+"_fit_lowresspec.pdf"
+    # hdulist = pyfits.open(os.path.join(out_pngs,planet,postfilename.replace(".pdf","_posterior.fits")))
+    # post = post*hdulist[0].data
+
+    hdulist = pyfits.HDUList()
+    hdulist.append(pyfits.PrimaryHDU(data=post))
+    hdulist.append(pyfits.ImageHDU(data=fitT_list))
+    hdulist.append(pyfits.ImageHDU(data=fitlogg_list))
+    hdulist.append(pyfits.ImageHDU(data=fitpara_list))
+    hdulist.append(pyfits.ImageHDU(data=ampl))
+    myoutfilename = planet+"_"+os.path.basename(gridname)+"_fit_lowresspec.pdf"
+    try:
+        hdulist.writeto(os.path.join(out_pngs,planet,myoutfilename.replace(".pdf","_posterior.fits")), overwrite=True)
+    except TypeError:
+        hdulist.writeto(os.path.join(out_pngs,planet,myoutfilename.replace(".pdf","_posterior.fits")), clobber=True)
+    hdulist.close()
+    hdulist = pyfits.HDUList()
+    hdulist.append(pyfits.PrimaryHDU(data=post2))
+    hdulist.append(pyfits.ImageHDU(data=fitT_list))
+    hdulist.append(pyfits.ImageHDU(data=fitlogg_list))
+    hdulist.append(pyfits.ImageHDU(data=fitpara_list))
+    hdulist.append(pyfits.ImageHDU(data=ampl))
+    myoutfilename = planet+"_"+os.path.basename(gridname)+"_fit_lowresspec.pdf"
+    try:
+        hdulist.writeto(os.path.join(out_pngs,planet,myoutfilename.replace(".pdf","_scalefac_posterior.fits")), overwrite=True)
+    except TypeError:
+        hdulist.writeto(os.path.join(out_pngs,planet,myoutfilename.replace(".pdf","_scalefac_posterior.fits")), clobber=True)
+    hdulist.close()
+
+    myargmax = np.unravel_index(np.nanargmax(post),post.shape)
+    print(myargmax)
+    print(fitT_list[myargmax[0]],fitlogg_list[myargmax[1]],fitpara_list[myargmax[2]])
+
+
+
     myargmax = np.unravel_index(np.nanargmax(post),post.shape)
     print(myargmax)
     print(fitT_list[myargmax[0]],fitlogg_list[myargmax[1]],fitpara_list[myargmax[2]])
@@ -326,9 +384,9 @@ if __name__ == "__main__":
 
 
     if 1:
-        print("Saving "+os.path.join(out_pngs,planet,planet+"_"+os.path.basename(gridname)+"_fit_sed.pdf"))
-        plt.savefig(os.path.join(out_pngs,planet,planet+"_"+os.path.basename(gridname)+"_fit_sed.pdf"),bbox_inches='tight')
-        plt.savefig(os.path.join(out_pngs,planet,planet+"_"+os.path.basename(gridname)+"_fit_sed.png"),bbox_inches='tight')
+        print("Saving "+os.path.join(out_pngs,planet,planet+"_"+os.path.basename(gridname)+"_fit_lowresspec.pdf"))
+        plt.savefig(os.path.join(out_pngs,planet,planet+"_"+os.path.basename(gridname)+"_fit_lowresspec.pdf"),bbox_inches='tight')
+        plt.savefig(os.path.join(out_pngs,planet,planet+"_"+os.path.basename(gridname)+"_fit_lowresspec.png"),bbox_inches='tight')
 
 
 
@@ -417,8 +475,8 @@ if __name__ == "__main__":
 
             f.subplots_adjust(wspace=0,hspace=0)
     if 1:
-        print("Saving "+os.path.join(out_pngs,planet,planet+"_"+os.path.basename(gridname)+"_corner_sed.pdf"))
-        plt.savefig(os.path.join(out_pngs,planet,planet+"_"+os.path.basename(gridname)+"_corner_sed.pdf"),bbox_inches='tight')
-        plt.savefig(os.path.join(out_pngs,planet,planet+"_"+os.path.basename(gridname)+"_corner_sed.png"),bbox_inches='tight')
+        print("Saving "+os.path.join(out_pngs,planet,planet+"_"+os.path.basename(gridname)+"_corner_lowresspec.pdf"))
+        plt.savefig(os.path.join(out_pngs,planet,planet+"_"+os.path.basename(gridname)+"_corner_lowresspec.pdf"),bbox_inches='tight')
+        plt.savefig(os.path.join(out_pngs,planet,planet+"_"+os.path.basename(gridname)+"_corner_lowresspec.png"),bbox_inches='tight')
     plt.show()
 

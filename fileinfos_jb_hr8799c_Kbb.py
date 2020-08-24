@@ -140,7 +140,7 @@ if 1: # add exposure time
         else:
             new_list_data[k][itime_id] = float(prihdr0["ITIME"])
 
-if 0: # add barycenter RV
+if 1: # add barycenter RV
     # from barycorrpy import get_BC_vel
     # filename_id = new_colnames.index("filename")
     # MJDOBS_id = new_colnames.index("MJD-OBS")
@@ -403,8 +403,10 @@ if 0:
             continue
         if "Kbb" in os.path.basename(item[filename_id]):
             Ktime_detec += float(item[itime_id])
+            print(float(item[itime_id]))
         if "Hbb" in os.path.basename(item[filename_id]):
             Htime_detec += float(item[itime_id])
+            print("Hbb",float(item[itime_id]))
     print(Ktime_detec/3600,Ktime/3600,Htime_detec/3600,Htime/3600)
 
     exit()
@@ -655,7 +657,7 @@ if 1:
     # else:
     #     myfolder = "sherlock/20190925_resH0model_RV"
     #     suffix = "_outputHPF_cutoff40_sherlock_v1_search_resinmodel_kl{0}".format(numbasis)
-    for k,item in enumerate(old_list_data):
+    for k,item in enumerate(new_list_data):
         filename = item[filename_id]
         # if new_list_data[k][cen_filename_id] != "nan":
         #     continue

@@ -62,7 +62,7 @@ for planet_id,planet in enumerate(["b","c","d"]):
         else:
             mynotes = ""
         first_date = True
-        for myfilter in ["Jbb","Hbb","Kbb"]:
+        for myfilter in ["Hbb","Kbb"]:#["Jbb","Hbb","Kbb"]:
             if myfilter=="Kbb": #Kbb 1965.0 0.25
                 CRVAL1 = 1965.
                 CDELT1 = 0.25
@@ -81,8 +81,8 @@ for planet_id,planet in enumerate(["b","c","d"]):
             init_wv = CRVAL1/1000.
             dwv = CDELT1/1000.
             wvs=np.arange(init_wv,init_wv+dwv*nl-1e-6,dwv)
-            print(wvs[0],(wvs[-1]-wvs[0])/40,dwv)
-            exit()
+            # print(wvs[0],(wvs[-1]-wvs[0])/40,dwv)
+            # exit()
             dprv = 3e5*dwv/(init_wv+dwv*nl//2)
 
             formated_date =  date[0:4]+"-"+date[4:6]+"-"+date[6:8]

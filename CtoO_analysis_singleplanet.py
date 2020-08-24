@@ -78,18 +78,18 @@ if __name__ == "__main__":
     if not useprior:
         priorTeff,priorTeff_sig = 1000,1e+4#1e-9
         priorlogg,priorlogg_sig = 4,1e+3#1e-9
-    # planet,color = "HR_8799_b","#0099cc"
-    # if useprior:
-    #     priorTeff,priorTeff_sig = 900,1e-9#1e-9
-    #     priorlogg,priorlogg_sig = 3.9,1e-9#1e-9
-    # planet,color = "HR_8799_c","#ff9900"
+    planet,color,snr_threshold = "HR_8799_b","#0099cc",7
+    if useprior:
+        priorTeff,priorTeff_sig = 900,1e-9#1e-9
+        priorlogg,priorlogg_sig = 3.9,1e-9#1e-9
+    # planet,color,snr_threshold = "HR_8799_c","#ff9900",9
     # if useprior:
     #     priorTeff,priorTeff_sig = 1060,1e-9#1e-9
     #     priorlogg,priorlogg_sig = 4.1,1e-9#1e-9
-    planet,color = "HR_8799_d","#6600ff"
-    if useprior:
-        priorTeff,priorTeff_sig = 1060,1e-9#1e-9
-        priorlogg,priorlogg_sig = 4.1,1e-9#1e-9
+    # planet,color,snr_threshold = "HR_8799_d","#6600ff",5.5
+    # if useprior:
+    #     priorTeff,priorTeff_sig = 1060,1e-9#1e-9
+    #     priorlogg,priorlogg_sig = 4.1,1e-9#1e-9
     IFSfilter = "*"
     scale = "*"
     date = "*"
@@ -115,10 +115,37 @@ if __name__ == "__main__":
     gridname = os.path.join("/data/osiris_data/","hr8799b_modelgrid")
     out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
     myoutfilename = "CtoO_"+planet+"_measurements_kl{0}_{1}{2}.pdf".format(kl,suffix,fake_str)
+    # myoutfilename = "CtoO_"+planet+"_measurements_kl{0}_{1}{2}_best10SNR.pdf".format(kl,suffix,fake_str)
 
     c_kms = 299792.458
     R= 4000
     fontsize=12
+
+
+    if kl ==0:
+        c_fileinfos_filename = "/data/osiris_data/"+planet+"/fileinfos_Kbb_jb.csv"
+    else:
+        c_fileinfos_filename = "/data/osiris_data/"+planet+"/fileinfos_Kbb_jb_kl{0}.csv".format(kl)
+
+
+    #read file
+    with open(c_fileinfos_filename, 'r') as csvfile:
+        csv_reader = csv.reader(csvfile, delimiter=';')
+        c_list_table = list(csv_reader)
+        c_colnames = c_list_table[0]
+        c_N_col = len(c_colnames)
+        c_list_data = c_list_table[1::]
+        c_filename_id = c_colnames.index("filename")
+        c_snr_id = c_colnames.index("snr")
+        c_status_id = c_colnames.index("status")
+    db_filelist = np.array([item[c_filename_id] for item in c_list_data])
+    db_snr_list = np.array([float(item[c_snr_id]) if item[c_snr_id] != "nan" else 0  for item in c_list_data])
+    db_status_list = np.array([float(item[c_status_id]) for item in c_list_data])
+    db_snr_selec = [db_snr_list[k] for k,db_status in enumerate(db_status_list) if db_status == 1]
+    print(np.sort(db_snr_selec)[::-1])
+    snr_threshold = np.sort(db_snr_selec)[::-1][9]
+    # print(np.sort(db_snr_list)[::-1][0:np.size(db_snr_selec)])
+    # exit()
 
     tmpfilename = os.path.join("/data/osiris_data/hr8799b_modelgrid/","hr8799b_modelgrid_R{0}_{1}.fits".format(R,"Kbb"))
     hdulist = pyfits.open(tmpfilename)
@@ -149,11 +176,10 @@ if __name__ == "__main__":
         if len(glob.glob(tmpfilename))!=1:
             print("No data on "+filename)
             continue
-        else:
-            print(filename)
         if os.path.basename(filename) in bad_data:
-            # print("coucou")
             continue
+        #if db_snr_list[np.where(db_filelist==filename)[0]] < snr_threshold:
+        #    continue
         hdulist = pyfits.open(tmpfilename)
         logpost =  hdulist[0].data
         if logpost.shape[0] != 21:

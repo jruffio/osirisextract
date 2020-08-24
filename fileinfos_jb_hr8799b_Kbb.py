@@ -366,8 +366,8 @@ if 1: # add filename
                         ["/data/osiris_data/HR_8799_b/20180722/reduced_jb/s180722_a041002_Kbb_035.fits",30,9,1],
                         ["/data/osiris_data/HR_8799_b/20180722/reduced_jb/s180722_a042002_Kbb_035.fits",30,10,1],
                         ["/data/osiris_data/HR_8799_b/20180722/reduced_jb/s180722_a043002_Jbb_035.fits",30,11,-1],
-                        ["/data/osiris_data/HR_8799_b/20200803/reduced_jb/s200803_a034002_Kbb_020.fits",31,0,0],
-                        ["/data/osiris_data/HR_8799_b/20200803/reduced_jb/s200803_a035002_Kbb_020.fits",31,1,0]]
+                        ["/data/osiris_data/HR_8799_b/20200803/reduced_jb/s200803_a034002_Kbb_020.fits",31,0,1],
+                        ["/data/osiris_data/HR_8799_b/20200803/reduced_jb/s200803_a035002_Kbb_020.fits",31,1,1]]
 
     try:
         sequence_id = old_colnames.index("sequence")
@@ -397,7 +397,7 @@ if 1: # add filename
                 new_list_data[k][sequence_it_id] = sec_it
                 new_list_data[k][status_id] = status_it
 
-if 0:
+if 1:
     Htime = 0
     Ktime = 0
     Htime_detec = 0
@@ -414,8 +414,10 @@ if 0:
             continue
         if "Kbb" in os.path.basename(item[filename_id]):
             Ktime_detec += float(item[itime_id])
+            print(float(item[itime_id]))
         if "Hbb" in os.path.basename(item[filename_id]):
             Htime_detec += float(item[itime_id])
+            print(float(item[itime_id]))
     print(Ktime_detec/3600,Ktime/3600,Htime_detec/3600,Htime/3600)
 
     exit()
@@ -502,7 +504,7 @@ if 0:
             new_list_data[seq_ind][xoffset_id] = dx
             new_list_data[seq_ind][yoffset_id] = dy
 
-if 0: # wavelength solution error
+if 1: # wavelength solution error
     try:
         wvsolerr_id = old_colnames.index("wv sol err")
     except:
@@ -535,12 +537,12 @@ if 0: # wavelength solution error
             #20161106 b = 20161107 b= 20161108 b
             elif (57698.<MJDOBS) and (MJDOBS<57701.):
                 wvsolerr = 0.6
-            elif (57701.<MJDOBS):
-                wvsolerr = 2
             #20171103 c
             #20180722 b
             elif (58060.<MJDOBS) and (MJDOBS<58322.):
                 wvsolerr = 1.0
+            elif (58322.<MJDOBS):
+                wvsolerr = 2
         elif item[ifs_filter_id] == "Hbb":
             #b: 20090722 20090723 20090730 20090903
             if (MJDOBS<55388.):
@@ -578,7 +580,7 @@ def get_err_from_posterior(x,posterior):
     return x[argmax_post],(rx-lx)/2.,argmax_post
 
 numbasis=0
-if 0:
+if 1:
     from scipy.signal import correlate2d
     try:
         cen_filename_id = old_colnames.index("cen filename")
@@ -652,7 +654,7 @@ if 0:
     # dwv = CDELT1/1000.
     # init_wv = CRVAL1/1000. # wv for first slice in mum
 
-    numbasis = 10#1,3,5
+    numbasis = 0#1,3,5
     myfolder = "sherlock/20191205_RV"
     # myfolder = "sherlock/20191104_RVsearch"
     # myfolder = "sherlock/20191018_RVsearch"

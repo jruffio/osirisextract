@@ -956,7 +956,7 @@ if __name__ == "__main__":
     ##############################
     print(len(sys.argv))
     if len(sys.argv) == 1:
-        planet = "HR_8799_b"
+        # planet = "HR_8799_b"
         # date = "090722"
         # date = "090730"
         # date = "090903"
@@ -978,15 +978,15 @@ if __name__ == "__main__":
         # date = "130726"
         # date = "171103"
         # date = "200729"
-        # planet = "HR_8799_d"
+        planet = "HR_8799_d"
         # date = "150720"
         # date = "150722"
         # date = "150723"
         # date = "150828"
         # date = "200729"
         # date = "200730"
-        # date = "200731"
-        date = "200803"
+        date = "200731"
+        # date = "200803"
         # planet = "51_Eri_b"
         # date = "171103"
         # date = "171104"
@@ -1006,7 +1006,8 @@ if __name__ == "__main__":
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20200213_molectest/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190305_HPF_only_noperscor/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190228_mol_temp/"
-        outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20200731_livereduc/"
+        # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20200729_livereduc/"
+        outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20200823_test/"
 
         # inputDir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb_pairsub/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb_pairsub/20190228_HPF_only/"
@@ -1014,22 +1015,22 @@ if __name__ == "__main__":
         print(os.path.join(inputDir,"s"+date+"*"+IFSfilter+"_"+scale+".fits"))
         filelist = glob.glob(os.path.join(inputDir,"s"+date+"*"+IFSfilter+"_"+scale+".fits"))
         filelist.sort()
-        filelist = [filelist[-1],]
+        filelist = [filelist[7],]
         print(filelist)
         # exit()
         # print(os.path.join(inputDir,"s"+date+"*"+IFSfilter+"_020.fits"))
         # filelist = filelist[1:]
         # filelist = filelist[len(filelist)-3:len(filelist)-2]
 
-        res_numbasis = 0
+        res_numbasis = 10
         numthreads = 10
         planet_search = True
         debug_paras = True
         plot_transmissions = False
         plt_psfs = False
         plot_persistence = False
-        # planet_model_string = "model"
-        planet_model_string = "CO"
+        planet_model_string = "model"
+        # planet_model_string = "CO"
         # planet_model_string = "CO2 CO H2O CH4"#"CO"#
         # planet_model_string = "CO2 CO H2O CH4 joint"
         # planet_model_string = "CO joint"
@@ -2204,17 +2205,6 @@ if __name__ == "__main__":
                 for k in range(padny):
                     for l in range(padnx):
                         sigmas_imgs_np[k,l,:] = np.clip(sigmas_imgs_np[k,l,:],np.nanmedian(sigmas_imgs_np[k,l,:])/2,np.inf)
-            # import matplotlib.pyplot as plt
-            # tmpk, tmpl = 44,8
-            # for k in range(5):
-            #     for l in range(5):
-            #         plt.subplot(5,5,5*k+l+1)
-            #         plt.plot(originalHPF_imgs_np[tmpk+5+k,tmpl+5+l,:],label="originalLPF_imgs_np")
-            #         plt.plot(sigmas_imgs_np[tmpk+5+k,tmpl+5+l,:],label="sigmas_imgs_np")
-            #         plt.ylim([-3,3])
-            # plt.legend()
-            # tpool.close()
-            # plt.show()
 
             if 0: #"JBhere"
                 out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
@@ -2386,6 +2376,7 @@ if __name__ == "__main__":
             if res_numbasis >= 1:
                 res_filelist = glob.glob(os.path.join(outputdir,os.path.basename(filename).replace(".fits","")+"*_output"+ressuffix+"_res.fits"))
                 # res_filelist = glob.glob(os.path.join(outputdir,os.path.basename(filename).replace(".fits","")+"*_output"+"*kl1*"+"_res.fits"))
+                print(os.path.join(outputdir,os.path.basename(filename).replace(".fits","")+"*_output"+ressuffix+"_res.fits"))
                 res_filename = res_filelist[0]
                 with pyfits.open(res_filename) as hdulist:
                     # hpfres = hdulist[0].data[0,0,2,:,:,:]
@@ -2454,6 +2445,27 @@ if __name__ == "__main__":
                 res4model_kl = kl_basis * (1. / np.sqrt(evals * (res4model.shape[0] - 1)))[None, :]  #multiply a value for each row
                 print(res4model_kl.shape)
                 # exit()
+
+                #sigmas_imgs_np = sigmas_imgs_np#*np.nanstd(hpfres,axis=(1,2))[None,None,:]*10
+                #print(sigmas_imgs_np.shape)
+                # exit()
+                # import matplotlib.pyplot as plt
+                # tmpk, tmpl = 44,8
+                # plt.plot(originalLPF_imgs_np[tmpk,tmpl,:],label="originalLPF_imgs_np")
+                # plt.plot(sigmas_imgs_np[tmpk,tmpl,:],label="sigmas_imgs_np")
+                # print(hpfres.shape)
+                # hpfres[np.where(hpfres==0)] = np.nan
+                # plt.plot(np.nanstd(hpfres,axis=(1,2))*10,label="hpfres")
+                # # plt.plot(res4model_kl[:,0]/np.nanstd(res4model_kl[:,0]),label="0")
+                # # plt.plot(res4model_kl[:,1]/np.nanstd(res4model_kl[:,1]),label="1")
+                # plt.legend()
+                # tpool.close()
+                # plt.show()
+                #hacks
+                # print(wvs.shape)
+                # data_sigmas[np.where(wvs>2.28)] /= 3.
+                # exit()
+                #sigmas_imgs_np[:,:,np.where(wvs>2.28)[0]] /= 10
 
                 # res4model = np.nansum(res4model,axis=(1,2))
                 # res4model = res4model/np.nanstd(res4model)

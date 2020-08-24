@@ -134,12 +134,12 @@ if __name__ == "__main__":
         fitpara_list = np.linspace(5e5,4e6,10,endpoint=True)
 
     else:
-        # fitT_list = np.linspace(800,1200,21,endpoint=True)
-        # fitlogg_list = np.linspace(3,4.5,46,endpoint=True)
-        # fitpara_list = np.linspace(0.45708819,0.89125094,80,endpoint=True)
-        fitT_list = np.linspace(800,1200,8,endpoint=True)
-        fitlogg_list = np.linspace(3,4.5,12,endpoint=True)
-        fitpara_list = np.linspace(0.45708819,0.89125094,20,endpoint=True)
+        fitT_list = np.linspace(800,1200,21,endpoint=True)
+        fitlogg_list = np.linspace(3,4.5,46,endpoint=True)
+        fitpara_list = np.linspace(0.45708819,0.89125094,80,endpoint=True)
+        # fitT_list = np.linspace(800,1200,8,endpoint=True)
+        # fitlogg_list = np.linspace(3,4.5,12,endpoint=True)
+        # fitpara_list = np.linspace(0.45708819,0.89125094,20,endpoint=True)
 
     variances = spectra_err**2
 
@@ -199,6 +199,18 @@ if __name__ == "__main__":
     if "HR_8799_d" in fit_folder:
         planet,color = "HR_8799_d","#6600ff"
     Nparas = len(para_vec_list)
+
+    hdulist = pyfits.HDUList()
+    hdulist.append(pyfits.PrimaryHDU(data=post))
+    hdulist.append(pyfits.ImageHDU(data=fitT_list))
+    hdulist.append(pyfits.ImageHDU(data=fitlogg_list))
+    hdulist.append(pyfits.ImageHDU(data=fitpara_list))
+    myoutfilename = planet+"_"+os.path.basename(gridname)+"_fit_OSIRISspec"+"_"+IFSfilter+".pdf"
+    try:
+        hdulist.writeto(os.path.join(out_pngs,planet,myoutfilename.replace(".pdf","_posterior.fits")), overwrite=True)
+    except TypeError:
+        hdulist.writeto(os.path.join(out_pngs,planet,myoutfilename.replace(".pdf","_posterior.fits")), clobber=True)
+    hdulist.close()
 
     myargmax = np.unravel_index(np.nanargmax(post),post.shape)
     print(myargmax)

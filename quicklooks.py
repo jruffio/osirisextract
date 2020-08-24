@@ -25,7 +25,7 @@ planet = "HR_8799_d"
 suffix = "KbbHbb"
 # suffix = "all"
 fontsize = 12
-resnumbasis = 0
+resnumbasis = 10
 # fileinfos_filename = "/data/osiris_data/"+planet+"/fileinfos_Kbb_jb.csv"
 if resnumbasis ==0:
     fileinfos_filename = "/data/osiris_data/"+planet+"/fileinfos_Kbb_jb.csv"
@@ -116,7 +116,7 @@ if 1:
 
     seqref = -1
     Ninarow = 20
-    f,ax_list = plt.subplots(N_lines//Ninarow+1,Ninarow,sharey="row",sharex="col",figsize=(12,12./Ninarow*64./19.*(N_lines//Ninarow+1)))#figsize=(12,8)
+    f,ax_list = plt.subplots(int(np.ceil(N_lines/Ninarow)),Ninarow,sharey="row",sharex="col",figsize=(12,12./Ninarow*64./19.*(N_lines//Ninarow+1)))#figsize=(12,8)
     try:
         ax_list = [myax for rowax in ax_list for myax in rowax ]
     except:
@@ -227,7 +227,7 @@ if 1:
                 plt.clim([0,np.max([np.nanstd(cube_hd)*10,30])])
             except:
                 plt.clim([0,np.max([np.nanstd(image)*10,30])])
-            plt.clim([0,60])
+            plt.clim([0,40])
             plt.xticks([0,10])
 
 
@@ -270,17 +270,18 @@ if 1:
             circle = plt.Circle((lcenref,kcenref),1,color="#ff9900", fill=False)
             ax.add_artist(circle)
         else:
-            xoffset0 = xoffset
-            yoffset0 = yoffset
-            lcenref = 9
-            kcenref = 30
-            seqref = sequence
-            circle = plt.Circle((lcenref,kcenref),3,color="#ff9900", fill=False)
-            ax.add_artist(circle)
-            circle = plt.Circle((lcenref,kcenref),1,color="#ff9900", fill=False)
-            ax.add_artist(circle)
-            # xoffset0 = 0
-            # yoffset0 = 0
+            pass
+            # xoffset0 = xoffset
+            # yoffset0 = yoffset
+            # lcenref = 9
+            # kcenref = 30
+            # seqref = sequence
+            # circle = plt.Circle((lcenref,kcenref),3,color="#ff9900", fill=False)
+            # ax.add_artist(circle)
+            # circle = plt.Circle((lcenref,kcenref),1,color="#ff9900", fill=False)
+            # ax.add_artist(circle)
+            # # xoffset0 = 0
+            # # yoffset0 = 0
 
     for ax in ax_list:
         plt.sca(ax)

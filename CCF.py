@@ -1237,6 +1237,23 @@ if 1:
                         plt.gca().annotate("HR 8799 "+planet,xy=(-900,18),va="top",ha="left",fontsize=fontsize,color=color)
                 else:
                     plt.gca().annotate("HR 8799 "+planet,xy=(-900,13),va="top",ha="left",fontsize=fontsize,color=color)
+                # croppedsummed_hdRV = summed_hdRV[400:800,(64*3)//2,(19*3)//2]
+                # finitehdRV=np.where(np.isfinite(croppedsummed_hdRV))
+                # croppedsummed_hdRV = croppedsummed_hdRV[finitehdRV]
+                # croppedplanetRV_hd = planetRV_hd[finitehdRV]
+                # cut1 = np.where(planetRV<=croppedplanetRV_hd[0])[0][-1]
+                # cut2 = np.where(planetRV>=croppedplanetRV_hd[-1])[0][0]
+                # # print(np.size(planetRV_hd))
+                # # print(cut1,cut2)
+                # # exit()
+                # concaplanetRV2plot = np.concatenate([planetRV[0:cut1+1],croppedplanetRV_hd,planetRV[cut2::]])
+                # concaCCF2plot = np.concatenate([summed_wideRV[200:400,(64*3)//2,(19*3)//2][0:cut1+1],
+                #                                 croppedsummed_hdRV,
+                #                                 summed_wideRV[200:400,(64*3)//2,(19*3)//2][cut2::]])
+                # if molid == 0:
+                #     plt.plot(concaplanetRV2plot,concaCCF2plot,linestyle=linestyle_list[molid],linewidth=3,color=color,label=molecule_str+": S/N={0:0.1f}".format(summed_hdRV[(400*3)//2,(64*3)//2,(19*3)//2]))
+                # else:
+                #     plt.plot(concaplanetRV2plot,concaCCF2plot,linestyle=linestyle_list[molid],linewidth=2,color="black",label=molecule_str+": S/N={0:0.1f}".format(summed_hdRV[(400*3)//2,(64*3)//2,(19*3)//2]))
                 if molid == 0:
                     plt.plot(planetRV,summed_wideRV[200:400,(64*3)//2,(19*3)//2],linestyle=linestyle_list[molid],linewidth=3,color=color,label=molecule_str+": S/N={0:0.1f}".format(summed_hdRV[(400*3)//2,(64*3)//2,(19*3)//2]))
                 else:
@@ -1244,16 +1261,16 @@ if 1:
                 plt.gca().tick_params(axis='x', labelsize=fontsize)
                 plt.gca().tick_params(axis='y', labelsize=fontsize)
                 plt.xlim([-1000,1000])
-                if planet == "b" or planet == "c":
-                    if IFSfilter == "Kbb":
-                        plt.ylim([-10,50])
-                        plt.yticks([0,10,20,30,40,50])
-                    elif IFSfilter == "Hbb":
-                        plt.ylim([-5,20])
-                        plt.yticks([0,5,10,15,20])
-                elif planet == "d":
-                    plt.ylim([-3,15])
-                    plt.yticks([0,5,10,15])
+                if IFSfilter == "Kbb":
+                    plt.ylim([-10,50])
+                    plt.yticks([0,10,20,30,40,50])
+                elif IFSfilter == "Hbb":
+                    plt.ylim([-5,20])
+                    plt.yticks([0,5,10,15,20])
+                # if planet == "b" or planet == "c":
+                # elif planet == "d":
+                #     plt.ylim([-3,15])
+                #     plt.yticks([0,5,10,15])
                 plt.legend(loc="upper right",frameon=True,fontsize=fontsize)#
                 # plt.show()
 
