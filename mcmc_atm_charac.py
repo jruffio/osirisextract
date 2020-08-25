@@ -707,7 +707,7 @@ if __name__ == "__main__":
         hdulist = pyfits.open(tmpfilename)
         # wvs =  hdulist[0].data
         if small:
-            wvs =  hdulist[0].data[1:6,1:6,:]
+            wvs =  hdulist[0].data[2:7,2:7,:]
         else:
             wvs =  hdulist[0].data
         hdulist.close()
@@ -715,28 +715,28 @@ if __name__ == "__main__":
         tmpfilename = os.path.join(os.path.dirname(filename),modelfolder,os.path.basename(filename).replace(".fits","_LPFdata"+inj_fake_str+".fits"))
         hdulist = pyfits.open(tmpfilename)
         if small:
-            LPFdata =  hdulist[0].data[1:6,1:6,:]
+            LPFdata =  hdulist[0].data[2:7,2:7,:]
         else:
             LPFdata =  hdulist[0].data
         hdulist.close()
         tmpfilename = os.path.join(os.path.dirname(filename),modelfolder,os.path.basename(filename).replace(".fits","_HPFdata"+inj_fake_str+".fits"))
         hdulist = pyfits.open(tmpfilename)
         if small:
-            HPFdata =  hdulist[0].data[1:6,1:6,:]
+            HPFdata =  hdulist[0].data[2:7,2:7,:]
         else:
             HPFdata =  hdulist[0].data
         hdulist.close()
         tmpfilename = os.path.join(os.path.dirname(filename),modelfolder,os.path.basename(filename).replace(".fits","_badpix"+inj_fake_str+".fits"))
         hdulist = pyfits.open(tmpfilename)
         if small:
-            data_badpix =  hdulist[0].data[1:6,1:6,:]
+            data_badpix =  hdulist[0].data[2:7,2:7,:]
         else:
             data_badpix =  hdulist[0].data
         hdulist.close()
         tmpfilename = os.path.join(os.path.dirname(filename),modelfolder,os.path.basename(filename).replace(".fits","_sigmas"+inj_fake_str+".fits"))
         hdulist = pyfits.open(tmpfilename)
         if small:
-            data_sigmas =  hdulist[0].data[1:6,1:6,:]
+            data_sigmas =  hdulist[0].data[2:7,2:7,:]
         else:
             data_sigmas =  hdulist[0].data
         hdulist.close()
@@ -747,7 +747,7 @@ if __name__ == "__main__":
         tmpfilename = os.path.join(os.path.dirname(filename),modelfolder,os.path.basename(filename).replace(".fits","_starspec"+inj_fake_str+".fits"))
         hdulist = pyfits.open(tmpfilename)
         if small:
-            star_obsspec =  hdulist[0].data[1:6,1:6,:]
+            star_obsspec =  hdulist[0].data[2:7,2:7,:]
         else:
             star_obsspec =  hdulist[0].data
         hdulist.close()
@@ -764,9 +764,9 @@ if __name__ == "__main__":
         hdulist.close()
 
         #hacks
-        print(wvs.shape)
-        print(data_sigmas.shape)
-        data_sigmas[np.where(wvs>2.28)] /= 3.
+        # print(wvs.shape)
+        # print(data_sigmas.shape)
+        # data_sigmas[np.where(wvs>2.28)] /= 3.
         # import matplotlib.pyplot as plt
         # plt.plot(data_sigmas[2,2,:])
         # plt.show()
