@@ -32,22 +32,23 @@ if __name__ == "__main__":
         label_list.append("Photometry")
         post_filelist.append("/home/sda/jruffio/pyOSIRIS/figures/HR_8799_"+planet+"/HR_8799_"+planet+"_"+gridname+"_fit_lowresspec_posterior.fits")
         label_list.append("Low resolution spectra")
-        post_filelist.append("/home/sda/jruffio/pyOSIRIS/figures/HR_8799_"+planet+"/HR_8799_"+planet+"_"+gridname+"_fit_lowresspec_scalefac_posterior.fits")
-        label_list.append("Low resolution spectra w\ scaling factor for the noise")
+        # post_filelist.append("/home/sda/jruffio/pyOSIRIS/figures/HR_8799_"+planet+"/HR_8799_"+planet+"_"+gridname+"_fit_lowresspec_scalefac_posterior.fits")
+        # label_list.append("Low resolution spectra w\ scaling factor for the noise")
         if "hr8799b_modelgrid" in gridname:
             post_filelist.append("/home/sda/jruffio/pyOSIRIS/figures/HR_8799_"+planet+"/CtoO_HR_8799_"+planet+"_measurements_kl10_HK_posterior.fits")
             label_list.append("Forward model OSIRIS")
-            post_filelist.append("/home/sda/jruffio/pyOSIRIS/figures/HR_8799_"+planet+"/CtoO_HR_8799_"+planet+"_measurements_kl10_HK_best10SNR_posterior.fits")
-            label_list.append("Forward model OSIRIS (best 10 exposures)")
+            # post_filelist.append("/home/sda/jruffio/pyOSIRIS/figures/HR_8799_"+planet+"/CtoO_HR_8799_"+planet+"_measurements_kl10_HK_best10SNR_posterior.fits")
+            # label_list.append("Forward model OSIRIS (best 10 exposures)")
         elif "clouds_modelgrid" in gridname:
             post_filelist.append("/home/sda/jruffio/pyOSIRIS/figures/HR_8799_"+planet+"/clouds_HR_8799_"+planet+"_measurements_kl10_HK_posterior.fits")
             label_list.append("Forward model OSIRIS")
-            post_filelist.append("/home/sda/jruffio/pyOSIRIS/figures/HR_8799_"+planet+"/clouds_HR_8799_"+planet+"_measurements_kl10_HK_best10SNR_posterior.fits")
-            label_list.append("Forward model OSIRIS (best 10 exposures)")
+            # post_filelist.append("/home/sda/jruffio/pyOSIRIS/figures/HR_8799_"+planet+"/clouds_HR_8799_"+planet+"_measurements_kl10_HK_best10SNR_posterior.fits")
+            # label_list.append("Forward model OSIRIS (best 10 exposures)")
         # post_filelist.append("/home/sda/jruffio/pyOSIRIS/figures/HR_8799_"+planet+"/HR_8799_"+planet+"_"+gridname+"_fit_OSIRISspec_Kbb_posterior.fits")
         # label_list.append("Extracted spectrum OSIRIS high-pass filtered")
 
-        color_list =  ["black","black","grey",color,color]
+        # color_list =  ["black","black","grey",color,color]
+        color_list =  ["grey","black",color]
         for postid,(linestyle,postfilename,label,_color) in enumerate(zip(linestyle_list,post_filelist,label_list,color_list)):
 
             hdulist = pyfits.open(postfilename)
@@ -55,21 +56,23 @@ if __name__ == "__main__":
             fitT_list = hdulist[1].data
             fitlogg_list = hdulist[2].data
             fitpara_list = hdulist[3].data
+            # print(post.shape,fitlogg_list)
+            # continue
 
-            maxids = np.unravel_index(np.argmax(post),post.shape)
-            if "Forward model" not in label:
-                fluxes = hdulist[4].data
-                if "Photometry" == label:
-                    print(planet,label,
-                          fitT_list[maxids[0]],fitlogg_list[maxids[1]],fitpara_list[maxids[2]],
-                          fluxes[maxids],10**(fluxes[maxids]/-2.5))
-                else:
-                    print(planet,label,
-                          fitT_list[maxids[0]],fitlogg_list[maxids[1]],fitpara_list[maxids[2]],
-                          fluxes[maxids])
-            else:
-                print(planet,label,fitT_list[maxids[0]],fitlogg_list[maxids[1]],fitpara_list[maxids[2]])
-            # exit()
+            # maxids = np.unravel_index(np.argmax(post),post.shape)
+            # if postid <= 1:
+            #     fluxes = hdulist[4].data
+            #     if "Photometry" == label:
+            #         print(planet,label,
+            #               fitT_list[maxids[0]],fitlogg_list[maxids[1]],fitpara_list[maxids[2]],
+            #               fluxes[maxids],10**(fluxes[maxids]/-2.5))
+            #     else:
+            #         print(planet,label,
+            #               fitT_list[maxids[0]],fitlogg_list[maxids[1]],fitpara_list[maxids[2]],
+            #               fluxes[maxids])
+            # else:
+            #     print(planet,label,fitT_list[maxids[0]],fitlogg_list[maxids[1]],fitpara_list[maxids[2]],fluxes[maxids])
+            # # exit()
 
             for paraid,(xvec,xticks) in enumerate(zip([fitT_list,fitlogg_list,fitpara_list],xticks_list)):
                 plt.sca(ax_post_list[paraid][plid])

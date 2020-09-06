@@ -55,7 +55,7 @@ if 1:
     # rvmerr_d = [0.03407766692871694]
     # rvperr_d = [0.03155199331507741]
 
-    if 0:
+    if 1:
         myoutfilename = "CtoO_HR_8799_b_measurements_kl{0}_HK".format(numbasis_list[0])+priorsuffix+".pdf"
         print(myoutfilename)
         hdulist = pyfits.open(os.path.join(out_pngs,"HR_8799_b",myoutfilename.replace(".pdf","_logposterior.fits")))

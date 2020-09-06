@@ -278,7 +278,7 @@ if __name__ == "__main__":
             for paraid,para in enumerate(fitpara_list):
 
                 model = myinterpgrid([T,logg,para])[0]
-                # model = myinterpgrid([1200,3.5,0.55])[0]
+                # model = myinterpgrid([1200,4.5,0.56])[0]
                 # print(model)
                 # exit()
 
@@ -303,7 +303,7 @@ if __name__ == "__main__":
                 # print(np.nanmean(_model),ampl[Tid,loggid,paraid],np.nanmean(_data))
                 # plt.scatter(model_wvs[wherefinite],_model*ampl[Tid,loggid,paraid])
                 # plt.scatter(model_wvs[wherefinite],_data)
-                # plt.ylim([-1e-15,1e-15])
+                # plt.ylim([0e-15,6e-15])
                 # # print(len(spectra_wvs),len(spectra),xerrors.shape,spectra_err.shape)
                 # # plt.errorbar(spectra_wvs,spectra,xerr=xerrors,yerr=spectra_err,color="red")
                 # # plt.errorbar(microns,fluxes,yerr=errors,color="blue")

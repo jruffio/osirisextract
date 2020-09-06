@@ -78,7 +78,7 @@ model_label_list.append("model - FM OSIRIS")
 model_paras_list = []
 model_paras_list.append([1200.0, 4.4, 0.6604302374683544,1.2537683644661261e-15])
 model_paras_list.append([940.0, 3.3, 0.5670028102531646,1.2304612717649738e-15])
-model_paras_list.append([1180.0, 3.1666666666666665, 0.577994272278481,1.2304612717649738e-15])
+model_paras_list.append([1180.0, 3.10, 0.577994272278481,1.6424043715285344e-15])
 # model_paras_list.append([1160.0, 3.2, 0.5889857343037974,5.902517102241156e-16])
 
 R = 4000
@@ -87,9 +87,8 @@ tmpfilename = os.path.join(osiris_data_dir,"hr8799b_modelgrid/","hr8799b_modelgr
 hdulist = pyfits.open(tmpfilename)
 planet_model_grid =  hdulist[0].data
 wvs_Kbb =  hdulist[1].data
-print(np.median(wvs_Kbb[1::]-wvs_Kbb[0:np.size(wvs_Kbb)-1]))
-print(np.median(wvs_Kbb))
-exit()
+# print(np.median(wvs_Kbb[1::]-wvs_Kbb[0:np.size(wvs_Kbb)-1]))
+# print(np.median(wvs_Kbb))
 Tlistunique =  hdulist[2].data
 logglistunique =  hdulist[3].data
 CtoOlistunique =  hdulist[4].data
@@ -276,7 +275,7 @@ model_label_list.append("model - FM OSIRIS")
 model_paras_list = []
 model_paras_list.append([1200.0, 4.366666666666667, 0.4900625760759494, 3.324116469339739e-15])
 model_paras_list.append([1200.0, 4.5, 0.5615070792405064, 2.8852987399530044e-15])
-model_paras_list.append([1200.0, 3.6666666666666665, 0.5615070792405064, 2.8852987399530044e-15])
+model_paras_list.append([1200.0, 3.63, 0.562, 3.847076882400877e-15])
 # model_paras_list.append([1180.0, 3.4333333333333336, 0.5670028102531646, 2.8852987399530044e-15])
 
 R = 4000
@@ -444,7 +443,7 @@ model_label_list.append("model - FM OSIRIS")
 model_paras_list = []
 model_paras_list.append([1140.0, 4.5, 0.45708819, 3.0069061400378204e-15])
 model_paras_list.append([1020.0, 4.5, 0.6879088925316456, 2.8889774797549904e-15])
-model_paras_list.append([1200.0, 4.433333333333334, 0.5230369621518988, 2.8889774797549904e-15])
+model_paras_list.append([1200.0, 3.7, 0.551, 4.147534522659406e-15])
 # model_paras_list.append([1200.0, 4.1, 0.5944814653164557, 2.8889774797549904e-15])
 
 R = 4000

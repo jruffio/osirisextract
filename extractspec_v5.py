@@ -41,8 +41,8 @@ if __name__ == "__main__":
 
     out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
     # planet = "kap_And"
-    planet = "HR_8799_b"
-    # planet = "HR_8799_c"
+    # planet = "HR_8799_b"
+    planet = "HR_8799_c"
     # planet = "HR_8799_d"
     # date = "2010*"
     cutoff = 40
@@ -114,7 +114,7 @@ if __name__ == "__main__":
                                                       "HR8799b_"+IFSfilter[0:1]+"_3Oct2018.save")
                         plrv = -9.
 
-                        plT,pllogg,plCtoO =1180.0,3.1666666666666665,0.577994272278481
+                        plT,pllogg,plCtoO =1180.0,3.10,0.577994272278481
                         planet_spec_func = interp1d(oriplanet_spec_wvs,myinterpgrid_CtoO([plT,pllogg,plCtoO])[0],bounds_error=False,fill_value=np.nan)
                         planet_spec_func_list.append(planet_spec_func)
                         planet_spec_func = interp1d(oriplanet_spec_wvs,myinterpgrid_CtoO([plT-200,pllogg,plCtoO])[0],bounds_error=False,fill_value=np.nan)
@@ -130,7 +130,7 @@ if __name__ == "__main__":
                         travis_spec_filename=os.path.join(planet_template_folder,
                                                       "HR8799c_"+IFSfilter[0:1]+"_3Oct2018.save")
                         plrv = -11.1
-                        plT,pllogg,plCtoO = 1200.0,3.667,0.561507
+                        plT,pllogg,plCtoO = 1200.0,3.6333333333333333,0.5615070792405064
                         planet_spec_func = interp1d(oriplanet_spec_wvs,myinterpgrid_CtoO([plT,pllogg,plCtoO])[0],bounds_error=False,fill_value=np.nan)
                         planet_spec_func_list.append(planet_spec_func)
                         planet_spec_func = interp1d(oriplanet_spec_wvs,myinterpgrid_CtoO([plT-200,pllogg,plCtoO])[0],bounds_error=False,fill_value=np.nan)
@@ -148,7 +148,7 @@ if __name__ == "__main__":
                                                       "HR8799c_"+IFSfilter[0:1]+"_3Oct2018.save")
                         plrv = -14.2
                         # plT,pllogg,plCtoO = 1200.0, 4.5, 0.5505156172151899
-                        plT,pllogg,plCtoO = 1200.0, 4.43, 0.523
+                        plT,pllogg,plCtoO = 1200.0, 3.7, 0.5505156172151899
                         planet_spec_func = interp1d(oriplanet_spec_wvs,myinterpgrid_CtoO([plT,pllogg,plCtoO])[0],bounds_error=False,fill_value=np.nan)
                         planet_spec_func_list.append(planet_spec_func)
                         planet_spec_func = interp1d(oriplanet_spec_wvs,myinterpgrid_CtoO([plT-200,pllogg,plCtoO])[0],bounds_error=False,fill_value=np.nan)

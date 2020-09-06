@@ -78,18 +78,18 @@ if __name__ == "__main__":
     if not useprior:
         priorTeff,priorTeff_sig = 1000,1e+4#1e-9
         priorlogg,priorlogg_sig = 4,1e+3#1e-9
-    planet,color,snr_threshold = "HR_8799_b","#0099cc",7
-    if useprior:
-        priorTeff,priorTeff_sig = 900,1e-9#1e-9
-        priorlogg,priorlogg_sig = 3.9,1e-9#1e-9
+    # planet,color,snr_threshold = "HR_8799_b","#0099cc",7
+    # if useprior:
+    #     priorTeff,priorTeff_sig = 900,1e-9#1e-9
+    #     priorlogg,priorlogg_sig = 3.9,1e-9#1e-9
     # planet,color,snr_threshold = "HR_8799_c","#ff9900",9
     # if useprior:
     #     priorTeff,priorTeff_sig = 1060,1e-9#1e-9
     #     priorlogg,priorlogg_sig = 4.1,1e-9#1e-9
-    # planet,color,snr_threshold = "HR_8799_d","#6600ff",5.5
-    # if useprior:
-    #     priorTeff,priorTeff_sig = 1060,1e-9#1e-9
-    #     priorlogg,priorlogg_sig = 4.1,1e-9#1e-9
+    planet,color,snr_threshold = "HR_8799_d","#6600ff",5.5
+    if useprior:
+        priorTeff,priorTeff_sig = 1060,1e-9#1e-9
+        priorlogg,priorlogg_sig = 4.1,1e-9#1e-9
     IFSfilter = "*"
     scale = "*"
     date = "*"
@@ -100,15 +100,17 @@ if __name__ == "__main__":
     if useprior:
         suffix = suffix + "_prior"
     addfilename = False
-    if addfilename:
-        suffix = suffix + "_wfilenames"
+    # if addfilename:
+    #     suffix = suffix + "_wfilenames"
     inputDir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/"
     # filelist = glob.glob(os.path.join(inputDir,"s"+date+"*"+"*"+"_"+scale+".fits"))
     filelist = glob.glob(os.path.join(inputDir,"s"+date+"*"+IFSfilter+"_"+scale+".fits"))
     filelist.sort()
     # outputfolder = "20200309_model"
     # outputfolder = "sherlock/20200312_travisgridpost"
-    outputfolder = "sherlock/20200714_CtoO_gridpost"
+    # outputfolder = "sherlock/20200714_CtoO_gridpost"
+    outputfolder = "sherlock/20200823_CtoO_gridpost"
+    # suffix = suffix + "_CObhead"
     fake_str = ""
     # outputfolder = "sherlock/20200427_travisgridpost"
     # fake_str = "_fk"
@@ -116,6 +118,7 @@ if __name__ == "__main__":
     out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
     myoutfilename = "CtoO_"+planet+"_measurements_kl{0}_{1}{2}.pdf".format(kl,suffix,fake_str)
     # myoutfilename = "CtoO_"+planet+"_measurements_kl{0}_{1}{2}_best10SNR.pdf".format(kl,suffix,fake_str)
+    # myoutfilename = "CtoO_"+planet+"_measurements_kl{0}_{1}{2}_bestSNRs.pdf".format(kl,suffix,fake_str)
 
     c_kms = 299792.458
     R= 4000
@@ -167,12 +170,16 @@ if __name__ == "__main__":
     filter_list = []
     new_file_list = []
     rawlogpost_list = []
+    db_epoch_list = np.array([filename.split(os.path.sep)[4] for filename in db_filelist])
+    # print(db_epoch_list)
+    # exit()
     for file_id, filename in enumerate(filelist):
         tmpfilename = os.path.join(os.path.dirname(filename),outputfolder,os.path.basename(filename).replace(".fits","_kl{0}_logpost".format(kl)+fake_str+".fits"))
         # if "20100715" not in tmpfilename:
         #     continue
         # if "2009" in tmpfilename:
         #     continue
+        # print(tmpfilename)
         if len(glob.glob(tmpfilename))!=1:
             print("No data on "+filename)
             continue
@@ -180,9 +187,21 @@ if __name__ == "__main__":
             continue
         #if db_snr_list[np.where(db_filelist==filename)[0]] < snr_threshold:
         #    continue
+
+        # best_snr = np.nanmax(db_snr_list[np.where(db_epoch_list==filename.split(os.path.sep)[4])[0]])
+        # print(filename.split(os.path.sep)[4],best_snr)
+        # # exit()
+        # if db_snr_list[np.where(db_filelist==filename)[0]] != best_snr:
+        #     print("Not best snr"+filename)
+        #     continue
+        # else:
+        #     print("The best snr")
+
         hdulist = pyfits.open(tmpfilename)
         logpost =  hdulist[0].data
+        # print(logpost.shape[0])
         if logpost.shape[0] != 21:
+            print("wrong shape "+filename)
             continue
         rawlogpost_list.append(logpost)
         date = os.path.basename(filename).split("_a")[0].split("s")[1]
@@ -198,6 +217,7 @@ if __name__ == "__main__":
         # print(fitlogg_list)
         # print(fitCtoO_list)
         # exit()
+    # exit()
     filter_list = np.array(filter_list)
     # print(filter_list)
     # exit()
