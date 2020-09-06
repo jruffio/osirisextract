@@ -13,7 +13,8 @@ from orbitize import driver
 if __name__ == "__main__":
 
     if len(sys.argv) == 1:
-        osiris_data_dir = "/data/osiris_data"
+        # osiris_data_dir = "/data/osiris_data"
+        osiris_data_dir = "/scr3/jruffio/data/osiris_data"
         astrometry_DATADIR = os.path.join(osiris_data_dir,"astrometry")
         uservs = True
         # planet = "b"
@@ -36,7 +37,7 @@ if __name__ == "__main__":
         # suffix = "sherlock"
         # suffix = "sherlock_ptemceefix_16_512_78125_50"
         # suffix = "test_bcd"
-        itnum = 2
+        itnum = 4
         suffix = "it{0}".format(itnum)
         suffix = suffix+"_{0}_{1}_{2}_{3}_{4}".format(num_temps,num_walkers,total_orbits//num_walkers,thin,uservs)
     else:
@@ -166,21 +167,27 @@ if __name__ == "__main__":
             # my_driver.sampler.curr_pos[:,:,12:18] = np.copy(chainspos_d[0:num_temps,0:num_walkers,0:6])
             # my_driver.sampler.curr_pos[:,:,18] = np.copy(chainspos_d[0:num_temps,0:num_walkers,6])
             # my_driver.sampler.curr_pos[:,:,20] = np.copy(chainspos_d[0:num_temps,0:num_walkers,7])
-            with pyfits.open(os.path.join(astrometry_DATADIR,"figures","HR_8799_bcd",
+            _filename = os.path.join(astrometry_DATADIR,"figures","HR_8799_bcd",
                                           'chain_'+rv_str+'_bcd_it{0}_{1}_{2}_{3}_{4}_{5}.fits'.format(
-                                              itnum-1,num_temps,num_walkers,10000,thin,uservs))) as hdulist:#total_orbits//num_walkers
+                                              itnum-1,num_temps,num_walkers,100000,thin,uservs))
+            print(_filename)
+            with pyfits.open(_filename) as hdulist:#total_orbits//num_walkers
+                print(hdulist[0].data.shape)
                 my_driver.sampler.curr_pos = hdulist[0].data[:,:,-1,:]
         else:
-            with pyfits.open(os.path.join(astrometry_DATADIR,"figures","HR_8799_bcd",
+            _filename = os.path.join(astrometry_DATADIR,"figures","HR_8799_bcd",
                                           'chain_'+rv_str+'_bcd_it{0}_{1}_{2}_{3}_{4}_{5}_coplanar.fits'.format(
-                                              itnum-1,num_temps,num_walkers,10000,thin,uservs))) as hdulist: #total_orbits//num_walkers
-                # print(hdulist[0].data[:,:,-1,:].shape)
+                                              itnum-1,num_temps,num_walkers,100000,thin,uservs))
+            print(_filename)
+            with pyfits.open(_filename) as hdulist: #total_orbits//num_walkers
+                print(hdulist[0].data.shape)
                 # print(my_driver.sampler.curr_pos.shape)
                 # exit()
                 my_driver.sampler.curr_pos = hdulist[0].data[:,:,-1,:]
+        # exit()
 
 
-        # print(my_driver.sampler.curr_pos[0,0,:])
+        print(my_driver.sampler.curr_pos[0,0,:])
         # exit()
 
         # plt.figure(2)
@@ -251,7 +258,8 @@ if __name__ == "__main__":
         # print("coucou")
     else:
         import matplotlib.pyplot as plt
-        osiris_data_dir = "/data/osiris_data"
+        # osiris_data_dir = "/data/osiris_data"
+        osiris_data_dir = "/scr3/jruffio/data/osiris_data"
         astrometry_DATADIR = os.path.join(osiris_data_dir,"astrometry")
         uservs = True
         object_to_plot = 3
@@ -275,13 +283,13 @@ if __name__ == "__main__":
         # suffix = "sherlock"
         # suffix = "sherlock_ptemceefix_16_512_78125_50"
         # suffix = "test_bcd"
-        suffix = "it2"
+        suffix = "it3"
         suffix = suffix+"_{0}_{1}_{2}_{3}_{4}".format(num_temps,num_walkers,total_orbits//num_walkers,thin,uservs)
         if coplanar:
             suffix = suffix + "_coplanar"
 
-        out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
-        # out_pngs = os.path.join(astrometry_DATADIR,"figures")
+        # out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
+        out_pngs = os.path.join(astrometry_DATADIR,"figures")
         data_table = orbitize.read_input.read_file(filename)
         print(data_table)
         print(filename)
@@ -293,8 +301,8 @@ if __name__ == "__main__":
         # ax.add_patch(e1)
         # plt.show()
 
-        suffix2 = "it1"
-        suffix2 = suffix2+"_{0}_{1}_{2}_{3}_{4}".format(num_temps,num_walkers,10000,thin,uservs)
+        suffix2 = "it3"
+        suffix2 = suffix2+"_{0}_{1}_{2}_{3}_{4}".format(num_temps,num_walkers,100000,thin,uservs)
         if coplanar:
             suffix2 = suffix2 + "_coplanar"
         hdf5_filename=os.path.join(astrometry_DATADIR,"figures","HR_8799_"+planet,'posterior_{0}_{1}_{2}.hdf5'.format(rv_str,planet,suffix2))
@@ -315,7 +323,7 @@ if __name__ == "__main__":
                     chains_withrvs[:,:,b] = chains[:,:,a]
                 chains =chains_withrvs
         # chains = chains[:,250::,:]
-        # print(chains.shape)
+        print(chains.shape)
         # plt.plot(chains[:,:,0].T)
         # plt.show()
 

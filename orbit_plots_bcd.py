@@ -69,10 +69,10 @@ try:
 except:
     pass
 
-
-osiris_data_dir = "/data/osiris_data"
+# osiris_data_dir = "/data/osiris_data"
+osiris_data_dir = "/scr3/jruffio/data/osiris_data"
 astrometry_DATADIR = os.path.join(osiris_data_dir,"astrometry")
-out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
+# out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
 sysrv=-12.6
 sysrv_err=1.4
 fontsize = 12
@@ -84,11 +84,18 @@ planet = "bcd"
 if 0: # plot inclination and Omega
     suffix_withrvs =  "it2_16_512_100000_50_True"
     with pyfits.open(os.path.join(astrometry_DATADIR,"figures","HR_8799_"+planet,'chain_{0}_{1}_{2}.fits'.format("withrvs",planet,suffix_withrvs))) as hdulist:
-        chains_withrvs = hdulist[0].data[0,:,75::,:]
+        chains_withrvs = hdulist[0].data
+        print(chains_withrvs.shape)
+        # chains_withrvs = chains_withrvs[0,:,chains_withrvs.shape[2]-25::,:]
+        chains_withrvs = chains_withrvs[0,:,:,:]
+        print(chains_withrvs.shape)
         post_withrvs = np.reshape(chains_withrvs,(chains_withrvs.shape[0]*chains_withrvs.shape[1],chains_withrvs.shape[2]))
-    suffix_withrvs_copl =  "it2_16_512_100000_50_True_coplanar"
+    suffix_withrvs_copl =  "it4_16_512_100000_50_True_coplanar"
     with pyfits.open(os.path.join(astrometry_DATADIR,"figures","HR_8799_"+planet,'chain_{0}_{1}_{2}.fits'.format("withrvs",planet,suffix_withrvs_copl))) as hdulist:
-        chains_withrvs_copl = hdulist[0].data[0,:,75::,:]
+        chains_withrvs_copl = hdulist[0].data
+        chains_withrvs_copl = chains_withrvs_copl[0,:,chains_withrvs_copl.shape[2]-25::,:]
+        # chains_withrvs_copl = chains_withrvs_copl[0,:,0:25,:]
+        # chains_withrvs_copl = chains_withrvs_copl[0,:,:,:]
         _chains_withrvs_copl = np.zeros((chains_withrvs_copl.shape[0],chains_withrvs_copl.shape[1],chains_withrvs_copl.shape[2]+4))
         a_list = [0,1,2,3,4,5, 6,7,2,8,4,9, 10,11,2,12,4,13, 14,15,16]
         b_list = np.arange(21)
@@ -97,6 +104,9 @@ if 0: # plot inclination and Omega
         chains_withrvs_copl =_chains_withrvs_copl
 
         post_withrvs_copl = np.reshape(chains_withrvs_copl,(chains_withrvs_copl.shape[0]*chains_withrvs_copl.shape[1],chains_withrvs_copl.shape[2]))
+
+    # plt.plot(np.rad2deg(chains_withrvs_copl[:,:,4+6].T),alpha=0.05)
+    # plt.show()
 
     fig = plt.figure(1,figsize=(6,4))
     Ome_bounds = [0,360]
@@ -169,8 +179,8 @@ if 1: # v2 PLot orbits
     # suffix_withrvs2 =  "it1_16_512_10000_50_True"
     # suffix_withrvs1 =  "it1_16_512_10000_50_True"
     # suffix_withrvs2 =  "it2_16_512_100000_50_True"
-    suffix_withrvs1 =  "it1_16_512_10000_50_True_coplanar"
-    suffix_withrvs2 =  "it2_16_512_100000_50_True_coplanar"
+    suffix_withrvs1 =  "it3_16_512_100000_50_True_coplanar"
+    suffix_withrvs2 =  "it4_16_512_100000_50_True_coplanar"
 
     filename = "{0}/HR8799{1}_rvs.csv".format(astrometry_DATADIR,planet)
     data_table_withrvs = orbitize.read_input.read_file(filename)
@@ -195,14 +205,16 @@ if 1: # v2 PLot orbits
             for a,b in zip(a_list,b_list):
                 _chains_withrvs[:,:,b] = chains_withrvs[:,:,a]
             chains_withrvs =_chains_withrvs
-
+    print(chains_withrvs.shape)
+    sysrv_med = np.median(chains_withrvs[:,:,-2],axis=(0,1))
+    sysrv_err = np.std(chains_withrvs[:,:,-2],axis=(0,1))
 
     if 1:
         # Create figure for orbit plots
-        fig = plt.figure(figsize=(12,5.5*10./6.))
+        fig = plt.figure(figsize=(12,5.5*10./6.*13./10.))
         post = np.reshape(chains_withrvs,(chains_withrvs.shape[0]*chains_withrvs.shape[1],chains_withrvs.shape[2]))
 
-        num_orbits_to_plot= 20 # Will plot 100 randomly selected orbits of this companion
+        num_orbits_to_plot= 50 # Will plot 100 randomly selected orbits of this companion
         start_mjd=data_table_withrvs['epoch'][0] # Minimum MJD for colorbar (here we choose first data epoch)
         data_table=data_table_withrvs
         cbar_param='epochs'
@@ -226,18 +238,25 @@ if 1: # v2 PLot orbits
         # ax3 = plt.subplot2grid((6, 14), (4, 9), rowspan=2, colspan=6)
 
 
-        ax0 = plt.subplot2grid((10, 14), (0, 0), rowspan=6, colspan=6)
-        ax11 = plt.subplot2grid((10, 14), (0, 9), colspan=6)
-        ax12 = plt.subplot2grid((10, 14), (1, 9), colspan=6)
-        ax13 = plt.subplot2grid((10, 14), (2, 9), colspan=6)
-        ax21 = plt.subplot2grid((10, 14), (3, 9), colspan=6)
-        ax22 = plt.subplot2grid((10, 14), (4, 9), colspan=6)
-        ax23 = plt.subplot2grid((10, 14), (5, 9), colspan=6)
-        ax3 = plt.subplot2grid((10, 14), (7, 0), rowspan=3, colspan=14)
+        ax0 = plt.subplot2grid((13, 14), (0, 0), rowspan=6, colspan=6)
+        ax11 = plt.subplot2grid((13, 14), (0, 9), colspan=6)
+        ax12 = plt.subplot2grid((13, 14), (1, 9), colspan=6)
+        ax13 = plt.subplot2grid((13, 14), (2, 9), colspan=6)
+        ax21 = plt.subplot2grid((13, 14), (3, 9), colspan=6)
+        ax22 = plt.subplot2grid((13, 14), (4, 9), colspan=6)
+        ax23 = plt.subplot2grid((13, 14), (5, 9), colspan=6)
+        ax31 = plt.subplot2grid((13, 14), (7, 0), rowspan=2, colspan=14)
+        ax32 = plt.subplot2grid((13, 14), (9, 0), rowspan=2, colspan=14)
+        ax33 = plt.subplot2grid((13, 14), (11, 0), rowspan=2, colspan=14)
 
         # cmap = mpl.cm.Purples_r
         # exit()
-        for object_to_plot,cmap,pl_color,ax1,ax2 in zip([1,2,3],[mpl.cm.Blues_r,mpl.cm.Oranges_r,mpl.cm.Purples_r],["#006699","#ff9900","#6600ff"],[ax11,ax12,ax13],[ax21,ax22,ax23]): # Plot orbits for the first (and only, in this case) companion
+        color_list = ["#006699","#ff9900","#6600ff"]
+        for object_to_plot,cmap,pl_linestyle,pl_color,ax1,ax2,ax3 in zip([1,2,3],
+                                                        [mpl.cm.Blues_r,mpl.cm.Oranges_r,mpl.cm.Purples_r],
+                                                        ["-", "--", ":"],
+                                                        color_list,
+                                                        [ax11,ax12,ax13],[ax21,ax22,ax23],[ax31,ax32,ax33]): # Plot orbits for the first (and only, in this case) companion
             print(object_to_plot,cmap,pl_color)
             print(data_table)
 
@@ -412,17 +431,17 @@ if 1: # v2 PLot orbits
 
                 # add colorbar
                 if object_to_plot == 1:
-                    cbar_ax = fig.add_axes([0.48, 0.38, 0.015, 0.5/3]) # xpos, ypos, width, height, in fraction of figure size
+                    cbar_ax = fig.add_axes([0.48, 0.52, 0.015, 0.37/3]) # xpos, ypos, width, height, in fraction of figure size
                     cbar = mpl.colorbar.ColorbarBase(cbar_ax, cmap=cmap, norm=norm_yr, orientation='vertical')
-                    cbar.set_label("b: "+cbar_param,fontsize=fontsize)
+                    cbar.set_label("b: (yr)",fontsize=fontsize)
                 if object_to_plot == 2:
-                    cbar_ax = fig.add_axes([0.48, 0.38+0.5/3, 0.015, 0.5/3]) # xpos, ypos, width, height, in fraction of figure size
+                    cbar_ax = fig.add_axes([0.48, 0.52+0.37/3, 0.015, 0.37/3]) # xpos, ypos, width, height, in fraction of figure size
                     cbar = mpl.colorbar.ColorbarBase(cbar_ax, cmap=cmap, norm=norm_yr, orientation='vertical')
-                    cbar.set_label("c: "+cbar_param,fontsize=fontsize)
+                    cbar.set_label("c: (yr)",fontsize=fontsize)
                 if object_to_plot == 3:
-                    cbar_ax = fig.add_axes([0.48, 0.38+2*0.5/3, 0.015,  0.5/3]) # xpos, ypos, width, height, in fraction of figure size
+                    cbar_ax = fig.add_axes([0.48, 0.52+2*0.37/3, 0.015,  0.37/3]) # xpos, ypos, width, height, in fraction of figure size
                     cbar = mpl.colorbar.ColorbarBase(cbar_ax, cmap=cmap, norm=norm_yr, orientation='vertical')
-                    cbar.set_label("d: "+cbar_param,fontsize=fontsize)
+                    cbar.set_label("d: "+"Calendar year",fontsize=fontsize)
                 cbar.ax.tick_params(labelsize=fontsize)
 
 
@@ -460,7 +479,7 @@ if 1: # v2 PLot orbits
                     points = np.array([yr_epochs[i,:], rvs[i,:]]).T.reshape(-1,1,2)
                     segments = np.concatenate([points[:-1], points[1:]], axis=1)
                     lc = LineCollection(
-                        segments, cmap=cmap, norm=norm, linewidth=1.0,alpha=0.5
+                        segments, cmap=cmap, norm=norm, linewidth=1.0,alpha=0.2
                     )
                     if cbar_param != 'epochs':
                         lc.set_array(np.ones(len(epochs[0]))*cbar_param_arr[i])
@@ -475,69 +494,72 @@ if 1: # v2 PLot orbits
                     eb1 = plt.errorbar(Time(data_table["epoch"][seppa_indices],format='mjd').decimalyear,
                                  data_table["quant1"][seppa_indices],
                                  yerr=data_table["quant1_err"][seppa_indices],fmt="x",color=pl_color,linestyle="",zorder=10)
-                    eb1[-1][0].set_linestyle("-")
+                    eb1[-1][0].set_linestyle(pl_linestyle)
                     plt.xticks([],[])
                     plt.sca(ax2)
                     eb2 = plt.errorbar(Time(data_table["epoch"][seppa_indices],format='mjd').decimalyear,
                                  data_table["quant2"][seppa_indices],
                                  yerr=data_table["quant2_err"][seppa_indices],fmt="x",color=pl_color,linestyle="",zorder=10)
-                    eb2[-1][0].set_linestyle("-")
+                    eb2[-1][0].set_linestyle(pl_linestyle)
                     plt.xticks([],[])
-                    plt.sca(ax3)
-                    eb3 = plt.errorbar(Time(data_table["epoch"][rv_indices],format='mjd').decimalyear,
-                                 data_table["quant1"][rv_indices],
-                                 yerr=data_table["quant1_err"][rv_indices],fmt="x",color=pl_color,linestyle="",zorder=10)
-                    eb3[-1][0].set_linestyle("-")
+                    for _ax3 in [ax31,ax32,ax33]:
+                        plt.sca(_ax3)
+                        eb3 = plt.errorbar(Time(data_table["epoch"][rv_indices],format='mjd').decimalyear,
+                                     data_table["quant1"][rv_indices],
+                                     yerr=data_table["quant1_err"][rv_indices],fmt="x",color=pl_color,linestyle="",zorder=10)
+                        eb3[-1][0].set_linestyle(pl_linestyle)
 
-                    #Monte Carlo error for radec
-                    ra_list = data_table["quant1"][radec_indices]
-                    dec_list = data_table["quant2"][radec_indices]
-                    ra_err_list = data_table["quant1_err"][radec_indices]
-                    dec_err_list = data_table["quant2_err"][radec_indices]
-                    # sep_list,pa_list = orbitize.system.radec2seppa(ra_list,dec_list)
-                    sep_merr_list = np.zeros(ra_list.shape)
-                    pa_merr_list = np.zeros(ra_list.shape)
-                    sep_perr_list = np.zeros(ra_list.shape)
-                    pa_perr_list = np.zeros(ra_list.shape)
-                    sep_list = np.zeros(ra_list.shape)
-                    pa_list = np.zeros(ra_list.shape)
-                    for myid,(ra,dec,ra_err,dec_err) in enumerate(zip(ra_list,dec_list,ra_err_list,dec_err_list)):
-                        mean = [ra,dec]
-                        cov=np.diag([ra_err**2,dec_err**2])
-                        radec_samples = np.random.multivariate_normal(mean,cov,size=1000)
-                        sep_samples,pa_samples = orbitize.system.radec2seppa(radec_samples[:,0],radec_samples[:,1])
-                        seppost,xedges = np.histogram(sep_samples,bins=25,range=[np.min(sep_samples),np.max(sep_samples)])
-                        x_centers = [(x1+x2)/2. for x1,x2 in zip(xedges[0:len(xedges)-1],xedges[1:len(xedges)])]
-                        sep_mod, _,_,sep_merr, sep_perr,_ = get_err_from_posterior(x_centers,seppost)
-                        # plt.figure(10)
-                        # plt.subplot(1,2,1)
-                        # plt.plot(x_centers,seppost)
-                        # print(np.min(sep_samples),np.max(sep_samples))
-                        # print(sep_mod,sep_merr, sep_perr,np.std(sep_samples))
-                        papost,xedges = np.histogram(pa_samples,bins=25,range=[np.min(pa_samples),np.max(pa_samples)])
-                        x_centers = [(x1+x2)/2. for x1,x2 in zip(xedges[0:len(xedges)-1],xedges[1:len(xedges)])]
-                        pa_mod, _,_,pa_merr, pa_perr,_ = get_err_from_posterior(x_centers,papost)
-                        # plt.subplot(1,2,2)
-                        # plt.plot(x_centers,papost)
-                        # print(np.min(papost),np.max(papost))
-                        # print(pa_mod,pa_merr, pa_perr,np.std(pa_samples))
-                        # plt.show()
-                        # exit()
-                        sep_merr_list[myid] = sep_merr
-                        pa_merr_list[myid] = pa_merr
-                        sep_perr_list[myid] = sep_perr
-                        pa_perr_list[myid] = pa_perr
-                        sep_list[myid] = sep_mod
-                        pa_list[myid] = pa_mod
+                        #Monte Carlo error for radec
+                        ra_list = data_table["quant1"][radec_indices]
+                        dec_list = data_table["quant2"][radec_indices]
+                        ra_err_list = data_table["quant1_err"][radec_indices]
+                        dec_err_list = data_table["quant2_err"][radec_indices]
+                        # sep_list,pa_list = orbitize.system.radec2seppa(ra_list,dec_list)
+                        sep_merr_list = np.zeros(ra_list.shape)
+                        pa_merr_list = np.zeros(ra_list.shape)
+                        sep_perr_list = np.zeros(ra_list.shape)
+                        pa_perr_list = np.zeros(ra_list.shape)
+                        sep_list = np.zeros(ra_list.shape)
+                        pa_list = np.zeros(ra_list.shape)
+                        for myid,(ra,dec,ra_err,dec_err) in enumerate(zip(ra_list,dec_list,ra_err_list,dec_err_list)):
+                            mean = [ra,dec]
+                            cov=np.diag([ra_err**2,dec_err**2])
+                            radec_samples = np.random.multivariate_normal(mean,cov,size=1000)
+                            sep_samples,pa_samples = orbitize.system.radec2seppa(radec_samples[:,0],radec_samples[:,1])
+                            seppost,xedges = np.histogram(sep_samples,bins=25,range=[np.min(sep_samples),np.max(sep_samples)])
+                            x_centers = [(x1+x2)/2. for x1,x2 in zip(xedges[0:len(xedges)-1],xedges[1:len(xedges)])]
+                            sep_mod, _,_,sep_merr, sep_perr,_ = get_err_from_posterior(x_centers,seppost)
+                            # plt.figure(10)
+                            # plt.subplot(1,2,1)
+                            # plt.plot(x_centers,seppost)
+                            # print(np.min(sep_samples),np.max(sep_samples))
+                            # print(sep_mod,sep_merr, sep_perr,np.std(sep_samples))
+                            papost,xedges = np.histogram(pa_samples,bins=25,range=[np.min(pa_samples),np.max(pa_samples)])
+                            x_centers = [(x1+x2)/2. for x1,x2 in zip(xedges[0:len(xedges)-1],xedges[1:len(xedges)])]
+                            pa_mod, _,_,pa_merr, pa_perr,_ = get_err_from_posterior(x_centers,papost)
+                            # plt.subplot(1,2,2)
+                            # plt.plot(x_centers,papost)
+                            # print(np.min(papost),np.max(papost))
+                            # print(pa_mod,pa_merr, pa_perr,np.std(pa_samples))
+                            # plt.show()
+                            # exit()
+                            sep_merr_list[myid] = sep_merr
+                            pa_merr_list[myid] = pa_merr
+                            sep_perr_list[myid] = sep_perr
+                            pa_perr_list[myid] = pa_perr
+                            sep_list[myid] = sep_mod
+                            pa_list[myid] = pa_mod
 
                     plt.sca(ax1)
-                    plt.errorbar(Time(data_table["epoch"][radec_indices],format='mjd').decimalyear,
+                    eb = plt.errorbar(Time(data_table["epoch"][radec_indices],format='mjd').decimalyear,
                                  sep_list,
                                  yerr=[-sep_merr_list,sep_perr_list],fmt="x",color=pl_color,linestyle="",zorder=10)
+                    eb[-1][0].set_linestyle(pl_linestyle)
                     plt.sca(ax2)
-                    plt.errorbar(Time(data_table["epoch"][radec_indices],format='mjd').decimalyear,
+                    eb = plt.errorbar(Time(data_table["epoch"][radec_indices],format='mjd').decimalyear,
                                  pa_list,
                                  yerr=[-pa_merr_list,pa_perr_list],fmt="x",color=pl_color,linestyle="",zorder=10)
+                    eb[-1][0].set_linestyle(pl_linestyle)
         # plt.show()
         plt.sca(ax11)
         plt.ylim([1700,1730])
@@ -589,16 +611,34 @@ if 1: # v2 PLot orbits
         ax23.tick_params(axis='x', labelsize=fontsize)
         ax23.tick_params(axis='y', labelsize=fontsize)
 
-        plt.sca(ax3)
+        plt.sca(ax31)
+        plt.fill_between([2000,2050],np.zeros(2)+sysrv_med+sysrv_err,np.zeros(2)+sysrv_med-sysrv_err,facecolor="none",edgecolor="black",alpha=1,hatch="\\",label="System RV")
+        #alpha=0.4,facecolor="none",edgecolor="#006699",label="Wang et al. 2018 ($RV_b-RV_c$)",hatch="\\"
+        plt.gca().annotate("HR 8799 " + "b", xy=(2005,-1), va="top", ha="left", fontsize=fontsize, color=color_list[0])
+        plt.xticks([],[])
+        plt.ylim([-20,0])
+        plt.yticks([-15,-10,-5,0])
+        ax31.tick_params(axis='y', labelsize=fontsize)
+        plt.sca(ax32)
+        plt.fill_between([2000,2050],np.zeros(2)+sysrv_med+sysrv_err,np.zeros(2)+sysrv_med-sysrv_err,facecolor="none",edgecolor="black",alpha=1,hatch="\\",label="System RV")
+        plt.gca().annotate("HR 8799 " + "c", xy=(2005,-1), va="top", ha="left", fontsize=fontsize, color=color_list[1])
+        plt.xticks([],[])
+        plt.ylim([-20,0])
+        plt.yticks([-15,-10,-5,0])
+        ax32.tick_params(axis='y', labelsize=fontsize)
+        plt.sca(ax33)
+        plt.fill_between([2000,2050],np.zeros(2)+sysrv_med+sysrv_err,np.zeros(2)+sysrv_med-sysrv_err,facecolor="none",edgecolor="black",alpha=1,hatch="\\",label="System RV")
+        plt.legend(loc="upper right",frameon=True,fontsize=12)#
+        plt.gca().annotate("HR 8799 " + "d", xy=(2005,-1), va="top", ha="left", fontsize=fontsize, color=color_list[2])
         plt.ylim([-20,0])
         plt.yticks([-20,-15,-10,-5,0])
-        ax3.set_ylabel('RV (km/s)',fontsize=fontsize)
-        ax3.set_xlabel('Epoch (yr)',fontsize=fontsize)
-        ax3.tick_params(axis='x', labelsize=fontsize)
-        ax3.tick_params(axis='y', labelsize=fontsize)
+        ax33.set_ylabel('RV (km/s)',fontsize=fontsize)
+        ax33.set_xlabel('Epoch (yr)',fontsize=fontsize)
+        ax33.tick_params(axis='x', labelsize=fontsize)
+        ax33.tick_params(axis='y', labelsize=fontsize)
 
-        fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,'orbits_bcd_withrvs.pdf')) # This is matplotlib.figure.Figure.savefig()
-        fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,'orbits_bcd_withrvs.png')) # This is matplotlib.figure.Figure.savefig()
+        # fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,'orbits_bcd_withrvs.pdf')) # This is matplotlib.figure.Figure.savefig()
+        # fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,'orbits_bcd_withrvs.png')) # This is matplotlib.figure.Figure.savefig()
         plt.show()
     exit()
 
