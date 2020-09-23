@@ -436,6 +436,15 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
         # todo maybe to change back
         # where_finite_data = np.where(np.isfinite(np.ravel(data_badpix))*(ravelLPFdata>0))
         where_finite_data = np.where(np.isfinite(np.ravel(data_badpix)))
+        if 0:
+            # lmin,lmax = 1.955,2.055 #Kn1
+            # lmin,lmax = 2.036,2.141 #Kn2
+            # lmin,lmax = 2.121,2.229 #Kn3
+            # lmin,lmax = 2.208,2.320 #Kn4
+            lmin,lmax = 2.292,2.408 #Kn5
+            where_finite_data = np.where(np.isfinite(np.ravel(data_badpix))*(np.ravel(wvs[None,None,:]-data_wvsol_offsets[:,:,None])>lmin)*(np.ravel(wvs[None,None,:]-data_wvsol_offsets[:,:,None])<lmax))
+            # print(np.size(where_finite_data[0]))
+            # exit()
         where_bad_data = np.where(~(np.isfinite(np.ravel(data_badpix))))
         ravelLPFdata = ravelLPFdata[where_finite_data]
         sigmas_vec = ravelsigmas[where_finite_data]#np.ones(ravelLPFdata.shape)#np.sqrt(np.abs(ravelLPFdata))
@@ -780,9 +789,9 @@ def _process_pixels_onlyHPF(curr_k_indices,curr_l_indices,row_indices,col_indice
 
                             outres_np[numbasis_id,model_id,0,:,row,col] = np.nanmean(HPFdata,axis=(0,1))
                             outres_np[numbasis_id,model_id,1,:,row,col] = np.nanmean(canvas_data_model_H0,axis=(0,1))
-                            outres_np[numbasis_id,model_id,2,:,row,col] = 0#final_res
-                            outres_np[numbasis_id,model_id,3,:,row,col] = 0#final_planet
-                            outres_np[numbasis_id,model_id,4,:,row,col] = 0#final_sigmas
+                            outres_np[numbasis_id,model_id,2,:,row,col] = canvas_residuals_with_nans[w,w,:]#final_res
+                            outres_np[numbasis_id,model_id,3,:,row,col] = LPFdata[w,w,:]#final_planet
+                            outres_np[numbasis_id,model_id,4,:,row,col] = HPFdata[w,w,:]#final_sigmas
                             outres_np[numbasis_id,model_id,5,:,row,col] = np.nanmean(LPFdata,axis=(0,1))
                             outres_np[numbasis_id,model_id,6,:,row,col] = np.nanmean(canvas_residuals_with_nans,axis=(0,1))
 
@@ -863,6 +872,13 @@ def _task_convolve_spectrum(paras):
         stamp_dwvs = stamp_wvs[1::]-stamp_wvs[0:(np.size(stamp_spec)-1)]
         gausskernel = 1/(np.sqrt(2*np.pi)*sig)*np.exp(-0.5*(stamp_wvs-pwv)**2/sig**2)
         conv_spectrum[l] = np.sum(gausskernel[1::]*stamp_spec[1::]*stamp_dwvs)
+        # import matplotlib.py
+        # plt.figure(2)
+        # plt.plot(stamp_wvs,gausskernel)
+        # plt.plot(stamp_wvs,stamp_spec)
+        # print(conv_spectrum[l])
+        # plt.show()
+        # exit()
     return conv_spectrum
 
 def convolve_spectrum(wvs,spectrum,R,mypool=None):
@@ -968,6 +984,7 @@ if __name__ == "__main__":
         # date = "130727"
         # date = "161106"
         # date = "180722"
+        # date = "200803"
         # planet = "HR_8799_c"
         # date = "100715"
         # date = "101028"
@@ -983,9 +1000,9 @@ if __name__ == "__main__":
         # date = "150722"
         # date = "150723"
         # date = "150828"
-        # date = "200729"
+        date = "200729"
         # date = "200730"
-        date = "200731"
+        # date = "200731"
         # date = "200803"
         # planet = "51_Eri_b"
         # date = "171103"
@@ -1007,7 +1024,8 @@ if __name__ == "__main__":
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190305_HPF_only_noperscor/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190228_mol_temp/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20200729_livereduc/"
-        outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20200823_test/"
+        # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20200823_test/"
+        outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20200914_res/"
 
         # inputDir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb_pairsub/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb_pairsub/20190228_HPF_only/"
@@ -1015,7 +1033,8 @@ if __name__ == "__main__":
         print(os.path.join(inputDir,"s"+date+"*"+IFSfilter+"_"+scale+".fits"))
         filelist = glob.glob(os.path.join(inputDir,"s"+date+"*"+IFSfilter+"_"+scale+".fits"))
         filelist.sort()
-        filelist = [filelist[7],]
+        # filelist = [filelist[7],]
+        filelist = [filelist[0],]
         print(filelist)
         # exit()
         # print(os.path.join(inputDir,"s"+date+"*"+IFSfilter+"_020.fits"))
@@ -1327,7 +1346,8 @@ if __name__ == "__main__":
             phoenix_db_folder = os.path.join(osiris_data_dir,"phoenix","PHOENIX-ACES-AGSS-COND-2011")
             if 1:
                 splitpostfilename = os.path.basename(filelist[0]).split("_")
-                imtype = "psf"
+                # imtype = "psf"
+                imtype = "science"
                 # print(date,star_name)
                 # exit()
                 # phoenix_wv_filename = os.path.join(phoenix_folder,"WAVE_PHOENIX-ACES-AGSS-COND-2011_R{0}.fits".format(R0))
@@ -1344,6 +1364,7 @@ if __name__ == "__main__":
                     vsini_samples = hdulist[0].data
                     with open(os.path.join(osiris_data_dir,"stellar_fits","{0}_{1}_{2}_{3}_models.txt".format(star_name,IFSfilter,date,imtype)), 'r') as txtfile:
                         grid_refstar_filelist = [s.strip().replace("/data/osiris_data",osiris_data_dir) for s in txtfile.readlines()]
+                        grid_refstar_filelist = [s.strip().replace("/scratch/groups/bmacint/osiris_data",osiris_data_dir) for s in grid_refstar_filelist]
                 else:
                     print(glob.glob(os.path.join(osiris_data_dir,"stellar_fits","{0}_*_*_{1}_rv_samples.fits".format(star_name,imtype)))[0])
                     hdulist = pyfits.open(glob.glob(os.path.join(osiris_data_dir,"stellar_fits","{0}_*_*_{1}_rv_samples.fits".format(star_name,imtype)))[0])
@@ -1354,6 +1375,7 @@ if __name__ == "__main__":
                     print(glob.glob(os.path.join(osiris_data_dir,"stellar_fits","{0}_*_*_{1}_models.txt".format(star_name,imtype))))
                     with open(glob.glob(os.path.join(osiris_data_dir,"stellar_fits","{0}_*_*_{1}_models.txt".format(star_name,imtype)))[0], 'r') as txtfile:
                         grid_refstar_filelist = [s.strip().replace("/data/osiris_data",osiris_data_dir) for s in txtfile.readlines()]
+                        grid_refstar_filelist = [s.strip().replace("/scratch/groups/bmacint/osiris_data",osiris_data_dir) for s in grid_refstar_filelist]
                 post_filename = os.path.join(osiris_data_dir,"stellar_fits","{0}_{1}_{2}_{3}_posterior.fits".format(star_name,IFSfilter,date,imtype))
                 if len(glob.glob(post_filename))>0:
                     print(post_filename)
@@ -2602,6 +2624,14 @@ if __name__ == "__main__":
             ##############################
             if not os.path.exists(os.path.join(outputdir)):
                 os.makedirs(os.path.join(outputdir))
+
+            # if res_it != 0:
+            #     # suffix = suffix+"_Kbb"
+            #     suffix = suffix+"_Kn5"
+            #     # suffix = suffix+"_Kn4"
+            #     # suffix = suffix+"_Kn3"
+            #     # suffix = suffix+"_Kn2"
+            #     # suffix = suffix+"_Kn1"
 
             hdulist = pyfits.HDUList()
             if planet_search:

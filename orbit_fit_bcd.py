@@ -13,9 +13,10 @@ from orbitize import driver
 if __name__ == "__main__":
 
     if len(sys.argv) == 1:
-        # osiris_data_dir = "/data/osiris_data"
-        osiris_data_dir = "/scr3/jruffio/data/osiris_data"
+        osiris_data_dir = "/data/osiris_data"
+        # osiris_data_dir = "/scr3/jruffio/data/osiris_data"
         astrometry_DATADIR = os.path.join(osiris_data_dir,"astrometry")
+        # uservs = False
         uservs = True
         # planet = "b"
         # planet = "bc"
@@ -37,7 +38,7 @@ if __name__ == "__main__":
         # suffix = "sherlock"
         # suffix = "sherlock_ptemceefix_16_512_78125_50"
         # suffix = "test_bcd"
-        itnum = 4
+        itnum = 6
         suffix = "it{0}".format(itnum)
         suffix = suffix+"_{0}_{1}_{2}_{3}_{4}".format(num_temps,num_walkers,total_orbits//num_walkers,thin,uservs)
     else:
@@ -109,7 +110,7 @@ if __name__ == "__main__":
     # print(plx,plx_err)
 
 
-    if 0:
+    if 1:
         out_pngs = os.path.join(astrometry_DATADIR,"figures")
         my_driver = driver.Driver(
             filename, 'MCMC', num_secondary_bodies, system_mass, plx, mass_err=mass_err, plx_err=plx_err,
@@ -140,7 +141,7 @@ if __name__ == "__main__":
             print(my_driver.system.param_idx['inc2'])
             print(my_driver.system.param_idx['pan2'])
 
-        # # exit()
+        # exit()
         # if len(planet) == 1:
         #     my_driver.system.sys_priors[0] = priors.JeffreysPrior(1, 1e2)
 
@@ -174,21 +175,66 @@ if __name__ == "__main__":
             with pyfits.open(_filename) as hdulist:#total_orbits//num_walkers
                 print(hdulist[0].data.shape)
                 my_driver.sampler.curr_pos = hdulist[0].data[:,:,-1,:]
-        else:
+        elif my_driver.system.coplanar and uservs:
+            # print(my_driver.sampler.curr_pos.shape)
+            # exit()
             _filename = os.path.join(astrometry_DATADIR,"figures","HR_8799_bcd",
-                                          'chain_'+rv_str+'_bcd_it{0}_{1}_{2}_{3}_{4}_{5}_coplanar.fits'.format(
-                                              itnum-1,num_temps,num_walkers,100000,thin,uservs))
+                                          'chain_'+"withrvs"+'_bcd_it{0}_{1}_{2}_{3}_{4}_{5}_coplanar.fits'.format(
+                                              itnum-1,num_temps,num_walkers,100000,thin,True))
             print(_filename)
             with pyfits.open(_filename) as hdulist: #total_orbits//num_walkers
                 print(hdulist[0].data.shape)
                 # print(my_driver.sampler.curr_pos.shape)
                 # exit()
                 my_driver.sampler.curr_pos = hdulist[0].data[:,:,-1,:]
+        elif my_driver.system.coplanar and not uservs:
+            # print(my_driver.sampler.curr_pos.shape)
+            # exit()
+            _filename = os.path.join(astrometry_DATADIR,"figures","HR_8799_bcd",
+                                          'chain_'+"norv"+'_bcd_it{0}_{1}_{2}_{3}_{4}_{5}_coplanar.fits'.format(
+                                              itnum-1,num_temps,num_walkers,100000,thin,False))
+            print(_filename)
+            with pyfits.open(_filename) as hdulist: #total_orbits//num_walkers
+                print(hdulist[0].data.shape)
+                # print(my_driver.sampler.curr_pos.shape)
+                # exit()
+                my_driver.sampler.curr_pos = hdulist[0].data[:,:,-1,:]
+            # print("min",np.min(my_driver.sampler.curr_pos,axis=(0,1)))
+            # print("max",np.max(my_driver.sampler.curr_pos,axis=(0,1)))
+            # print(my_driver.sampler.curr_pos.shape)
+            # _filename = os.path.join(astrometry_DATADIR,"figures","HR_8799_bcd",
+            #                               'chain_'+"withrvs"+'_bcd_it{0}_{1}_{2}_{3}_{4}_{5}_coplanar.fits'.format(
+            #                                   itnum-1,num_temps,num_walkers,100000,thin,True))
+            # print(_filename)
+            # with pyfits.open(_filename) as hdulist: #total_orbits//num_walkers
+            #     print(hdulist[0].data.shape)
+            #     # print(my_driver.sampler.curr_pos.shape)
+            #     # exit()
+            #     my_driver.sampler.curr_pos = hdulist[0].data[:,:,-1,[0,1,2,3,4,5, 6,7,8,9, 10,11,12,13, 14,16]]
+            #
+            #
+            # if restrict_angle_ranges:
+            #     print("coucou")
+            #     wrapped = np.where(my_driver.sampler.curr_pos[:,:,4]>=np.pi)
+            #     # print(wrapped)
+            #     my_driver.sampler.curr_pos[wrapped[0],wrapped[1],4] -= np.pi
+            #     my_driver.sampler.curr_pos[wrapped[0],wrapped[1],3] -= np.pi
+            #     my_driver.sampler.curr_pos[wrapped[0],wrapped[1],8] -= np.pi
+            #     my_driver.sampler.curr_pos[wrapped[0],wrapped[1],12] -= np.pi
+            #     my_driver.sampler.curr_pos[wrapped[0],wrapped[1],3]  = np.mod(my_driver.sampler.curr_pos[wrapped[0],wrapped[1],3],2*np.pi)
+            #     my_driver.sampler.curr_pos[wrapped[0],wrapped[1],8]  = np.mod(my_driver.sampler.curr_pos[wrapped[0],wrapped[1],8],2*np.pi)
+            #     my_driver.sampler.curr_pos[wrapped[0],wrapped[1],12]  = np.mod(my_driver.sampler.curr_pos[wrapped[0],wrapped[1],12],2*np.pi)
+
+        # print("min",np.min(my_driver.sampler.curr_pos,axis=(0,1)))
+        # print("max",np.max(my_driver.sampler.curr_pos,axis=(0,1)))
+        #
+        # print("coucou")
+        # print(my_driver.sampler.curr_pos.shape)
+        # print(len(my_driver.sampler._logl(my_driver.sampler.curr_pos[0,:,:], include_logp=False)))
+        # print(my_driver.sampler._logl(my_driver.sampler.curr_pos[0,:,:], include_logp=False))
         # exit()
 
 
-        print(my_driver.sampler.curr_pos[0,0,:])
-        # exit()
 
         # plt.figure(2)
         # plt.scatter(np.ravel(my_driver.sampler.curr_pos[:,:,4]),np.ravel(my_driver.sampler.curr_pos[:,:,4+6]))

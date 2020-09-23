@@ -195,7 +195,7 @@ def _remove_edges(wvs_indices,nan_mask_boxsize,dtype):
 ######
 ## Step 1
 # run the cross correlation with the OH template
-if 0:
+if 1:
     out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
     IFSfilter = "Kbb"
     # IFSfilter = "Hbb"
@@ -215,7 +215,8 @@ if 0:
     # inputdir = "/data/osiris_data/HR_8799_b"
     # filelist = glob.glob(os.path.join(inputdir,"2009*/reduced_sky_jb/s*_"+IFSfilter+"_[0-9][0-9][0-9].fits"))
     inputdir = "/data/osiris_data/HR_8799_d"
-    filelist = glob.glob(os.path.join(inputdir,"202008*/reduced_sky_jb/s*_"+IFSfilter+"_[0-9][0-9][0-9].fits"))
+    filelist = glob.glob(os.path.join(inputdir,"20200*/reduced_sky_jb/s*_"+IFSfilter+"_[0-9][0-9][0-9].fits"))
+    # filelist = glob.glob(os.path.join(inputdir,"202008*/reduced_sky_jb/s*_"+IFSfilter+"_[0-9][0-9][0-9].fits"))
     # filelist = [filelist[1]]
     print(filelist)
     # exit()

@@ -69,10 +69,10 @@ try:
 except:
     pass
 
-# osiris_data_dir = "/data/osiris_data"
-osiris_data_dir = "/scr3/jruffio/data/osiris_data"
+osiris_data_dir = "/data/osiris_data"
+# osiris_data_dir = "/scr3/jruffio/data/osiris_data"
 astrometry_DATADIR = os.path.join(osiris_data_dir,"astrometry")
-# out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
+out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
 sysrv=-12.6
 sysrv_err=1.4
 fontsize = 12
@@ -257,8 +257,8 @@ if 1: # v2 PLot orbits
                                                         ["-", "--", ":"],
                                                         color_list,
                                                         [ax11,ax12,ax13],[ax21,ax22,ax23],[ax31,ax32,ax33]): # Plot orbits for the first (and only, in this case) companion
-            print(object_to_plot,cmap,pl_color)
-            print(data_table)
+            # print(object_to_plot,cmap,pl_color)
+            # print(data_table)
 
             if data_table is not None:
                 radec_indices = np.where((data_table['quant_type']=='radec')*(data_table['object']==object_to_plot))
@@ -504,51 +504,53 @@ if 1: # v2 PLot orbits
                     plt.xticks([],[])
                     for _ax3 in [ax31,ax32,ax33]:
                         plt.sca(_ax3)
+                        # print(np.array(data_table["quant1"][rv_indices]))
+                        # exit()
                         eb3 = plt.errorbar(Time(data_table["epoch"][rv_indices],format='mjd').decimalyear,
-                                     data_table["quant1"][rv_indices],
-                                     yerr=data_table["quant1_err"][rv_indices],fmt="x",color=pl_color,linestyle="",zorder=10)
+                                     np.array(data_table["quant1"][rv_indices]),
+                                     yerr=np.array(data_table["quant1_err"][rv_indices]),fmt="x",color=pl_color,linestyle="",zorder=10)
                         eb3[-1][0].set_linestyle(pl_linestyle)
-
-                        #Monte Carlo error for radec
-                        ra_list = data_table["quant1"][radec_indices]
-                        dec_list = data_table["quant2"][radec_indices]
-                        ra_err_list = data_table["quant1_err"][radec_indices]
-                        dec_err_list = data_table["quant2_err"][radec_indices]
-                        # sep_list,pa_list = orbitize.system.radec2seppa(ra_list,dec_list)
-                        sep_merr_list = np.zeros(ra_list.shape)
-                        pa_merr_list = np.zeros(ra_list.shape)
-                        sep_perr_list = np.zeros(ra_list.shape)
-                        pa_perr_list = np.zeros(ra_list.shape)
-                        sep_list = np.zeros(ra_list.shape)
-                        pa_list = np.zeros(ra_list.shape)
-                        for myid,(ra,dec,ra_err,dec_err) in enumerate(zip(ra_list,dec_list,ra_err_list,dec_err_list)):
-                            mean = [ra,dec]
-                            cov=np.diag([ra_err**2,dec_err**2])
-                            radec_samples = np.random.multivariate_normal(mean,cov,size=1000)
-                            sep_samples,pa_samples = orbitize.system.radec2seppa(radec_samples[:,0],radec_samples[:,1])
-                            seppost,xedges = np.histogram(sep_samples,bins=25,range=[np.min(sep_samples),np.max(sep_samples)])
-                            x_centers = [(x1+x2)/2. for x1,x2 in zip(xedges[0:len(xedges)-1],xedges[1:len(xedges)])]
-                            sep_mod, _,_,sep_merr, sep_perr,_ = get_err_from_posterior(x_centers,seppost)
-                            # plt.figure(10)
-                            # plt.subplot(1,2,1)
-                            # plt.plot(x_centers,seppost)
-                            # print(np.min(sep_samples),np.max(sep_samples))
-                            # print(sep_mod,sep_merr, sep_perr,np.std(sep_samples))
-                            papost,xedges = np.histogram(pa_samples,bins=25,range=[np.min(pa_samples),np.max(pa_samples)])
-                            x_centers = [(x1+x2)/2. for x1,x2 in zip(xedges[0:len(xedges)-1],xedges[1:len(xedges)])]
-                            pa_mod, _,_,pa_merr, pa_perr,_ = get_err_from_posterior(x_centers,papost)
-                            # plt.subplot(1,2,2)
-                            # plt.plot(x_centers,papost)
-                            # print(np.min(papost),np.max(papost))
-                            # print(pa_mod,pa_merr, pa_perr,np.std(pa_samples))
-                            # plt.show()
-                            # exit()
-                            sep_merr_list[myid] = sep_merr
-                            pa_merr_list[myid] = pa_merr
-                            sep_perr_list[myid] = sep_perr
-                            pa_perr_list[myid] = pa_perr
-                            sep_list[myid] = sep_mod
-                            pa_list[myid] = pa_mod
+                    #
+                    #Monte Carlo error for radec
+                    ra_list = data_table["quant1"][radec_indices]
+                    dec_list = data_table["quant2"][radec_indices]
+                    ra_err_list = data_table["quant1_err"][radec_indices]
+                    dec_err_list = data_table["quant2_err"][radec_indices]
+                    # sep_list,pa_list = orbitize.system.radec2seppa(ra_list,dec_list)
+                    sep_merr_list = np.zeros(ra_list.shape)
+                    pa_merr_list = np.zeros(ra_list.shape)
+                    sep_perr_list = np.zeros(ra_list.shape)
+                    pa_perr_list = np.zeros(ra_list.shape)
+                    sep_list = np.zeros(ra_list.shape)
+                    pa_list = np.zeros(ra_list.shape)
+                    for myid,(ra,dec,ra_err,dec_err) in enumerate(zip(ra_list,dec_list,ra_err_list,dec_err_list)):
+                        mean = [ra,dec]
+                        cov=np.diag([ra_err**2,dec_err**2])
+                        radec_samples = np.random.multivariate_normal(mean,cov,size=1000)
+                        sep_samples,pa_samples = orbitize.system.radec2seppa(radec_samples[:,0],radec_samples[:,1])
+                        seppost,xedges = np.histogram(sep_samples,bins=25,range=[np.min(sep_samples),np.max(sep_samples)])
+                        x_centers = [(x1+x2)/2. for x1,x2 in zip(xedges[0:len(xedges)-1],xedges[1:len(xedges)])]
+                        sep_mod, _,_,sep_merr, sep_perr,_ = get_err_from_posterior(x_centers,seppost)
+                        # plt.figure(10)
+                        # plt.subplot(1,2,1)
+                        # plt.plot(x_centers,seppost)
+                        # print(np.min(sep_samples),np.max(sep_samples))
+                        # print(sep_mod,sep_merr, sep_perr,np.std(sep_samples))
+                        papost,xedges = np.histogram(pa_samples,bins=25,range=[np.min(pa_samples),np.max(pa_samples)])
+                        x_centers = [(x1+x2)/2. for x1,x2 in zip(xedges[0:len(xedges)-1],xedges[1:len(xedges)])]
+                        pa_mod, _,_,pa_merr, pa_perr,_ = get_err_from_posterior(x_centers,papost)
+                        # plt.subplot(1,2,2)
+                        # plt.plot(x_centers,papost)
+                        # print(np.min(papost),np.max(papost))
+                        # print(pa_mod,pa_merr, pa_perr,np.std(pa_samples))
+                        # plt.show()
+                        # exit()
+                        sep_merr_list[myid] = sep_merr
+                        pa_merr_list[myid] = pa_merr
+                        sep_perr_list[myid] = sep_perr
+                        pa_perr_list[myid] = pa_perr
+                        sep_list[myid] = sep_mod
+                        pa_list[myid] = pa_mod
 
                     plt.sca(ax1)
                     eb = plt.errorbar(Time(data_table["epoch"][radec_indices],format='mjd').decimalyear,
@@ -637,8 +639,8 @@ if 1: # v2 PLot orbits
         ax33.tick_params(axis='x', labelsize=fontsize)
         ax33.tick_params(axis='y', labelsize=fontsize)
 
-        # fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,'orbits_bcd_withrvs.pdf')) # This is matplotlib.figure.Figure.savefig()
-        # fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,'orbits_bcd_withrvs.png')) # This is matplotlib.figure.Figure.savefig()
+        fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,'orbits_bcd_withrvs.pdf')) # This is matplotlib.figure.Figure.savefig()
+        fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,'orbits_bcd_withrvs.png')) # This is matplotlib.figure.Figure.savefig()
         plt.show()
     exit()
 

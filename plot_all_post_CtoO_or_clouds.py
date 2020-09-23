@@ -22,7 +22,7 @@ if __name__ == "__main__":
 
     f1,ax_post_list = plt.subplots(3,3,sharey="row",figsize=(12,12*4/5))#,sharex="col"
     planet_list = ["b","c","d"]
-    linestyle_list = ["-","--","--","-.",":",(0,(3,5,1,5,1,5))]
+    linestyle_list = [":","--","-","-.",":",(0,(3,5,1,5,1,5))]
 
     plt.figure(f1.number)
     for plid,(planet,color) in enumerate(zip(planet_list,["#0099cc","#ff9900","#6600ff"])):
@@ -90,7 +90,7 @@ if __name__ == "__main__":
                     else:
                         plt.xticks(xticks[1::])
                     plt.gca().annotate(planet,xy=(xvec[0],0.95),va="top",ha="left",fontsize=fontsize,color=color)
-                    plt.gca().tick_params(axis='c', labelsize=fontsize)
+                    # plt.gca().tick_params(axis='c', labelsize=fontsize)
                     plt.gca().tick_params(axis='x', labelsize=fontsize)
                     plt.gca().tick_params(axis='y', labelsize=fontsize)
 

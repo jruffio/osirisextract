@@ -44,6 +44,321 @@ try:
 except ImportError:
     mkl_exists = False
 
+import numpy
+import sys
+#import asciitable
+from astropy.io import ascii
+import bisect
+# import ipdb
+from scipy.interpolate import interp1d
+
+
+def mass_model(model_name,deltaMag,dist,Smag,age,band):
+    """returns a mass model from the cond, btsettl, or dusty
+    model_name: 'cond', 'bt_settl', 'dusty'
+    deltaMag: the delta magnitude of the planetary companion
+    dist: the distance(in parsecs) to the target star
+    Smag: the stellar magnitude
+    age:the age in Myrs
+    band: 'l', 'ks', 'h', 'j', 'm'
+    """
+    if band.lower()=='l': col='col11'
+    if band.lower()=='ks': col='col10'
+    if band.lower()=='h': col='col9'
+    if band.lower()=='j': col='col8'
+    if band.lower()=='m': col='col12'
+    if model_name.lower()=='cond':
+        age_below, ML_below, mass_below, age_above, ML_above, mass_above=read_model('/data/osiris_data/evol_grids/model.AMES-Cond-2000.M-0.0.NaCo.txt',col,age/1000.)
+    if model_name.lower()=='btsettl' or model_name.lower()=='bt-settl' :
+        age_below, ML_below, mass_below, age_above, ML_above, mass_above=read_model('/data/osiris_data/evol_grids/model.BT-Settl.M-0.0.NaCo.txt',col,age/1000.)
+    if model_name.lower()=='dusty':
+        age_below, ML_below, mass_below, age_above, ML_above, mass_above=read_model('/data/osiris_data/evol_grids/model.AMES-dusty.M-0.0.NaCo.txt',col,age/1000.)
+
+    ##convert to age to Myr
+    age_below*=1000.
+    age_above*=1000.
+
+    ###Corresponding masses
+    mass=mass_below
+    #This doesn't seem right to me
+
+    ###Adjust for distance (in pc)
+    dist_adjust=5.*numpy.log10(dist)-5.
+    ML_below+=dist_adjust
+    ML_above+=dist_adjust
+
+    ####adjust for stellar magnitude
+    ML_below-=Smag
+    ML_above-=Smag
+
+    ###3. Need to create L' magnitudes and masses for the age of the star
+    fraction=(age-age_below)/(age_above-age_below)
+
+    ML_sub=(ML_above-ML_below)*fraction
+    ML_adjust=ML_below+ML_sub
+
+    ##input new magnitude to determine masses
+    f=interp1d(ML_adjust[::-1],mass[::-1],bounds_error=False,fill_value=np.nan)
+    # print(ML_adjust[::-1],mass[::-1])
+    # print(deltaMag)
+    # mass_new=np.zeros(deltaMag.shape)+np.nan
+    # wherevalid = np.where(np.isfinite(deltaMag)*np.isfinite(deltaMag))
+    mass_new=f(deltaMag)
+
+    ### Now convert mass from m/Msun to jupiter masses
+    mass_new=mass_new*1047.9
+
+    return mass_new
+
+def dmag_model(model_name,mass2,Smass,age,band):
+    """returns a deltaMag model from the cond, btsettl, or dusty
+    model_name: 'cond', 'bt_settl', 'dusty'
+    mass: the mass of the planetary companion (Solar)
+    dist: the distance(in parsecs) to the target star
+    Smag: the stellar magnitude
+    age:the age in Myrs
+    band: 'l', 'ks', 'h', 'j', 'm'
+    """
+    if band.lower()=='l': col='col11'
+    if band.lower()=='ks': col='col10'
+    if band.lower()=='h': col='col9'
+    if band.lower()=='j': col='col8'
+    if band.lower()=='m': col='col12'
+    if model_name.lower()=='cond':
+        age_below, ML_below, mass_below, age_above, ML_above, mass_above=read_model('/data/osiris_data/evol_grids/model.AMES-Cond-2000.M-0.0.NaCo.txt',col,age/1000.)
+    if model_name.lower()=='btsettl' or model_name.lower()=='bt-settl' :
+        age_below, ML_below, mass_below, age_above, ML_above, mass_above=read_model('/data/osiris_data/evol_grids/model.BT-Settl.M-0.0.NaCo.txt',col,age/1000.)
+    if model_name.lower()=='dusty':
+        age_below, ML_below, mass_below, age_above, ML_above, mass_above=read_model('/data/osiris_data/evol_grids/model.AMES-dusty.M-0.0.NaCo.txt',col,age/1000.)
+
+    ##convert to age to Myr
+    age_below*=1000.
+    age_above*=1000.
+
+    ###Corresponding mass
+    mass=mass_below
+
+    ### Need to create L' magnitudes for the age of the star
+    fraction=(age-age_below)/(age_above-age_below)
+
+    ML_sub=(ML_above-ML_below)*fraction
+    ML_adjust=ML_below+ML_sub
+
+    ##input new mass to determine mag
+    f=interp1d(mass[::-1], ML_adjust[::-1])
+    dmag_new=f(mass2) - f(Smass)
+
+    return dmag_new
+
+
+###input the model name, the filter and age you want and the magnitudes and masses will be returned.
+def read_model(model_name, filterColNum, exact_age_wanted):
+
+    ###this will return the upper and lower bounds for the age requested, unless the age exactly matches one listed
+    ###age in Gyrs
+
+    #model_name='model.BT-Settl.NaCo.txt'
+    #filterColNum='col11'
+    #age_wanted=0.001####temporarily
+    with open(model_name) as f:
+        content = f.readlines()
+
+    content=numpy.array(content)
+    headers=ascii.read(content[6]) ##can be read, column by column. for example headers['col11'][0] which is L'
+    #print "Returning filter ",headers[filterColNum][0]
+
+    ###determine where all the bars are, assuming the appear in threes, the header is between the 1st and 2nd bar,
+    ### above the 1st bar is the age and between the 2nd and 3rd bar is the data.
+
+    bars=numpy.where(content==content[5])[0]
+    bars=numpy.reshape(bars,(bars.size//3,3)) ###now it is reshaped so that the three bars are associated together
+    age=[] ###append the ages since we do not know the length of the file
+
+
+    ##first read in all the ages and find the one the user has requested
+    for bar in bars:
+        age.append(float(content[bar[0]-1].split('=')[1])) ###Read the line above the first bar, and store just the part after the equal sign. Convert to float and this is the age.
+    age=numpy.array(age)
+    if numpy.size(age[age>exact_age_wanted]) > 0:
+        age_above=min(age[age>exact_age_wanted])
+    else:
+        age_above=max(age)
+        print("Warning: age greater than max age in grid")
+
+    if numpy.size(age[age<=exact_age_wanted]) > 0:
+        age_below=max(age[age<=exact_age_wanted])
+    else:
+        age_below=min(age)
+        print("Warning: age less than min age in grid")
+
+    #age_below = age[age <= exact_age_wanted].max()
+    #age_above = age[age >exact_age_wanted].min()
+    ########### first for the nearest age
+    #age_row=bars[numpy.where(age==nearest_age)[0],0] ##find the correct row to begin in the list, based on the input age
+    nums_start0=bars[numpy.where(age==age_below)[0],1]+1
+    nums_end0=bars[numpy.where(age==age_below)[0],2]
+
+    ###add from mike
+    nums_start0= int(nums_start0[0])
+    nums_end0  = int(nums_end0[0])
+
+    nums0=ascii.read(content[nums_start0:nums_end0])
+
+    ########then for the next nearest age
+
+    nums_start1=bars[numpy.where(age==age_above)[0],1]+1
+    nums_end1=bars[numpy.where(age==age_above)[0],2]
+    ###add from mike
+    nums_start1= int(nums_start1[0])
+    nums_end1  = int(nums_end1[0])
+    nums1=ascii.read(content[nums_start1:nums_end1])
+
+    ########Finally check if the mass column matches in both cases
+    mass_below=nums0['col1']
+    mass_above=nums1['col1']
+    ML_below=nums0[filterColNum]
+    ML_above=nums1[filterColNum]
+
+
+    if numpy.array_equal(mass_below,mass_above)==0:
+        #print "in if statement1"
+        overlap=numpy.in1d(mass_below,mass_above)
+        ML_below=ML_below[overlap]
+        mass_below=mass_below[overlap]
+    if numpy.array_equal(mass_above,mass_below)==0:
+        #print "in if statement2"
+        overlap=numpy.in1d(mass_above,mass_below)
+        ML_above=ML_above[overlap]
+        mass_above=mass_above[overlap]
+
+
+    ###return the ages, magnitudes and the corresponding masses
+
+    return age_below, ML_below, mass_below, age_above, ML_above, mass_above
+
+def age_mass_to_mag_Sonora_hotstart(ageMyr,mass_list,band,tefflooginterpgrid= None):
+    Msun = 1.989e30 #kg
+    Mjup = 1.898e27 #kg
+    if tefflooginterpgrid is None:
+        mags_filename = "/data/osiris_data/sonora//Sonora_Bobcat_Tables/photometry_tables/mag_table+0.0_nostar"
+        mags_data = np.loadtxt(mags_filename, skiprows=11)
+        mags_data_Teff_logg = mags_data[:, 0:2]
+        uniqueTeff = np.unique(mags_data[:, 0])
+        uniquelogg = np.unique(mags_data[:, 1])
+        # exit()
+        mags_data_Rnorm = mags_data[:, 3]
+        # col 17 Keck Lp
+        if band == "Lp":
+            mags_data_Lp = mags_data[:, 17]  # Lp
+        elif band == "Ms":
+            mags_data_Lp = mags_data[:,18] #M
+        elif band == "Ks":
+            mags_data_Lp = mags_data[:,16] #K
+        from scipy.interpolate import RegularGridInterpolator
+        tefflooginterpgrid = RegularGridInterpolator((uniqueTeff, uniquelogg),
+                                               np.concatenate([np.reshape(mags_data_Rnorm,(len(uniquelogg), len(uniqueTeff))).T[:, :, None],
+                                                               np.reshape(mags_data_Lp,(len(uniquelogg), len(uniqueTeff))).T[:, :,None]], axis=2),
+                                               bounds_error=False,
+                                               fill_value=np.nan)
+
+    evol_filename = "/data/osiris_data/sonora//Sonora_Bobcat_Tables/evolution_tables/evo_tables+0.0/nc+0.0_co1.0_mass"
+    data_chunks_lines = []
+    with open(evol_filename) as openfileobject:
+        for linenum, line in enumerate(openfileobject):
+            if "  " == line[0:2]:
+                data_chunks_lines.append((linenum, int(line)))
+    evol_data = np.zeros((len(data_chunks_lines), 6))
+    for k,(firstline, nline) in enumerate(data_chunks_lines):
+        evol_data_chunk = np.loadtxt(evol_filename, skiprows=firstline + 1, max_rows=nline)
+        for l in np.arange(6):
+            if l == 1:
+                evol_data[k, l] = ageMyr
+            else:
+                f = interp1d(np.log10(evol_data_chunk[:,1])+3,evol_data_chunk[:,l],kind="cubic",bounds_error=False, fill_value=np.nan)
+                evol_data[k,l] = f(np.log10(ageMyr))
+    # converting mass to Mjup
+    evol_data[:, 0] = evol_data[:, 0] * Msun / Mjup
+    evol_uniquemass = np.unique(evol_data[:, 0])
+
+    evol_Lpmag = np.zeros(evol_data.shape[0])
+    for k, row in enumerate(evol_data):
+        Teff = row[3]
+        logg = row[4]
+        Rnorm0 = row[5]
+        Rnorm1, Lpmag1 = tefflooginterpgrid([Teff, logg])[0]
+        evol_Lpmag[k] = Lpmag1 - 5 * np.log10(Rnorm1 / Rnorm0)
+
+    whereLpmagfinite = np.where(np.isfinite(evol_Lpmag))
+    f = interp1d(evol_data[:, 0][whereLpmagfinite],evol_Lpmag[whereLpmagfinite], kind="cubic", bounds_error=False,fill_value=np.nan)
+    maxmass = np.nanmax(evol_data[:, 0][whereLpmagfinite])
+    minmass = np.nanmin(evol_data[:, 0][whereLpmagfinite])
+
+    outLpMag = f(mass_list)
+    outLpMag[np.where(mass_list>maxmass)] = -np.inf
+    outLpMag[np.where(mass_list<minmass)] = np.inf
+    return outLpMag
+
+def age_mag_to_mass_Sonora_hotstart(ageMyr,mag_list,band,tefflooginterpgrid= None):
+    Msun = 1.989e30 #kg
+    Mjup = 1.898e27 #kg
+    if tefflooginterpgrid is None:
+        mags_filename = "/data/osiris_data/sonora//Sonora_Bobcat_Tables/photometry_tables/mag_table+0.0_nostar"
+        mags_data = np.loadtxt(mags_filename, skiprows=11)
+        mags_data_Teff_logg = mags_data[:, 0:2]
+        uniqueTeff = np.unique(mags_data[:, 0])
+        uniquelogg = np.unique(mags_data[:, 1])
+        # exit()
+        mags_data_Rnorm = mags_data[:, 3]
+        # col 17 Keck Lp
+        if band == "Lp":
+            mags_data_Lp = mags_data[:, 17]  # Lp
+        elif band == "Ms":
+            mags_data_Lp = mags_data[:,18] #M
+        elif band == "Ks":
+            mags_data_Lp = mags_data[:,16] #K
+        from scipy.interpolate import RegularGridInterpolator
+        tefflooginterpgrid = RegularGridInterpolator((uniqueTeff, uniquelogg),
+                                               np.concatenate([np.reshape(mags_data_Rnorm,(len(uniquelogg), len(uniqueTeff))).T[:, :, None],
+                                                               np.reshape(mags_data_Lp,(len(uniquelogg), len(uniqueTeff))).T[:, :,None]], axis=2),
+                                               bounds_error=False,
+                                               fill_value=np.nan)
+
+    evol_filename = "/data/osiris_data/sonora//Sonora_Bobcat_Tables/evolution_tables/evo_tables+0.0/nc+0.0_co1.0_mass"
+    data_chunks_lines = []
+    with open(evol_filename) as openfileobject:
+        for linenum, line in enumerate(openfileobject):
+            if "  " == line[0:2]:
+                data_chunks_lines.append((linenum, int(line)))
+    evol_data = np.zeros((len(data_chunks_lines), 6))
+    for k,(firstline, nline) in enumerate(data_chunks_lines):
+        evol_data_chunk = np.loadtxt(evol_filename, skiprows=firstline + 1, max_rows=nline)
+        for l in np.arange(6):
+            if l == 1:
+                evol_data[k, l] = ageMyr
+            else:
+                f = interp1d(np.log10(evol_data_chunk[:,1])+3,evol_data_chunk[:,l],kind="cubic",bounds_error=False, fill_value=np.nan)
+                evol_data[k,l] = f(np.log10(ageMyr))
+    # converting mass to Mjup
+    evol_data[:, 0] = evol_data[:, 0] * Msun / Mjup
+    evol_uniquemass = np.unique(evol_data[:, 0])
+
+    evol_Lpmag = np.zeros(evol_data.shape[0])
+    for k, row in enumerate(evol_data):
+        Teff = row[3]
+        logg = row[4]
+        Rnorm0 = row[5]
+        Rnorm1, Lpmag1 = tefflooginterpgrid([Teff, logg])[0]
+        evol_Lpmag[k] = Lpmag1 - 5 * np.log10(Rnorm1 / Rnorm0)
+
+    whereLpmagfinite = np.where(np.isfinite(evol_Lpmag))
+    f = interp1d(evol_Lpmag[whereLpmagfinite],evol_data[:, 0][whereLpmagfinite], kind="cubic", bounds_error=False,fill_value=np.nan)
+    maxmass = np.nanmax(evol_data[:, 0][whereLpmagfinite])
+    minmass = np.nanmin(evol_data[:, 0][whereLpmagfinite])
+
+    outmass = f(mag_list)
+    outmass[np.where(outmass>maxmass)] = -np.inf
+    outmass[np.where(outmass<minmass)] = np.inf
+    return outmass
 #------------------------------------------------
 if __name__ == "__main__":
     try:
@@ -59,8 +374,8 @@ if __name__ == "__main__":
     planet = "HR_8799_d"
     # date = "200729"
     # date = "200730"
-    date = "200731"
-    # date = "200803"
+    # date = "200731"
+    date = "200803"
     # IFSfilter = "Kbb"
     IFSfilter = "Kbb"
     # IFSfilter = "Jbb" # "Kbb" or "Hbb"
@@ -73,11 +388,252 @@ if __name__ == "__main__":
     inputDir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/"
     out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
 
+    if 1: # JWST spectra
+        # filename = "/data/JWST/nirspec/HR2562_G395H:F290LP_R2700/cube/cube_reconstructed.fits"
+        # filename = "/data/JWST/nirspec/HR2562_G395H:F290LP_R2700/cube/cube_reconstructed_snr.fits"
+        filename = "/data/JWST/nirspec/eps_Eri/eps_Eri_wb52793/cube/cube_reconstructed_signal.fits"
+        with pyfits.open(filename) as hdulist:
+            cube = hdulist[0].data
+        filename = "/data/JWST/nirspec/eps_Eri/eps_Eri_satspot_wb52793/cube/cube_reconstructed_signal.fits"
+        with pyfits.open(filename) as hdulist:
+            cube_satspot = hdulist[0].data
+        cal_cube = cube_satspot-cube
+        filename = "/data/JWST/nirspec/eps_Eri/eps_Eri_wb52793/cube/cube_reconstructed_snr.fits"
+        with pyfits.open(filename) as hdulist:
+            cube_snr = hdulist[0].data
+        filename = "/data/JWST/nirspec/eps_Eri/eps_Eri_wb52793/cube/cube_reconstructed_noise.fits"
+        with pyfits.open(filename) as hdulist:
+            cube_noise = hdulist[0].data
+        filename = "/data/JWST/nirspec/eps_Eri/eps_Eri_wb52793/cube/cube_reconstructed_saturation.fits"
+        with pyfits.open(filename) as hdulist:
+            cube_satur = hdulist[0].data
+        im_satur = np.nanmax(cube_satur,axis=0)
+        where_satur = np.where(im_satur==2)
+        filename = "/data/JWST/nirspec/eps_Eri/eps_Eri_wb52793/lineplot/lineplot_wave_pix.fits"
+        wvs = pyfits.getdata(filename).WAVELENGTH
+        id = np.argmin(np.abs(wvs-4.5))
+        cal_im = np.nanmedian(cal_cube,axis=0)
+        ny,nx = cal_im.shape
+        yc,xc = ny//2,nx//2
+        x_psf_vec, y_psf_vec = np.arange(nx)-xc, np.arange(ny)-yc
+        x_psf_grid, y_psf_grid = np.meshgrid(x_psf_vec, y_psf_vec)
+        r_grid = np.sqrt(x_psf_grid**2+y_psf_grid**2)*0.1
+        where_out =np.where(r_grid>1)
+
+        ypsfc,xpsfc = np.unravel_index(np.argmax(cal_im),cal_im.shape)
+        psf_cube = cal_cube[:,ypsfc-1:ypsfc+2,xpsfc-1:xpsfc+2] * 10**((1.67-9.5)/-2.5)
+
+        cube_wpl = copy(cube)
+        plt.subplot(1,2,1)
+        tmp = np.nanmedian(psf_cube,axis=(1,2))
+        plt.plot(wvs,tmp/np.nanmean(tmp),label="psf")
+        tmp = np.nanmedian(cube[:,where_out[0],where_out[1]],axis=1)
+        plt.plot(wvs,tmp/np.nanmedian(tmp),label="data")
+        plt.legend()
+        plt.subplot(1,2,2)
+        plt.imshow(im_satur)
+        plt.show()
+
+        epserib_Mcont = 2.5e-6
+        numthreads = 10
+        specpool = mp.Pool(processes=numthreads)
+        filename = "/data/osiris_data/sonora/sp_t250g31nc_m0.0"
+        spec_arr = np.loadtxt(filename, skiprows=2)
+        wvs,spec = spec_arr[::-1,0],spec_arr[::-1,1]/1e-8
+        wherewvs = np.where((wvs>2.87-1)*(wvs<5.27+1))
+        wvs,spec = wvs[wherewvs],spec[wherewvs]
+        plt.plot(wvs, spec,label="From Mark original")
+        from reduce_HPFonly_diagcov_resmodel_v2 import convolve_spectrum
+        R = 2700
+        planet_convspec = convolve_spectrum(wvs, spec,R,specpool)
+
+        pl_cube = psf_cube/np.nansum(psf_cube,axis=(1,2))[:,None,None]*planet_convspec
+        pl_cube = pl_cube/np.nansum(pl_cube)*np.nansum(psf_cube)*epserib_Mcont
+
+        # print(yc,xc)
+        # exit()
+        print(cube.shape)
+        im = cube[id,:,:]#np.nanmedian(cube,axis=0)
+        # sig = im/cube_snr[id,:,:]
+        sig = cube_noise[id,:,:]
+        sig = sig/np.nanmax(im)
+        im/=np.nanmax(im)
+        im[np.where(im<=0)] = np.nan
+        im[np.where(r_grid>1.5)] = np.nan
+        sig[np.where(im<=0)] = np.nan
+        sig[np.where(r_grid>1.5)] = np.nan
+
+        psf_sep_list = np.array(np.ravel(r_grid))
+        psf_value_list = np.array(np.ravel(im))
+        sig_value_list = np.array(np.ravel(sig))
+        dsep=0.1
+        binnedpsf_sep = np.arange(0,2.,dsep)
+        binnedpsf_value = np.zeros(binnedpsf_sep.shape)
+        binnedpsf_sig = np.zeros(binnedpsf_sep.shape)
+        for sepid,sep in enumerate(binnedpsf_sep):
+            wherebin = np.where((psf_sep_list<sep+dsep/2)*(psf_sep_list>sep-dsep/2))
+            if len(wherebin[0]) != 0:
+                binnedpsf_value[sepid]=np.nanmedian(psf_value_list[wherebin])
+                binnedpsf_sig[sepid]=np.nanmedian(sig_value_list[wherebin])
+            else:
+                binnedpsf_value[sepid] = np.nan
+                binnedpsf_sig[sepid] = np.nan
+        plt.plot(binnedpsf_sep,binnedpsf_value,linestyle="-",linewidth=3,label="4.5mum PSF profile HR2562",color="red")
+        plt.plot(binnedpsf_sep,binnedpsf_sig,linestyle="-",linewidth=3,label="1-sigma",color="blue")
+        plt.yscale("log")
+        plt.xlim([0,2])
+        plt.ylim([1e-7,1e-0])
+        plt.xlabel("Separation (as)",fontsize=fontsize)
+        plt.ylabel("Planet to star flux ratio",fontsize=fontsize)
+        plt.gca().tick_params(axis='x', labelsize=fontsize)
+        plt.gca().tick_params(axis='y', labelsize=fontsize)
+        plt.legend(loc="upper right",frameon=True,fontsize=fontsize*0.75)
+
+        plt.figure(2)
+        filename = "/data/osiris_data/sonora/sp_t250g31nc_m0.0"
+        spec_arr = np.loadtxt(filename, skiprows=2)
+        wvs,spec = spec_arr[::-1,0],spec_arr[::-1,1]/1e-8
+        wherewvs = np.where((wvs>2.87-1)*(wvs<5.27+1))
+        wvs,spec = wvs[wherewvs],spec[wherewvs]
+        plt.plot(wvs, spec,label="From Mark original")
+        from reduce_HPFonly_diagcov_resmodel_v2 import convolve_spectrum
+        R = 2700
+        planet_convspec = convolve_spectrum(wvs, spec,R,specpool)
+        plt.plot(wvs, planet_convspec,label="R=2700")
+        R = 1000
+        planet_convspec = convolve_spectrum(wvs, spec,R,specpool)
+        print(np.mean(planet_convspec))
+        plt.plot(wvs, planet_convspec,label="R=1000")
+        R = 100
+        planet_convspec = convolve_spectrum(wvs, spec,R,specpool)
+        print(np.mean(planet_convspec))
+        plt.plot(wvs, planet_convspec,label="R=100")
+        # plt.xlim([1,30])
+        plt.legend()
+        plt.show()
+        print(wvs,spec )
+        exit()
+
+
+
+    if 0: # residuals
+        planet = "HR_8799_d"
+        date = "200731"
+        inputDir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/"
+        ply,plx = 39,9
+        # filename = "/data/osiris_data/HR_8799_b/20200803/reduced_jb/20200914_res/s200803_a034002_Kbb_020_outputHPF_cutoff40_sherlock_v1_search_resinmodel_kl10_res.fits"
+        filename = "/data/osiris_data/HR_8799_b/20200803/reduced_jb/20200914_res/s200803_a034002_Kbb_020_outputHPF_cutoff40_sherlock_v1_search_rescalc_res.fits"
+        with pyfits.open(filename) as hdulist:
+            res = np.nanstd(hdulist[0].data[0,0,2,:,10:64+10-10,10:19+10-10],axis=0)
+            fl = np.nanmedian(hdulist[0].data[0,0,3,:,10:64+10-10,10:19+10-10]+hdulist[0].data[0,0,4,:,10:64+10-10,10:19+10-10],axis=0)
+            plt.scatter(fl,res,s = 2)
+        # filename = "/data/osiris_data/HR_8799_c/20200729/reduced_jb/20200914_res/s200729_a036002_Kbb_020_outputHPF_cutoff40_sherlock_v1_search_resinmodel_kl10_res.fits"
+        filename = "/data/osiris_data/HR_8799_c/20200729/reduced_jb/20200914_res/s200729_a036002_Kbb_020_outputHPF_cutoff40_sherlock_v1_search_rescalc_res.fits"
+        with pyfits.open(filename) as hdulist:
+            res = np.nanstd(hdulist[0].data[0,0,2,:,10:64+10-10,10:19+10-10],axis=0)
+            fl = np.nanmedian(hdulist[0].data[0,0,3,:,10:64+10-10,10:19+10-10]+hdulist[0].data[0,0,4,:,10:64+10-10,10:19+10-10],axis=0)
+            plt.scatter(fl,res,s = 2)
+        # filename = "/data/osiris_data/HR_8799_d/20200731/reduced_jb/20200914_res/s200731_a028002_Kbb_020_outputHPF_cutoff40_sherlock_v1_search_resinmodel_kl10_res.fits"
+        filename = "/data/osiris_data/HR_8799_d/20200731/reduced_jb/20200914_res/s200731_a028002_Kbb_020_outputHPF_cutoff40_sherlock_v1_search_rescalc_res.fits"
+        with pyfits.open(filename) as hdulist:
+            res = np.nanstd(hdulist[0].data[0,0,2,:,10:64+10-10,10:19+10-10],axis=0)
+            fl = np.nanmedian(hdulist[0].data[0,0,3,:,10:64+10-10,10:19+10-10]+hdulist[0].data[0,0,4,:,10:64+10-10,10:19+10-10],axis=0)
+            plt.scatter(fl,res,s = 2)
+
+
+        # sky_nodarksub_filelist = glob.glob(os.path.join(inputDir,"..","noise_test_nosub","s"+date+"*{0}*".format(9)+IFSfilter+"_"+scale+".fits"))
+        # sky2_nodarksub_filelist = glob.glob(os.path.join(inputDir,"..","noise_test_nosub","s"+date+"*{0}*".format(22)+IFSfilter+"_"+scale+".fits"))
+        # filelist = [sky_nodarksub_filelist[0],
+        #             sky2_nodarksub_filelist[0]]
+        # # label_list = ["sky w/o dark sub","sky w/ dark sub","science w/o sky sub","science w/ sky sub"]
+        # mycube_list = []
+        # myvec_list = []
+        # for filename in filelist:
+        #     print(filename)
+        #     with pyfits.open(filename) as hdulist:
+        #         prihdr = hdulist[0].header
+        #         curr_mjdobs = prihdr["MJD-OBS"]
+        #         imgs = np.rollaxis(np.rollaxis(hdulist[0].data,2),2,1)
+        #         imgs = return_64x19(imgs)
+        #         imgs = np.moveaxis(imgs,0,2)
+        #         imgs_hdrbadpix = np.rollaxis(np.rollaxis(hdulist[2].data,2),2,1)
+        #         imgs_hdrbadpix = return_64x19(imgs_hdrbadpix)
+        #         imgs_hdrbadpix = np.moveaxis(imgs_hdrbadpix,0,2)
+        #         imgs_hdrbadpix = imgs_hdrbadpix.astype(dtype=ctypes.c_double)
+        #         imgs_hdrbadpix[np.where(imgs_hdrbadpix==0)] = np.nan
+        #         imgs[np.where(imgs_hdrbadpix==0)] = 0
+        #     mycube_list.append(imgs)
+        # delta_sky = mycube_list[1]-mycube_list[0]
+        # window_size=100
+        # threshold=5
+        # for k in range(imgs.shape[0]):
+        #     print(k)
+        #     for l in range(imgs.shape[1]):
+        #         delta_sky_nodarksub = delta_sky[k,l,:]
+        #         smooth_vec = median_filter(delta_sky_nodarksub,footprint=np.ones(window_size),mode="reflect")
+        #         _myvec = delta_sky_nodarksub - smooth_vec
+        #         wherefinite = np.where(np.isfinite(_myvec))
+        #         mad = mad_std(_myvec[wherefinite])
+        #         whereoutliers = np.where(np.abs(_myvec)>threshold*mad)[0]
+        #         delta_sky_nodarksub[whereoutliers] = np.nan
+        #         delta_sky[k,l,:] = LPFvsHPF(delta_sky_nodarksub,cutoff=cutoff)[1]
+        #
+        # delta_sky_std = np.nanstd(delta_sky,axis=2)
+        # med_sky = np.nanmedian(delta_sky_std)
+        # print(med_sky)
+
+        med_stdsky = 0.016679049
+        x = np.linspace(0,10,100)
+        plt.plot(x,np.sqrt(med_stdsky**2+0.025**2*x**2),"--",color="black",label="calib limited")
+        plt.plot(x,np.sqrt(med_stdsky**2+0.037**2*x),"-",color="black",label="photon limited")
+        plt.plot(x,0*x+med_stdsky,":",color="gray",label="sigma_background")
+        # plt.yscale("log")
+        plt.xlim([0,5])
+        plt.ylim([0,0.1])
+        plt.legend(loc="upper left")
+
+        plt.xlabel("star flux (arb. unit)")
+        plt.ylabel("sigma_res")
+
+        plt.gca().annotate("calib limited: sigma_res $\propto$ sqrt(sigma_background**2+ g0*star_flux**2)",
+                           xy=(0,0), va="bottom", ha="left", fontsize=fontsize, color="black")
+        plt.gca().annotate("photon limited: sigma_res $\propto$ sqrt(sigma_background**2+ g1*star_flux)",
+                           xy=(0,0.005), va="bottom", ha="left", fontsize=fontsize, color="black")
+        plt.show()
+
+
+    if 0: # SNR vs narrow band filters
+        # ["#006699","#ff9900","#6600ff"]
+        ply,plx = 32,11
+        filter_list = ["Kbb","Kn5","Kn4","Kn3","Kn2","Kn1"]
+        for k,whichfilter in enumerate(filter_list):
+            filename = "/data/osiris_data/HR_8799_c/20100715/reduced_jb/20200910_narrowfilters/s100715_a010001_Kbb_020_outputHPF_cutoff40_sherlock_v1_search_resinmodel_kl10_{0}.fits".format(whichfilter)
+            with pyfits.open(filename) as hdulist:
+                arr = hdulist[0].data[0,0,13-3,0,ply,plx]
+                plt.plot(k,arr,"x",color="#ff9900")
+        ply,plx = 39,9
+        for k,whichfilter in enumerate(filter_list):
+            filename = "/data/osiris_data/HR_8799_d/20200731/reduced_jb/20200910_narrowfilters/s200731_a028002_Kbb_020_outputHPF_cutoff40_sherlock_v1_search_resinmodel_kl10_{0}.fits".format(whichfilter)
+            with pyfits.open(filename) as hdulist:
+                arr = hdulist[0].data[0,0,13-3,0,ply,plx]
+                plt.plot(k,arr,"o",color="#6600ff")
+        plt.plot(0,-100,"x",color="#ff9900",label="HR 8799 c")
+        plt.plot(0,-100,"o",color="#6600ff",label="HR 8799 d")
+        plt.xticks(np.arange(len(filter_list)),filter_list)
+        plt.ylim([0,25])
+        plt.ylabel("S/N")
+        plt.legend()
+        plt.show()
+
+
+
     if 0:
         fig = plt.figure(6,figsize=(6,4))
         psf_filelist = glob.glob(os.path.join(inputDir,"..","reduced_telluric_jb","HR_8799","s"+date+"*"+IFSfilter+"_"+scale+".fits"))
         print(psf_filelist)
         myim_list = []
+        psf_sep_list = []
+        value_sep_list = []
         for filename in psf_filelist:
             print(filename)
             with pyfits.open(filename) as hdulist:
@@ -114,6 +670,8 @@ if __name__ == "__main__":
             r_ravel = np.ravel(r_grid)[where_fin]
             myim_list.append(im)
             plt.scatter(r_ravel,im_ravel,s=5,alpha=0.1,c="black")
+            psf_sep_list.extend(r_ravel)
+            value_sep_list.extend(im_ravel)
         plt.yscale("log")
         plt.ylim([1e-4,1])
         plt.xlim([0,0.6])
@@ -123,9 +681,702 @@ if __name__ == "__main__":
         plt.gca().tick_params(axis='y', labelsize=fontsize)
         # plt.legend(loc="upper right",frameon=True,fontsize=fontsize)
         plt.tight_layout()
-        fig.savefig(os.path.join(out_pngs,"OSIRIS_PSF.pdf"),bbox_inches='tight') # This is matplotlib.figure.Figure.savefig()
-        fig.savefig(os.path.join(out_pngs,"OSIRIS_PSF.png"),bbox_inches='tight') # This is matplotlib.figure.Figure.savefig()
+        # fig.savefig(os.path.join(out_pngs,"OSIRIS_PSF.pdf"),bbox_inches='tight') # This is matplotlib.figure.Figure.savefig()
+        # fig.savefig(os.path.join(out_pngs,"OSIRIS_PSF.png"),bbox_inches='tight') # This is matplotlib.figure.Figure.savefig()
+        plt.show()
+        exit()
+
+    if 1:# contrast curves
+        HR8799_Lmag = 5.194
+        HR8799_cde_dLmag = -2.5*np.log10(2e-4)
+        HR8799_Kmag = 5.24
+        HR8799_cde_dKmag = 10.86
+        HR8799_plx = 24.2175#25.38 # [mas]
+        HR8799_dist = 1/(HR8799_plx/1000)
+        HR8799_LMag = HR8799_Lmag-5*np.log10(HR8799_dist)+5
+        HR8799_KMag = HR8799_Kmag-5*np.log10(HR8799_dist)+5
+        HR8799_cde_LMag = HR8799_LMag+HR8799_cde_dLmag
+        HR8799_cde_KMag = HR8799_KMag+HR8799_cde_dKmag
+        age = 30
+        print(-2.5*np.log10(2e-4)+HR8799_LMag)
+        print(mass_model("btsettl",-2.5*np.log10(2e-4),10,HR8799_LMag,age,"l"))
+        print(-2.5*np.log10(4.5e-5)+HR8799_KMag)
+        print(mass_model("btsettl",-2.5*np.log10(4.5e-5),10,HR8799_KMag,age,"ks"))
+        # exit()
+
+        psf_sep_list = []
+        psf_value_list = []
+        if 1: #HR 8799 d
+            sc_filelist = glob.glob("/data/osiris_data/HR_8799_d/20200731/reduced_jb/s200731*Kbb_020.fits")
+            sc_sep_list = []
+            sc_value_list = []
+            fileinfos_filename = os.path.join("/data/osiris_data/HR_8799_d","fileinfos_Kbb_jb_kl{0}.csv".format(10))
+            if 1:
+                with open(fileinfos_filename, 'r') as csvfile:
+                    csv_reader = csv.reader(csvfile, delimiter=';')
+                    list_table = list(csv_reader)
+                    colnames = list_table[0]
+                    N_col = len(colnames)
+                    list_data = list_table[1::]
+                    N_lines =  len(list_data)
+                kcen_id = colnames.index("kcen")
+                lcen_id = colnames.index("lcen")
+                filename_id = colnames.index("filename")
+                status_id = colnames.index("status")
+                filelist = [os.path.basename(item[filename_id]) for item in list_data]
+
+            if 1:
+                refstar_name_filter = "*"
+                ref_star_folder = os.path.join(os.path.dirname(sc_filelist[0]),"..","reduced_telluric_jb")
+                fileinfos_refstars_filename = os.path.join("/data/osiris_data","fileinfos_refstars_jb.csv")
+                with open(fileinfos_refstars_filename, 'r') as csvfile:
+                    csv_reader = csv.reader(csvfile, delimiter=';')
+                    refstarsinfo_list_table = list(csv_reader)
+                    refstarsinfo_colnames = refstarsinfo_list_table[0]
+                    refstarsinfo_list_data = refstarsinfo_list_table[1::]
+                refstarsinfo_filename_id = refstarsinfo_colnames.index("filename")
+                refstarsinfo_filelist = [os.path.basename(item[refstarsinfo_filename_id]) for item in refstarsinfo_list_data]
+                type_id = refstarsinfo_colnames.index("type")
+                Jmag_id = refstarsinfo_colnames.index("Jmag")
+                Hmag_id = refstarsinfo_colnames.index("Hmag")
+                Kmag_id = refstarsinfo_colnames.index("Kmag")
+                rv_simbad_id = refstarsinfo_colnames.index("RV Simbad")
+                starname_id = refstarsinfo_colnames.index("star name")
+                psfs_rep4flux_filelist = glob.glob(os.path.join(ref_star_folder,refstar_name_filter,"s*"+IFSfilter+"_"+scale+"_psfs_repaired_v2.fits"))
+                psfs_rep4flux_filelist.sort()
+                hr8799_flux_list = []
+                for psfs_rep4flux_filename in psfs_rep4flux_filelist:
+                    for refstar_fileid,refstarsinfo_file in enumerate(refstarsinfo_filelist):
+                        if os.path.basename(refstarsinfo_file).replace(".fits","") in psfs_rep4flux_filename:
+                            fileitem = refstarsinfo_list_data[refstar_fileid]
+                            break
+                    refstar_RV = float(fileitem[rv_simbad_id])
+                    ref_star_type = fileitem[type_id]
+                    if IFSfilter == "Jbb":
+                        refstar_mag = float(fileitem[Jmag_id])
+                    elif IFSfilter == "Hbb":
+                        refstar_mag = float(fileitem[Hmag_id])
+                    elif IFSfilter == "Kbb":
+                        refstar_mag = float(fileitem[Kmag_id])
+                        host_mag = 4.34
+                    with pyfits.open(psfs_rep4flux_filename) as hdulist:
+                        psfs_repaired = hdulist[0].data
+                        bbflux = np.nanmedian(np.nanmax(psfs_repaired,axis=(1,2)))
+                    hr8799_flux_list.append(bbflux* 10**(-1./2.5*(host_mag-refstar_mag)))
+
+                print(hr8799_flux_list)
+                hr8799_flux = np.mean(hr8799_flux_list)
+                print(hr8799_flux)
+
+            for filename in sc_filelist:
+                print(filename)
+                fileid = filelist.index(os.path.basename(filename))
+                fileitem = list_data[fileid]
+                status,plcen_k,plcen_l = int(fileitem[status_id]),float(fileitem[kcen_id]),float(fileitem[lcen_id])
+                if status != 1:
+                    continue
+                print(status,plcen_k,plcen_l)
+
+
+                # exit()
+                with pyfits.open(filename) as hdulist:
+                    prihdr = hdulist[0].header
+                    curr_mjdobs = prihdr["MJD-OBS"]
+                    imgs = np.rollaxis(np.rollaxis(hdulist[0].data,2),2,1)
+                    imgs = return_64x19(imgs)
+                    imgs = np.moveaxis(imgs,0,2)
+                    imgs_hdrbadpix = np.rollaxis(np.rollaxis(hdulist[2].data,2),2,1)
+                    imgs_hdrbadpix = return_64x19(imgs_hdrbadpix)
+                    imgs_hdrbadpix = np.moveaxis(imgs_hdrbadpix,0,2)
+                    imgs_hdrbadpix = imgs_hdrbadpix.astype(dtype=ctypes.c_double)
+                    imgs_hdrbadpix[np.where(imgs_hdrbadpix==0)] = np.nan
+                    imgs[np.where(imgs_hdrbadpix==0)] = 0
+                ny,nx,nz = imgs.shape
+                init_wv = prihdr["CRVAL1"]/1000. # wv for first slice in mum
+                dwv = prihdr["CDELT1"]/1000. # wv interval between 2 slices in mum
+                wvs=np.linspace(init_wv,init_wv+dwv*nz,nz,endpoint=False)
+
+                wvid = np.argmin(np.abs(wvs-2.3))
+
+                im = np.nanmedian(imgs,axis=2)/hr8799_flux
+                ny,nx = im.shape
+                x_psf_vec, y_psf_vec = np.arange(nx)-(plcen_l-34.65), np.arange(ny)-plcen_k
+                x_psf_grid, y_psf_grid = np.meshgrid(x_psf_vec, y_psf_vec)
+                r_grid = np.sqrt(x_psf_grid**2+y_psf_grid**2)*0.02
+                im[np.where(im<=0)] = np.nan
+                im[np.where(r_grid>0.75)] = np.nan
+                im[np.where(r_grid<0.5)] = np.nan
+                im_ravel = np.ravel(im)
+                where_fin = np.where(np.isfinite(im_ravel))
+                im_ravel = im_ravel[where_fin]
+                r_ravel = np.ravel(r_grid)[where_fin]
+                psf_sep_list.extend(r_ravel)
+                psf_value_list.extend(im_ravel)
+
+        if 1: #HR 8799 c
+            sc_filelist = glob.glob("/data/osiris_data/HR_8799_c/20200729/reduced_jb/s200729*Kbb_020.fits")
+            sc_sep_list = []
+            sc_value_list = []
+            fileinfos_filename = os.path.join("/data/osiris_data/HR_8799_c","fileinfos_Kbb_jb_kl{0}.csv".format(10))
+            if 1:
+                with open(fileinfos_filename, 'r') as csvfile:
+                    csv_reader = csv.reader(csvfile, delimiter=';')
+                    list_table = list(csv_reader)
+                    colnames = list_table[0]
+                    N_col = len(colnames)
+                    list_data = list_table[1::]
+                    N_lines =  len(list_data)
+                kcen_id = colnames.index("kcen")
+                lcen_id = colnames.index("lcen")
+                filename_id = colnames.index("filename")
+                status_id = colnames.index("status")
+                filelist = [os.path.basename(item[filename_id]) for item in list_data]
+
+            if 1:
+                refstar_name_filter = "*"
+                ref_star_folder = os.path.join(os.path.dirname(sc_filelist[0]),"..","reduced_telluric_jb")
+                fileinfos_refstars_filename = os.path.join("/data/osiris_data","fileinfos_refstars_jb.csv")
+                with open(fileinfos_refstars_filename, 'r') as csvfile:
+                    csv_reader = csv.reader(csvfile, delimiter=';')
+                    refstarsinfo_list_table = list(csv_reader)
+                    refstarsinfo_colnames = refstarsinfo_list_table[0]
+                    refstarsinfo_list_data = refstarsinfo_list_table[1::]
+                refstarsinfo_filename_id = refstarsinfo_colnames.index("filename")
+                refstarsinfo_filelist = [os.path.basename(item[refstarsinfo_filename_id]) for item in refstarsinfo_list_data]
+                type_id = refstarsinfo_colnames.index("type")
+                Jmag_id = refstarsinfo_colnames.index("Jmag")
+                Hmag_id = refstarsinfo_colnames.index("Hmag")
+                Kmag_id = refstarsinfo_colnames.index("Kmag")
+                rv_simbad_id = refstarsinfo_colnames.index("RV Simbad")
+                starname_id = refstarsinfo_colnames.index("star name")
+                psfs_rep4flux_filelist = glob.glob(os.path.join(ref_star_folder,refstar_name_filter,"s*"+IFSfilter+"_"+scale+"_psfs_repaired_v2.fits"))
+                psfs_rep4flux_filelist.sort()
+                hr8799_flux_list = []
+                for psfs_rep4flux_filename in psfs_rep4flux_filelist:
+                    for refstar_fileid,refstarsinfo_file in enumerate(refstarsinfo_filelist):
+                        if os.path.basename(refstarsinfo_file).replace(".fits","") in psfs_rep4flux_filename:
+                            fileitem = refstarsinfo_list_data[refstar_fileid]
+                            break
+                    refstar_RV = float(fileitem[rv_simbad_id])
+                    ref_star_type = fileitem[type_id]
+                    if IFSfilter == "Jbb":
+                        refstar_mag = float(fileitem[Jmag_id])
+                    elif IFSfilter == "Hbb":
+                        refstar_mag = float(fileitem[Hmag_id])
+                    elif IFSfilter == "Kbb":
+                        refstar_mag = float(fileitem[Kmag_id])
+                        host_mag = 4.34
+                    with pyfits.open(psfs_rep4flux_filename) as hdulist:
+                        psfs_repaired = hdulist[0].data
+                        bbflux = np.nanmedian(np.nanmax(psfs_repaired,axis=(1,2)))
+                    hr8799_flux_list.append(bbflux* 10**(-1./2.5*(host_mag-refstar_mag)))
+
+                print(hr8799_flux_list)
+                hr8799_flux = np.mean(hr8799_flux_list)
+                print(hr8799_flux)
+
+            for filename in sc_filelist:
+                print(filename)
+                fileid = filelist.index(os.path.basename(filename))
+                fileitem = list_data[fileid]
+                status,plcen_k,plcen_l = int(fileitem[status_id]),float(fileitem[kcen_id]),float(fileitem[lcen_id])
+                if status != 1:
+                    continue
+                print(status,plcen_k,plcen_l)
+
+
+                # exit()
+                with pyfits.open(filename) as hdulist:
+                    prihdr = hdulist[0].header
+                    curr_mjdobs = prihdr["MJD-OBS"]
+                    imgs = np.rollaxis(np.rollaxis(hdulist[0].data,2),2,1)
+                    imgs = return_64x19(imgs)
+                    imgs = np.moveaxis(imgs,0,2)
+                    imgs_hdrbadpix = np.rollaxis(np.rollaxis(hdulist[2].data,2),2,1)
+                    imgs_hdrbadpix = return_64x19(imgs_hdrbadpix)
+                    imgs_hdrbadpix = np.moveaxis(imgs_hdrbadpix,0,2)
+                    imgs_hdrbadpix = imgs_hdrbadpix.astype(dtype=ctypes.c_double)
+                    imgs_hdrbadpix[np.where(imgs_hdrbadpix==0)] = np.nan
+                    imgs[np.where(imgs_hdrbadpix==0)] = 0
+                ny,nx,nz = imgs.shape
+                init_wv = prihdr["CRVAL1"]/1000. # wv for first slice in mum
+                dwv = prihdr["CDELT1"]/1000. # wv interval between 2 slices in mum
+                wvs=np.linspace(init_wv,init_wv+dwv*nz,nz,endpoint=False)
+
+                wvid = np.argmin(np.abs(wvs-2.3))
+
+                im = np.nanmedian(imgs,axis=2)/hr8799_flux
+                ny,nx = im.shape
+                x_psf_vec, y_psf_vec = np.arange(nx)-(plcen_l-47.15), np.arange(ny)-plcen_k
+                x_psf_grid, y_psf_grid = np.meshgrid(x_psf_vec, y_psf_vec)
+                r_grid = np.sqrt(x_psf_grid**2+y_psf_grid**2)*0.02
+                im[np.where(im<=0)] = np.nan
+                im[np.where(r_grid>1.5)] = np.nan
+                # im[np.where(r_grid<0.5)] = np.nan
+                im_ravel = np.ravel(im)
+                where_fin = np.where(np.isfinite(im_ravel))
+                im_ravel = im_ravel[where_fin]
+                r_ravel = np.ravel(r_grid)[where_fin]
+                psf_sep_list.extend(r_ravel)
+                psf_value_list.extend(im_ravel)
+
+        if 1: #HR 8799 b
+            sc_filelist = glob.glob("/data/osiris_data/HR_8799_b/20200803/reduced_jb/s200803*Kbb_020.fits")
+            sc_sep_list = []
+            sc_value_list = []
+            fileinfos_filename = os.path.join("/data/osiris_data/HR_8799_b","fileinfos_Kbb_jb_kl{0}.csv".format(10))
+            if 1:
+                with open(fileinfos_filename, 'r') as csvfile:
+                    csv_reader = csv.reader(csvfile, delimiter=';')
+                    list_table = list(csv_reader)
+                    colnames = list_table[0]
+                    N_col = len(colnames)
+                    list_data = list_table[1::]
+                    N_lines =  len(list_data)
+                kcen_id = colnames.index("kcen")
+                lcen_id = colnames.index("lcen")
+                filename_id = colnames.index("filename")
+                status_id = colnames.index("status")
+                filelist = [os.path.basename(item[filename_id]) for item in list_data]
+
+            if 1:
+                refstar_name_filter = "*"
+                ref_star_folder = os.path.join(os.path.dirname(sc_filelist[0]),"..","reduced_telluric_jb")
+                fileinfos_refstars_filename = os.path.join("/data/osiris_data","fileinfos_refstars_jb.csv")
+                with open(fileinfos_refstars_filename, 'r') as csvfile:
+                    csv_reader = csv.reader(csvfile, delimiter=';')
+                    refstarsinfo_list_table = list(csv_reader)
+                    refstarsinfo_colnames = refstarsinfo_list_table[0]
+                    refstarsinfo_list_data = refstarsinfo_list_table[1::]
+                refstarsinfo_filename_id = refstarsinfo_colnames.index("filename")
+                refstarsinfo_filelist = [os.path.basename(item[refstarsinfo_filename_id]) for item in refstarsinfo_list_data]
+                type_id = refstarsinfo_colnames.index("type")
+                Jmag_id = refstarsinfo_colnames.index("Jmag")
+                Hmag_id = refstarsinfo_colnames.index("Hmag")
+                Kmag_id = refstarsinfo_colnames.index("Kmag")
+                rv_simbad_id = refstarsinfo_colnames.index("RV Simbad")
+                starname_id = refstarsinfo_colnames.index("star name")
+                psfs_rep4flux_filelist = glob.glob(os.path.join(ref_star_folder,refstar_name_filter,"s*"+IFSfilter+"_"+scale+"_psfs_repaired_v2.fits"))
+                psfs_rep4flux_filelist.sort()
+                hr8799_flux_list = []
+                for psfs_rep4flux_filename in psfs_rep4flux_filelist:
+                    for refstar_fileid,refstarsinfo_file in enumerate(refstarsinfo_filelist):
+                        if os.path.basename(refstarsinfo_file).replace(".fits","") in psfs_rep4flux_filename:
+                            fileitem = refstarsinfo_list_data[refstar_fileid]
+                            break
+                    refstar_RV = float(fileitem[rv_simbad_id])
+                    ref_star_type = fileitem[type_id]
+                    if IFSfilter == "Jbb":
+                        refstar_mag = float(fileitem[Jmag_id])
+                    elif IFSfilter == "Hbb":
+                        refstar_mag = float(fileitem[Hmag_id])
+                    elif IFSfilter == "Kbb":
+                        refstar_mag = float(fileitem[Kmag_id])
+                        host_mag = 4.34
+                    with pyfits.open(psfs_rep4flux_filename) as hdulist:
+                        psfs_repaired = hdulist[0].data
+                        bbflux = np.nanmedian(np.nanmax(psfs_repaired,axis=(1,2)))
+                    hr8799_flux_list.append(bbflux* 10**(-1./2.5*(host_mag-refstar_mag)))
+
+                print(hr8799_flux_list)
+                hr8799_flux = np.mean(hr8799_flux_list)
+                print(hr8799_flux)
+
+            for filename in sc_filelist:
+                print(filename)
+                fileid = filelist.index(os.path.basename(filename))
+                fileitem = list_data[fileid]
+                status,plcen_k,plcen_l = int(fileitem[status_id]),float(fileitem[kcen_id]),float(fileitem[lcen_id])
+                if status != 1:
+                    continue
+                print(status,plcen_k,plcen_l)
+
+
+                # exit()
+                with pyfits.open(filename) as hdulist:
+                    prihdr = hdulist[0].header
+                    curr_mjdobs = prihdr["MJD-OBS"]
+                    imgs = np.rollaxis(np.rollaxis(hdulist[0].data,2),2,1)
+                    imgs = return_64x19(imgs)
+                    imgs = np.moveaxis(imgs,0,2)
+                    imgs_hdrbadpix = np.rollaxis(np.rollaxis(hdulist[2].data,2),2,1)
+                    imgs_hdrbadpix = return_64x19(imgs_hdrbadpix)
+                    imgs_hdrbadpix = np.moveaxis(imgs_hdrbadpix,0,2)
+                    imgs_hdrbadpix = imgs_hdrbadpix.astype(dtype=ctypes.c_double)
+                    imgs_hdrbadpix[np.where(imgs_hdrbadpix==0)] = np.nan
+                    imgs[np.where(imgs_hdrbadpix==0)] = 0
+                ny,nx,nz = imgs.shape
+                init_wv = prihdr["CRVAL1"]/1000. # wv for first slice in mum
+                dwv = prihdr["CDELT1"]/1000. # wv interval between 2 slices in mum
+                wvs=np.linspace(init_wv,init_wv+dwv*nz,nz,endpoint=False)
+
+                wvid = np.argmin(np.abs(wvs-2.3))
+
+                im = np.nanmedian(imgs,axis=2)/hr8799_flux
+                ny,nx = im.shape
+                x_psf_vec, y_psf_vec = np.arange(nx)-(plcen_l+86), np.arange(ny)-plcen_k
+                x_psf_grid, y_psf_grid = np.meshgrid(x_psf_vec, y_psf_vec)
+                r_grid = np.sqrt(x_psf_grid**2+y_psf_grid**2)*0.02
+                im[np.where(im<=0)] = np.nan
+                # im[np.where(r_grid>0.75)] = np.nan
+                im[np.where(r_grid<1.65)] = np.nan
+                im_ravel = np.ravel(im)
+                where_fin = np.where(np.isfinite(im_ravel))
+                im_ravel = im_ravel[where_fin]
+                r_ravel = np.ravel(r_grid)[where_fin]
+                psf_sep_list.extend(r_ravel)
+                psf_value_list.extend(im_ravel)
+        # dsep=0.02
+        # psf_sep_list = np.array(psf_sep_list)
+        # psf_value_list = np.array(psf_value_list)
+        # binnedpsf_sep = np.arange(0,0.75,dsep)
+        # binnedpsf_value = np.zeros(binnedpsf_sep.shape)
+        # for sepid,sep in enumerate(binnedpsf_sep):
+        #     wherebin = np.where((psf_sep_list<sep+dsep/2)*(psf_sep_list>sep-dsep/2))
+        #     if len(wherebin[0]) != 0:
+        #         binnedpsf_value[sepid]=np.nanmedian(psf_value_list[wherebin])
+        #     else:
+        #         binnedpsf_value[sepid] = np.nan
+        #
+        # plt.title("K-band")
+        # plt.plot(binnedpsf_sep,binnedpsf_value,linestyle="-",linewidth=3,label="OSIRIS unocculted PSF K",color="red")
+        # plt.yscale("log")
+        # plt.xlim([0,1])
+        # plt.ylim([1e-5,1e-0])
+        # plt.xlabel("Separation (as)",fontsize=fontsize)
+        # plt.ylabel("Planet to star flux ratio",fontsize=fontsize)
+        # plt.gca().tick_params(axis='x', labelsize=fontsize)
+        # plt.gca().tick_params(axis='y', labelsize=fontsize)
+        # plt.legend(loc="upper right",frameon=True,fontsize=fontsize*0.75)
         # plt.show()
+
+
+        if 1: #PSF
+            psf_filelist = glob.glob("/data/osiris_data/HR_8799_d/20200731/reduced_telluric_jb/HR_8799/s200731*Kbb_020.fits")
+            # psf_filelist.extend(glob.glob("/data/osiris_data/HR_8799_d/20200803/reduced_telluric_jb/HR_8799/s200803*Kbb_020.fits"))
+            # psf_filelist = glob.glob("/data/osiris_data/HR_8799_d/20200730/reduced_telluric_jb/HR_8799/s200730*Kbb_020.fits")
+            # psf_filelist = glob.glob("/data/osiris_data/HR_8799_d/20200729/reduced_telluric_jb/HR_8799/s200729*Kbb_020.fits")
+            for filename in psf_filelist:
+                print(filename)
+                with pyfits.open(filename) as hdulist:
+                    prihdr = hdulist[0].header
+                    curr_mjdobs = prihdr["MJD-OBS"]
+                    imgs = np.rollaxis(np.rollaxis(hdulist[0].data,2),2,1)
+                    imgs = return_64x19(imgs)
+                    imgs = np.moveaxis(imgs,0,2)
+                    imgs_hdrbadpix = np.rollaxis(np.rollaxis(hdulist[2].data,2),2,1)
+                    imgs_hdrbadpix = return_64x19(imgs_hdrbadpix)
+                    imgs_hdrbadpix = np.moveaxis(imgs_hdrbadpix,0,2)
+                    imgs_hdrbadpix = imgs_hdrbadpix.astype(dtype=ctypes.c_double)
+                    imgs_hdrbadpix[np.where(imgs_hdrbadpix==0)] = np.nan
+                    imgs[np.where(imgs_hdrbadpix==0)] = 0
+                ny,nx,nz = imgs.shape
+                init_wv = prihdr["CRVAL1"]/1000. # wv for first slice in mum
+                dwv = prihdr["CDELT1"]/1000. # wv interval between 2 slices in mum
+                wvs=np.linspace(init_wv,init_wv+dwv*nz,nz,endpoint=False)
+
+                wvid = np.argmin(np.abs(wvs-2.3))
+
+                im = np.nanmedian(imgs,axis=2)
+                im/=np.nanmax(im)
+                ny,nx = im.shape
+                ymax,xmax = np.unravel_index(np.argmax(im),im.shape)
+                x_psf_vec, y_psf_vec = np.arange(nx)-xmax, np.arange(ny)-ymax
+                x_psf_grid, y_psf_grid = np.meshgrid(x_psf_vec, y_psf_vec)
+                r_grid = np.sqrt(x_psf_grid**2+y_psf_grid**2)*0.02
+                im[np.where(im<=0)] = np.nan
+                im[np.where(r_grid>0.4)] = np.nan
+                im_ravel = np.ravel(im)
+                where_fin = np.where(np.isfinite(im_ravel))
+                im_ravel = im_ravel[where_fin]
+                r_ravel = np.ravel(r_grid)[where_fin]
+                psf_sep_list.extend(r_ravel)
+                psf_value_list.extend(im_ravel)
+
+        psf_sep_list = np.array(psf_sep_list)
+        psf_value_list = np.array(psf_value_list)
+        dsep=0.02
+        binnedpsf_sep = np.arange(0,2.,dsep)
+        binnedpsf_value = np.zeros(binnedpsf_sep.shape)
+        for sepid,sep in enumerate(binnedpsf_sep):
+            wherebin = np.where((psf_sep_list<sep+dsep/2)*(psf_sep_list>sep-dsep/2))
+            if len(wherebin[0]) != 0:
+                binnedpsf_value[sepid]=np.nanmedian(psf_value_list[wherebin])
+            else:
+                binnedpsf_value[sepid] = np.nan
+
+        # ["#006699","#ff9900","#6600ff"]
+        loD2as = 0.079
+        nirc2_L_raw = np.loadtxt('/data/osiris_data/noise_charac/4jb-raw-phot.txt')
+        nirc2_L_raw_sep = nirc2_L_raw[:,0]*loD2as
+        nirc2_L_raw_cont = nirc2_L_raw[:,1]
+        nirc2_L_raw_cont[np.where(nirc2_L_raw_sep<0.079)] = np.nan
+        nirc2_L_raw_label = "NIRC2 L Raw - 25s"
+        nirc2_L_raw_plotparas = ["--","#006699"]
+        nirc2_L_nocoro = np.loadtxt('/data/osiris_data/noise_charac/4jb-nocoro.txt')
+        nirc2_L_nocoro_sep = nirc2_L_nocoro[:,0]*loD2as
+        nirc2_L_nocoro_cont = nirc2_L_nocoro[:,1]
+        nirc2_L_nocoro_cont[np.where(nirc2_L_nocoro_sep<0.079)] = np.nan
+        nirc2_L_nocoro_label = "NIRC2 L No coro (best) - 90 min"
+        nirc2_L_nocoro_plotparas = [":","#ff9900"]
+        nirc2_L_coro = np.loadtxt('/data/osiris_data/noise_charac/4jb-coro400.txt')
+        nirc2_L_coro_sep = nirc2_L_coro[:,0]*loD2as
+        nirc2_L_coro_cont = nirc2_L_coro[:,1]
+        nirc2_L_coro_cont[np.where(nirc2_L_coro_sep<0.079)] = np.nan
+        nirc2_L_coro_label = "NIRC2 L 90min Coro (avg+) - 90 min"
+        nirc2_L_coro_plotparas = [":","#6600ff"]
+
+        plt.figure(10,figsize=(12,12))
+        plt.subplot(2,2,1)
+        plt.title("K-band")
+        plt.plot(binnedpsf_sep,binnedpsf_value,linestyle=nirc2_L_raw_plotparas[0],linewidth=3,label="OSIRIS unocculted PSF K",color=nirc2_L_raw_plotparas[1])
+        whered=np.argmin(np.abs(binnedpsf_sep-0.7))
+        OSIRIS_FMnoise_cont = binnedpsf_value/30
+        OSIRIS_FMnoise_cont = OSIRIS_FMnoise_cont/OSIRIS_FMnoise_cont[whered]*4.5e-5
+        OSIRIS_FMnoise_label = "OSIRIS HR8799d modeling noise limited - 10 min"
+        OSIRIS_FMnoise_plotparas = ["-","red"]
+        plt.plot(binnedpsf_sep,OSIRIS_FMnoise_cont,linestyle=OSIRIS_FMnoise_plotparas[0],linewidth=3,label=OSIRIS_FMnoise_label,color=OSIRIS_FMnoise_plotparas[1])
+        binnedpsf_value_at_700mas = binnedpsf_value[whered]
+        OSIRIS_photnoise_cont = np.sqrt(binnedpsf_value/binnedpsf_value_at_700mas)*(binnedpsf_value_at_700mas/30)
+        OSIRIS_photnoise_cont = OSIRIS_photnoise_cont/OSIRIS_photnoise_cont[whered]*4.5e-5
+        OSIRIS_photnoise_label = "OSIRIS HR8799d photon noise limited - 10 min"
+        OSIRIS_photnoise_plotparas = ["-","blue"]
+        OSIRIS_photnoise90_cont = OSIRIS_photnoise_cont/np.sqrt(9)
+        OSIRIS_photnoise90_label = "OSIRIS HR8799d photon noise limited - 90 min"
+        OSIRIS_photnoise90_plotparas = ["--","cyan"]
+        plt.plot(binnedpsf_sep,OSIRIS_photnoise_cont,linestyle=OSIRIS_photnoise_plotparas[0],linewidth=3,label=OSIRIS_photnoise_label,color=OSIRIS_photnoise_plotparas[1])
+        plt.plot(binnedpsf_sep,OSIRIS_photnoise90_cont,linestyle=OSIRIS_photnoise90_plotparas[0],linewidth=3,label=OSIRIS_photnoise90_label,color=OSIRIS_photnoise90_plotparas[1])
+        plt.yscale("log")
+        plt.xscale("log")
+        plt.xlim([0.05,2])
+        plt.ylim([1e-6,1e-0])
+        plt.xlabel("Separation (as)",fontsize=fontsize)
+        plt.ylabel("Planet to star flux ratio",fontsize=fontsize)
+        plt.gca().tick_params(axis='x', labelsize=fontsize)
+        plt.gca().tick_params(axis='y', labelsize=fontsize)
+        plt.legend(loc="upper right",frameon=True,fontsize=fontsize*0.75)
+        # plt.show()
+
+
+        plt.subplot(2,2,2)
+        plt.title("L-band")
+        plt.plot(nirc2_L_raw_sep,nirc2_L_raw_cont,linestyle=nirc2_L_raw_plotparas[0],linewidth=3,label=nirc2_L_raw_label,color=nirc2_L_raw_plotparas[1])
+        plt.plot(nirc2_L_nocoro_sep,nirc2_L_nocoro_cont,linestyle=nirc2_L_nocoro_plotparas[0],linewidth=3,label=nirc2_L_nocoro_label,color=nirc2_L_nocoro_plotparas[1])
+        plt.plot(nirc2_L_coro_sep,nirc2_L_coro_cont,linestyle=nirc2_L_coro_plotparas[0],linewidth=3,label=nirc2_L_coro_label,color=nirc2_L_coro_plotparas[1])
+        plt.yscale("log")
+        plt.xscale("log")
+        plt.xlim([0.05,2])
+        plt.ylim([1e-5,1e-2])
+        plt.xlabel("Separation (as)",fontsize=fontsize)
+        plt.ylabel("Planet to star flux ratio",fontsize=fontsize)
+        plt.gca().tick_params(axis='x', labelsize=fontsize)
+        plt.gca().tick_params(axis='y', labelsize=fontsize)
+        plt.legend(loc="upper right",frameon=True,fontsize=fontsize*0.75)
+        plt.gca().annotate("From Thompson W. et al.", xy=(0,1e-5), va="bottom", ha="left", fontsize=fontsize, color="black")
+        # plt.tight_layout()
+
+
+        plt.subplot(2,2,3)
+        # plt.figure(10,figsize=(6,6))
+        plt.title("2 Myr")
+        # plt.plot(nirc2_L_raw_sep,age_mag_to_mass_Sonora_hotstart(30,nirc2_L_raw_cont,"Lp",tefflooginterpgrid= None),linestyle="-",linewidth=3,label=nirc2_L_raw_label)
+        gridname = "btsettl"
+        # gridname = "cond"
+        age = 2
+        if 1:
+            nirc2_L_nocoro_mass = mass_model(gridname,-2.5*np.log10(nirc2_L_nocoro_cont),10,HR8799_LMag,age,"l")
+            nirc2_L_coro_mass = mass_model(gridname,-2.5*np.log10(nirc2_L_coro_cont),10,HR8799_LMag,age,"l")
+            OSIRIS_FMnoise_mass = mass_model(gridname,-2.5*np.log10(OSIRIS_FMnoise_cont),10,HR8799_KMag,age,"ks")
+            OSIRIS_photnoise_mass = mass_model(gridname,-2.5*np.log10(OSIRIS_photnoise_cont),10,HR8799_KMag,age,"ks")
+            OSIRIS_photnoise90_mass = mass_model(gridname,-2.5*np.log10(OSIRIS_photnoise90_cont),10,HR8799_KMag,age,"ks")
+            plt.gca().annotate(gridname, xy=(0.1,0), va="bottom", ha="left", fontsize=fontsize, color="black")
+        if 0:
+            nirc2_L_nocoro_mass = age_mag_to_mass_Sonora_hotstart(age,HR8799_LMag-2.5*np.log10(nirc2_L_nocoro_cont),"Lp",tefflooginterpgrid= None)
+            nirc2_L_coro_mass = age_mag_to_mass_Sonora_hotstart(age,HR8799_LMag-2.5*np.log10(nirc2_L_coro_cont),"Lp",tefflooginterpgrid= None)
+            OSIRIS_FMnoise_mass = age_mag_to_mass_Sonora_hotstart(age,HR8799_KMag-2.5*np.log10(OSIRIS_FMnoise_cont),"Ks",tefflooginterpgrid= None)
+            OSIRIS_photnoise_mass = age_mag_to_mass_Sonora_hotstart(age,HR8799_KMag-2.5*np.log10(OSIRIS_photnoise_cont),"Ks",tefflooginterpgrid= None)
+            OSIRIS_photnoise90_mass = age_mag_to_mass_Sonora_hotstart(age,HR8799_KMag-2.5*np.log10(OSIRIS_photnoise90_cont),"Ks",tefflooginterpgrid= None)
+            plt.gca().annotate("Sonora Bobcat - Marley et al.", xy=(0.1,0), va="bottom", ha="left", fontsize=fontsize, color="black")
+        plt.plot(nirc2_L_nocoro_sep,nirc2_L_nocoro_mass,
+                 linestyle=nirc2_L_nocoro_plotparas[0],linewidth=3,label=nirc2_L_nocoro_label,color=nirc2_L_nocoro_plotparas[1])
+        plt.plot(nirc2_L_coro_sep,nirc2_L_coro_mass,
+                 linestyle=nirc2_L_coro_plotparas[0],linewidth=3,label=nirc2_L_coro_label,color=nirc2_L_coro_plotparas[1])
+        plt.plot(binnedpsf_sep,OSIRIS_FMnoise_mass,
+                 linestyle=OSIRIS_FMnoise_plotparas[0],linewidth=3,label=OSIRIS_FMnoise_label,color=OSIRIS_FMnoise_plotparas[1])
+        plt.plot(binnedpsf_sep,OSIRIS_photnoise_mass,
+                 linestyle=OSIRIS_photnoise_plotparas[0],linewidth=3,label=OSIRIS_photnoise_label,color=OSIRIS_photnoise_plotparas[1])
+        plt.plot(binnedpsf_sep,OSIRIS_photnoise90_mass,
+                 linestyle=OSIRIS_photnoise90_plotparas[0],linewidth=3,label=OSIRIS_photnoise90_label,color=OSIRIS_photnoise90_plotparas[1])
+        plt.xscale("log")
+        plt.xlim([0.05,2])
+        plt.ylim([0,12])
+        plt.xlabel("Separation (as)",fontsize=fontsize)
+        plt.ylabel("Mass ($M_{Jup}$)",fontsize=fontsize)
+        plt.gca().tick_params(axis='x', labelsize=fontsize)
+        plt.gca().tick_params(axis='y', labelsize=fontsize)
+        plt.legend(loc="upper right",frameon=True,fontsize=fontsize*0.75)
+
+        plt.subplot(2,2,4)
+        plt.title("30 Myr")
+        # plt.plot(nirc2_L_raw_sep,age_mag_to_mass_Sonora_hotstart(30,nirc2_L_raw_cont,"Lp",tefflooginterpgrid= None),linestyle="-",linewidth=3,label=nirc2_L_raw_label)
+        age = 30
+        if 1:
+            nirc2_L_nocoro_mass = mass_model(gridname,-2.5*np.log10(nirc2_L_nocoro_cont),10,HR8799_LMag,age,"l")
+            nirc2_L_coro_mass = mass_model(gridname,-2.5*np.log10(nirc2_L_coro_cont),10,HR8799_LMag,age,"l")
+            OSIRIS_FMnoise_mass = mass_model(gridname,-2.5*np.log10(OSIRIS_FMnoise_cont),10,HR8799_KMag,age,"ks")
+            OSIRIS_photnoise_mass = mass_model(gridname,-2.5*np.log10(OSIRIS_photnoise_cont),10,HR8799_KMag,age,"ks")
+            OSIRIS_photnoise90_mass = mass_model(gridname,-2.5*np.log10(OSIRIS_photnoise90_cont),10,HR8799_KMag,age,"ks")
+            plt.gca().annotate(gridname, xy=(0.1,0), va="bottom", ha="left", fontsize=fontsize, color="black")
+        if 0:
+            nirc2_L_nocoro_mass = age_mag_to_mass_Sonora_hotstart(age,HR8799_LMag-2.5*np.log10(nirc2_L_nocoro_cont),"Lp",tefflooginterpgrid= None)
+            nirc2_L_coro_mass = age_mag_to_mass_Sonora_hotstart(age,HR8799_LMag-2.5*np.log10(nirc2_L_coro_cont),"Lp",tefflooginterpgrid= None)
+            OSIRIS_FMnoise_mass = age_mag_to_mass_Sonora_hotstart(age,HR8799_KMag-2.5*np.log10(OSIRIS_FMnoise_cont),"Ks",tefflooginterpgrid= None)
+            OSIRIS_photnoise_mass = age_mag_to_mass_Sonora_hotstart(age,HR8799_KMag-2.5*np.log10(OSIRIS_photnoise_cont),"Ks",tefflooginterpgrid= None)
+            OSIRIS_photnoise90_mass = age_mag_to_mass_Sonora_hotstart(age,HR8799_KMag-2.5*np.log10(OSIRIS_photnoise90_cont),"Ks",tefflooginterpgrid= None)
+            plt.gca().annotate("Sonora Bobcat - Marley et al.", xy=(0.1,0), va="bottom", ha="left", fontsize=fontsize, color="black")
+        plt.plot(nirc2_L_nocoro_sep,nirc2_L_nocoro_mass,
+                 linestyle=nirc2_L_nocoro_plotparas[0],linewidth=3,label=nirc2_L_nocoro_label,color=nirc2_L_nocoro_plotparas[1])
+        plt.plot(nirc2_L_coro_sep,nirc2_L_coro_mass,
+                 linestyle=nirc2_L_coro_plotparas[0],linewidth=3,label=nirc2_L_coro_label,color=nirc2_L_coro_plotparas[1])
+        plt.plot(binnedpsf_sep,OSIRIS_FMnoise_mass,
+                 linestyle=OSIRIS_FMnoise_plotparas[0],linewidth=3,label=OSIRIS_FMnoise_label,color=OSIRIS_FMnoise_plotparas[1])
+        plt.plot(binnedpsf_sep,OSIRIS_photnoise_mass,
+                 linestyle=OSIRIS_photnoise_plotparas[0],linewidth=3,label=OSIRIS_photnoise_label,color=OSIRIS_photnoise_plotparas[1])
+        plt.plot(binnedpsf_sep,OSIRIS_photnoise90_mass,
+                 linestyle=OSIRIS_photnoise90_plotparas[0],linewidth=3,label=OSIRIS_photnoise90_label,color=OSIRIS_photnoise90_plotparas[1])
+
+        plt.xscale("log")
+        # plt.yscale("log")
+        plt.xlim([0.05,2])
+        plt.ylim([0,20])
+        plt.xlabel("Separation (as)",fontsize=fontsize)
+        plt.ylabel("Mass ($M_{Jup}$)",fontsize=fontsize)
+        plt.gca().tick_params(axis='x', labelsize=fontsize)
+        plt.gca().tick_params(axis='y', labelsize=fontsize)
+        plt.legend(loc="upper right",frameon=True,fontsize=fontsize*0.75)
+
+
+        plt.figure(11,figsize=(6,4))
+        #"#006699","#ff9900"
+        plt.plot(nirc2_L_nocoro_sep,nirc2_L_nocoro_cont,linestyle="-",linewidth=3,label="NIRC2 L-band (90 min; Thompson W.)",color="#006699")
+        plt.plot(binnedpsf_sep,OSIRIS_photnoise_cont,linestyle="-",linewidth=1,label="OSIRIS K-band (10 min)",color="#ff9900")
+        plt.plot(binnedpsf_sep,OSIRIS_photnoise90_cont,linestyle="--",linewidth=1,label="OSIRIS K-band (predicted 90 min)",color="#ff9900")
+        plt.plot(binnedpsf_sep,OSIRIS_photnoise90_cont/np.sqrt(30)*np.sqrt(9),linestyle=":",linewidth=1,label="OSIRIS K-band (predicted 300 min)",color="#ff9900")
+        # Hr 8799
+        sep_list = [0.25,0.384,0.693,0.942,0.27,0.7]
+        contK_list = [2.5e-5,4.5e-5,4.5e-5,4.5e-5,1.7e-4,4.3e-3]
+        contL_list = [8e-5,2e-4,2e-4,2e-4,6.9e-4,5.5e-3]
+        name_list = ["HR 8799 f","HR 8799 e","HR 8799 d","HR 8799 c","HD 206893 b","GQ Lup b"]
+        for sep,contL,contK,name in zip(sep_list,contL_list,contK_list,name_list):
+            plt.plot([sep], [contK],marker="x",linestyle="",markeredgecolor="#ff9900",markerfacecolor="#ff9900")
+            plt.plot([sep], [contL],marker="o",linestyle="",markeredgecolor="#006699",markerfacecolor="#006699")
+            plt.plot([sep,sep], [contK,contL],marker="",linestyle="-",linewidth=0.5,color="gray")
+            plt.gca().annotate(name, xy=(sep+0.01,contL), va="bottom", ha="left", fontsize=fontsize*0.5, color="black")
+
+        # plt.plot([0.1720],)
+        plt.yscale("log")
+        plt.xlim([0.05,2])
+        plt.ylim([1e-6,1e-2])
+        plt.xlabel("Separation (as)",fontsize=fontsize)
+        plt.ylabel("Planet to star flux ratio",fontsize=fontsize)
+        plt.gca().tick_params(axis='x', labelsize=fontsize)
+        plt.gca().tick_params(axis='y', labelsize=fontsize)
+        plt.legend(loc="lower right",frameon=True,fontsize=fontsize*0.75)
+        # plt.show()
+
+
+
+        plt.figure(12,figsize=(6,4))
+        #"#006699","#ff9900"
+        plt.plot(binnedpsf_sep,OSIRIS_photnoise_cont/np.sqrt(10**((0-5.2)/-2.5)),linestyle="--",linewidth=2,label="Kmag = 0 (scaled)",color="#ff9900")
+        plt.plot(binnedpsf_sep,OSIRIS_photnoise_cont,linestyle="-",linewidth=2,label="Kmag = 5.2; OSIRIS K-band (10 min)",color="#ff9900")
+        plt.plot(binnedpsf_sep,OSIRIS_photnoise_cont/np.sqrt(10**((10-5.2)/-2.5)),linestyle=":",linewidth=2,label="Kmag = 10 (scaled)",color="#ff9900")
+        # plt.plot([0.1720],)
+        plt.yscale("log")
+        plt.xscale("log")
+        plt.xlim([0.05,2])
+        plt.ylim([1e-6,1e-2])
+        plt.xlabel("Separation (as)",fontsize=fontsize)
+        plt.ylabel("Planet to star flux ratio",fontsize=fontsize)
+        plt.gca().tick_params(axis='x', labelsize=fontsize)
+        plt.gca().tick_params(axis='y', labelsize=fontsize)
+        plt.legend(loc="upper right",frameon=True,fontsize=fontsize*0.75)
+        plt.tight_layout()
+
+
+        plt.figure(13,figsize=(12,5))
+        #"#006699","#ff9900"
+        plt.subplot(1,2,1)
+        plt.plot(binnedpsf_sep,OSIRIS_photnoise_cont/np.sqrt(10**((6.5-5.2)/-2.5)),linestyle="-",linewidth=2,label="Kmag = 6.5 (scaled; 10 min)",color="#ff9900")
+        plt.plot(binnedpsf_sep,OSIRIS_photnoise_cont/np.sqrt(10**((6.5-5.2)/-2.5))/np.sqrt(6),linestyle="--",linewidth=2,label="Kmag = 6.5 (scaled; 60 min)",color="#ff9900")
+        plt.plot(binnedpsf_sep,OSIRIS_photnoise_cont/np.sqrt(10**((6.5-5.2)/-2.5))/np.sqrt(30),linestyle=":",linewidth=2,label="Kmag = 6.5 (scaled; 300 min)",color="#ff9900")
+        # plt.plot(binnedpsf_sep,OSIRIS_photnoise_cont,linestyle="-",linewidth=2,label="Kmag = 5.2; OSIRIS K-band (10 min)",color="#ff9900")
+        # plt.plot(binnedpsf_sep,OSIRIS_photnoise_cont/np.sqrt(10**((10-5.2)/-2.5)),linestyle=":",linewidth=2,label="Kmag = 10 (scaled)",color="#ff9900")
+        # plt.plot([0.1720],)
+        plt.yscale("log")
+        plt.xscale("log")
+        plt.xlim([0.05,2])
+        plt.ylim([1e-6,1e-2])
+        plt.xlabel("Separation (as)",fontsize=fontsize)
+        plt.ylabel("Planet to star flux ratio",fontsize=fontsize)
+        plt.gca().tick_params(axis='x', labelsize=fontsize)
+        plt.gca().tick_params(axis='y', labelsize=fontsize)
+        plt.legend(loc="upper right",frameon=True,fontsize=fontsize*0.75)
+        plt.subplot(1,2,2)
+        tmp = mass_model(gridname,-2.5*np.log10(OSIRIS_photnoise_cont/np.sqrt(10**((0-5.2)/-2.5))),7.68,0,455,"ks")
+        plt.plot(binnedpsf_sep,tmp,linestyle="-",linewidth=2,label="btsettl; Kmag = 0 (scaled; 10 min)",color="#ff9900")
+        tmp = mass_model(gridname,-2.5*np.log10(OSIRIS_photnoise_cont/np.sqrt(10**((0-5.2)/-2.5))/np.sqrt(30)),7.68,0,455,"ks")
+        plt.plot(binnedpsf_sep,tmp,linestyle="--",linewidth=2,label="btsettl; Kmag = 0 (scaled; 300 min)",color="#ff9900")
+        plt.xscale("log")
+        plt.xlim([0.05,2])
+        plt.ylim([0,80])
+        plt.xlabel("Separation (as)",fontsize=fontsize)
+        plt.ylabel("Planet mass ($M_\mathrm{Jup}$)",fontsize=fontsize)
+        plt.gca().tick_params(axis='x', labelsize=fontsize)
+        plt.gca().tick_params(axis='y', labelsize=fontsize)
+        plt.legend(loc="upper right",frameon=True,fontsize=fontsize*0.75)
+
+        plt.tight_layout()
+
+        # plt.subplot(2,2,3)
+        plt.figure(14,figsize=(8,6))
+        # ["#006699","#ff9900","#6600ff"]
+        # plt.title("2 Myr")
+        # plt.plot(nirc2_L_raw_sep,age_mag_to_mass_Sonora_hotstart(30,nirc2_L_raw_cont,"Lp",tefflooginterpgrid= None),linestyle="-",linewidth=3,label=nirc2_L_raw_label)
+        gridname = "btsettl"
+        # gridname = "cond"
+        age = 2
+        if 1:
+            nirc2_L_nocoro_mass = mass_model(gridname,-2.5*np.log10(nirc2_L_nocoro_cont),10,HR8799_LMag,age,"l")
+            nirc2_L_coro_mass = mass_model(gridname,-2.5*np.log10(nirc2_L_coro_cont),10,HR8799_LMag,age,"l")
+            OSIRIS_FMnoise_mass = mass_model(gridname,-2.5*np.log10(OSIRIS_FMnoise_cont),10,HR8799_KMag,age,"ks")
+            OSIRIS_photnoise_mass = mass_model(gridname,-2.5*np.log10(OSIRIS_photnoise_cont),10,HR8799_KMag,age,"ks")
+            OSIRIS_photnoise60_mass = mass_model(gridname,-2.5*np.log10(OSIRIS_photnoise_cont/np.sqrt(6)),10,HR8799_KMag,age,"ks")
+        plt.plot(nirc2_L_nocoro_sep,nirc2_L_nocoro_mass,
+                 linestyle="--",linewidth=3,label="NIRC2 L (90 min; no coro; best)",color="#006699")
+        plt.plot(nirc2_L_coro_sep,nirc2_L_coro_mass,
+                 linestyle="-",linewidth=3,label="NIRC2 L (90 min; coro; avg+)",color="#006699")
+        plt.plot(binnedpsf_sep,OSIRIS_FMnoise_mass,
+                 linestyle=":",linewidth=3,label="OSIRIS K (10 min; model limited)",color="#ff9900")
+        plt.plot(binnedpsf_sep,OSIRIS_photnoise_mass,
+                 linestyle="--",linewidth=3,label="OSIRIS K (10 min; photon limited)",color="#ff9900")
+        plt.plot(binnedpsf_sep,OSIRIS_photnoise60_mass,
+                 linestyle="-",linewidth=3,label="OSIRIS K (60 min; photon limited)",color="#ff9900")
+
+        np.savetxt("/home/sda/jruffio/pyOSIRIS/figures/contrast4Eric.txt",
+            np.concatenate([binnedpsf_sep[:,None],OSIRIS_photnoise_cont[:,None]/np.sqrt(6)],axis=1))
+        plt.xscale("log")
+        plt.xlim([0.05,2])
+        plt.ylim([0,12])
+        plt.xlabel("Separation (arcsec)",fontsize=fontsize)
+        plt.ylabel("BTSettl - 2 Myr - Mass ($M_{Jup}$)",fontsize=fontsize)
+        plt.gca().tick_params(axis='x', labelsize=fontsize)
+        plt.gca().tick_params(axis='y', labelsize=fontsize)
+        plt.legend(loc="upper right",frameon=True,fontsize=fontsize*0.75)
+        plt.tight_layout()
+
+        plt.show()
+
         exit()
 
     if 1:
