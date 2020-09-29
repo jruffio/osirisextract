@@ -68,6 +68,7 @@ if 1: # add filename
     filelist = glob.glob(os.path.join("/data/osiris_data/HR_8799_*","*",reductionname,"*",filenamefilter))
     filelist.extend(glob.glob(os.path.join("/data/osiris_data/51_Eri_*","*",reductionname,"*",filenamefilter)))
     filelist.extend(glob.glob(os.path.join("/data/osiris_data/kap_And","*",reductionname,"*",filenamefilter)))
+    filelist.extend(glob.glob(os.path.join("/data/osiris_data/GJ_504_b","*",reductionname,"*",filenamefilter)))
     filelist.sort()
     for filename in filelist:
         if filename not in old_filelist:
@@ -277,6 +278,14 @@ if 1:
             new_list_data[k][Hmag_id] = 6.418
             new_list_data[k][Kmag_id] = 6.438
             new_list_data[k][hipnum_id] = 25453
+        elif refstar_name == "HIP_65599":
+            new_list_data[k][rv_simbad_id] =-18
+            new_list_data[k][vsini_fixed_id] = 100#actually dunno np.nan
+            new_list_data[k][type_id] = "A0"
+            new_list_data[k][Jmag_id] = 7.929
+            new_list_data[k][Hmag_id] = 7.975
+            new_list_data[k][Kmag_id] = 7.938
+            new_list_data[k][hipnum_id] = 65599
         else:
             new_list_data[k][rv_simbad_id] =  np.nan
             new_list_data[k][vsini_fixed_id] = np.nan
@@ -295,7 +304,7 @@ if 1: # add barycenter RV
         # pmra : Proper motion in RA [mas/year]. Eg. PMRA = d(RA)/dt * cos(dec). Default is 0.
         # pmdec : Proper motion in Dec [mas/year]. Default is 0.
         # px : Parallax of target [mas]. Default is 0.
-    from barycorrpy import get_BC_vel
+    # from barycorrpy import get_BC_vel
     filename_id = new_colnames.index("filename")
     MJDOBS_id = new_colnames.index("MJD-OBS")
     try:
