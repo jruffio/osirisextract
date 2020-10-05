@@ -72,9 +72,10 @@ if __name__ == "__main__":
         IFSfilter = "Kbb"#"Jbb"#"Hbb"#"Kbb"
         # planet = "HR_8799_b"
         # planet = "HR_8799_c"
-        planet = "HR_8799_d"
+        # planet = "HR_8799_d"
         # planet = "kap_And"
         # planet = "51_Eri_b"
+        planet = "GJ_504_b"
         # extra_filter = "a013001"
         extra_filter = ""
         if "HR_8799_b" in planet:#/data/osiris_data/HR_8799_b/20161107/reduced_telluric_jb/HD_210501/s161107_a032002_Kbb_020.fits
@@ -107,6 +108,9 @@ if __name__ == "__main__":
             if "Kbb" in IFSfilter:
                 date_list = ["20161106","20161107","20161108","20171104"] #Kbb
             # date_list = [date_list[-1],]
+        elif "GJ_504_b" in planet:
+            if "Kbb" in IFSfilter:
+                date_list = ["20190526","20190527"] #Kbb
         foldername = planet
 
 
