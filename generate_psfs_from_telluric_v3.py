@@ -71,11 +71,11 @@ if __name__ == "__main__":
     if 1:
         IFSfilter = "Kbb"#"Jbb"#"Hbb"#"Kbb"
         # planet = "HR_8799_b"
-        # planet = "HR_8799_c"
+        planet = "HR_8799_c"
         # planet = "HR_8799_d"
         # planet = "kap_And"
         # planet = "51_Eri_b"
-        planet = "GJ_504_b"
+        # planet = "GJ_504_b"
         # extra_filter = "a013001"
         extra_filter = ""
         if "HR_8799_b" in planet:#/data/osiris_data/HR_8799_b/20161107/reduced_telluric_jb/HD_210501/s161107_a032002_Kbb_020.fits
@@ -88,13 +88,13 @@ if __name__ == "__main__":
             # date_list = [date_list[1],]
         elif "HR_8799_c" in planet:
             if "Kbb" in IFSfilter:
-                date_list = ["20100715","20101104","20110723","20110724","20110725","20130726","20171103","20200729"] #Kbb
+                date_list = ["20100715","20101104","20110723","20110724","20110725","20130726","20171103","20200729","20201006"] #Kbb
             elif "Hbb" in IFSfilter:
                 date_list = ["20101028","20101104","20110724","20110725","20171103"] # Hbb
             elif "Jbb" in IFSfilter:
                 date_list = ["20130726","20131029", "20131030", "20131031"] #Jbb
             # date_list = [date_list[0],]
-            date_list = ["20200729"] #Kbb
+            date_list = ["20201006"] #Kbb
         elif "HR_8799_d" in planet:
             if "Kbb" in IFSfilter:
                 date_list = ["20130727","20150720","20150722","20150723","20150828","20200729","20200730","20200731"] #Kbb

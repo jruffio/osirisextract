@@ -239,7 +239,7 @@ if 1:
     def convertdates(date_list):
         return [date[4:6]+"-"+date[6:8]+"-"+date[0:4] for date in date_list ]
 
-    plt.figure(1,figsize=(4,3.7))
+    plt.figure(1,figsize=(6,6))
     if 1:
         plt.plot(rv_b,linestyle="",color="#0099cc",marker="x") #"#ff9900" "#0099cc" "#6600ff"
         plt.errorbar(numbasis_list,rv_b,yerr=rverr_b,color="#0099cc",label="b: RV")
@@ -259,10 +259,29 @@ if 1:
         # eb = plt.errorbar(numbasis_list+0.02,rv_fake_d,yerr=rverr_fake_d,color="#6600ff",fmt="",linestyle="--",label="c: corrected RV")
         # eb[-1][0].set_linestyle("--")
 
+    with open("/data/osiris_data/rv_bcd_2015.csv", 'r') as csvfile:
+        csv_reader = csv.reader(csvfile, delimiter=',')
+        rv_bcd_list_table = np.array(list(csv_reader)[1::]).astype(np.float)
+        rv_bcd_list_table = np.concatenate([rv_bcd_list_table,-rv_bcd_list_table],axis=0)
+        rv_bcd_list_table = rv_bcd_list_table[np.where(rv_bcd_list_table[:,0]>0)[0],:]
+        rv_bmc_list_data = rv_bcd_list_table[:,0]-rv_bcd_list_table[:,1]
+        rv_dmc_list_data = rv_bcd_list_table[:,2]-rv_bcd_list_table[:,1]
 
-    plt.legend(loc="lower left",frameon=True,fontsize=fontsize)
+    rv_bmc_med = np.median(rv_bmc_list_data)
+    rv_dmc_med = np.median(rv_dmc_list_data)
+    rv_bmc_std = np.std(rv_bmc_list_data)
+    rv_dmc_std = np.std(rv_dmc_list_data)
+    plt.fill_between(numbasis_list,
+                     rv_c+rv_bmc_med-rv_bmc_std,
+                     rv_c+rv_bmc_med+rv_bmc_std,alpha=0.4,facecolor="none",edgecolor="#006699",label="Wang et al. 2018 ($RV_b-RV_c$)",hatch="\\") # (Astrometry; bcde coplanar & stable)
+    plt.fill_between(numbasis_list,
+                     rv_c+rv_dmc_med-rv_dmc_std,
+                     rv_c+rv_dmc_med+rv_dmc_std,alpha=0.4,facecolor="none",edgecolor="#6600ff",label="Wang et al. 2018 ($RV_d-RV_c$)",hatch="/") # (Astrometry; bcde coplanar & stable)
+
+    plt.legend(loc="upper left",frameon=True,fontsize=fontsize)
     plt.xlabel("# PCA modes",fontsize=fontsize)
     plt.xticks([0,1,2],[0,1,10])
+    plt.ylim([-15,-5])
     plt.ylabel("RV (km/s)",fontsize=fontsize)
     plt.tick_params(axis="x",labelsize=fontsize)
     plt.tick_params(axis="y",labelsize=fontsize)

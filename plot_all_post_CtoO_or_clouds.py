@@ -95,6 +95,10 @@ if __name__ == "__main__":
                     plt.gca().tick_params(axis='y', labelsize=fontsize)
 
     for paraid, xlabel in enumerate(xlabel_list):
+        plt.sca(ax_post_list[paraid][1])
+        plt.xlabel(xlabel,fontsize=fontsize)
+        plt.sca(ax_post_list[paraid][2])
+        plt.xlabel(xlabel,fontsize=fontsize)
         plt.sca(ax_post_list[paraid][0])
         plt.xlabel(xlabel,fontsize=fontsize)
         plt.ylabel("Posterior ",fontsize=fontsize)

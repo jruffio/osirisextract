@@ -450,7 +450,7 @@ def get_err_from_posterior(x,posterior):
     return x[argmax_post],(rx-lx)/2.,argmax_post
 
 numbasis=0
-if 0:
+if 1:
     from scipy.signal import correlate2d
     try:
         cen_filename_id = old_colnames.index("cen filename")
@@ -525,8 +525,8 @@ if 0:
     # init_wv = CRVAL1/1000. # wv for first slice in mum
 
     numbasis = 0#1,3,5
-    myfolder = "sherlock/20191205_RV"
-    # myfolder = "sherlock/20191104_RVsearch"
+    # myfolder = "sherlock/20191205_RV"
+    myfolder = "sherlock/20200518_molecules"
     # myfolder = "sherlock/20191018_RVsearch"
     suffix = "_outputHPF_cutoff40_sherlock_v1_search_resinmodel_kl{0}".format(numbasis)
     # suffix = "_outputHPF_cutoff40_sherlock_v1_search"
@@ -571,7 +571,7 @@ if 0:
             cube = cube - offsets
 
         bary_rv = -float(item[bary_rv_id])/1000. # RV in km/s
-        rv_star = -12.6#-12.6+-1.4km/s HR 8799 Rob and Simbad
+        rv_star = -27#-12.6+-1.4km/s HR 8799 Rob and Simbad
 
         # print(bary_rv+rv_star)
         guess_rv_id = np.argmin(np.abs(planetRV_hd-(bary_rv+rv_star)))

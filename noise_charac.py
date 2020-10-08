@@ -388,7 +388,93 @@ if __name__ == "__main__":
     inputDir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/"
     out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
 
-    if 1: # JWST spectra
+    if 1:
+        rot = -42
+        fov_ravec = np.array([np.cos(np.deg2rad(rot)),-np.sin(np.deg2rad(rot))])
+        fov_decvec= np.array([np.sin(np.deg2rad(rot)),np.cos(np.deg2rad(rot))])
+        print(fov_ravec)
+        print(fov_decvec)
+        print(fov_ravec*1076*10+fov_decvec*544*10)
+        print(np.sqrt(np.sum((fov_ravec*1076*10)**2+(fov_decvec*544*10)**2)))
+        exit()
+
+        e_ra = -308
+        e_dec = 232
+        d_ra = -546.5
+        d_dec = -428.8
+        c_ra =  -373
+        c_dec = 865.5
+        print(np.rad2deg(np.arctan2(0,0)))
+        print(np.rad2deg(np.arctan2(1,0)))
+
+        f_ra =  -225
+        f_dec = 52.5
+        # f_sep = 250
+        # f_pa = 270
+        # f_ra = f_sep * np.sin(np.deg2rad(f_pa))
+        # f_dec = f_sep * np.cos(np.deg2rad(f_pa))
+
+        print(np.rad2deg(np.arctan2(c_ra,c_dec)) % 360)
+        print(np.rad2deg(np.arctan2(d_ra,d_dec)) % 360)
+        # print(np.rad2deg(np.arctan2(e_ra,e_dec)) % 360)
+        # print(np.rad2deg(np.arctan2(f_ra,f_dec)) % 360)
+        #
+        # print(np.sqrt(c_ra**2+c_dec**2))
+        # print(np.sqrt(d_ra**2+d_dec**2))
+        # print(np.sqrt(e_ra**2+e_dec**2))
+        # print(np.sqrt(f_ra**2+f_dec**2))
+
+        print(np.rad2deg(np.arctan2((c_ra+d_ra)/2.,(c_dec+d_dec)/2.)) % 360)
+        print(np.rad2deg(np.arctan2((c_ra-d_ra)/2.,(c_dec-d_dec)/2.)) % 360)
+        # print(np.rad2deg(np.arctan2(4,64)) % 360)
+        # exit()
+        # cen_ra = (f_ra+d_ra)/2.
+        # cen_dec = 0
+        # rot = 0
+
+        rot = 7.6-(np.rad2deg(np.arctan2(4,64)) % 360)
+        fov_ravec = np.array([np.cos(np.deg2rad(rot)),-np.sin(np.deg2rad(rot))])
+        fov_decvec= np.array([np.sin(np.deg2rad(rot)),np.cos(np.deg2rad(rot))])
+        cen_ra = (c_ra+d_ra)/2. + 65*fov_ravec[0]+ 8*35*fov_decvec[0]
+        cen_dec = (c_dec+d_dec)/2. + 65*fov_ravec[1] + 8*35*fov_decvec[1]
+        # cen_ra = (f_ra+d_ra)/2.
+        # cen_dec = 0
+
+        # cen_ra = c_ra
+        # cen_dec = c_dec
+        # rot = 66
+        # cen_ra = d_ra
+        # cen_dec = d_dec
+        # rot = -39
+
+
+        plt.scatter([0],[0])
+        plt.scatter([c_ra,d_ra,e_ra,f_ra],[c_dec,d_dec,e_dec,f_dec])
+        plt.xlim([-1500,1500])
+        plt.ylim([-1500,1500])
+
+        w = 18*35
+        l = 63*35
+        print(fov_ravec)
+        print(fov_decvec)
+        plt.plot([cen_ra+fov_ravec[0]*w/2.+fov_decvec[0]*l/2.,cen_ra+fov_ravec[0]*w/2.-fov_decvec[0]*l/2],
+                 [cen_dec+fov_ravec[1]*w/2.+fov_decvec[1]*l/2.,cen_dec+fov_ravec[1]*w/2.-fov_decvec[1]*l/2],color="red",linestyle="--")
+        plt.plot([cen_ra-fov_ravec[0]*w/2.+fov_decvec[0]*l/2.,cen_ra-fov_ravec[0]*w/2.-fov_decvec[0]*l/2],
+                 [cen_dec-fov_ravec[1]*w/2.+fov_decvec[1]*l/2.,cen_dec-fov_ravec[1]*w/2.-fov_decvec[1]*l/2],color="red",linestyle="--")
+        plt.plot([cen_ra+fov_ravec[0]*w/2.+fov_decvec[0]*l/2.,cen_ra+fov_ravec[0]*(w/2.-3*35)-fov_decvec[0]*l/2],
+                 [cen_dec+fov_ravec[1]*w/2.+fov_decvec[1]*l/2.,cen_dec+fov_ravec[1]*(w/2.-3*35)-fov_decvec[1]*l/2],color="pink",linestyle="-")
+        plt.plot([cen_ra-fov_ravec[0]*(w/2.-4*35)+fov_decvec[0]*l/2.,cen_ra-fov_ravec[0]*w/2.-fov_decvec[0]*l/2],
+                 [cen_dec-fov_ravec[1]*(w/2.-4*35)+fov_decvec[1]*l/2.,cen_dec-fov_ravec[1]*w/2.-fov_decvec[1]*l/2],color="pink",linestyle="-")
+
+        plt.gca().annotate("FOV: dra={0:.0f} ddec={1:.0f} rot={2:.1f}".format(cen_ra,cen_dec,rot),
+                           xy=(1000,-1000), va="bottom", ha="left", fontsize=fontsize, color="black")
+        plt.gca().invert_xaxis()
+        plt.gca().set_aspect("equal")
+        plt.show()
+        exit()
+
+
+    if 0: # JWST spectra
         # filename = "/data/JWST/nirspec/HR2562_G395H:F290LP_R2700/cube/cube_reconstructed.fits"
         # filename = "/data/JWST/nirspec/HR2562_G395H:F290LP_R2700/cube/cube_reconstructed_snr.fits"
         filename = "/data/JWST/nirspec/eps_Eri/eps_Eri_wb52793/cube/cube_reconstructed_signal.fits"

@@ -627,8 +627,8 @@ if __name__ == "__main__":
         print(uni_starname_list)
         # delta_teff = 50
         # uni_starname_list = ['kap_And','HIP_111538','51_Eri','HIP_25453','HD_7215','HIP_1123','HIP_116886','HR_8799','HD_210501','BD+14_4774']
-        # uni_starname_list = ['HR_8799',]
-        uni_starname_list = ['HIP_65599',]
+        uni_starname_list = ['HR_8799',]
+        # uni_starname_list = ['HIP_65599',]
         # uni_starname_list = ['HD_210501',]
         print(ref_unique_dates)
         # exit()
@@ -810,12 +810,14 @@ if __name__ == "__main__":
             type_list = []
 
             plt.figure(2)
-            for date in ["190526","190527"]:#['200729','200730','200731']:#ref_unique_dates:
+            for date in ["201006"]:#["190526","190527"]:#['200729','200730','200731']:#ref_unique_dates:
                 for IFSfilter in ["Kbb"]:#["Hbb","Kbb"]:
                     where_files = np.where((starname == ref_starname_list) *\
                                            np.array(["ao_off_" not in a for a in ref_stars_filelist])*\
                                            (date == ref_dates_list)*\
                                            (IFSfilter == ref_IFSfilter_list))
+                    # print(where_files)
+                    # exit()
 
 
                     if len(where_files[0]) != 0:
@@ -1039,8 +1041,8 @@ if __name__ == "__main__":
         istest = ""#"_test"
         # for starname in ['kap_And','HIP_111538','51_Eri','HIP_25453','HD_7215','HIP_1123','HIP_116886','HR_8799','HD_210501','BD+14_4774']:
         # for starname in ['HD_210501']:
-        # for starname in ['HR_8799']:
-        for starname in ['HIP_65599']:
+        for starname in ['HR_8799']:
+        # for starname in ['HIP_65599']:
             #
             # filter_postfilename = "kap_And_*_posterior.fits"
             # filter_postfilename = "HIP_111538_*_posterior.fits"

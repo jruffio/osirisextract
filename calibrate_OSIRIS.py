@@ -217,8 +217,10 @@ if 1:
     # inputdir = "/data/osiris_data/HR_8799_d"
     # filelist = glob.glob(os.path.join(inputdir,"20200*/reduced_sky_jb/s*_"+IFSfilter+"_[0-9][0-9][0-9].fits"))
     # filelist = glob.glob(os.path.join(inputdir,"202008*/reduced_sky_jb/s*_"+IFSfilter+"_[0-9][0-9][0-9].fits"))
-    inputdir = "/data/osiris_data/GJ_504_b"
-    filelist = glob.glob(os.path.join(inputdir,"2019*/reduced_sky_jb/s*_"+IFSfilter+"_[0-9][0-9][0-9].fits"))
+    # inputdir = "/data/osiris_data/GJ_504_b"
+    # filelist = glob.glob(os.path.join(inputdir,"2019*/reduced_sky_jb/s*_"+IFSfilter+"_[0-9][0-9][0-9].fits"))
+    inputdir = "/data/osiris_data/HR_8799_c"
+    filelist = glob.glob(os.path.join(inputdir,"202010*/reduced_sky_jb/s*_"+IFSfilter+"_[0-9][0-9][0-9].fits"))
     # filelist = [filelist[1]]
     print(filelist)
     # exit()
@@ -580,9 +582,10 @@ if 1:
     suffix="_Rfixed"
     IFSfilter = "Kbb"
     # IFSfilter = "Hbb"
-    year = 2019
+    year = 2020
     # scale = "020"
-    scale = "050"
+    # scale = "050"
+    scale = "035"
     # inputdir = "/data/osiris_data/HR_8799_*"
     filename_filter_list = []
     # filename_filter = os.path.join(inputdir,"2010*/reduced_sky_jb/s*_"+IFSfilter+"_020.fits")

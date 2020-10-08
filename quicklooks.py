@@ -18,6 +18,7 @@ planet = "HR_8799_c"
 # planet = "HR_8799_d"
 # planet = "kap_And"
 # planet = "51_Eri_b"
+# planet = "GJ_504_b"
 
 # IFSfilter = "Kbb"
 # IFSfilter = "Hbb"
@@ -56,6 +57,7 @@ with open(fileinfos_filename, 'r') as csvfile:
     xoffset_id = colnames.index("header offset x")
     yoffset_id = colnames.index("header offset y")
     sequence_id = colnames.index("sequence")
+    seqit_id = colnames.index("sequence it")
     status_id = colnames.index("status")
     wvsolerr_id = colnames.index("wv sol err")
     ifs_filter_id = colnames.index("IFS filter")
@@ -69,7 +71,7 @@ new_list_data = []
 for filename in filelist_sorted:
     if 0 or "Kbb" in list_data[filelist.index(filename)][ifs_filter_id] or \
        "Hbb" in list_data[filelist.index(filename)][ifs_filter_id]:
-        if 1:#"20190324_HPF_only" in list_data[filelist.index(filename)][cen_filename_id]:
+        if "20201006" in list_data[filelist.index(filename)][cen_filename_id]:
             new_list_data.append(list_data[filelist.index(filename)])
 list_data=new_list_data
 # print(new_list_data)
@@ -98,6 +100,147 @@ list_data=new_list_data
 #     list_data = new_list_data
 
 N_lines =  len(list_data)
+
+
+# plot 2D images
+if 1:
+
+    # seq_list = np.array([item[sequence_id] for item in list_data])
+    seq_list = np.concatenate([np.zeros(5),np.ones(5),2*np.ones(5),3*np.ones(5),4*np.ones(5)])
+    # seq_list = np.concatenate([np.zeros(15),3*np.ones(5),4*np.ones(5)])
+    seqit_list = np.array([item[seqit_id] for item in list_data])
+
+    N_lines =  len(np.unique(seq_list))
+    seqref = -1
+    Ninarow = 20
+    f,ax_list = plt.subplots(int(np.ceil(N_lines/Ninarow)),Ninarow,sharey="row",sharex="col",figsize=(12,12./Ninarow*64./19.*(N_lines//Ninarow+1)))#figsize=(12,8)
+    try:
+        ax_list = [myax for rowax in ax_list for myax in rowax ]
+    except:
+        pass
+
+
+
+    for k,seq in enumerate(np.unique(seq_list)):
+        cube_hd_list = []
+        cube_list  = []
+        ax = ax_list[k]
+        plt.sca(ax)
+        for item in np.array(list_data)[np.where(seq_list==seq)[0]]:
+            reducfilename = item[cen_filename_id]
+            try:
+                hdulist = pyfits.open(reducfilename.replace(".fits","_planetRV.fits"))
+            except:
+                print("Not there")
+                continue
+            planetRV = hdulist[0].data
+
+            NplanetRV_hd = np.where((planetRV[1::]-planetRV[0:(np.size(planetRV)-1)]) < 0)[0][0]+1
+            planetRV_hd = hdulist[0].data[0:NplanetRV_hd]
+            planetRV = hdulist[0].data[NplanetRV_hd::]
+            # rv_per_pix = 3e5*dwv/(init_wv+dwv*nl//2) # 38.167938931297705
+
+            hdulist = pyfits.open(reducfilename)
+            print(hdulist[0].data.shape)
+            # cube_hd = hdulist[0].data[-1,0,0,0:NplanetRV_hd,:,:]
+            # cube = hdulist[0].data[-1,0,0,NplanetRV_hd::,:,:]
+
+            _cube_hd = hdulist[0].data[-1,0,2,0:NplanetRV_hd,:,:]-hdulist[0].data[-1,0,1,0:NplanetRV_hd,:,:]
+            _cube = hdulist[0].data[-1,0,2,NplanetRV_hd::,:,:]-hdulist[0].data[-1,0,1,NplanetRV_hd::,:,:]
+            cube_cp = copy(_cube)
+            cube_cp[np.where(np.abs(planetRV)<500)[0],:,:] = np.nan
+            offsets = np.nanmedian(cube_cp,axis=0)[None,:,:]
+            _cube_hd = _cube_hd - offsets
+            _cube = _cube - offsets
+            cube_hd_list.append(_cube_hd)
+            cube_list.append(_cube)
+
+        cube = np.nansum(cube_list,axis=0)
+        cube_hd = np.nansum(cube_hd_list,axis=0)
+        # if k == 0 or k == 3 or k == 4:
+        #     cube = np.nansum(cube_list,axis=0)
+        #     cube_hd = np.nansum(cube_hd_list,axis=0)
+        # else:
+        #     cube[:,2*k::,:] = cube[:,2*k::,:]+ np.nansum(cube_list,axis=0)[:,2*k::,:]
+        #     cube_hd[:,2*k::,:] = cube_hd[:,2*k::,:]+np.nansum(cube_hd_list,axis=0)[:,2*k::,:]
+
+        bary_rv = -float(item[bary_rv_id])/1000. # RV in km/s
+        if "HR_8799" in reducfilename:
+            rv_star = -12.6#-12.6+-1.4km/s HR 8799 Rob and Simbad
+        if "kap_And" in reducfilename:
+            rv_star = -12.7#-12.6+-1.4km/s HR 8799 Rob and Simbad
+        if "51_Eri_b" in reducfilename:
+            rv_star = +12.6#-12.6+-1.4km/s HR 8799 Rob and Simbad
+        if "GJ_504_b" in reducfilename:
+            rv_star = -27#-12.6+-1.4km/s HR 8799 Rob and Simbad
+        print(rv_star)
+        # exit()
+
+        try:
+            kcen = int(item[kcen_id])
+            lcen = int(item[lcen_id])
+            rvcen = float(item[rvcen_id])
+        except:
+            rvcen = bary_rv + rv_star
+        zcen = np.argmin(np.abs(planetRV_hd-rvcen))
+        image = copy(cube_hd[zcen,:,:])
+        delta_AIC = cube_hd[zcen,kcen,lcen]
+        # if "171103" in reducfilename:
+        #     test.append(image)
+        # if "171103" not in reducfilename:
+        #     test2.append(image)
+
+        ny,nx = image.shape
+        if 1:#delta_AIC>50:
+            plt.imshow(image,interpolation="nearest",origin="lower")#,cmap="gray")
+            # plt.clim([0,cube_hd[zcen,kcen,lcen]/2.0])
+            # plt.clim([0,np.nanstd(cube_hd)*10])
+            # plt.clim([0,30])
+            try:
+                plt.clim([0,np.max([np.nanstd(cube_hd)*10,30])])
+            except:
+                plt.clim([0,np.max([np.nanstd(image)*10,30])])
+            plt.clim([0,50])
+            plt.xticks([0,10])
+
+
+        if int(item[status_id]) == 1:
+            color = "white"
+            circlelinestyle = "-"
+        elif int(item[status_id]) == 2:
+            color = "grey"
+            circlelinestyle = "--"
+        else:
+            color = "grey"
+            circlelinestyle = "--"
+        plt.gca().text(3,10,os.path.basename(item[filename_id]).split("bb_")[0],ha="left",va="bottom",rotation=90,size=fontsize/3*2,color=color)
+        try:
+            circle = plt.Circle((lcen,kcen),5,color=color, fill=False,linestyle=circlelinestyle)
+            ax.add_artist(circle)
+            # print(hdulist[0].data[0,0,11,zcen,kcen,lcen])
+        except:
+            pass
+        # plt.title(os.path.basename(item[filename_id]).split(IFSfilter)[0])
+
+    for ax in ax_list:
+        plt.sca(ax)
+        plt.tick_params(axis="x",which="both",bottom=False,top=False,labelbottom=False)
+        plt.tick_params(axis="y",which="both",left=False,right=False,labelleft=False)
+        plt.gca().spines["right"].set_visible(False)
+        plt.gca().spines["left"].set_visible(False)
+        plt.gca().spines["top"].set_visible(False)
+        plt.gca().spines["bottom"].set_visible(False)
+
+    # f.subplots_adjust(wspace=0,hspace=0)
+    # plt.show()
+    if not os.path.exists(os.path.join(out_pngs,planet)):
+        os.makedirs(os.path.join(out_pngs,planet))
+    print("Saving "+os.path.join(out_pngs,planet,planet+"_"+suffix+"_images_kl{0}.pdf".format(resnumbasis)))
+    plt.savefig(os.path.join(out_pngs,planet,planet+"_"+suffix+"_images_kl{0}.png".format(resnumbasis)),bbox_inches='tight')
+    plt.savefig(os.path.join(out_pngs,planet,planet+"_"+suffix+"_images_kl{0}.pdf".format(resnumbasis)),bbox_inches='tight')
+    plt.show()
+    exit()
+
 
 # plot 2D images
 if 1:
@@ -142,7 +285,7 @@ if 1:
         # if "20190324_HPF_only" not in reducfilename:
         #     continue
         print(k,item)
-        # if "20171104" not in reducfilename:
+        # if "20201006" not in reducfilename:
         #     continue
         # print(reducfilename)
         # reducfilename = item[cen_filename_id].replace("20190117_HPFonly","20190125_HPFonly").replace("sherlock_v0","sherlock_v1_search")
@@ -191,6 +334,8 @@ if 1:
                 rv_star = -12.7#-12.6+-1.4km/s HR 8799 Rob and Simbad
             if "51_Eri_b" in reducfilename:
                 rv_star = +12.6#-12.6+-1.4km/s HR 8799 Rob and Simbad
+            if "GJ_504_b" in reducfilename:
+                rv_star = -27#-12.6+-1.4km/s HR 8799 Rob and Simbad
             print(rv_star)
             # exit()
 
@@ -227,7 +372,7 @@ if 1:
                 plt.clim([0,np.max([np.nanstd(cube_hd)*10,30])])
             except:
                 plt.clim([0,np.max([np.nanstd(image)*10,30])])
-            plt.clim([0,40])
+            plt.clim([0,30])
             plt.xticks([0,10])
 
 

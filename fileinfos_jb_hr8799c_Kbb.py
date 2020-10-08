@@ -216,7 +216,7 @@ if 1: # add filename
             else:
                 seqid += 1
                 imid = 0
-            print("[\"{0}\",{1},{2},0],".format(filename,seqid,imid) )
+            print("[\"{0}\",{1},{2},0],".format(filename,seqid+2,imid) )
             pastnum = currnum
         exit()
     else:
@@ -357,7 +357,32 @@ if 1: # add filename
                         ["/data/osiris_data/HR_8799_c/20200729/reduced_jb/s200729_a036002_Kbb_020.fits",28,0,1],
                         ["/data/osiris_data/HR_8799_c/20200729/reduced_jb/s200729_a037002_Kbb_020.fits",28,1,1],
                         ["/data/osiris_data/HR_8799_c/20200729/reduced_jb/s200729_a038002_Kbb_020.fits",28,2,1],
-                        ["/data/osiris_data/HR_8799_c/20200729/reduced_jb/s200729_a039002_Kbb_020.fits",28,3,1]]
+                        ["/data/osiris_data/HR_8799_c/20200729/reduced_jb/s200729_a039002_Kbb_020.fits",28,3,1],
+                        ["/data/osiris_data/HR_8799_c/20201006/reduced_jb/s201006_a059002_Kbb_035.fits",29,0,1],
+                        ["/data/osiris_data/HR_8799_c/20201006/reduced_jb/s201006_a059003_Kbb_035.fits",29,1,0],
+                        ["/data/osiris_data/HR_8799_c/20201006/reduced_jb/s201006_a059004_Kbb_035.fits",29,2,0],
+                        ["/data/osiris_data/HR_8799_c/20201006/reduced_jb/s201006_a059005_Kbb_035.fits",29,3,0],
+                        ["/data/osiris_data/HR_8799_c/20201006/reduced_jb/s201006_a059006_Kbb_035.fits",29,4,0],
+                        ["/data/osiris_data/HR_8799_c/20201006/reduced_jb/s201006_a060002_Kbb_035.fits",29,5,0],
+                        ["/data/osiris_data/HR_8799_c/20201006/reduced_jb/s201006_a060003_Kbb_035.fits",29,6,0],
+                        ["/data/osiris_data/HR_8799_c/20201006/reduced_jb/s201006_a060004_Kbb_035.fits",29,7,0],
+                        ["/data/osiris_data/HR_8799_c/20201006/reduced_jb/s201006_a060005_Kbb_035.fits",29,8,0],
+                        ["/data/osiris_data/HR_8799_c/20201006/reduced_jb/s201006_a060006_Kbb_035.fits",29,9,0],
+                        ["/data/osiris_data/HR_8799_c/20201006/reduced_jb/s201006_a061002_Kbb_035.fits",29,10,0],
+                        ["/data/osiris_data/HR_8799_c/20201006/reduced_jb/s201006_a061003_Kbb_035.fits",29,11,0],
+                        ["/data/osiris_data/HR_8799_c/20201006/reduced_jb/s201006_a061004_Kbb_035.fits",29,12,0],
+                        ["/data/osiris_data/HR_8799_c/20201006/reduced_jb/s201006_a061005_Kbb_035.fits",29,13,0],
+                        ["/data/osiris_data/HR_8799_c/20201006/reduced_jb/s201006_a061006_Kbb_035.fits",29,14,0],
+                        ["/data/osiris_data/HR_8799_c/20201006/reduced_jb/s201006_a062002_Kbb_035.fits",29,15,0],
+                        ["/data/osiris_data/HR_8799_c/20201006/reduced_jb/s201006_a062003_Kbb_035.fits",29,16,0],
+                        ["/data/osiris_data/HR_8799_c/20201006/reduced_jb/s201006_a062004_Kbb_035.fits",29,17,0],
+                        ["/data/osiris_data/HR_8799_c/20201006/reduced_jb/s201006_a062005_Kbb_035.fits",29,18,0],
+                        ["/data/osiris_data/HR_8799_c/20201006/reduced_jb/s201006_a062006_Kbb_035.fits",29,19,0],
+                        ["/data/osiris_data/HR_8799_c/20201006/reduced_jb/s201006_a063002_Kbb_035.fits",29,20,0],
+                        ["/data/osiris_data/HR_8799_c/20201006/reduced_jb/s201006_a063003_Kbb_035.fits",29,21,0],
+                        ["/data/osiris_data/HR_8799_c/20201006/reduced_jb/s201006_a063004_Kbb_035.fits",29,22,0],
+                        ["/data/osiris_data/HR_8799_c/20201006/reduced_jb/s201006_a063005_Kbb_035.fits",29,23,0],
+                        ["/data/osiris_data/HR_8799_c/20201006/reduced_jb/s201006_a063006_Kbb_035.fits",29,24,0]]
 
     try:
         sequence_id = new_colnames.index("sequence")
@@ -643,8 +668,9 @@ if 1:
     # dwv = CDELT1/1000.
     # init_wv = CRVAL1/1000. # wv for first slice in mum
 
-    numbasis = 0#1,3,5
-    myfolder = "sherlock/20191205_RV"
+    numbasis = 10#1,3,5
+    myfolder = "sherlock/20201006_RV"
+    # myfolder = "sherlock/20191205_RV"
     # myfolder = "sherlock/20191104_RVsearch"
     # myfolder = "sherlock/20191018_RVsearch"
     suffix = "_outputHPF_cutoff40_sherlock_v1_search_resinmodel_kl{0}".format(numbasis)
@@ -659,6 +685,10 @@ if 1:
     #     suffix = "_outputHPF_cutoff40_sherlock_v1_search_resinmodel_kl{0}".format(numbasis)
     for k,item in enumerate(new_list_data):
         filename = item[filename_id]
+        if "20201006" not in filename:
+            continue
+        # print(filename)
+        # exit()
         # if new_list_data[k][cen_filename_id] != "nan":
         #     continue
         # if float(item[MJDOBS_id]) < 59059:
