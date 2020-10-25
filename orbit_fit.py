@@ -10,8 +10,8 @@ if len(sys.argv) == 1:
     osiris_data_dir = "/data/osiris_data"
     astrometry_DATADIR = os.path.join(osiris_data_dir,"astrometry")
     uservs = False
-    # planet = "b"
-    planet = "bc"
+    planet = "b"
+    # planet = "bc"
     coplanar = False
     if uservs and (planet == "b" or planet =="c" or planet == "bc"):
         filename = "{0}/HR8799{1}_rvs.csv".format(astrometry_DATADIR,planet)
@@ -19,12 +19,12 @@ if len(sys.argv) == 1:
         filename = "{0}/HR8799{1}.csv".format(astrometry_DATADIR,planet)
     # MCMC parameters
     num_temps = 16
-    num_walkers = 100
-    total_orbits = 100*100 # number of steps x number of walkers (at lowest temperature)
+    num_walkers = 512
+    total_orbits = 512*100000 # number of steps x number of walkers (at lowest temperature)
     burn_steps = 0 # steps to burn in per walker
-    thin = 2 # only save every 2nd step
-    num_threads = 1#mp.cpu_count() # or a different number if you prefer
-    suffix = "test_fixomegabug_notcoplanar"
+    thin = 50 # only save every 2nd step
+    num_threads = 16#mp.cpu_count() # or a different number if you prefer
+    suffix = "single_planet"
     # suffix = "sherlock"
     # suffix = "sherlock_ptemceefix_16_512_78125_50"
     suffix = suffix+"_{0}_{1}_{2}_{3}_{4}".format(num_temps,num_walkers,total_orbits//num_walkers,thin,uservs)

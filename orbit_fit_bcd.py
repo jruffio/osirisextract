@@ -38,8 +38,10 @@ if __name__ == "__main__":
         # suffix = "sherlock"
         # suffix = "sherlock_ptemceefix_16_512_78125_50"
         # suffix = "test_bcd"
-        itnum = 6
-        suffix = "it{0}".format(itnum)
+        # itnum = 8
+        # suffix = "it{0}".format(itnum)
+        itnum = 2
+        suffix = "from_scratch_it{0}".format(itnum)
         suffix = suffix+"_{0}_{1}_{2}_{3}_{4}".format(num_temps,num_walkers,total_orbits//num_walkers,thin,uservs)
     else:
         import matplotlib
@@ -147,8 +149,9 @@ if __name__ == "__main__":
 
         my_driver.sampler = sampler.MCMC(my_driver.system, num_temps=num_temps, num_walkers=num_walkers, num_threads=num_threads, like='chi2_lnlike', custom_lnlike=None)
 
-        print(my_driver.sampler.curr_pos[0,0,:])
-        print(my_driver.sampler.curr_pos.shape)
+        # print(my_driver.sampler.curr_pos[0,0,:])
+        # print(my_driver.sampler.curr_pos.shape)
+        # print(my_driver.system.coplanar)
         # exit()
 
         if not my_driver.system.coplanar:
@@ -168,73 +171,76 @@ if __name__ == "__main__":
             # my_driver.sampler.curr_pos[:,:,12:18] = np.copy(chainspos_d[0:num_temps,0:num_walkers,0:6])
             # my_driver.sampler.curr_pos[:,:,18] = np.copy(chainspos_d[0:num_temps,0:num_walkers,6])
             # my_driver.sampler.curr_pos[:,:,20] = np.copy(chainspos_d[0:num_temps,0:num_walkers,7])
-            _filename = os.path.join(astrometry_DATADIR,"figures","HR_8799_bcd",
-                                          'chain_'+rv_str+'_bcd_it{0}_{1}_{2}_{3}_{4}_{5}.fits'.format(
-                                              itnum-1,num_temps,num_walkers,100000,thin,uservs))
-            print(_filename)
-            with pyfits.open(_filename) as hdulist:#total_orbits//num_walkers
-                print(hdulist[0].data.shape)
-                my_driver.sampler.curr_pos = hdulist[0].data[:,:,-1,:]
-        elif my_driver.system.coplanar and uservs:
-            # print(my_driver.sampler.curr_pos.shape)
-            # exit()
-            _filename = os.path.join(astrometry_DATADIR,"figures","HR_8799_bcd",
-                                          'chain_'+"withrvs"+'_bcd_it{0}_{1}_{2}_{3}_{4}_{5}_coplanar.fits'.format(
-                                              itnum-1,num_temps,num_walkers,100000,thin,True))
-            print(_filename)
-            with pyfits.open(_filename) as hdulist: #total_orbits//num_walkers
-                print(hdulist[0].data.shape)
-                # print(my_driver.sampler.curr_pos.shape)
-                # exit()
-                my_driver.sampler.curr_pos = hdulist[0].data[:,:,-1,:]
-        elif my_driver.system.coplanar and not uservs:
-            # print(my_driver.sampler.curr_pos.shape)
-            # exit()
-            _filename = os.path.join(astrometry_DATADIR,"figures","HR_8799_bcd",
-                                          'chain_'+"norv"+'_bcd_it{0}_{1}_{2}_{3}_{4}_{5}_coplanar.fits'.format(
-                                              itnum-1,num_temps,num_walkers,100000,thin,False))
-            print(_filename)
-            with pyfits.open(_filename) as hdulist: #total_orbits//num_walkers
-                print(hdulist[0].data.shape)
-                # print(my_driver.sampler.curr_pos.shape)
-                # exit()
-                my_driver.sampler.curr_pos = hdulist[0].data[:,:,-1,:]
-            # print("min",np.min(my_driver.sampler.curr_pos,axis=(0,1)))
-            # print("max",np.max(my_driver.sampler.curr_pos,axis=(0,1)))
-            # print(my_driver.sampler.curr_pos.shape)
+
             # _filename = os.path.join(astrometry_DATADIR,"figures","HR_8799_bcd",
-            #                               'chain_'+"withrvs"+'_bcd_it{0}_{1}_{2}_{3}_{4}_{5}_coplanar.fits'.format(
-            #                                   itnum-1,num_temps,num_walkers,100000,thin,True))
+            #                               'chain_'+rv_str+'_bcd_it{0}_{1}_{2}_{3}_{4}_{5}.fits'.format(
+            #                                   itnum-1,num_temps,num_walkers,100000,thin,uservs))
             # print(_filename)
+            # with pyfits.open(_filename) as hdulist:#total_orbits//num_walkers
+            #     print(hdulist[0].data.shape)
+            #     my_driver.sampler.curr_pos = hdulist[0].data[:,:,-1,:]
+
+            # _filename = os.path.join(astrometry_DATADIR,"figures","HR_8799_bcd",
+            #                               'chain_'+rv_str+'_bcd_it{0}_{1}_{2}_{3}_{4}_{5}_coplanar.fits'.format(
+            #                                   4,16,512,100000,50,True))
+            # print(_filename)
+            # # / scr3 / jruffio / data / osiris_data / astrometry / figures / HR_8799_bcd / chain_withrvs_bcd_it4_16_512_100000_5_True_coplanar.fits
+            # #                                                                              chain_withrvs_bcd_it4_16_512_100000_50_True_coplanar
             # with pyfits.open(_filename) as hdulist: #total_orbits//num_walkers
             #     print(hdulist[0].data.shape)
-            #     # print(my_driver.sampler.curr_pos.shape)
-            #     # exit()
-            #     my_driver.sampler.curr_pos = hdulist[0].data[:,:,-1,[0,1,2,3,4,5, 6,7,8,9, 10,11,12,13, 14,16]]
             #
+            #     chains_withrvs = hdulist[0].data
+            #     chains_withrvs = chains_withrvs[:, :, chains_withrvs.shape[2] - 5:chains_withrvs.shape[2] - 2, :]
+            #     # chains_withrvs = chains_withrvs[:, :, 0:5, :]
+            #     if chains_withrvs.shape[3] == 21 - 4:
+            #         _chains_withrvs = np.zeros(
+            #             (chains_withrvs.shape[0], chains_withrvs.shape[1], chains_withrvs.shape[2],chains_withrvs.shape[3]  + 4))
+            #         a_list = [0, 1, 2, 3, 4, 5,
+            #                   6, 7, 2, 8, 4, 9,
+            #                   10, 11, 2, 12, 4, 13,
+            #                   14, 15, 16]
+            #         b_list = np.arange(21)
+            #         for a, b in zip(a_list, b_list):
+            #             _chains_withrvs[:,:, :, b] = chains_withrvs[:,:, :, a]
+            #         _chains_withrvs[:, :, :, 2+6] = np.clip(_chains_withrvs[:, :, :, 2+6] +1e-3*np.random.randn(*_chains_withrvs[:, :, :, 2+6].shape),1e-6,np.pi-1e-6)
+            #         _chains_withrvs[:, :, :, 4+6] = np.clip(_chains_withrvs[:, :, :, 4+6] +1e-3*np.random.randn(*_chains_withrvs[:, :, :, 4+6].shape),1e-6,2*np.pi-1e-6)
+            #         _chains_withrvs[:, :, :, 2+12] = np.clip(_chains_withrvs[:, :, :, 2+12] +1e-3*np.random.randn(*_chains_withrvs[:, :, :, 2+12].shape),1e-6,np.pi-1e-6)
+            #         _chains_withrvs[:, :, :, 4+12] = np.clip(_chains_withrvs[:, :, :, 4+12] +1e-3*np.random.randn(*_chains_withrvs[:, :, :, 4+12].shape),1e-6,2*np.pi-1e-6)
+            #         chains_withrvs = _chains_withrvs
             #
-            # if restrict_angle_ranges:
-            #     print("coucou")
-            #     wrapped = np.where(my_driver.sampler.curr_pos[:,:,4]>=np.pi)
-            #     # print(wrapped)
-            #     my_driver.sampler.curr_pos[wrapped[0],wrapped[1],4] -= np.pi
-            #     my_driver.sampler.curr_pos[wrapped[0],wrapped[1],3] -= np.pi
-            #     my_driver.sampler.curr_pos[wrapped[0],wrapped[1],8] -= np.pi
-            #     my_driver.sampler.curr_pos[wrapped[0],wrapped[1],12] -= np.pi
-            #     my_driver.sampler.curr_pos[wrapped[0],wrapped[1],3]  = np.mod(my_driver.sampler.curr_pos[wrapped[0],wrapped[1],3],2*np.pi)
-            #     my_driver.sampler.curr_pos[wrapped[0],wrapped[1],8]  = np.mod(my_driver.sampler.curr_pos[wrapped[0],wrapped[1],8],2*np.pi)
-            #     my_driver.sampler.curr_pos[wrapped[0],wrapped[1],12]  = np.mod(my_driver.sampler.curr_pos[wrapped[0],wrapped[1],12],2*np.pi)
-
-        # print("min",np.min(my_driver.sampler.curr_pos,axis=(0,1)))
-        # print("max",np.max(my_driver.sampler.curr_pos,axis=(0,1)))
-        #
-        # print("coucou")
-        # print(my_driver.sampler.curr_pos.shape)
-        # print(len(my_driver.sampler._logl(my_driver.sampler.curr_pos[0,:,:], include_logp=False)))
-        # print(my_driver.sampler._logl(my_driver.sampler.curr_pos[0,:,:], include_logp=False))
+            #         my_driver.sampler.curr_pos = _chains_withrvs[:,:,-1,:]
+            #         print(_chains_withrvs[0,10,-1,:])
+            #         print("yes")
+            #         # exit()
+            # Saving chain /scr3/jruffio/data/osiris_data/astrometry/figures/HR_8799_bcd/chain_withrvs_bcd_it5_16_512_100000_50_True.fits
+            # /scr3/jruffio/data/osiris_data/astrometry/figures/HR_8799_bcd/posterior_withrvs_bcd_it5_16_512_100000_50_True.hdf5
+            #              /scr3/jruffio/data/osiris_data/astrometry/figures/HR_8799_bcd/chain_withrvs_bcd_it4_16_512_100000_50_True.fits
+            _filename = os.path.join(astrometry_DATADIR,"figures","HR_8799_bcd",
+                                          'chain_'+rv_str+'_bcd_from_scratch_it{0}_{1}_{2}_{3}_{4}_{5}.fits'.format(
+                                              itnum-1,num_temps,num_walkers,100000,thin,uservs))
+            print(_filename)
+            # exit()
+            with pyfits.open(_filename) as hdulist: #total_orbits//num_walkers
+                print(hdulist[0].data.shape)
+                # print(my_driver.sampler.curr_pos.shape)
+                # exit()
+                my_driver.sampler.curr_pos = hdulist[0].data[:,:,-1,:]
+        else:
+            _filename = os.path.join(astrometry_DATADIR,"figures","HR_8799_bcd",
+                                          'chain_'+rv_str+'_bcd_from_scratch_it{0}_{1}_{2}_{3}_{4}_{5}_coplanar.fits'.format(
+                                              itnum-1,num_temps,num_walkers,100000,thin,uservs))
+            print(_filename)
+            with pyfits.open(_filename) as hdulist: #total_orbits//num_walkers
+                print(hdulist[0].data.shape)
+                # print(my_driver.sampler.curr_pos.shape)
+                # exit()
+                my_driver.sampler.curr_pos = hdulist[0].data[:,:,-1,:]
+        # print(suffix)
         # exit()
 
 
+        print(my_driver.sampler.curr_pos[0,0,:])
+        # exit()
 
         # plt.figure(2)
         # plt.scatter(np.ravel(my_driver.sampler.curr_pos[:,:,4]),np.ravel(my_driver.sampler.curr_pos[:,:,4+6]))
@@ -247,6 +253,11 @@ if __name__ == "__main__":
         #     exit()
 
         my_driver.sampler.run_sampler(total_orbits, burn_steps=burn_steps, thin=thin)
+        # print(my_driver.sampler.chain[0,0:50,4,2]-my_driver.sampler.chain[0,0:50,3,2])
+        # print(my_driver.sampler.chain[0,0:50,4,2+6]-my_driver.sampler.chain[0,0:50,3,2+6])
+        # print(my_driver.sampler.chain[0,0:50,4,2+12]-my_driver.sampler.chain[0,0:50,3,2+12])
+        # print(my_driver.sampler.chain.shape)
+        # # exit()
 
         # if my_driver.system.coplanar and len(planet) >=2:
         #     my_driver.sampler.chain[:,:,:,2+6] = my_driver.sampler.chain[:,:,:,2]
@@ -312,8 +323,8 @@ if __name__ == "__main__":
         # planet = "b"
         # planet = "bc"
         planet = "bcd"
-        # coplanar = False
-        coplanar = True
+        coplanar = False
+        # coplanar = True
         if uservs:
             filename = "{0}/HR8799{1}_rvs.csv".format(astrometry_DATADIR,planet)
         else:
@@ -329,8 +340,9 @@ if __name__ == "__main__":
         # suffix = "sherlock"
         # suffix = "sherlock_ptemceefix_16_512_78125_50"
         # suffix = "test_bcd"
-        suffix = "it3"
-        suffix = suffix+"_{0}_{1}_{2}_{3}_{4}".format(num_temps,num_walkers,total_orbits//num_walkers,thin,uservs)
+        # suffix = "it3"
+        # suffix = suffix+"_{0}_{1}_{2}_{3}_{4}".format(num_temps,num_walkers,total_orbits//num_walkers,thin,uservs)
+        suffix =  "it8_16_512_100000_50_True"
         if coplanar:
             suffix = suffix + "_coplanar"
 
@@ -347,7 +359,7 @@ if __name__ == "__main__":
         # ax.add_patch(e1)
         # plt.show()
 
-        suffix2 = "it3"
+        suffix2 = "it8"
         suffix2 = suffix2+"_{0}_{1}_{2}_{3}_{4}".format(num_temps,num_walkers,100000,thin,uservs)
         if coplanar:
             suffix2 = suffix2 + "_coplanar"

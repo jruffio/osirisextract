@@ -60,8 +60,7 @@ def get_upperlim_from_posterior(x,posterior):
     # plt.plot(x,posterior/np.nanmax(posterior))
     # plt.show()
     lf = interp1d(cum_posterior,x,bounds_error=False,fill_value=np.nan)
-    upplim = lf(0.6827)
-    return upplim
+    return lf(1-0.6827),lf(0.6827)
 
 try:
     import mkl
@@ -72,7 +71,8 @@ except:
 osiris_data_dir = "/data/osiris_data"
 # osiris_data_dir = "/scr3/jruffio/data/osiris_data"
 astrometry_DATADIR = os.path.join(osiris_data_dir,"astrometry")
-out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
+#out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
+out_pngs = os.path.join(osiris_data_dir,"astrometry","figures")
 sysrv=-12.6
 sysrv_err=1.4
 fontsize = 12
@@ -81,51 +81,185 @@ planet = "bcd"
 
 
 
-if 0: # plot inclination and Omega
-    suffix_withrvs =  "it2_16_512_100000_50_True"
+if 1: # plot inclination and Omega
+    # suffix_withrvs =  "sherlock_16_512_100000_50_False"
+    suffix_withrvs =  "single_planet2_16_512_100000_50_False"
+    with pyfits.open(os.path.join(astrometry_DATADIR,"figures","HR_8799_"+"b",'chain_{0}_{1}_{2}.fits'.format("norv","b",suffix_withrvs))) as hdulist:
+        chains_withrvs = hdulist[0].data
+        chains_withrvs = chains_withrvs[0,:,chains_withrvs.shape[2]-1000::,:]
+        post_b_norv = np.reshape(chains_withrvs,(chains_withrvs.shape[0]*chains_withrvs.shape[1],chains_withrvs.shape[2]))
+    # suffix_withrvs =  "sherlock_16_512_100000_50_False"
+    suffix_withrvs =  "single_planet2_16_512_100000_50_False"
+    with pyfits.open(os.path.join(astrometry_DATADIR,"figures","HR_8799_"+"c",'chain_{0}_{1}_{2}.fits'.format("norv","c",suffix_withrvs))) as hdulist:
+        chains_withrvs = hdulist[0].data
+        chains_withrvs = chains_withrvs[0,:,chains_withrvs.shape[2]-1000::,:]
+        post_c_norv = np.reshape(chains_withrvs,(chains_withrvs.shape[0]*chains_withrvs.shape[1],chains_withrvs.shape[2]))
+    # suffix_withrvs =  "sherlock_16_512_100000_50_False"
+    suffix_withrvs =  "single_planet2_16_512_100000_50_False"
+    with pyfits.open(os.path.join(astrometry_DATADIR,"figures","HR_8799_"+"d",'chain_{0}_{1}_{2}.fits'.format("norv","d",suffix_withrvs))) as hdulist:
+        chains_withrvs = hdulist[0].data
+        chains_withrvs = chains_withrvs[0,:,chains_withrvs.shape[2]-1000::,:]
+        post_d_norv = np.reshape(chains_withrvs,(chains_withrvs.shape[0]*chains_withrvs.shape[1],chains_withrvs.shape[2]))
+
+    # suffix_withrvs =  "it8_16_512_100000_50_True"
+    suffix_withrvs = "from_scratch_it1_16_512_100000_50_True"
     with pyfits.open(os.path.join(astrometry_DATADIR,"figures","HR_8799_"+planet,'chain_{0}_{1}_{2}.fits'.format("withrvs",planet,suffix_withrvs))) as hdulist:
         chains_withrvs = hdulist[0].data
         print(chains_withrvs.shape)
-        # chains_withrvs = chains_withrvs[0,:,chains_withrvs.shape[2]-25::,:]
-        chains_withrvs = chains_withrvs[0,:,:,:]
+        chains_withrvs = chains_withrvs[0,:,chains_withrvs.shape[2]-100::,:]
+        # chains_withrvs = chains_withrvs[0,:,0:25,:]
+        # chains_withrvs = chains_withrvs[0,:,:,:]
         print(chains_withrvs.shape)
         post_withrvs = np.reshape(chains_withrvs,(chains_withrvs.shape[0]*chains_withrvs.shape[1],chains_withrvs.shape[2]))
-    suffix_withrvs_copl =  "it4_16_512_100000_50_True_coplanar"
+    suffix_withrvs_copl =  "it7_16_512_100000_50_True_coplanar"
     with pyfits.open(os.path.join(astrometry_DATADIR,"figures","HR_8799_"+planet,'chain_{0}_{1}_{2}.fits'.format("withrvs",planet,suffix_withrvs_copl))) as hdulist:
         chains_withrvs_copl = hdulist[0].data
-        chains_withrvs_copl = chains_withrvs_copl[0,:,chains_withrvs_copl.shape[2]-25::,:]
+        # chains_withrvs_copl = chains_withrvs_copl[0,:,chains_withrvs_copl.shape[2]-25::,:]
         # chains_withrvs_copl = chains_withrvs_copl[0,:,0:25,:]
-        # chains_withrvs_copl = chains_withrvs_copl[0,:,:,:]
+        chains_withrvs_copl = chains_withrvs_copl[0,:,:,:]
+
         _chains_withrvs_copl = np.zeros((chains_withrvs_copl.shape[0],chains_withrvs_copl.shape[1],chains_withrvs_copl.shape[2]+4))
         a_list = [0,1,2,3,4,5, 6,7,2,8,4,9, 10,11,2,12,4,13, 14,15,16]
         b_list = np.arange(21)
         for a,b in zip(a_list,b_list):
             _chains_withrvs_copl[:,:,b] = chains_withrvs_copl[:,:,a]
         chains_withrvs_copl =_chains_withrvs_copl
-
+        print(chains_withrvs_copl.shape)
         post_withrvs_copl = np.reshape(chains_withrvs_copl,(chains_withrvs_copl.shape[0]*chains_withrvs_copl.shape[1],chains_withrvs_copl.shape[2]))
 
-    # plt.plot(np.rad2deg(chains_withrvs_copl[:,:,4+6].T),alpha=0.05)
+
+    # suffix_norv_copl =  "it7_16_512_100000_50_False_coplanar"
+    suffix_norv_copl = "from_scratch_it1_16_512_100000_50_False_coplanar"
+    with pyfits.open(os.path.join(astrometry_DATADIR,"figures","HR_8799_"+planet,'chain_{0}_{1}_{2}.fits'.format("norv",planet,suffix_norv_copl))) as hdulist:
+        chains_norv_copl = hdulist[0].data
+        # chains_norv_copl = chains_norv_copl[0,:,chains_norv_copl.shape[2]-100::,:]
+        # chains_norv_copl = chains_norv_copl[0,:,500:525,:]
+        chains_norv_copl = chains_norv_copl[0,:,:,:]
+        _chains_norv_copl = np.zeros((chains_norv_copl.shape[0],chains_norv_copl.shape[1],chains_norv_copl.shape[2]+5))
+        a_list = [0,1,2,3,4,5, 6,7,2,8,4,9, 10,11,2,12,4,13, 14,None,15]
+        b_list = np.arange(21)
+        for a,b in zip(a_list,b_list):
+            if a is not None:
+                _chains_norv_copl[:,:,b] = chains_norv_copl[:,:,a]
+            else:
+                _chains_norv_copl[:,:,b] = -10.5
+        chains_norv_copl =_chains_norv_copl
+        print(chains_norv_copl.shape)
+
+        post_norv_copl = np.reshape(chains_norv_copl,(chains_norv_copl.shape[0]*chains_norv_copl.shape[1],chains_norv_copl.shape[2]))
+
+
+    with pyfits.open(os.path.join(astrometry_DATADIR,"figures","HR_8799_"+planet,'Samples_nw512_lo-0566.fits')) as hdulist:
+        chains_rv_Rob = hdulist[0].data
+        post_rv_Rob = np.reshape(chains_rv_Rob,(chains_rv_Rob.shape[0]*chains_rv_Rob.shape[1],chains_rv_Rob.shape[2]))
+        print(chains_rv_Rob.shape)
+    # plt.subplot(1,2,1)
+    # plt.plot(np.rad2deg(chains_withrvs[:,:,4+6].T),alpha=0.05)
+    # plt.subplot(1,2,2)
+    # plt.plot(np.rad2deg(chains_withrvs[:,:,4].T)-np.rad2deg(chains_withrvs[:,:,4+6].T),alpha=0.05)
+    # plt.ylabel("inc")
+    # plt.xlabel("it*50")
+    # # plt.plot(chains_withrvs_copl[:,:,19].T,alpha=0.05)
+    # print(np.rad2deg(chains_withrvs[:,:10,4].T)-np.rad2deg(chains_withrvs[:,1:11,4+6].T))
+    # print(np.nanmedian(np.rad2deg(chains_withrvs[:,:,2].T)-np.rad2deg(chains_withrvs[:,:,2+6].T),axis=1))
     # plt.show()
 
-    fig = plt.figure(1,figsize=(6,4))
     Ome_bounds = [0,360]
     inc_bounds = [0,60]
+    # Ome_inc_bins = [360 / 40, 60 // 5]
+    Ome_inc_bins = [360 / 10, 60 // 1]
+    # print(np.rad2deg(post_rv_Rob[:,4]))
+    # print(post_rv_Rob[:,1])
+    # print((np.arccos(post_rv_Rob[:,1])))
+    # print(np.rad2deg(np.arccos(post_rv_Rob[:,1])))
+    # exit()
+    inc_Ome_rv_Rob_b,xedges,yedges = np.histogram2d(np.rad2deg(post_rv_Rob[:,4]),np.rad2deg(np.arccos(post_rv_Rob[:,1])),
+                                                  bins=Ome_inc_bins,range=[Ome_bounds,inc_bounds])
+    inc_Ome_rv_Rob_c,xedges,yedges = np.histogram2d(np.rad2deg(post_rv_Rob[:,4+6]),np.rad2deg(np.arccos(post_rv_Rob[:,1+6])),
+                                                  bins=Ome_inc_bins,range=[Ome_bounds,inc_bounds])
+    inc_Ome_rv_Rob_d,xedges,yedges = np.histogram2d(np.rad2deg(post_rv_Rob[:,4+12]),np.rad2deg(np.arccos(post_rv_Rob[:,1+12])),
+                                                  bins=Ome_inc_bins,range=[Ome_bounds,inc_bounds])
 
     cmaps = ["cool","hot"]
-    colors=["#006699","#ff9900","#6600ff","grey"]
     # inc_Ome_norv_b,xedges,yedges = np.histogram2d(np.rad2deg(np.concatenate([post_norv[:,4],post_norv[:,4]+np.pi])),np.rad2deg(np.concatenate([post_norv[:,2],post_norv[:,2]])),bins=[360/4,45//2],range=[Ome_bounds,inc_bounds])
-    inc_Ome_withrvs_b,xedges,yedges = np.histogram2d(np.rad2deg(post_withrvs[:,4]),np.rad2deg(post_withrvs[:,2]),bins=[360/40,60//5],range=[Ome_bounds,inc_bounds])
-    inc_Ome_withrvs_c,xedges,yedges = np.histogram2d(np.rad2deg(post_withrvs[:,4+6]),np.rad2deg(post_withrvs[:,2+6]),bins=[360/40,60//5],range=[Ome_bounds,inc_bounds])
-    inc_Ome_withrvs_d,xedges,yedges = np.histogram2d(np.rad2deg(post_withrvs[:,4+12]),np.rad2deg(post_withrvs[:,2+12]),bins=[360/40,60//5],range=[Ome_bounds,inc_bounds])
-    inc_Ome_withrvs_copl,xedges,yedges = np.histogram2d(np.rad2deg(post_withrvs_copl[:,4]),np.rad2deg(post_withrvs_copl[:,2]),bins=[360/40,60//5],range=[Ome_bounds,inc_bounds])
+    # inc_Ome_norv_b,xedges,yedges = np.histogram2d(np.rad2deg(np.concatenate([post_b_norv[:,4],np.mod(post_b_norv[:,4]+np.pi,2*np.pi)])),np.rad2deg(np.concatenate([post_b_norv[:,2],post_b_norv[:,2]])),#np.rad2deg(post_b_norv[:,4]),np.rad2deg(post_b_norv[:,2]),
+    #                                               bins=Ome_inc_bins,range=[Ome_bounds,inc_bounds])
+    # inc_Ome_norv_c,xedges,yedges = np.histogram2d(np.rad2deg(np.concatenate([post_c_norv[:,4],np.mod(post_c_norv[:,4]+np.pi,2*np.pi)])),np.rad2deg(np.concatenate([post_c_norv[:,2],post_c_norv[:,2]])),#np.rad2deg(post_c_norv[:,4]),np.rad2deg(post_c_norv[:,2]),
+    #                                               bins=Ome_inc_bins,range=[Ome_bounds,inc_bounds])
+    # inc_Ome_norv_d,xedges,yedges = np.histogram2d(np.rad2deg(np.concatenate([post_d_norv[:,4],np.mod(post_d_norv[:,4]+np.pi,2*np.pi)])),np.rad2deg(np.concatenate([post_d_norv[:,2],post_d_norv[:,2]])),#np.rad2deg(post_d_norv[:,4]),np.rad2deg(post_d_norv[:,2]),
+    #                                               bins=Ome_inc_bins,range=[Ome_bounds,inc_bounds])
+    inc_Ome_norv_b,xedges,yedges = np.histogram2d(np.rad2deg(post_b_norv[:,4]),np.rad2deg(post_b_norv[:,2]),
+                                                  bins=Ome_inc_bins,range=[Ome_bounds,inc_bounds])
+    inc_Ome_norv_c,xedges,yedges = np.histogram2d(np.rad2deg(post_c_norv[:,4]),np.rad2deg(post_c_norv[:,2]),
+                                                  bins=Ome_inc_bins,range=[Ome_bounds,inc_bounds])
+    inc_Ome_norv_d,xedges,yedges = np.histogram2d(np.rad2deg(post_d_norv[:,4]),np.rad2deg(post_d_norv[:,2]),
+                                                  bins=Ome_inc_bins,range=[Ome_bounds,inc_bounds])
+    inc_Ome_withrvs_b,xedges,yedges = np.histogram2d(np.rad2deg(post_withrvs[:,4]),np.rad2deg(post_withrvs[:,2]),bins=Ome_inc_bins,range=[Ome_bounds,inc_bounds])
+    inc_Ome_withrvs_c,xedges,yedges = np.histogram2d(np.rad2deg(post_withrvs[:,4+6]),np.rad2deg(post_withrvs[:,2+6]),bins=Ome_inc_bins,range=[Ome_bounds,inc_bounds])
+    inc_Ome_withrvs_d,xedges,yedges = np.histogram2d(np.rad2deg(post_withrvs[:,4+12]),np.rad2deg(post_withrvs[:,2+12]),bins=Ome_inc_bins,range=[Ome_bounds,inc_bounds])
+    inc_Ome_withrvs_copl,xedges,yedges = np.histogram2d(np.rad2deg(post_withrvs_copl[:,4]),np.rad2deg(post_withrvs_copl[:,2]),bins=Ome_inc_bins,range=[Ome_bounds,inc_bounds])
+    inc_Ome_norv_copl,xedges,yedges = np.histogram2d(np.rad2deg(np.concatenate([post_norv_copl[:,4],np.mod(post_norv_copl[:,4]+np.pi,2*np.pi)])),np.rad2deg(np.concatenate([post_norv_copl[:,2],post_norv_copl[:,2]])),#np.rad2deg(post_norv_copl[:,4]),np.rad2deg(post_norv_copl[:,2]),
+                                                     bins=Ome_inc_bins,range=[Ome_bounds,inc_bounds])
+    sma_ecc_withrvs_copl_b,aedges,eedges = np.histogram2d(post_withrvs_copl[:,0],post_withrvs_copl[:,1],bins=[50,20],range=[[0,80],[0,0.4]])
+    sma_ecc_norvs_copl_b,aedges,eedges = np.histogram2d(post_norv_copl[:,0],post_norv_copl[:,1],bins=[50,20],range=[[0,80],[0,0.4]])
+    sma_ecc_withrvs_copl_c,aedges,eedges = np.histogram2d(post_withrvs_copl[:,0+6],post_withrvs_copl[:,1+6],bins=[50,20],range=[[0,80],[0,0.4]])
+    sma_ecc_norvs_copl_c,aedges,eedges = np.histogram2d(post_norv_copl[:,0+6],post_norv_copl[:,1+6],bins=[50,20],range=[[0,80],[0,0.4]])
+    sma_ecc_withrvs_copl_d,aedges,eedges = np.histogram2d(post_withrvs_copl[:,0+12],post_withrvs_copl[:,1+12],bins=[50,20],range=[[0,80],[0,0.4]])
+    sma_ecc_norvs_copl_d,aedges,eedges = np.histogram2d(post_norv_copl[:,0+12],post_norv_copl[:,1+12],bins=[50,20],range=[[0,80],[0,0.4]])
+    # print(post_norv_copl[:,0],post_norv_copl[:,1])
+    # exit()
 
     x_centers = [(x1+x2)/2. for x1,x2 in zip(xedges[0:len(xedges)-1],xedges[1:len(xedges)])]
     y_centers = [(y1+y2)/2. for y1,y2 in zip(yedges[0:len(yedges)-1],yedges[1:len(yedges)])]
+    a_centers = [(x1+x2)/2. for x1,x2 in zip(aedges[0:len(aedges)-1],aedges[1:len(aedges)])]
+    e_centers = [(y1+y2)/2. for y1,y2 in zip(eedges[0:len(eedges)-1],eedges[1:len(eedges)])]
 
-    hist_list = [inc_Ome_withrvs_b,inc_Ome_withrvs_c,inc_Ome_withrvs_d,inc_Ome_withrvs_copl]
-    label_list = ["b","c","d","coplanar"]
-    for inc_Ome_hist,mylabel,mycolor in zip(hist_list,label_list,colors):
+    fig = plt.figure(11,figsize=(6,4))
+    hist_list = [sma_ecc_withrvs_copl_b,sma_ecc_withrvs_copl_c,sma_ecc_withrvs_copl_d,sma_ecc_norvs_copl_b,sma_ecc_norvs_copl_c,sma_ecc_norvs_copl_d]
+    label_list = ["b w/ rv","c w/ rv","d w/ rv","b w/o rv","c w/o rv","d w/o rv"]
+    linestyle_list = ["-","--",":","-","--",":"]
+    linewidth_list = [3,3,3,1,1,1]
+    colors=["#006699","#ff9900","#6600ff","#006699","#ff9900","#6600ff"]
+    for inc_Ome_hist,mylabel,ls,mycolor,lw in zip(hist_list,label_list,linestyle_list,colors,linewidth_list):
+        inc_Ome_hist_T = inc_Ome_hist.T
+        ravel_H = np.ravel(inc_Ome_hist_T)
+        print(ravel_H.shape)
+        ind = np.argsort(ravel_H)
+        cum_ravel_H = np.zeros(np.shape(ravel_H))
+        cum_ravel_H[ind] = np.cumsum(ravel_H[ind])
+        cum_H = 1-np.reshape(cum_ravel_H/np.nanmax(cum_ravel_H),np.shape(inc_Ome_hist_T))
+        cum_H.shape = inc_Ome_hist_T.shape
+        image = copy(inc_Ome_hist_T)
+        image[np.where(cum_H>0.9545)] = np.nan
+
+        # plt.imshow(image,origin ="lower",
+        #            extent=[Ome_bounds[0],Ome_bounds[1],inc_bounds[0],inc_bounds[1]],
+        #            aspect="auto",zorder=10,cmap=cmaps[0],alpha=0.5)#,alpha = 0.5,interpolation="spline16",,alpha = 0.75
+        plt.xlim([0,80])
+        plt.ylim([0,0.4])
+        levels = [0.6827]
+        xx,yy = np.meshgrid(a_centers,e_centers)
+        CS = plt.contour(xx,yy,cum_H,levels = levels,linestyles=ls,linewidths=[lw],colors=(mycolor,),zorder=15,label=mylabel)
+        # levels = [0.9545,0.9973]
+        # CS = plt.contour(xx,yy,cum_H.T,levels = levels,linestyles="-",linewidths=[2],colors=(colors[0],),zorder=15)
+        plt.plot([-1,-2],[-1,-2],linestyle=ls,linewidth=lw,color=mycolor,label=mylabel)
+
+    plt.xlabel(r"Semi-Major Axis (au)",fontsize=fontsize)
+    plt.ylabel(r"Eccentricity",fontsize=fontsize)
+    plt.gca().tick_params(axis='x', labelsize=fontsize)
+    plt.gca().tick_params(axis='y', labelsize=fontsize)
+    plt.legend(loc="upper right",frameon=True,fontsize=fontsize)
+    plt.tight_layout()
+    fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,'sma_vs_ecc_coplanar.pdf'),bbox_inches='tight') # This is matplotlib.figure.Figure.savefig()
+    fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,'sma_vs_ecc_coplanar.png'),bbox_inches='tight') # This is matplotlib.figure.Figure.savefig()
+
+    fig = plt.figure(1,figsize=(6,4))
+    hist_list = [inc_Ome_withrvs_copl,inc_Ome_norv_copl]
+    label_list = ["coplanar w/ rv","coplanar w/o rv"]
+    linestyle_list = ["-","-."]
+    linewidth_list = [3,1]
+    colors=["grey","black"]
+    for inc_Ome_hist,mylabel,ls,mycolor,lw in zip(hist_list,label_list,linestyle_list,colors,linewidth_list):
         inc_Ome_hist_T = inc_Ome_hist.T
         ravel_H = np.ravel(inc_Ome_hist_T)
         print(ravel_H.shape)
@@ -144,10 +278,12 @@ if 0: # plot inclination and Omega
         plt.ylim(inc_bounds)
         levels = [0.6827]
         xx,yy = np.meshgrid(x_centers,y_centers)
-        CS = plt.contour(xx,yy,cum_H,levels = levels,linestyles="-",linewidths=[2],colors=(mycolor,),zorder=15,label=mylabel)
+        CS = plt.contour(xx,yy,cum_H,levels = levels,linestyles=ls,linewidths=[lw],colors=(mycolor,),zorder=15,label=mylabel)
+        levels = [0.954]
+        CS = plt.contour(xx,yy,cum_H,levels = levels,linestyles=ls,linewidths=[lw/2.],colors=(mycolor,),zorder=15,label=mylabel)
         # levels = [0.9545,0.9973]
         # CS = plt.contour(xx,yy,cum_H.T,levels = levels,linestyles="-",linewidths=[2],colors=(colors[0],),zorder=15)
-        plt.plot([-1,-2],[-1,-2],linestyle="-",linewidth=2,color=mycolor,label=mylabel)
+        plt.plot([-1,-2],[-1,-2],linestyle=ls,linewidth=lw,color=mycolor,label=mylabel)
 
     plt.xlabel(r"Longitude of Ascending Node (deg)",fontsize=fontsize)
     plt.ylabel(r"Inclination (deg)",fontsize=fontsize)
@@ -155,8 +291,190 @@ if 0: # plot inclination and Omega
     plt.gca().tick_params(axis='y', labelsize=fontsize)
     plt.legend(loc="upper right",frameon=True,fontsize=fontsize)
     plt.tight_layout()
-    # fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,'ome_vs_inc.pdf'),bbox_inches='tight') # This is matplotlib.figure.Figure.savefig()
-    # fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,'ome_vs_inc.png'),bbox_inches='tight') # This is matplotlib.figure.Figure.savefig()
+    plt.xlim([0,360])
+    plt.ylim([10,40])
+    fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,'ome_vs_inc_coplanar.pdf'),bbox_inches='tight') # This is matplotlib.figure.Figure.savefig()
+    fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,'ome_vs_inc_coplanar.png'),bbox_inches='tight') # This is matplotlib.figure.Figure.savefig()
+
+    #
+    fig = plt.figure(2,figsize=(6,4))
+    hist_list = [inc_Ome_norv_b,inc_Ome_norv_c,inc_Ome_norv_d,inc_Ome_withrvs_b,inc_Ome_withrvs_c,inc_Ome_withrvs_d]
+    label_list = ["b w/o rv","c w/o rv","d w/o rv","b w/ rv","c w/ rv","d w/ rv"]
+    linestyle_list = ["-","--",":","-","--",":"]
+    linewidth_list = [1,1,1,3,3,3]
+    colors=["#006699","#ff9900","#6600ff","#006699","#ff9900","#6600ff"]
+    for inc_Ome_hist,mylabel,ls,mycolor,lw in zip(hist_list,label_list,linestyle_list,colors,linewidth_list):
+        inc_Ome_hist_T = inc_Ome_hist.T
+        ravel_H = np.ravel(inc_Ome_hist_T)
+        print(ravel_H.shape)
+        ind = np.argsort(ravel_H)
+        cum_ravel_H = np.zeros(np.shape(ravel_H))
+        cum_ravel_H[ind] = np.cumsum(ravel_H[ind])
+        cum_H = 1-np.reshape(cum_ravel_H/np.nanmax(cum_ravel_H),np.shape(inc_Ome_hist_T))
+        cum_H.shape = inc_Ome_hist_T.shape
+        image = copy(inc_Ome_hist_T)
+        image[np.where(cum_H>0.9545)] = np.nan
+
+        # plt.imshow(image,origin ="lower",
+        #            extent=[Ome_bounds[0],Ome_bounds[1],inc_bounds[0],inc_bounds[1]],
+        #            aspect="auto",zorder=10,cmap=cmaps[0],alpha=0.5)#,alpha = 0.5,interpolation="spline16",,alpha = 0.75
+        plt.xlim(Ome_bounds)
+        plt.ylim(inc_bounds)
+        levels = [0.6827]
+        xx,yy = np.meshgrid(x_centers,y_centers)
+        CS = plt.contour(xx,yy,cum_H,levels = levels,linestyles=ls,linewidths=[lw],colors=(mycolor,),zorder=15,label=mylabel)
+        # levels = [0.9545,0.9973]
+        # CS = plt.contour(xx,yy,cum_H.T,levels = levels,linestyles="-",linewidths=[2],colors=(colors[0],),zorder=15)
+        plt.plot([-1,-2],[-1,-2],linestyle=ls,linewidth=lw,color=mycolor,label=mylabel)
+    plt.xlabel(r"Longitude of Ascending Node (deg)",fontsize=fontsize)
+    plt.ylabel(r"Inclination (deg)",fontsize=fontsize)
+    plt.gca().tick_params(axis='x', labelsize=fontsize)
+    plt.gca().tick_params(axis='y', labelsize=fontsize)
+    plt.legend(loc="upper right",frameon=True,fontsize=fontsize)
+    plt.tight_layout()
+
+    # fig = plt.figure(2,figsize=(6,4))
+    # hist_list = [inc_Ome_norv_b,inc_Ome_norv_c,inc_Ome_norv_d,inc_Ome_rv_Rob_b,inc_Ome_rv_Rob_c,inc_Ome_rv_Rob_d,]
+    # label_list = ["b w/o rv","c w/o rv","d w/o rv","b w/ rv (Rob)","c w/ rv (Rob)","d w/ rv (Rob)"]
+    # linestyle_list = ["-","--",":","-","--",":"]
+    # linewidth_list = [1,1,1,3,3,3]
+    # colors=["#006699","#ff9900","#6600ff","#006699","#ff9900","#6600ff"]
+    # for inc_Ome_hist,mylabel,ls,mycolor,lw in zip(hist_list,label_list,linestyle_list,colors,linewidth_list):
+    #     inc_Ome_hist_T = inc_Ome_hist.T
+    #     ravel_H = np.ravel(inc_Ome_hist_T)
+    #     print(ravel_H.shape)
+    #     ind = np.argsort(ravel_H)
+    #     cum_ravel_H = np.zeros(np.shape(ravel_H))
+    #     cum_ravel_H[ind] = np.cumsum(ravel_H[ind])
+    #     cum_H = 1-np.reshape(cum_ravel_H/np.nanmax(cum_ravel_H),np.shape(inc_Ome_hist_T))
+    #     cum_H.shape = inc_Ome_hist_T.shape
+    #     image = copy(inc_Ome_hist_T)
+    #     image[np.where(cum_H>0.9545)] = np.nan
+    #
+    #     # plt.imshow(image,origin ="lower",
+    #     #            extent=[Ome_bounds[0],Ome_bounds[1],inc_bounds[0],inc_bounds[1]],
+    #     #            aspect="auto",zorder=10,cmap=cmaps[0],alpha=0.5)#,alpha = 0.5,interpolation="spline16",,alpha = 0.75
+    #     plt.xlim(Ome_bounds)
+    #     plt.ylim(inc_bounds)
+    #     levels = [0.6827]
+    #     xx,yy = np.meshgrid(x_centers,y_centers)
+    #     CS = plt.contour(xx,yy,cum_H,levels = levels,linestyles=ls,linewidths=[lw],colors=(mycolor,),zorder=15,label=mylabel)
+    #     # levels = [0.9545,0.9973]
+    #     # CS = plt.contour(xx,yy,cum_H.T,levels = levels,linestyles="-",linewidths=[2],colors=(colors[0],),zorder=15)
+    #     plt.plot([-1,-2],[-1,-2],linestyle=ls,linewidth=lw,color=mycolor,label=mylabel)
+    # plt.xlabel(r"Longitude of Ascending Node (deg)",fontsize=fontsize)
+    # plt.ylabel(r"Inclination (deg)",fontsize=fontsize)
+    # plt.gca().tick_params(axis='x', labelsize=fontsize)
+    # plt.gca().tick_params(axis='y', labelsize=fontsize)
+    # plt.legend(loc="upper right",frameon=True,fontsize=fontsize)
+    # plt.tight_layout()
+
+    fig = plt.figure(3,figsize=(6,4))
+    hist_list = [inc_Ome_rv_Rob_b,inc_Ome_rv_Rob_c,inc_Ome_rv_Rob_d,inc_Ome_withrvs_b,inc_Ome_withrvs_c,inc_Ome_withrvs_d]
+    label_list = ["b w/ rv Rob","c w/ rv Rob","d w/ rv Rob","b w/ rv","c w/ rv","d w/ rv"]
+    linestyle_list = ["-","--",":","-","--",":"]
+    linewidth_list = [1,1,1,3,3,3]
+    colors=["#006699","#ff9900","#6600ff","#006699","#ff9900","#6600ff"]
+    for inc_Ome_hist,mylabel,ls,mycolor,lw in zip(hist_list,label_list,linestyle_list,colors,linewidth_list):
+        inc_Ome_hist_T = inc_Ome_hist.T
+        ravel_H = np.ravel(inc_Ome_hist_T)
+        print(ravel_H.shape)
+        ind = np.argsort(ravel_H)
+        cum_ravel_H = np.zeros(np.shape(ravel_H))
+        cum_ravel_H[ind] = np.cumsum(ravel_H[ind])
+        cum_H = 1-np.reshape(cum_ravel_H/np.nanmax(cum_ravel_H),np.shape(inc_Ome_hist_T))
+        cum_H.shape = inc_Ome_hist_T.shape
+        image = copy(inc_Ome_hist_T)
+        image[np.where(cum_H>0.9545)] = np.nan
+
+        # plt.imshow(image,origin ="lower",
+        #            extent=[Ome_bounds[0],Ome_bounds[1],inc_bounds[0],inc_bounds[1]],
+        #            aspect="auto",zorder=10,cmap=cmaps[0],alpha=0.5)#,alpha = 0.5,interpolation="spline16",,alpha = 0.75
+        plt.xlim(Ome_bounds)
+        plt.ylim(inc_bounds)
+        levels = [0.6827]
+        xx,yy = np.meshgrid(x_centers,y_centers)
+        CS = plt.contour(xx,yy,cum_H,levels = levels,linestyles=ls,linewidths=[lw],colors=(mycolor,),zorder=15,label=mylabel)
+        # levels = [0.9545,0.9973]
+        # CS = plt.contour(xx,yy,cum_H.T,levels = levels,linestyles="-",linewidths=[2],colors=(colors[0],),zorder=15)
+        plt.plot([-1,-2],[-1,-2],linestyle=ls,linewidth=lw,color=mycolor,label=mylabel)
+    plt.xlabel(r"Longitude of Ascending Node (deg)",fontsize=fontsize)
+    plt.ylabel(r"Inclination (deg)",fontsize=fontsize)
+    plt.gca().tick_params(axis='x', labelsize=fontsize)
+    plt.gca().tick_params(axis='y', labelsize=fontsize)
+    plt.legend(loc="upper right",frameon=True,fontsize=fontsize)
+    plt.tight_layout()
+
+
+
+    colors=["#006699","#ff9900","#6600ff","#006699","#ff9900","#6600ff"]
+    param_list = ["sma1","ecc1","inc1","aop1","pan1","epp1","sma2","ecc2","inc2","aop2","pan2","epp2","sma3","ecc3","inc3","aop3","pan3","epp3","plx","sysrv","mtot"]
+    xlabel_list = ["a (au)","e","i (deg)",r"$\omega$ (deg)",r"$\Omega$ (deg)",r"$\tau$",
+                   "a (au)","e","i (deg)",r"$\omega$ (deg)",r"$\Omega$ (deg)",r"$\tau$",
+                   "a (au)","e","i (deg)",r"$\omega$ (deg)",r"$\Omega$ (deg)",r"$\tau$",
+                   "Paral. (mas)","$\mathrm{RV}_{\mathrm{sys}}$(km/s)",r"$M_{\mathrm{tot}}$ ($M_{\mathrm{Sun}}$)"]
+    color_list = ["#006699","#006699","black","#006699","black","#006699",
+                  "#ff9900","#ff9900","black","#ff9900","black","#ff9900",
+                  "#6600ff","#6600ff","black","#6600ff","black","#6600ff",
+                  "black","black","black"]
+    axis_list = [1, 2, 3, 4, 5, 6, 1, 2, 3, 4, 5, 6, 1, 2, 3, 4, 5, 6,7,8,9]
+    bins_list = [50,50,50,50,200,50,
+                 50,50,50,50,200,50,
+                 50,50,50,50,200,50,
+                 50,50,50]
+    xticks_list = [[25,50],[0,0.2],[0,30],[0,180],[0,180],[0,0.5],
+                 [25,50],[0,0.2],[0,30],[0,180],[0,180],[0,0.5],
+                 [25,50],[0,0.2],[0,30],[0,180],[0,180],[0,0.5],
+                 [24,24.5],[-12,-10],[1.5,1.8]]
+    planet_list = ["b","b","b","b","b","b",
+                 "c","c","c","c","c","c",
+                 "d","d","d","d","d","d",
+                 "","",""]
+    fig = plt.figure(20,figsize=(12,2))
+    for paraid, (param, chain,color,axis,pl,xlabel,xticks) in enumerate(zip(param_list, chains_withrvs_copl.T,color_list,axis_list,planet_list,xlabel_list,xticks_list)):
+        if pl == "b":
+            ls = "-"
+        elif pl == "c":
+            ls = "--"
+        elif pl == "d":
+            ls = ":"
+        else:
+            ls = "-"
+
+        plt.subplot(1,9,axis)
+        # print(param, np.nanmedian(chain), np.nanstd(chain))
+        if "inc" in param or "aop" in param or "pan" in param:
+            chain = np.rad2deg(chain)
+        post, xedges = np.histogram(chain, bins=100, range=[np.min(chain), np.max(chain)],density=True)
+        post /= np.max(post)
+        x_centers = [(x1 + x2) / 2. for x1, x2 in zip(xedges[0:len(xedges) - 1], xedges[1:len(xedges)])]
+        mode,_,_,merr,perr,_ = get_err_from_posterior(x_centers, post)
+        print(param,mode,merr,perr,get_upperlim_from_posterior(x_centers, post))
+        plt.plot(x_centers, post,color=color,label=pl,linestyle=ls)
+        plt.ylim([0,1.1])
+        plt.xlabel(xlabel,fontsize=fontsize)
+        ax0 = plt.gca()
+        ax0.tick_params(axis='x', labelsize=fontsize)
+        ax0.tick_params(axis='y', labelsize=fontsize)
+        plt.xticks(xticks)
+        plt.yticks([])
+
+    plt.subplot(1,9,1)
+    plt.legend(loc="upper right",frameon=True,fontsize=fontsize)
+    plt.subplot(1,9,1)
+    plt.yticks([0,0.5,1])
+    plt.ylabel("Posterior",fontsize=fontsize)
+
+    fig.subplots_adjust(wspace=0,hspace=0)
+    # plt.tight_layout()
+    fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,'all_paras_coplanar.pdf'),bbox_inches='tight') # This is matplotlib.figure.Figure.savefig()
+    fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,'all_paras_coplanar.png'),bbox_inches='tight') # This is matplotlib.figure.Figure.savefig()
+    # plt.show()
+    # exit()
+
+
+
+
     plt.show()
 
 
@@ -179,8 +497,10 @@ if 1: # v2 PLot orbits
     # suffix_withrvs2 =  "it1_16_512_10000_50_True"
     # suffix_withrvs1 =  "it1_16_512_10000_50_True"
     # suffix_withrvs2 =  "it2_16_512_100000_50_True"
-    suffix_withrvs1 =  "it3_16_512_100000_50_True_coplanar"
-    suffix_withrvs2 =  "it4_16_512_100000_50_True_coplanar"
+    suffix_withrvs1 =  "it7_16_512_100000_50_True_coplanar"
+    suffix_withrvs2 =  "it7_16_512_100000_50_True_coplanar"
+    # suffix_withrvs1 =  "it8_16_512_100000_50_True"
+    # suffix_withrvs2 =  "it8_16_512_100000_50_True"
 
     filename = "{0}/HR8799{1}_rvs.csv".format(astrometry_DATADIR,planet)
     data_table_withrvs = orbitize.read_input.read_file(filename)
@@ -639,8 +959,8 @@ if 1: # v2 PLot orbits
         ax33.tick_params(axis='x', labelsize=fontsize)
         ax33.tick_params(axis='y', labelsize=fontsize)
 
-        fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,'orbits_bcd_withrvs.pdf')) # This is matplotlib.figure.Figure.savefig()
-        fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,'orbits_bcd_withrvs.png')) # This is matplotlib.figure.Figure.savefig()
+        fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,'orbits_bcd_withrvs.pdf'),bbox_inches='tight') # This is matplotlib.figure.Figure.savefig()
+        fig.savefig(os.path.join(out_pngs,"HR_8799_"+planet,'orbits_bcd_withrvs.png'),bbox_inches='tight') # This is matplotlib.figure.Figure.savefig()
         plt.show()
     exit()
 

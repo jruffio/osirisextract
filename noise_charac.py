@@ -388,7 +388,7 @@ if __name__ == "__main__":
     inputDir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/"
     out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
 
-    if 1:
+    if 0:
         rot = -42
         fov_ravec = np.array([np.cos(np.deg2rad(rot)),-np.sin(np.deg2rad(rot))])
         fov_decvec= np.array([np.sin(np.deg2rad(rot)),np.cos(np.deg2rad(rot))])
