@@ -973,7 +973,8 @@ if __name__ == "__main__":
     print(len(sys.argv))
     if len(sys.argv) == 1:
         # planet = "HR_8799_b"
-        # date = "090722"
+        planet = "HR_8799_bfk3"
+        date = "090722"
         # date = "090730"
         # date = "090903"
         # date = "100711"
@@ -995,12 +996,12 @@ if __name__ == "__main__":
         # date = "130726"
         # date = "171103"
         # date = "200729"
-        planet = "HR_8799_d"
+        # planet = "HR_8799_d"
         # date = "150720"
         # date = "150722"
         # date = "150723"
         # date = "150828"
-        date = "200729"
+        # date = "200729"
         # date = "200730"
         # date = "200731"
         # date = "200803"
@@ -1024,9 +1025,9 @@ if __name__ == "__main__":
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190305_HPF_only_noperscor/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190228_mol_temp/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20200729_livereduc/"
-        # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20200823_test/"
-        outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20200914_res/"
-        outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20200914_ql/"
+        outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20210125_test/"
+        # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20200914_res/"
+        # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20200914_ql/"
 
         # inputDir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb_pairsub/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb_pairsub/20190228_HPF_only/"
@@ -1042,7 +1043,7 @@ if __name__ == "__main__":
         # filelist = filelist[1:]
         # filelist = filelist[len(filelist)-3:len(filelist)-2]
 
-        res_numbasis = 10
+        res_numbasis = 0
         numthreads = 10
         planet_search = True
         debug_paras = True
@@ -1347,8 +1348,8 @@ if __name__ == "__main__":
             phoenix_db_folder = os.path.join(osiris_data_dir,"phoenix","PHOENIX-ACES-AGSS-COND-2011")
             if 1:
                 splitpostfilename = os.path.basename(filelist[0]).split("_")
-                # imtype = "psf"
-                imtype = "science"
+                imtype = "psf"
+                # imtype = "science"
                 # print(date,star_name)
                 # exit()
                 # phoenix_wv_filename = os.path.join(phoenix_folder,"WAVE_PHOENIX-ACES-AGSS-COND-2011_R{0}.fits".format(R0))
@@ -1370,11 +1371,11 @@ if __name__ == "__main__":
                     print(glob.glob(os.path.join(osiris_data_dir,"stellar_fits","{0}_*_*_{1}_rv_samples.fits".format(star_name,imtype)))[0])
                     hdulist = pyfits.open(glob.glob(os.path.join(osiris_data_dir,"stellar_fits","{0}_*_*_{1}_rv_samples.fits".format(star_name,imtype)))[0])
                     rv_samples = hdulist[0].data
-                    hdulist = pyfits.open(glob.glob(os.path.join(osiris_data_dir,"stellar_fits","{0}_*_*_{1}_vsini_samples.fits".format(star_name,imtype)))[0])
+                    hdulist = pyfits.open(glob.glob(os.path.join(osiris_data_dir,"stellar_fits","{0}_*_[!2]*_{1}_vsini_samples.fits".format(star_name,imtype)))[0])
                     vsini_samples = hdulist[0].data
                     print(os.path.join(osiris_data_dir,"stellar_fits","{0}_*_*_{1}_models.fits".format(star_name,imtype)))
-                    print(glob.glob(os.path.join(osiris_data_dir,"stellar_fits","{0}_*_*_{1}_models.txt".format(star_name,imtype))))
-                    with open(glob.glob(os.path.join(osiris_data_dir,"stellar_fits","{0}_*_*_{1}_models.txt".format(star_name,imtype)))[0], 'r') as txtfile:
+                    print(glob.glob(os.path.join(osiris_data_dir,"stellar_fits","{0}_*_*_{1}_models.txt".format(star_name,imtype)))[0])
+                    with open(glob.glob(os.path.join(osiris_data_dir,"stellar_fits","{0}_*_[!2]*_{1}_models.txt".format(star_name,imtype)))[0], 'r') as txtfile:
                         grid_refstar_filelist = [s.strip().replace("/data/osiris_data",osiris_data_dir) for s in txtfile.readlines()]
                         grid_refstar_filelist = [s.strip().replace("/scratch/groups/bmacint/osiris_data",osiris_data_dir) for s in grid_refstar_filelist]
                 post_filename = os.path.join(osiris_data_dir,"stellar_fits","{0}_{1}_{2}_{3}_posterior.fits".format(star_name,IFSfilter,date,imtype))
