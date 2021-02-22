@@ -130,7 +130,7 @@ if 1:
 
     my_driver.sampler = sampler.MCMC(my_driver.system, num_temps=num_temps, num_walkers=num_walkers, num_threads=num_threads, like='chi2_lnlike', custom_lnlike=None)
 
-    if 0 and len(planet) == 1:
+    if 1 and len(planet) == 1:
             _filename = os.path.join(astrometry_DATADIR,"figures","HR_8799_"+planet,
                                           'chain_'+rv_str+'_'+planet+'_it{0}_{1}_{2}_{3}_{4}_{5}_coplanar.fits'.format(
                                               itnum-1,num_temps,num_walkers,100000,thin,uservs))

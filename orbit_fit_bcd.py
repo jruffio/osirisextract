@@ -21,8 +21,8 @@ if __name__ == "__main__":
         # planet = "b"
         # planet = "bc"
         planet = "bcd"
-        # coplanar = False
-        coplanar = True
+        coplanar = False
+        # coplanar = True
         if uservs:
             filename = "{0}/HR8799{1}_rvs.csv".format(astrometry_DATADIR,planet)
         else:
@@ -40,8 +40,10 @@ if __name__ == "__main__":
         # suffix = "test_bcd"
         # itnum = 8
         # suffix = "it{0}".format(itnum)
-        itnum = 2
-        suffix = "from_scratch_it{0}".format(itnum)
+        # itnum = 2
+        # suffix = "from_scratch_it{0}".format(itnum)
+        itnum = 4
+        suffix = "restriOme_it{0}".format(itnum)
         suffix = suffix+"_{0}_{1}_{2}_{3}_{4}".format(num_temps,num_walkers,total_orbits//num_walkers,thin,uservs)
     else:
         import matplotlib
@@ -82,8 +84,10 @@ if __name__ == "__main__":
         rv_str = "withrvs"
         sysrv=-12.6
         sysrv_err=1.4
-        # restrict_angle_ranges = True
-        restrict_angle_ranges = False
+        if coplanar:
+            restrict_angle_ranges = False
+        else:
+            restrict_angle_ranges = True
     else:
         rv_str = "norv"
         sysrv=0
@@ -216,7 +220,7 @@ if __name__ == "__main__":
             # /scr3/jruffio/data/osiris_data/astrometry/figures/HR_8799_bcd/posterior_withrvs_bcd_it5_16_512_100000_50_True.hdf5
             #              /scr3/jruffio/data/osiris_data/astrometry/figures/HR_8799_bcd/chain_withrvs_bcd_it4_16_512_100000_50_True.fits
             _filename = os.path.join(astrometry_DATADIR,"figures","HR_8799_bcd",
-                                          'chain_'+rv_str+'_bcd_from_scratch_it{0}_{1}_{2}_{3}_{4}_{5}.fits'.format(
+                                          'chain_'+rv_str+'_bcd_restriOme_it{0}_{1}_{2}_{3}_{4}_{5}.fits'.format(
                                               itnum-1,num_temps,num_walkers,100000,thin,uservs))
             print(_filename)
             # exit()
