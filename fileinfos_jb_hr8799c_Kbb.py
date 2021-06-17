@@ -436,7 +436,7 @@ if 0:
 
     exit()
 
-if 1:
+if 0:
     def determine_mosaic_offsets_from_header(prihdr_list):
         OBFMXIM_list = []
         OBFMYIM_list = []
@@ -520,7 +520,7 @@ if 1:
 
 
 
-if 1: # wavelength solution error
+if 0: # wavelength solution error
     try:
         wvsolerr_id = old_colnames.index("wv sol err")
     except:
@@ -668,8 +668,12 @@ if 1:
     # dwv = CDELT1/1000.
     # init_wv = CRVAL1/1000. # wv for first slice in mum
 
-    numbasis = 10#1,3,5
-    myfolder = "sherlock/20201006_RV"
+    numbasis = 15#1,3,5
+    myfolder1 = "sherlock/20210525_RV"
+    myfolder2 = "sherlock/20210505_RV"
+    myfolder3 = "sherlock/20191205_RV"
+    # myfolder = "sherlock/20210505_RV"
+    # myfolder = "sherlock/20201006_RV"
     # myfolder = "sherlock/20191205_RV"
     # myfolder = "sherlock/20191104_RVsearch"
     # myfolder = "sherlock/20191018_RVsearch"
@@ -685,8 +689,8 @@ if 1:
     #     suffix = "_outputHPF_cutoff40_sherlock_v1_search_resinmodel_kl{0}".format(numbasis)
     for k,item in enumerate(new_list_data):
         filename = item[filename_id]
-        if "20201006" not in filename:
-            continue
+        # if "20201006" not in filename:
+        #     continue
         # print(filename)
         # exit()
         # if new_list_data[k][cen_filename_id] != "nan":
@@ -702,6 +706,19 @@ if 1:
         #     #s171103_a023002_Hbb_020
         #     #s171103_a024002_Hbb_020
         #     #s171103_a031002_Hbb_020_outputHPF_cutoff40_sherlock_v1_search_planetRV
+
+        if len(glob.glob(os.path.join(os.path.dirname(filename),myfolder3,
+                                           os.path.basename(filename).replace(".fits",suffix+"_planetRV.fits")))) == 1:
+            myfolder = myfolder3
+        elif len(glob.glob(os.path.join(os.path.dirname(filename),myfolder2,
+                                           os.path.basename(filename).replace(".fits",suffix+"_planetRV.fits")))) == 1:
+            myfolder = myfolder2
+        elif len(glob.glob(os.path.join(os.path.dirname(filename),myfolder1,
+                                           os.path.basename(filename).replace(".fits",suffix+"_planetRV.fits")))) == 1:
+            myfolder = myfolder1
+        else:
+            myfolder = None
+
         try:
             hdulist = pyfits.open(os.path.join(os.path.dirname(filename),myfolder,
                                            os.path.basename(filename).replace(".fits",suffix+"_planetRV.fits")))

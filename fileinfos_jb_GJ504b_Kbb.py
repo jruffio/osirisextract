@@ -11,13 +11,11 @@ import csv
 from copy import copy
 
 
-# planet = "c"
 IFSfilter = "Kbb"
-planet = "b"
 # IFSfilter = "Hbb"
 
 
-fileinfos_filename = "/data/osiris_data/GJ_504_"+planet+"/fileinfos_Kbb_jb.csv"
+fileinfos_filename = "/data/osiris_data/HD_1160"+"/fileinfos_Kbb_jb.csv"
 
 # create file if none exists
 if len(glob.glob(fileinfos_filename)) == 0:
@@ -54,19 +52,19 @@ new_list_data = copy(old_list_data)
 for item in old_list_table:
     print(item)
 
-if 1: # add filename
+if 0: # add filename
     filename_id = new_colnames.index("filename")
     old_filelist = [item[filename_id] for item in new_list_data]
 
     reductionname = "reduced_jb"
     filenamefilter = "s*_a*_[0-9][0-9][0-9].fits"
-    filelist = glob.glob(os.path.join("/data/osiris_data/GJ_504_"+planet,"*",reductionname,filenamefilter))
+    filelist = glob.glob(os.path.join("/data/osiris_data/HD_1160","*",reductionname,filenamefilter))
     for filename in filelist:
         if filename not in old_filelist:
             new_list_data.append([filename,]+[np.nan,]*(N_col-1))
     # print(new_list_data)
 
-if 1: # add spectral band
+if 0: # add spectral band
     filename_id = new_colnames.index("filename")
     try:
         ifs_filter_id = new_colnames.index("IFS filter")
@@ -101,7 +99,7 @@ if 0:
 
     new_list_data = new_new_list_data
 
-if 1: # add MJD-OBS
+if 0: # add MJD-OBS
     filename_id = new_colnames.index("filename")
     MJDOBS_id = new_colnames.index("MJD-OBS")
 
@@ -110,7 +108,7 @@ if 1: # add MJD-OBS
         prihdr0 = hdulist[0].header
         new_list_data[k][MJDOBS_id] = prihdr0["MJD-OBS"]
 
-if 1: # add Temperature
+if 0: # add Temperature
     filename_id = new_colnames.index("filename")
     try:
         DTMP6_id = new_colnames.index("DTMP6")
@@ -124,7 +122,7 @@ if 1: # add Temperature
         prihdr0 = hdulist[0].header
         new_list_data[k][DTMP6_id] = prihdr0["DTMP7"]
 
-if 1: # add exposure time
+if 0: # add exposure time
     filename_id = new_colnames.index("filename")
     try:
         itime_id = new_colnames.index("itime")
@@ -221,29 +219,17 @@ if 1: # add filename
             pastnum = currnum
         exit()
     else:
-        sequence_list = [["/data/osiris_data/GJ_504_b/20190526/reduced_jb/s190526_a008002_Kbb_050.fits",1,0,0],
-                        ["/data/osiris_data/GJ_504_b/20190526/reduced_jb/s190526_a011002_Kbb_050.fits",2,0,0],
-                        ["/data/osiris_data/GJ_504_b/20190526/reduced_jb/s190526_a012002_Kbb_050.fits",2,1,0],
-                        ["/data/osiris_data/GJ_504_b/20190526/reduced_jb/s190526_a013002_Kbb_050.fits",2,2,0],
-                        ["/data/osiris_data/GJ_504_b/20190526/reduced_jb/s190526_a014002_Kbb_050.fits",2,3,0],
-                        ["/data/osiris_data/GJ_504_b/20190526/reduced_jb/s190526_a018002_Kbb_050.fits",3,0,0],
-                        ["/data/osiris_data/GJ_504_b/20190526/reduced_jb/s190526_a019002_Kbb_050.fits",3,1,0],
-                        ["/data/osiris_data/GJ_504_b/20190526/reduced_jb/s190526_a020002_Kbb_050.fits",3,2,0],
-                        ["/data/osiris_data/GJ_504_b/20190526/reduced_jb/s190526_a021002_Kbb_050.fits",3,3,0],
-                        ["/data/osiris_data/GJ_504_b/20190526/reduced_jb/s190526_a022002_Kbb_050.fits",3,4,0],
-                        ["/data/osiris_data/GJ_504_b/20190526/reduced_jb/s190526_a023002_Kbb_050.fits",3,5,0],
-                        ["/data/osiris_data/GJ_504_b/20190527/reduced_jb/s190527_a009002_Kbb_050.fits",4,0,0],
-                        ["/data/osiris_data/GJ_504_b/20190527/reduced_jb/s190527_a010002_Kbb_050.fits",4,1,0],
-                        ["/data/osiris_data/GJ_504_b/20190527/reduced_jb/s190527_a011002_Kbb_050.fits",4,2,0],
-                        ["/data/osiris_data/GJ_504_b/20190527/reduced_jb/s190527_a012002_Kbb_050.fits",4,3,0],
-                        ["/data/osiris_data/GJ_504_b/20190527/reduced_jb/s190527_a013002_Kbb_050.fits",4,4,0],
-                        ["/data/osiris_data/GJ_504_b/20190527/reduced_jb/s190527_a014002_Kbb_050.fits",4,5,0],
-                        ["/data/osiris_data/GJ_504_b/20190527/reduced_jb/s190527_a015002_Kbb_050.fits",4,6,0],
-                        ["/data/osiris_data/GJ_504_b/20190527/reduced_jb/s190527_a018002_Kbb_050.fits",5,0,0],
-                        ["/data/osiris_data/GJ_504_b/20190527/reduced_jb/s190527_a019002_Kbb_050.fits",5,1,0],
-                        ["/data/osiris_data/GJ_504_b/20190527/reduced_jb/s190527_a020002_Kbb_050.fits",5,2,0],
-                        ["/data/osiris_data/GJ_504_b/20190527/reduced_jb/s190527_a021002_Kbb_050.fits",5,3,0],
-                        ["/data/osiris_data/GJ_504_b/20190527/reduced_jb/s190527_a022002_Kbb_050.fits",5,4,0]]
+        sequence_list = [["/data/osiris_data/HD_1160/20171104/reduced_jb/s171104_a008002_Kbb_020.fits",1,0,0],
+                        ["/data/osiris_data/HD_1160/20171104/reduced_jb/s171104_a009002_Kbb_020.fits",1,1,0],
+                        ["/data/osiris_data/HD_1160/20171104/reduced_jb/s171104_a010002_Kbb_020.fits",1,2,0],
+                        ["/data/osiris_data/HD_1160/20171104/reduced_jb/s171104_a011002_Kbb_020.fits",1,3,0],
+                        ["/data/osiris_data/HD_1160/20171104/reduced_jb/s171104_a012002_Kbb_020.fits",1,4,0],
+                        ["/data/osiris_data/HD_1160/20171104/reduced_jb/s171104_a013002_Kbb_020.fits",1,5,0],
+                        ["/data/osiris_data/HD_1160/20171104/reduced_jb/s171104_a014002_Kbb_020.fits",1,6,0],
+                        ["/data/osiris_data/HD_1160/20171104/reduced_jb/s171104_a015002_Kbb_020.fits",1,7,0],
+                        ["/data/osiris_data/HD_1160/20171104/reduced_jb/s171104_a016002_Kbb_020.fits",1,8,0],
+                        ["/data/osiris_data/HD_1160/20180723/reduced_jb/s180723_a019002_Kbb_035.fits",2,0,0],
+                        ["/data/osiris_data/HD_1160/20180723/reduced_jb/s180723_a023002_Kbb_035.fits",3,0,0]]
 
     try:
         sequence_id = old_colnames.index("sequence")
@@ -450,7 +436,7 @@ def get_err_from_posterior(x,posterior):
     return x[argmax_post],(rx-lx)/2.,argmax_post
 
 numbasis=0
-if 1:
+if 0:
     from scipy.signal import correlate2d
     try:
         cen_filename_id = old_colnames.index("cen filename")

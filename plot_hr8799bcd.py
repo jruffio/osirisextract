@@ -233,6 +233,7 @@ plt.fill_between(Kbbmicrons, Kbbfluxes-Kbberr,Kbbfluxes+Kbberr, color = '#0099cc
 plt.plot(Kbbmicrons_HR, Kbbfluxes_HR, color = '#0099cc', alpha=1,linewidth=0.5)
 
 
+plt.gca().text(myxlim[0],0.98*2e-15,"HR 8799 b - Low resolution spectra",ha="left",va="top",rotation=0,size=fontsize,color='#0099cc',alpha=1)
 plt.ylim([0,2e-15])
 plt.xlim(myxlim)
 lgd = plt.legend(loc="lower left",bbox_to_anchor=(1,0),frameon=False,fontsize=fontsize*0.9,ncol=1)#loc="lower right"
@@ -253,9 +254,12 @@ for label,fmt in zip(label_list,fmt_list):
     fluxes = vega_fluxes[where_refs]*10**(absmags[where_refs]/-2.5)
     yerr = [fluxes - vega_fluxes[where_refs]*10**((absmags[where_refs]+absmags_err[where_refs])/-2.5),
             vega_fluxes[where_refs]*10**((absmags[where_refs]-absmags_err[where_refs])/-2.5)-fluxes]
-    plt.errorbar(absmags_wvs[where_refs], fluxes,yerr = yerr, xerr=xerrs[:,where_refs[0]], fmt=fmt, color = '#0099cc', capsize=5,
-        elinewidth=1, markeredgewidth=1, label = label)
+    plt.errorbar(absmags_wvs[where_refs], fluxes,yerr = yerr, xerr=None, fmt=fmt, color = '#0099cc', capsize=5,
+        elinewidth=2, markeredgewidth=1, label = label)
+    plt.errorbar(absmags_wvs[where_refs], fluxes,yerr = None, xerr=xerrs[:,where_refs[0]], fmt=fmt, color = '#0099cc', capsize=0,
+        elinewidth=1, markeredgewidth=1)
 
+plt.gca().text(myxlim[0],0.98*2e-15,"HR 8799 b - Photometry",ha="left",va="top",rotation=0,size=fontsize,color='#0099cc',alpha=1)
 plt.ylim([0,2e-15])
 plt.xlim(myxlim)
 lgd = plt.legend(loc="upper left",bbox_to_anchor=(1,1),frameon=False,fontsize=fontsize*0.9,ncol=1)#loc="lower right"
@@ -400,6 +404,7 @@ plt.fill_between(Pmicrons, Pfluxes-Perr,Pfluxes+Perr, color = '#cccc00', alpha=0
 c_kms = 299792.458
 plt.plot(K13microns*(1-75/c_kms), K13fluxes,label = 'Konopacky et al. 2013', color = '#ff3300', alpha=1,linewidth=0.5)
 
+plt.gca().text(myxlim[0],0.98*5e-15,"HR 8799 c - Low resolution spectra",ha="left",va="top",rotation=0,size=fontsize,color='#ff9900',alpha=1)
 plt.ylim([0,5e-15])
 plt.xlim(myxlim)
 lgd = plt.legend(loc="lower left",bbox_to_anchor=(1,0),frameon=False,fontsize=fontsize*0.9,ncol=1)#loc="lower right"
@@ -420,9 +425,12 @@ for label,fmt in zip(label_list,fmt_list):
     fluxes = vega_fluxes[where_refs]*10**(absmags[where_refs]/-2.5)
     yerr = [fluxes - vega_fluxes[where_refs]*10**((absmags[where_refs]+absmags_err[where_refs])/-2.5),
             vega_fluxes[where_refs]*10**((absmags[where_refs]-absmags_err[where_refs])/-2.5)-fluxes]
-    plt.errorbar(absmags_wvs[where_refs], fluxes,yerr = yerr, xerr=xerrs[:,where_refs[0]], fmt=fmt, color = '#ff3300', capsize=5,
-        elinewidth=1, markeredgewidth=1, label = label)
+    plt.errorbar(absmags_wvs[where_refs], fluxes,yerr = yerr, xerr=None, fmt=fmt, color = '#ff3300', capsize=5,
+        elinewidth=2, markeredgewidth=1, label = label)
+    plt.errorbar(absmags_wvs[where_refs], fluxes,yerr = None, xerr=xerrs[:,where_refs[0]], fmt=fmt, color = '#ff3300', capsize=0,
+        elinewidth=1, markeredgewidth=1)
 
+plt.gca().text(myxlim[0],0.98*5e-15,"HR 8799 c - Photometry",ha="left",va="top",rotation=0,size=fontsize,color='#ff9900',alpha=1)
 plt.ylim([0,5e-15])
 plt.xlim(myxlim)
 lgd = plt.legend(loc="upper left",bbox_to_anchor=(1,1),frameon=False,fontsize=fontsize*0.9,ncol=1)#loc="lower right"
@@ -562,6 +570,7 @@ plt.errorbar(Z16Smicrons, Z16Sfluxes, yerr = Z16Serr, color = '#990066', capsize
 plt.fill_between(Z16Smicrons, Z16Sfluxes-Z16Serr,Z16Sfluxes+Z16Serr, color = '#990066', alpha=0.5)
 
 
+plt.gca().text(myxlim[0],0.98*5e-15,"HR 8799 d - Low resolution spectra",ha="left",va="top",rotation=0,size=fontsize,color='#6600ff',alpha=1)
 plt.ylim([0,5e-15])
 plt.xlim(myxlim)
 lgd = plt.legend(loc="lower left",bbox_to_anchor=(1,0),frameon=False,fontsize=fontsize*0.9,ncol=1)#loc="lower right"
@@ -582,9 +591,12 @@ for label,fmt in zip(label_list,fmt_list):
     fluxes = vega_fluxes[where_refs]*10**(absmags[where_refs]/-2.5)
     yerr = [fluxes - vega_fluxes[where_refs]*10**((absmags[where_refs]+absmags_err[where_refs])/-2.5),
             vega_fluxes[where_refs]*10**((absmags[where_refs]-absmags_err[where_refs])/-2.5)-fluxes]
-    plt.errorbar(absmags_wvs[where_refs], fluxes,yerr = yerr, xerr=xerrs[:,where_refs[0]], fmt=fmt, color = '#6600ff', capsize=5,
-        elinewidth=1, markeredgewidth=1, label = label)
+    plt.errorbar(absmags_wvs[where_refs], fluxes,yerr = yerr, xerr=None, fmt=fmt, color = '#6600ff', capsize=5,
+        elinewidth=2, markeredgewidth=1, label = label)
+    plt.errorbar(absmags_wvs[where_refs], fluxes,yerr = None, xerr=xerrs[:,where_refs[0]], fmt=fmt, color = '#6600ff', capsize=0,
+        elinewidth=1, markeredgewidth=1)
 
+plt.gca().text(myxlim[0],0.98*5e-15,"HR 8799 d - Photometry",ha="left",va="top",rotation=0,size=fontsize,color='#6600ff',alpha=1)
 plt.ylim([0,5e-15])
 plt.xlim(myxlim)
 lgd = plt.legend(loc="upper left",bbox_to_anchor=(1,1),frameon=False,fontsize=fontsize*0.9,ncol=1)#loc="lower right"
@@ -593,7 +605,7 @@ plt.tick_params(axis="x",which="both",labelleft=False,right=False,left=False)
 plt.yticks([0e-15,1e-15,2e-15,3e-15,4e-15])
 
 
-plt.ylabel("Flux (W/$m^2$/$\mu$m)", fontsize=fontsize)
+plt.ylabel("Flux density (W/$m^2$/$\mu$m)", fontsize=fontsize)
 plt.xlabel("$\lambda$ ($\mu$m)", fontsize=fontsize)
 
 f1.subplots_adjust(wspace=0,hspace=0)#

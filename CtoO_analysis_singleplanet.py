@@ -71,25 +71,47 @@ if __name__ == "__main__":
     print('Argument List:', str(sys.argv))
     print("CPU COUNT: {0}".format(mp.cpu_count()))
 
+    if 0:
+        C = np.array([8.25, 8.26, 8.28, 8.29 ,8.31, 8.33 ,8.35, 8.38 ,8.42 ,8.48])
+        O = np.array([8.3, 8.33 ,8.37, 8.42 ,8.46 ,8.51, 8.57, 8.64, 8.72 ,8.82])
+        CtoO = 10**(C-O)
 
+        plt.figure(1,figsize=(4,3))
+        plt.plot(CtoO,C ,linestyle="--",color="red",label='[C/H]')
+        plt.plot(CtoO,O,linestyle="-",color="blue",label='[O/H]')
+        plt.xlabel("C/O",fontsize=12)
+        plt.ylabel("[X/H]",fontsize=12)
+        plt.legend(loc="upper right",fontsize=12)
+        plt.gca().tick_params(axis='x', labelsize=12)
+        plt.gca().tick_params(axis='y', labelsize=12)
+
+        # ax1= plt.gca()
+        # ax2 = ax1.twinx()
+        # plt.sca(ax2)
+        # plt.ylabel("C/O",fontsize=12)
+        # plt.legend(loc="upper right",fontsize=12)
+        plt.tight_layout()
+
+        plt.show()
+        exit()
 
     kl = 10
     useprior = False
     if not useprior:
         priorTeff,priorTeff_sig = 1000,1e+4#1e-9
         priorlogg,priorlogg_sig = 4,1e+3#1e-9
-    # planet,color,snr_threshold = "HR_8799_b","#0099cc",7
-    # if useprior:
-    #     priorTeff,priorTeff_sig = 900,1e-9#1e-9
-    #     priorlogg,priorlogg_sig = 3.9,1e-9#1e-9
+    planet,color,snr_threshold = "HR_8799_b","#0099cc",7
+    if useprior:
+        priorTeff,priorTeff_sig = 900,1e-9#1e-9
+        priorlogg,priorlogg_sig = 3.9,1e-9#1e-9
     # planet,color,snr_threshold = "HR_8799_c","#ff9900",9
     # if useprior:
     #     priorTeff,priorTeff_sig = 1060,1e-9#1e-9
     #     priorlogg,priorlogg_sig = 4.1,1e-9#1e-9
-    planet,color,snr_threshold = "HR_8799_d","#6600ff",5.5
-    if useprior:
-        priorTeff,priorTeff_sig = 1060,1e-9#1e-9
-        priorlogg,priorlogg_sig = 4.1,1e-9#1e-9
+    # planet,color,snr_threshold = "HR_8799_d","#6600ff",5.5
+    # if useprior:
+    #     priorTeff,priorTeff_sig = 1060,1e-9#1e-9
+    #     priorlogg,priorlogg_sig = 4.1,1e-9#1e-9
     IFSfilter = "*"
     scale = "*"
     date = "*"
@@ -123,7 +145,6 @@ if __name__ == "__main__":
     c_kms = 299792.458
     R= 4000
     fontsize=12
-
 
     if kl ==0:
         c_fileinfos_filename = "/data/osiris_data/"+planet+"/fileinfos_Kbb_jb.csv"
@@ -283,21 +304,39 @@ if __name__ == "__main__":
         hdulist.close()
 
 
-        myinterpgrid = RegularGridInterpolator((fitT_list,fitlogg_list,fitCtoO_list,planetRV_array0),logpost,method="linear",bounds_error=False,fill_value=np.nanmin(logpost))
-        hr_logpost = myinterpgrid(pts).reshape((np.size(hr_fitT_list),np.size(hr_fitlogg_list),np.size(hr_fitCtoO_list),np.size(hr_planetRV_array0)))
+        # myinterpgrid = RegularGridInterpolator((fitT_list,fitlogg_list,fitCtoO_list,planetRV_array0),logpost,method="linear",bounds_error=False,fill_value=np.nanmin(logpost))
+        # hr_logpost = myinterpgrid(pts).reshape((np.size(hr_fitT_list),np.size(hr_fitlogg_list),np.size(hr_fitCtoO_list),np.size(hr_planetRV_array0)))
+        # # hr_logpost = logpost
+        # try:
+        #     combined_logpost += hr_logpost
+        #     # combined_logpost += logpost
+        # except:
+        #     combined_logpost = copy(hr_logpost)
+        #     # combined_logpost = copy(logpost)
+        # try:
+        #     combined_nightly_logpost[date] += hr_logpost
+        #     # combined_nightly_logpost[date] += logpost
+        # except:
+        #     combined_nightly_logpost[date] = copy(hr_logpost)
+        #     # combined_nightly_logpost[date] = copy(logpost)
+
+        # myinterpgrid = RegularGridInterpolator((fitT_list,fitlogg_list,fitCtoO_list,planetRV_array0),logpost,method="linear",bounds_error=False,fill_value=np.nanmin(logpost))
+        # hr_logpost = myinterpgrid(pts).reshape((np.size(hr_fitT_list),np.size(hr_fitlogg_list),np.size(hr_fitCtoO_list),np.size(hr_planetRV_array0)))
         # hr_logpost = logpost
-        try:
-            combined_logpost += hr_logpost
-            # combined_logpost += logpost
-        except:
-            combined_logpost = copy(hr_logpost)
-            # combined_logpost = copy(logpost)
-        try:
-            combined_nightly_logpost[date] += hr_logpost
-            # combined_nightly_logpost[date] += logpost
-        except:
-            combined_nightly_logpost[date] = copy(hr_logpost)
-            # combined_nightly_logpost[date] = copy(logpost)
+        # if file_id not in [ 1,  2,  6, 11, 13, 14, 38, 45, 46, 47, 50, 51, 52, 56]:
+        if 1:
+            try:
+                # combined_logpost += hr_logpost
+                combined_logpost += logpost
+            except:
+                # combined_logpost = copy(hr_logpost)
+                combined_logpost = copy(logpost)
+            try:
+                # combined_nightly_logpost[date] += hr_logpost
+                combined_nightly_logpost[date] += logpost
+            except:
+                # combined_nightly_logpost[date] = copy(hr_logpost)
+                combined_nightly_logpost[date] = copy(logpost)
         logpost = logpost + logpriorTeff_vec[:,None,None,None] + logpriorlogg_vec[None,:,None,None]
         post = np.exp(logpost-np.nanmax(logpost))
         # logpriorTeff_vec = 1/(np.sqrt(2*np.pi)*priorTeff_sig)*np.exp(-0.5/priorTeff_sig**2*(fitT_list-priorTeff)**2)
@@ -381,6 +420,13 @@ if __name__ == "__main__":
     m_yerr = np.array([argmaxpost-leftCI for leftCI,argmaxpost,rightCI in CtoO_CI_list])
     p_yerr = np.array([rightCI - argmaxpost for leftCI,argmaxpost,rightCI in CtoO_CI_list])
     # plt.errorbar(np.arange(len(CtoO_CI_list)),yval,yerr=[m_yerr,p_yerr ])
+    print(np.where(np.abs(yval-np.nanmedian(yval))/((m_yerr+p_yerr)/2)>5))
+    notoutliers = np.where(np.abs(yval-np.nanmedian(yval))/((m_yerr+p_yerr)/2)<5)
+    print(np.mean(yval),np.mean(yval[notoutliers]))
+    print("coucou",np.nanstd(yval[notoutliers]),np.mean(m_yerr[notoutliers]),np.mean(m_yerr[notoutliers]+p_yerr[notoutliers])/2/np.sqrt(len(filter_list)))
+    print("coucou",np.nanstd(yval[notoutliers]),np.mean(p_yerr[notoutliers]),np.mean(m_yerr[notoutliers]+p_yerr[notoutliers])/2/np.sqrt(len(filter_list)))
+    print("bonjour",np.nanstd(yval),np.mean(m_yerr+p_yerr)/2,np.mean(m_yerr+p_yerr)/2/np.sqrt(len(filter_list)))
+    exit()
 
     plt.figure(1,figsize=(12,4))
     print(len(filter_list),len(CtoO_CI_list))
@@ -436,6 +482,7 @@ if __name__ == "__main__":
     plt.legend(loc="upper left",bbox_to_anchor=[len(CtoO_CI_list)/totlength,0.9],frameon=True,fontsize=fontsize)#
     # plt.tight_layout()
     # exit()
+    # plt.show()
 
     if 1:
         print("Saving "+os.path.join(out_pngs,planet,myoutfilename))
@@ -446,15 +493,21 @@ if __name__ == "__main__":
     nightly_CtoO_post_list = []
     nightly_Nexp = []
     for date in unique_dates:
-        where_data = np.where(date_list==date)
-        nightly_Nexp.append(len(where_data[0]))
+        try:
+            where_data = np.where(date_list==date)
+            nightly_Nexp.append(len(where_data[0]))
 
-        tmp_logpost = combined_nightly_logpost[date] + hr_logpriorTeff_vec[:,None,None,None] + hr_logpriorlogg_vec[None,:,None,None]
-        tmp_post = np.exp(tmp_logpost-np.nanmax(tmp_logpost))
-        tonight_CtoOpost = np.nansum(tmp_post,axis=(0,1,3))
-        nightly_CtoO_post_list.append(tonight_CtoOpost)
-        leftCI,argmaxpost,rightCI,_ = get_err_from_posterior(hr_fitCtoO_list,tonight_CtoOpost)
-        nightly_CtoO_CI_list.append([leftCI,argmaxpost,rightCI])
+            tmp_logpost = combined_nightly_logpost[date] + hr_logpriorTeff_vec[:,None,None,None] + hr_logpriorlogg_vec[None,:,None,None]
+            tmp_post = np.exp(tmp_logpost-np.nanmax(tmp_logpost))
+            tonight_CtoOpost = np.nansum(tmp_post,axis=(0,1,3))
+            nightly_CtoO_post_list.append(tonight_CtoOpost)
+            leftCI,argmaxpost,rightCI,_ = get_err_from_posterior(hr_fitCtoO_list,tonight_CtoOpost)
+            nightly_CtoO_CI_list.append([leftCI,argmaxpost,rightCI])
+        except:
+            nightly_Nexp.append(0)
+            nightly_CtoO_post_list.append(np.nan)
+            nightly_CtoO_CI_list.append([np.nan,np.nan,np.nan])
+
 
 
     nightly_yval = [argmaxpost for leftCI,argmaxpost,rightCI in nightly_CtoO_CI_list]

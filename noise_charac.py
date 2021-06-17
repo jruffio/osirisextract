@@ -374,8 +374,8 @@ if __name__ == "__main__":
     planet = "HR_8799_d"
     # date = "200729"
     # date = "200730"
-    # date = "200731"
-    date = "200803"
+    date = "200731"
+    # date = "200803"
     # IFSfilter = "Kbb"
     IFSfilter = "Kbb"
     # IFSfilter = "Jbb" # "Kbb" or "Hbb"
@@ -772,7 +772,7 @@ if __name__ == "__main__":
         plt.show()
         exit()
 
-    if 1:# contrast curves
+    if 0:# contrast curves
         HR8799_Lmag = 5.194
         HR8799_cde_dLmag = -2.5*np.log10(2e-4)
         HR8799_Kmag = 5.24
@@ -1212,6 +1212,28 @@ if __name__ == "__main__":
         nirc2_L_coro_label = "NIRC2 L 90min Coro (avg+) - 90 min"
         nirc2_L_coro_plotparas = [":","#6600ff"]
 
+
+        plt.figure(50,figsize=(6,4))
+        plt.plot(binnedpsf_sep,binnedpsf_value,linestyle=nirc2_L_raw_plotparas[0],linewidth=3,label="OSIRIS unocculted PSF K",color="#ff9900")
+        plt.yscale("log")
+        plt.xscale("log")
+        # plt.xlim([0.05,2])
+        plt.ylim([1e-6,1e-0])
+        plt.xlabel("Separation (arcsec)",fontsize=fontsize)
+        plt.ylabel("Contrast",fontsize=fontsize)
+        plt.gca().tick_params(axis='x', labelsize=fontsize)
+        plt.gca().tick_params(axis='y', labelsize=fontsize)
+        sep_list = [0.384,0.693,0.942,1.720]
+        contK_list = [4.5e-5,4.5e-5,4.5e-5,2e-5]
+        name_list = ["HR 8799 e","HR 8799 d","HR 8799 c","HR 8799 b"]
+        color_list = ["#ff99cc","#6600ff","#ff9900","#006699"]
+        for sep,contK,name,color in zip(sep_list,contK_list,name_list,color_list):
+            plt.plot([sep], [contK],marker="x",linestyle="",markeredgecolor=color,markerfacecolor=color)
+            plt.gca().annotate(name, xy=(sep+0.01,contK), va="bottom", ha="right", fontsize=fontsize, color=color,rotation=-45)
+        plt.legend(loc="upper right",frameon=True,fontsize=fontsize*0.75)
+        plt.tight_layout()
+        # plt.show()
+
         plt.figure(10,figsize=(12,12))
         plt.subplot(2,2,1)
         plt.title("K-band")
@@ -1575,7 +1597,7 @@ if __name__ == "__main__":
         # plt.legend()
         # plt.show()
 
-    if 1:
+    # if 1:
         modelfolder = "20200309_model"
         gridname = os.path.join("/data/osiris_data/","hr8799b_modelgrid")
         N_kl = 0#10
@@ -1601,6 +1623,7 @@ if __name__ == "__main__":
         from scipy.interpolate import RegularGridInterpolator
         myinterpgrid = RegularGridInterpolator((Tlistunique,logglistunique,CtoOlistunique),planet_model_grid,method="linear",bounds_error=False,fill_value=0.0)
 
+        print(os.path.join(inputDir,"..","reduced_jb","s"+date+"*{0}*".format(imnum)+IFSfilter+"_"+scale+".fits"))
         filename = glob.glob(os.path.join(inputDir,"..","reduced_jb","s"+date+"*{0}*".format(imnum)+IFSfilter+"_"+scale+".fits"))[0]
         print(filename)
 
@@ -1810,6 +1833,8 @@ if __name__ == "__main__":
         HPFmodel = HPFmodel[:,where_valid_parameters[0]]
 
         HPFparas,HPFchi2,rank,s = np.linalg.lstsq(HPFmodel,ravelHPFdata,rcond=None)
+        print(HPFparas[0])
+        pl_flux = HPFparas[0]#5.5
         data_model = np.dot(HPFmodel,HPFparas)
         ravelresiduals = ravelHPFdata-data_model
         # HPFchi2 = np.nansum((ravelresiduals)**2)
@@ -1841,7 +1866,7 @@ if __name__ == "__main__":
         # colors=["#006699","#ff9900","#6600ff","grey"]
         plt.plot(wvs[2,2,:],star_model[2,2,:],linestyle="--",linewidth=3,color="#006699",label="On-axis star")
         plt.plot(wvs[2,2,:],LPFdata[2,2,:]+HPFdata[2,2,:],linestyle="-",linewidth=2,color="#ff9900",label="Starlight + planet")
-        plt.plot(wvs[2,2,:],planet_model[2,2,:]*HPFparas[0],linestyle="-",linewidth=1,color="#6600ff",label="Scaled planet (fit)")
+        plt.plot(wvs[2,2,:],planet_model[2,2,:]*pl_flux,linestyle="-",linewidth=1,color="#6600ff",label="Scaled planet (fit)")
         plt.plot(wvs[2,2,:],sky,linestyle="-.",linewidth=0.5,color="blue",label="Sky")
         # plt.plot(wvs[2,2,:],dark,linestyle="--",linewidth=0.5,color="grey",label="Irreducible noise")
         plt.yscale("log")
@@ -1857,11 +1882,11 @@ if __name__ == "__main__":
 
         fig = plt.figure(2,figsize=(12,3))
         # colors=["#006699","#ff9900","#6600ff","grey"]
-        print(np.nansum(planet_model[2,2,:]*HPFparas[0])/np.nansum((LPFdata[2,2,:]+HPFdata[2,2,:])))
+        print(np.nansum(planet_model[2,2,:]*pl_flux)/np.nansum((LPFdata[2,2,:]+HPFdata[2,2,:])))
         # exit()
-        plt.plot(wvs[2,2,:],planet_model[2,2,:]*HPFparas[0]/(LPFdata[2,2,:]+HPFdata[2,2,:]),linestyle="--",linewidth=1,color="#6600ff",label="Scaled planet / Data")
+        plt.plot(wvs[2,2,:],planet_model[2,2,:]*pl_flux/(LPFdata[2,2,:]+HPFdata[2,2,:]),linestyle="--",linewidth=1,color="#6600ff",label="Scaled planet / Data")
         plt.plot(wvs[2,2,:],(LPFdata[2,2,:]+HPFdata[2,2,:])/star_model[2,2,:],linestyle="-",linewidth=2,color="#ff9900",label="(Starlight + planet) / On-axis star")
-        plt.plot(wvs[2,2,:],planet_model[2,2,:]*HPFparas[0]/star_model[2,2,:],linestyle="-",linewidth=1,color="#6600ff",label="Scaled planet / On-axis star")
+        plt.plot(wvs[2,2,:],planet_model[2,2,:]*pl_flux/star_model[2,2,:],linestyle="-",linewidth=1,color="#6600ff",label="Scaled planet / On-axis star")
         plt.yscale("log")
         plt.ylim([1e-6,1e-1])
         plt.xlabel(r"$\lambda$ ($\mu$m)",fontsize=fontsize)
@@ -1876,7 +1901,7 @@ if __name__ == "__main__":
         fig = plt.figure(3,figsize=(12,3))
         plt.plot(wvs[2,2,:],HPFdata[2,2,:],linestyle="-",linewidth=2,color="#ff9900",label="Data (HPF; Starlight + planet)")
         plt.plot(wvs[2,2,:],canvas_model[2,2,:],linestyle="--",linewidth=0.5,color="black",label="Forward Model")
-        plt.plot(wvs[2,2,:],HPF_planet_model[2,2,:]*HPFparas[0],linestyle="-",linewidth=1,color="#6600ff",label="Scaled planet (HPF)")
+        plt.plot(wvs[2,2,:],HPF_planet_model[2,2,:]*pl_flux,linestyle="-",linewidth=1,color="#6600ff",label="Scaled planet (HPF)")
         plt.xlabel(r"$\lambda$ ($\mu$m)",fontsize=fontsize)
         plt.ylabel(r"Data Number",fontsize=fontsize)
         plt.gca().tick_params(axis='x', labelsize=fontsize)
@@ -1955,7 +1980,7 @@ if __name__ == "__main__":
         print("photon std", np.sqrt(np.nanmedian((LPFdata[2,2,:]+HPFdata[2,2,:]))*600*2.15)/600)
         print(np.nanmedian(LPFdata[2,2,:]+HPFdata[2,2,:]))
 
-        print("bin planet SNR",np.median(planet_model[2,2,:]*HPFparas[0])/np.nanstd(canvas_res[2,2,:]))
+        print("bin planet SNR",np.median(planet_model[2,2,:]*pl_flux)/np.nanstd(canvas_res[2,2,:]))
         print("bin star SNR",np.nanmedian(HPFdata[2,2,:]+LPFdata[2,2,:])/np.nanstd(canvas_res[2,2,:]))
         print("starlight",np.nanmedian((LPFdata[2,2,:]+HPFdata[2,2,:])/star_model[2,2,:]))
         print(np.median(np.nanmax(nospec_planet_model,axis=(0,1))/np.nansum(nospec_planet_model,axis=(0,1))))

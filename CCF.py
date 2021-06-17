@@ -14,9 +14,9 @@ from reduce_HPFonly_diagcov_resmodel_v2 import LPFvsHPF
 
 out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
 
-# planet = "b"
+planet = "b"
 # planet = "c"
-planet = "d"
+# planet = "d"
 
 # IFSfilter = "Kbb"
 # IFSfilter = "Hbb"
@@ -905,6 +905,7 @@ if 1:
     resnumbasis = 10
     fontsize = 12
     for IFSfilter in ["Kbb"]:#,"Hbb"]:
+    # for IFSfilter in ["Hbb"]:
         if IFSfilter=="Kbb": #Kbb 1965.0 0.25
             CRVAL1 = 1965.
             CDELT1 = 0.25
@@ -915,6 +916,7 @@ if 1:
             f4,ax_CCFsummary_list = plt.subplots(3,1,sharex="col",figsize=(6,9))#figsize=(12,8)
             planet_list = ["b","c","d"]
             # planet_list = ["c","d"]
+            # planet_list = ["b"]
         elif IFSfilter=="Hbb": #Hbb 1651 1473.0 0.2
             CRVAL1 = 1473.
             CDELT1 = 0.2
@@ -922,7 +924,7 @@ if 1:
             R=4000
             f1,ax_CCF_list = plt.subplots(4,2,sharey="row",sharex="col",figsize=(8,12*4/5))#figsize=(12,8)
             f2,ax_histo_list = plt.subplots(4,2,sharey="row",sharex="col",figsize=(8,12*4/5))#figsize=(12,8)
-            f4,ax_CCFsummary_list = plt.subplots(2,1,sharex="col",figsize=(6,6))#figsize=(12,8)
+            f4,ax_CCFsummary_list = plt.subplots(3,1,figsize=(6,9))#,sharex="col",figsize=(12,8)
             planet_list = ["b","c"]
         linestyle_list = ["-","-","--","-.",":"]
         dwv = CDELT1/1000.
@@ -1025,6 +1027,7 @@ if 1:
                     if len(glob.glob(reducfilename.replace(".fits","_planetRV.fits"))) == 0:
                         continue
                     print(reducfilename)
+                    # continue
                     # exit()
                     hdulist = pyfits.open(reducfilename.replace(".fits","_planetRV.fits"))
                     planetRV = hdulist[0].data
@@ -1230,13 +1233,14 @@ if 1:
 
                 plt.figure(f4.number)
                 plt.sca(ax_CCFsummary_list[plid])
-                if plid != 2:
-                    if IFSfilter == "Kbb":
-                        plt.gca().annotate("HR 8799 "+planet,xy=(-900,45),va="top",ha="left",fontsize=fontsize,color=color)
-                    elif IFSfilter == "Hbb":
-                        plt.gca().annotate("HR 8799 "+planet,xy=(-900,18),va="top",ha="left",fontsize=fontsize,color=color)
-                else:
-                    plt.gca().annotate("HR 8799 "+planet,xy=(-900,13),va="top",ha="left",fontsize=fontsize,color=color)
+                if IFSfilter == "Kbb":
+                    plt.gca().annotate("HR 8799 "+planet,xy=(-900,45),va="top",ha="left",fontsize=fontsize,color=color)
+                elif IFSfilter == "Hbb":
+                    plt.gca().annotate("HR 8799 "+planet,xy=(-900,18),va="top",ha="left",fontsize=fontsize,color=color)
+                # if plid != 2:
+                # else:
+                #     plt.gca().annotate("HR 8799 "+planet,xy=(-900,13),va="top",ha="left",fontsize=fontsize,color=color)
+
                 # croppedsummed_hdRV = summed_hdRV[400:800,(64*3)//2,(19*3)//2]
                 # finitehdRV=np.where(np.isfinite(croppedsummed_hdRV))
                 # croppedsummed_hdRV = croppedsummed_hdRV[finitehdRV]
@@ -1261,6 +1265,7 @@ if 1:
                 plt.gca().tick_params(axis='x', labelsize=fontsize)
                 plt.gca().tick_params(axis='y', labelsize=fontsize)
                 plt.xlim([-1000,1000])
+                plt.xticks([-1000,-500,0,500,1000])
                 if IFSfilter == "Kbb":
                     plt.ylim([-10,50])
                     plt.yticks([0,10,20,30,40,50])
@@ -1275,20 +1280,43 @@ if 1:
                 # plt.show()
 
         plt.figure(f4.number)
-        plt.sca(ax_CCFsummary_list[-1])
-        plt.ylabel("S/N",fontsize=15)
-        plt.xlabel(r"$\Delta V$ (km/s)",fontsize=fontsize)
-        plt.xticks([-1000,-500,0,500,1000])
-        # plt.xticks([-2000,-1000,0,1000,2000])
-        # plt.yticks([-10,0,10,20,30,40])
-        plt.gca().tick_params(axis='x', labelsize=fontsize)
-        plt.gca().tick_params(axis='y', labelsize=fontsize)
-        f4.subplots_adjust(wspace=0,hspace=0)
+        if IFSfilter == "Hbb":
+            plt.sca(ax_CCFsummary_list[0])
+            plt.xticks([])
 
-        print("Saving "+os.path.join(out_pngs,"HR_8799_"+IFSfilter+"_CCFsummary_kl{0}.png".format(resnumbasis)))
-        plt.savefig(os.path.join(out_pngs,"HR_8799_"+IFSfilter+"_CCFsummary_kl{0}.png".format(resnumbasis)),bbox_inches='tight')
-        plt.savefig(os.path.join(out_pngs,"HR_8799_"+IFSfilter+"_CCFsummary_kl{0}.pdf".format(resnumbasis)),bbox_inches='tight')
-        plt.close(f4.number)
+            plt.sca(ax_CCFsummary_list[1])
+            plt.ylabel("S/N",fontsize=15)
+            plt.xlabel(r"$\Delta V$ (km/s)",fontsize=fontsize)
+            plt.xticks([-1000,-500,0,500,1000])
+            plt.gca().tick_params(axis='x', labelsize=fontsize)
+            plt.gca().tick_params(axis='y', labelsize=fontsize)
+            ax_CCFsummary_list[1].yaxis.set_ticks_position('left')
+            ax_CCFsummary_list[1].xaxis.set_ticks_position('bottom')
+            f4.subplots_adjust(wspace=0,hspace=0)
+
+            plt.sca(ax_CCFsummary_list[2])
+            plt.gca().patch.set_alpha(0.0)
+            plt.xticks([])
+            plt.yticks([])
+            plt.gca().spines['right'].set_visible(False)
+            plt.gca().spines['left'].set_visible(False)
+            plt.gca().spines['bottom'].set_visible(False)
+
+        elif IFSfilter == "Kbb":
+            plt.sca(ax_CCFsummary_list[-1])
+            plt.ylabel("S/N",fontsize=15)
+            plt.xlabel(r"$\Delta V$ (km/s)",fontsize=fontsize)
+            plt.xticks([-1000,-500,0,500,1000])
+            # plt.xticks([-2000,-1000,0,1000,2000])
+            # plt.yticks([-10,0,10,20,30,40])
+            plt.gca().tick_params(axis='x', labelsize=fontsize)
+            plt.gca().tick_params(axis='y', labelsize=fontsize)
+            f4.subplots_adjust(wspace=0,hspace=0)
+
+        # print("Saving "+os.path.join(out_pngs,"HR_8799_"+IFSfilter+"_CCFsummary_kl{0}.png".format(resnumbasis)))
+        # plt.savefig(os.path.join(out_pngs,"HR_8799_"+IFSfilter+"_CCFsummary_kl{0}.png".format(resnumbasis)))#,bbox_inches='tight')
+        # plt.savefig(os.path.join(out_pngs,"HR_8799_"+IFSfilter+"_CCFsummary_kl{0}.pdf".format(resnumbasis)))#,bbox_inches='tight')
+        # plt.close(f4.number)
 
         plt.figure(f1.number)
         plt.sca(ax_CCF_list[-1][0])
@@ -1305,26 +1333,33 @@ if 1:
         plt.gca().tick_params(axis='y', labelsize=fontsize)
         f1.subplots_adjust(wspace=0,hspace=0)
 
-        print("Saving "+os.path.join(out_pngs,"HR_8799_"+IFSfilter+"_CCF_kl{0}.png".format(resnumbasis)))
-        plt.savefig(os.path.join(out_pngs,"HR_8799_"+IFSfilter+"_CCF_kl{0}.png".format(resnumbasis)),bbox_inches='tight')
-        plt.savefig(os.path.join(out_pngs,"HR_8799_"+IFSfilter+"_CCF_kl{0}.pdf".format(resnumbasis)),bbox_inches='tight')
-        plt.close(f1.number)
+        # print("Saving "+os.path.join(out_pngs,"HR_8799_"+IFSfilter+"_CCF_kl{0}.png".format(resnumbasis)))
+        # plt.savefig(os.path.join(out_pngs,"HR_8799_"+IFSfilter+"_CCF_kl{0}.png".format(resnumbasis)),bbox_inches='tight')
+        # plt.savefig(os.path.join(out_pngs,"HR_8799_"+IFSfilter+"_CCF_kl{0}.pdf".format(resnumbasis)),bbox_inches='tight')
+        # plt.close(f1.number)
 
 
         plt.figure(f2.number)
+        plt.sca(ax_histo_list[-1][0])
+        plt.xlabel("S/N",fontsize=15)
+        plt.ylabel(r"Normalized histogram",fontsize=fontsize)
+        plt.xticks([-6,-4,-2,0,2,4,6])
+        plt.yticks([1e-6,1e-4,1e-2,1e-0])
+        plt.sca(ax_histo_list[-1][1])
+        plt.xticks([-4,-2,0,2,4,6])
+        plt.sca(ax_histo_list[-1][2])
+        plt.xticks([-4,-2,0,2,4,6])
         for m in range(len(planet_list)):
             plt.sca(ax_histo_list[0][m])
             plt.legend(loc="lower center",frameon=True,fontsize=fontsize)
         plt.gca().tick_params(axis='x', labelsize=fontsize,which="both")
         plt.gca().tick_params(axis='y', labelsize=fontsize,which="both")
-        plt.xticks([-6,-4,-2,0,2,4,6])
-        plt.yticks([1e-6,1e-4,1e-2,1e-0])
         f2.subplots_adjust(wspace=0,hspace=0)
 
-        print("Saving "+os.path.join(out_pngs,"HR_8799_"+IFSfilter+"_CCF_histo_kl{0}.png".format(resnumbasis)))
-        plt.savefig(os.path.join(out_pngs,"HR_8799_"+IFSfilter+"_CCF_histo_kl{0}.png".format(resnumbasis)),bbox_inches='tight')
-        plt.savefig(os.path.join(out_pngs,"HR_8799_"+IFSfilter+"_CCF_histo_kl{0}.pdf".format(resnumbasis)),bbox_inches='tight')
-        plt.close(f2.number)
+        # print("Saving "+os.path.join(out_pngs,"HR_8799_"+IFSfilter+"_CCF_histo_kl{0}.png".format(resnumbasis)))
+        # plt.savefig(os.path.join(out_pngs,"HR_8799_"+IFSfilter+"_CCF_histo_kl{0}.png".format(resnumbasis)),bbox_inches='tight')
+        # plt.savefig(os.path.join(out_pngs,"HR_8799_"+IFSfilter+"_CCF_histo_kl{0}.pdf".format(resnumbasis)),bbox_inches='tight')
+        # plt.close(f2.number)
         plt.show()
         # exit()
 

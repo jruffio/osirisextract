@@ -561,8 +561,8 @@ if __name__ == "__main__":
 
     numthreads = 32
 
-    osiris_data_dir = sys.argv[1]#"/data/osiris_data"
-    # osiris_data_dir = "/data/osiris_data/"
+    # osiris_data_dir = sys.argv[1]#"/data/osiris_data"
+    osiris_data_dir = "/data/osiris_data/"
     fileinfos_refstars_filename = os.path.join(osiris_data_dir,"fileinfos_refstars_jb.csv")
     phoenix_folder = os.path.join(osiris_data_dir,"phoenix")
 
@@ -618,11 +618,11 @@ if __name__ == "__main__":
     # exit()
 
     degpoly = 4
-    uni_starname_list = ['kap_And','HIP_111538','51_Eri','HIP_25453','HD_7215','HIP_1123','HIP_116886','HR_8799','HD_210501','BD+14_4774']
+    uni_starname_list = ['kap_And','HIP_111538','51_Eri','HIP_25453','HD_7215','HIP_1123','HIP_116886','HR_8799','HD_210501','BD+14_4774',"HD_1160"]
     print(len(uni_starname_list)) #10
     print(len(ref_unique_dates)) #26
-    starname = uni_starname_list[int(sys.argv[2])]
-    date = ref_unique_dates[int(sys.argv[3])]
+    starname = "HD_1160"#uni_starname_list[int(sys.argv[2])]
+    date = "171104"#"180723"#ref_unique_dates[int(sys.argv[3])]
     if 1:
         print(uni_starname_list)
         # delta_teff = 50
@@ -788,6 +788,8 @@ if __name__ == "__main__":
             rv0 = rv_simbad_dict[starname] #13.10
             vsini0 = vsini_fixed_dict[starname]
             print(rv0,vsini0)
+            if np.isnan(vsini0):
+                vsini0 = 100
 
             wvs4broadening = np.arange(phoenix_wvs[0],phoenix_wvs[-1],
                                        1e-5)

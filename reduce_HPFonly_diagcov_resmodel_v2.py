@@ -973,8 +973,8 @@ if __name__ == "__main__":
     print(len(sys.argv))
     if len(sys.argv) == 1:
         # planet = "HR_8799_b"
-        planet = "HR_8799_bfk3"
-        date = "090722"
+        # planet = "HR_8799_bfk"
+        # date = "090722"
         # date = "090730"
         # date = "090903"
         # date = "100711"
@@ -1010,6 +1010,9 @@ if __name__ == "__main__":
         # date = "171104"
         # planet = "kap_And"
         # date = "161106"
+        planet = "HD_1160"
+        date = "171104"
+        # date = "180723"
         # IFSfilter = "Kbb"
         IFSfilter = "Kbb"
         # IFSfilter = "Jbb" # "Kbb" or "Hbb"
@@ -1025,7 +1028,7 @@ if __name__ == "__main__":
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190305_HPF_only_noperscor/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190228_mol_temp/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20200729_livereduc/"
-        outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20210125_test/"
+        outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20210520_test/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20200914_res/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20200914_ql/"
 
@@ -1044,7 +1047,7 @@ if __name__ == "__main__":
         # filelist = filelist[len(filelist)-3:len(filelist)-2]
 
         res_numbasis = 0
-        numthreads = 10
+        numthreads = 32
         planet_search = True
         debug_paras = True
         plot_transmissions = False
@@ -1198,6 +1201,24 @@ if __name__ == "__main__":
             host_vsini = 150 #unknown
             star_name = "kap_And"
             RV4fakes = -13.9
+        if "HD_1160" in filelist[0]:
+            phoenix_model_host_filename = glob.glob(os.path.join(phoenix_folder,"kap_And"+"*.fits"))[0]
+            travis_spec_filename=os.path.join(planet_template_folder,
+                                          "HD_1160_lte03000-4.50+0.5.PHOENIX-ACES-AGSS-COND-2011-HiRes.fits")
+            if IFSfilter == "Jbb":
+                host_mag = 4.29
+            elif IFSfilter == "Hbb":
+                host_mag = 4.31
+            elif IFSfilter == "Kbb":
+                host_mag = 4.34
+            else:
+                raise("IFS filter name unknown")
+            host_type = "A0"
+            host_rv = 12.6 #+-0.8
+            host_limbdark = 0.5
+            host_vsini = 80 #unknown
+            star_name = "HD_1160"
+            RV4fakes = 12.6
 
 
         for filename in filelist:
@@ -1322,6 +1343,8 @@ if __name__ == "__main__":
                 hdulist.close()
             else:
                 wvsol_offsets = np.zeros((ny,nx))
+            # print(np.nanmedian(wvsol_offsets))
+            # exit()
             wvsol_offsets = np.pad(wvsol_offsets,((padding,padding),(padding,padding)),mode="constant",constant_values=0)
 
             ## file specific info
@@ -1563,6 +1586,9 @@ if __name__ == "__main__":
                 else:
                     planet_template_filename=travis_spec_filename.replace(".save",
                                                                           "_gaussconv_R{0}_{1}.csv".format(R,IFSfilter))
+                    if "HD_1160" in os.path.basename(travis_spec_filename):
+                        planet_template_filename=travis_spec_filename.replace(".fits",
+                                                                              "_gaussconv_R{0}_{1}.csv".format(R,IFSfilter))
 
                     if use_R_calib:
                         travis_spectrum = scio.readsav(travis_spec_filename)
@@ -1574,7 +1600,8 @@ if __name__ == "__main__":
                         planet_partial_template_func_list.append(planet_spec_func)
                     else:
                         if len(glob.glob(planet_template_filename)) == 0:
-                            travis_spectrum = scio.readsav(travis_spec_filename)
+                            if "HD_1160" not in os.path.basename(travis_spec_filename):
+                                travis_spectrum = scio.readsav(travis_spec_filename)
                             if "HR8799" in os.path.basename(travis_spec_filename):
                                 ori_planet_spec = np.array(travis_spectrum["fmod"])
                                 ori_planet_convspec = np.array(travis_spectrum["fmods"])
@@ -1585,6 +1612,15 @@ if __name__ == "__main__":
                             elif "KapAnd" in os.path.basename(travis_spec_filename):
                                 ori_planet_spec = np.array(travis_spectrum["f"])
                                 wmod = np.array(travis_spectrum["w"])/1.e4
+                            elif "HD_1160" in os.path.basename(travis_spec_filename):
+                                phoenix_wv_filename = os.path.join(phoenix_folder,"WAVE_PHOENIX-ACES-AGSS-COND-2011.fits")
+                                with pyfits.open(phoenix_wv_filename) as hdulist:
+                                    wmod = hdulist[0].data/1.e4
+                                crop_hd1160b = np.where((wmod>wvs[0]-(wvs[-1]-wvs[0])/2)*(wmod<wvs[-1]+(wvs[-1]-wvs[0])/2))
+                                wmod = wmod[crop_hd1160b]
+                                with pyfits.open(travis_spec_filename) as hdulist:
+                                    ori_planet_spec = hdulist[0].data[crop_hd1160b]
+
                             print("convolving: "+planet_template_filename)
                             planet_convspec = convolve_spectrum(wmod,ori_planet_spec,R,specpool)
 

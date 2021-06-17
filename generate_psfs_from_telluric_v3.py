@@ -71,11 +71,12 @@ if __name__ == "__main__":
     if 1:
         IFSfilter = "Kbb"#"Jbb"#"Hbb"#"Kbb"
         # planet = "HR_8799_b"
-        planet = "HR_8799_c"
+        # planet = "HR_8799_c"
         # planet = "HR_8799_d"
         # planet = "kap_And"
         # planet = "51_Eri_b"
         # planet = "GJ_504_b"
+        planet = "HD_1160"
         # extra_filter = "a013001"
         extra_filter = ""
         if "HR_8799_b" in planet:#/data/osiris_data/HR_8799_b/20161107/reduced_telluric_jb/HD_210501/s161107_a032002_Kbb_020.fits
@@ -99,8 +100,8 @@ if __name__ == "__main__":
             if "Kbb" in IFSfilter:
                 date_list = ["20130727","20150720","20150722","20150723","20150828","20200729","20200730","20200731"] #Kbb
             # date_list = [date_list[0],]
-            # date_list = ["20200729","20200730","20200731"] #Kbb
-            date_list = ["20200803"] #Kbb
+            date_list = ["20200729","20200730","20200731","20200803"] #Kbb
+            # date_list = ["20200803"] #Kbb
         elif "51_Eri_b" in planet:
             if "Kbb" in IFSfilter:
                 date_list = ["20171103","20171104"] #Kbb
@@ -111,6 +112,9 @@ if __name__ == "__main__":
         elif "GJ_504_b" in planet:
             if "Kbb" in IFSfilter:
                 date_list = ["20190526","20190527"] #Kbb
+        elif "HD_1160" in planet:
+            if "Kbb" in IFSfilter:
+                date_list = ["20171104","20180723"] #Kbb
         foldername = planet
 
 
@@ -350,6 +354,7 @@ if __name__ == "__main__":
                     hdulist.writeto(refstar_filename.replace(".fits","_psfs_centers_v2.fits"), clobber=True)
                 hdulist.close()
 
+    # exit()
     print("STEP 1")
     # Plot centers
     if 0 or run_all:

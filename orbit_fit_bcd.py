@@ -153,9 +153,8 @@ if __name__ == "__main__":
 
         my_driver.sampler = sampler.MCMC(my_driver.system, num_temps=num_temps, num_walkers=num_walkers, num_threads=num_threads, like='chi2_lnlike', custom_lnlike=None)
 
-        # print(my_driver.sampler.curr_pos[0,0,:])
-        # print(my_driver.sampler.curr_pos.shape)
-        # print(my_driver.system.coplanar)
+        print(my_driver.sampler.curr_pos[0,0,:])
+        print(my_driver.sampler.curr_pos.shape)
         # exit()
 
         if not my_driver.system.coplanar:

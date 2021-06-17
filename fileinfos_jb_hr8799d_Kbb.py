@@ -54,7 +54,7 @@ new_list_data = copy(old_list_data)
 for item in old_list_table:
     print(item)
 
-if 1: # add filename
+if 0: # add filename
     filename_id = new_colnames.index("filename")
     old_filelist = [item[filename_id] for item in new_list_data]
 
@@ -66,7 +66,7 @@ if 1: # add filename
             new_list_data.append([filename,]+[np.nan,]*(N_col-1))
     # print(new_list_data)
 
-if 1: # add spectral band
+if 0: # add spectral band
     filename_id = new_colnames.index("filename")
     try:
         ifs_filter_id = new_colnames.index("IFS filter")
@@ -101,7 +101,7 @@ if 0:
 
     new_list_data = new_new_list_data
 
-if 1: # add MJD-OBS
+if 0: # add MJD-OBS
     filename_id = new_colnames.index("filename")
     MJDOBS_id = new_colnames.index("MJD-OBS")
 
@@ -110,7 +110,7 @@ if 1: # add MJD-OBS
         prihdr0 = hdulist[0].header
         new_list_data[k][MJDOBS_id] = prihdr0["MJD-OBS"]
 
-if 1: # add Temperature
+if 0: # add Temperature
     filename_id = new_colnames.index("filename")
     try:
         DTMP6_id = new_colnames.index("DTMP6")
@@ -124,7 +124,7 @@ if 1: # add Temperature
         prihdr0 = hdulist[0].header
         new_list_data[k][DTMP6_id] = prihdr0["DTMP7"]
 
-if 1: # add exposure time
+if 0: # add exposure time
     filename_id = new_colnames.index("filename")
     try:
         itime_id = new_colnames.index("itime")
@@ -141,7 +141,7 @@ if 1: # add exposure time
         else:
             new_list_data[k][itime_id] = float(prihdr0["ITIME"])
 
-if 1: # add barycenter RV
+if 0: # add barycenter RV
     # from barycorrpy import get_BC_vel
     # filename_id = new_colnames.index("filename")
     # MJDOBS_id = new_colnames.index("MJD-OBS")
@@ -199,7 +199,7 @@ if 1: # add barycenter RV
         barycorr = sc.radial_velocity_correction(obstime=Time(MJDOBS, format="mjd", scale="utc"), location=keck)
         new_list_data[k][bary_rv_id] = barycorr.to(u.m/u.s).value
 
-if 1: # add filename
+if 0: # add filename
     if 0:
         filename_id = new_colnames.index("filename")
         ifs_filter_id = new_colnames.index("IFS filter")
@@ -393,7 +393,7 @@ if 0:
 
     exit()
 
-if 1:
+if 0:
     def determine_mosaic_offsets_from_header(prihdr_list):
         OBFMXIM_list = []
         OBFMYIM_list = []
@@ -476,7 +476,7 @@ if 1:
             new_list_data[seq_ind][yoffset_id] = dy
 
 
-if 1: # wavelength solution error
+if 0: # wavelength solution error
     try:
         wvsolerr_id = old_colnames.index("wv sol err")
     except:
@@ -622,7 +622,10 @@ if 1:
     # init_wv = CRVAL1/1000. # wv for first slice in mum
 
     numbasis = 0#1,3,5
-    myfolder = "sherlock/20191205_RV"
+    myfolder1 = "sherlock/20210525_RV"
+    myfolder2 = "sherlock/20210505_RV"
+    myfolder3 = "sherlock/20191205_RV"
+    # myfolder = "sherlock/20210505_RV"
     # myfolder = "sherlock/20191104_RVsearch"
     # myfolder = "sherlock/20191018_RVsearch"
     suffix = "_outputHPF_cutoff40_sherlock_v1_search_resinmodel_kl{0}".format(numbasis)
@@ -635,12 +638,25 @@ if 1:
         print(filename)
         # if filename == '/data/osiris_data/HR_8799_c/20101104/reduced_jb/s101104_a034001_Kbb_020.fits':
         #     continue
+        if len(glob.glob(os.path.join(os.path.dirname(filename),myfolder3,
+                                           os.path.basename(filename).replace(".fits",suffix+"_planetRV.fits")))) == 1:
+            myfolder = myfolder3
+        elif len(glob.glob(os.path.join(os.path.dirname(filename),myfolder2,
+                                           os.path.basename(filename).replace(".fits",suffix+"_planetRV.fits")))) == 1:
+            myfolder = myfolder2
+        elif len(glob.glob(os.path.join(os.path.dirname(filename),myfolder1,
+                                           os.path.basename(filename).replace(".fits",suffix+"_planetRV.fits")))) == 1:
+            myfolder = myfolder1
+        else:
+            myfolder = None
+
         try:
             print(os.path.join(os.path.dirname(filename),myfolder,
                                            os.path.basename(filename).replace(".fits",suffix+"_planetRV.fits")))
             hdulist = pyfits.open(os.path.join(os.path.dirname(filename),myfolder,
                                            os.path.basename(filename).replace(".fits",suffix+"_planetRV.fits")))
         except:
+            continue
             new_list_data[k][kcen_id] = np.nan
             new_list_data[k][lcen_id] = np.nan
             new_list_data[k][rvcen_id],new_list_data[k][rvcensig_id] = np.nan,np.nan
@@ -734,9 +750,11 @@ if 1:
             except:
                 new_list_data[k][RVfakes_id],new_list_data[k][RVfakessig_id] = np.nan,np.nan
 
+            print(new_list_data[k][rvcen_id])
             new_list_data[k][kcen_id] = ymax
             new_list_data[k][lcen_id] = xmax
             new_list_data[k][rvcen_id],new_list_data[k][rvcensig_id],argmax_post = get_err_from_posterior(planetRV_hd,posterior)
+            print(new_list_data[k][rvcen_id])
             # print(new_list_data[k][rvcen_id],new_list_data[k][rvcensig_id],argmax_post)
             # print(new_list_data[k][status_id])
             # if np.isnan(new_list_data[k][rvcensig_id]) and new_list_data[k][status_id]:

@@ -31,7 +31,7 @@ def get_err_from_posterior(x,posterior):
 if 1:
     out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
     fontsize=15
-    numbasis_list = np.array([0,1,2])
+    numbasis_list = np.array([0,1,5,10,15])
     # rv_c = [-11.608945710803633, -11.207188499440162, -11.130158122796846]
     # rverr_c = [0.39995957140655475, 0.4005435461700829, 0.40263553957115733]
     # rv_fake_c = [-12.087383546897385, -11.304705751066765, -11.193931216436319]
@@ -44,18 +44,25 @@ if 1:
     # rverr_d = [1.5544543012391918, 1.6443821722825074, 1.6940156886081097]
     # rv_fake_d = [-16.964360807639505, -13.809828903996385, -15.479359543199587]
     # rverr_fake_d = [1.5544543012391918, 1.6443821722825074, 1.6940156886081097]
-    rv_c = [-11.606934489081514, -11.206867811301883, -11.126854475745958]
-    rverr_c = [0.391234743860962, 0.3929428817820666, 0.3954140633322645]
-    rv_fake_c = [-12.08701450241707, -11.306884480746792, -11.1868644774129]
-    rverr_fake_c =[0.41213882476395547, 0.39792877298272966, 0.4059180296709144]
-    rv_b = [-8.966494415735955, -9.266544424070677, -9.0265044174029]
-    rverr_b = [0.6933120101775065, 0.6719185206191662, 0.6637374898511119]
-    rv_fake_b = [-9.266544424070677, -9.226537756292714, -9.0265044174029]
-    rverr_fake_b = [0.6636727841071384, 0.6788268543640683, 0.6728046132388119]
-    rv_d = [-19.688281380230038, -13.897316219369895, -15.69761626937823]
-    rverr_d = [1.7946953690541445, 1.8628739788951396, 1.9279952452381766]
-    rv_fake_d = [-16.877812968828138, -13.937322887147857, -15.637606267711284]
-    rverr_fake_d = [1.5994389329638912, 1.9054168236452247, 1.9561937931198887]
+    #before 05/20/2021
+    # rv_c = [-11.606934489081514, -11.206867811301883, -11.126854475745958]
+    # rverr_c = [0.391234743860962, 0.3929428817820666, 0.3954140633322645]
+    # rv_fake_c = [-12.08701450241707, -11.306884480746792, -11.1868644774129]
+    # rverr_fake_c =[0.41213882476395547, 0.39792877298272966, 0.4059180296709144]
+    # rv_b = [-8.966494415735955, -9.266544424070677, -9.0265044174029]
+    # rverr_b = [0.6933120101775065, 0.6719185206191662, 0.6637374898511119]
+    # rv_fake_b = [-9.266544424070677, -9.226537756292714, -9.0265044174029]
+    # rverr_fake_b = [0.6636727841071384, 0.6788268543640683, 0.6728046132388119]
+    # rv_d = [-19.688281380230038, -13.897316219369895, -15.69761626937823]
+    # rverr_d = [1.7946953690541445, 1.8628739788951396, 1.9279952452381766]
+    # rv_fake_d = [-16.877812968828138, -13.937322887147857, -15.637606267711284]
+    # rverr_fake_d = [1.5994389329638912, 1.9054168236452247, 1.9561937931198887]
+    rv_c = [-11.606934489081514, -11.206867811301883,-10.996832805467577, -11.126854475745958,-10.926821136856141 ]
+    rverr_c = [0.391234743860962, 0.3929428817820666,0.37179592150195884, 0.3954140633322645,0.3737943022452148]
+    rv_b = [-8.966494415735955, -9.266544424070677, -9.0265044174029, -9.0265044174029, -8.996499416569428 ]
+    rverr_b = [0.6933120101775065, 0.6719185206191662,0.42344782152089344, 0.6637374898511119,0.42417300842243577]
+    rv_d = [-19.688281380230038, -13.897316219369895,np.nan, -15.69761626937823,np.nan]
+    rverr_d = [1.7946953690541445, 1.8628739788951396,np.nan, 1.9279952452381766,np.nan]
 
     rv_b = []
     rv_c = []
@@ -63,27 +70,44 @@ if 1:
     rverr_b = []
     rverr_c = []
     rverr_d = []
-    for kl in [0,1,10]:
-        myoutfilename = "RV_HR_8799_b_measurements_kl{0}.pdf".format(kl)
-        hdulist = pyfits.open(os.path.join(out_pngs,"HR_8799_b",myoutfilename.replace(".pdf","_posterior.fits")))
-        rvsampling, posterior_b = hdulist[0].data[0,:],hdulist[0].data[1,:]
-        rv,rverr,_ = get_err_from_posterior(rvsampling, posterior_b)
-        rv_b.append(rv)
-        rverr_b.append(rverr)
+    for kl in numbasis_list:#[0,1,5,10,15]:
+        try:
+            myoutfilename = "RV_HR_8799_b_measurements_kl{0}.pdf".format(kl)
+            hdulist = pyfits.open(os.path.join(out_pngs,"HR_8799_b",myoutfilename.replace(".pdf","_posterior.fits")))
+            rvsampling, posterior_b = hdulist[0].data[0,:],hdulist[0].data[1,:]
+            rv,rverr,_ = get_err_from_posterior(rvsampling, posterior_b)
+            rv_b.append(rv)
+            rverr_b.append(rverr)
+        except:
+            rv_b.append(np.nan)
+            rverr_b.append(np.nan)
 
-        myoutfilename = "RV_HR_8799_c_measurements_kl{0}.pdf".format(kl)
-        hdulist = pyfits.open(os.path.join(out_pngs,"HR_8799_c",myoutfilename.replace(".pdf","_posterior.fits")))
-        rvsampling, posterior_c = hdulist[0].data[0,:],hdulist[0].data[1,:]
-        rv,rverr,_ = get_err_from_posterior(rvsampling, posterior_c)
-        rv_c.append(rv)
-        rverr_c.append(rverr)
+        try:
+            myoutfilename = "RV_HR_8799_c_measurements_kl{0}.pdf".format(kl)
+            hdulist = pyfits.open(os.path.join(out_pngs,"HR_8799_c",myoutfilename.replace(".pdf","_posterior.fits")))
+            rvsampling, posterior_c = hdulist[0].data[0,:],hdulist[0].data[1,:]
+            rv,rverr,_ = get_err_from_posterior(rvsampling, posterior_c)
+            rv_c.append(rv)
+            rverr_c.append(rverr)
+        except:
+            rv_c.append(np.nan)
+            rverr_c.append(np.nan)
 
-        myoutfilename = "RV_HR_8799_d_measurements_kl{0}.pdf".format(kl)
-        hdulist = pyfits.open(os.path.join(out_pngs,"HR_8799_d",myoutfilename.replace(".pdf","_posterior.fits")))
-        rvsampling, posterior_d = hdulist[0].data[0,:],hdulist[0].data[1,:]
-        rv,rverr,_ = get_err_from_posterior(rvsampling, posterior_d)
-        rv_d.append(rv)
-        rverr_d.append(rverr)
+        # if kl == 5 or kl == 15:
+        #     rv_d.append(np.nan)
+        #     rverr_d.append(np.nan)
+        #     continue
+
+        try:
+            myoutfilename = "RV_HR_8799_d_measurements_kl{0}.pdf".format(kl)
+            hdulist = pyfits.open(os.path.join(out_pngs,"HR_8799_d",myoutfilename.replace(".pdf","_posterior.fits")))
+            rvsampling, posterior_d = hdulist[0].data[0,:],hdulist[0].data[1,:]
+            rv,rverr,_ = get_err_from_posterior(rvsampling, posterior_d)
+            rv_d.append(rv)
+            rverr_d.append(rverr)
+        except:
+            rv_d.append(np.nan)
+            rverr_d.append(np.nan)
 
 
     # b
@@ -121,13 +145,23 @@ if 1:
     #  2.22381737 0.96031668 1.34266108 1.81032644 2.18358091 1.42092456
     #  2.0842469  1.28690558]
     # 10
+    # submitted paper
+    # epochs_b =  ['20100711', '20100712',  '20100713', '20130725', '20130726', '20130727', '20161106', '20161107' , '20161108', '20180722','20200803']
+    # mjd_b = [55388.5453326,  55389.53783948,
+    #          55390.61962042, 56498.5530891,  56499.49851632 ,56500.51394936,
+    #          57698.31569029 ,57699.31962104 ,57700.33532939 ,58321.52393743,
+    #          59064.45748826]
+    # epochs_rv_b =  [  -10.57920756, -12.35982049 , -3.71445932 , -9.53545184,  -8.44582097,  -9.05172061,   -8.23000863,  -9.71148301,  -3.23729904,  -6.21223367,-6.40273812]
+    # epochs_rverr_b = [ 1.09404719, 1.14231799,  2.21445212 ,0.96492429, 1.34422894, 1.86751255, 2.23673811 ,1.45381564,  2.09713865, 1.29136631,2.8232242]
+    # epochs_Nexp_b = [8100.0, 8100.0, 1800.0, 9600.0, 5400.0, 3000.0, 1200.0, 1800.0, 600.0, 1800.0,1200.0]#[9, 9, 2, 16, 9, 5, 2, 3, 1, 6]
+    # new reduc
     epochs_b =  ['20100711', '20100712',  '20100713', '20130725', '20130726', '20130727', '20161106', '20161107' , '20161108', '20180722','20200803']
     mjd_b = [55388.5453326,  55389.53783948,
              55390.61962042, 56498.5530891,  56499.49851632 ,56500.51394936,
              57698.31569029 ,57699.31962104 ,57700.33532939 ,58321.52393743,
              59064.45748826]
-    epochs_rv_b =  [  -10.57920756, -12.35982049 , -3.71445932 , -9.53545184,  -8.44582097,  -9.05172061,   -8.23000863,  -9.71148301,  -3.23729904,  -6.21223367,-6.40273812]
-    epochs_rverr_b = [ 1.09404719, 1.14231799,  2.21445212 ,0.96492429, 1.34422894, 1.86751255, 2.23673811 ,1.45381564,  2.09713865, 1.29136631,2.8232242]
+    epochs_rv_b =  [  -10.57920756, -12.35982049 , -3.71445932 , -9.53545184 , -8.44582097 , -9.05172061 , -8.23000863 , -9.71148301,  -3.23729904 , -6.21223367 , -9.94725681]
+    epochs_rverr_b = [ 1.09404719 ,1.14231799 ,2.21445212 ,0.96492429, 1.34422894 ,1.86751255, 2.23673811 ,1.45381564, 2.09713865, 1.29136631 ,2.26564859]
     epochs_Nexp_b = [8100.0, 8100.0, 1800.0, 9600.0, 5400.0, 3000.0, 1200.0, 1800.0, 600.0, 1800.0,1200.0]#[9, 9, 2, 16, 9, 5, 2, 3, 1, 6]
 
     # c
@@ -161,11 +195,19 @@ if 1:
     # [0.68697538        nan 0.74275716 1.31189968 2.08184032 2.09739146
     #  3.66514447        nan        nan        nan 0.91748099]
     # 10
+    #submitted paper
     epochs_c =  ['20100715' , '20101104' ,'20110723' ,'20110724', '20110725','20130726', '20171103','20200729']
     mjd_c = [55392.54593533, 55504.30989646 ,55765.54142572 ,55766.56019321,
  55767.57188185 ,56499.58103326 ,58060.24997848 ,59059.49647781]
     epochs_rv_c = [-11.83538564, -10.95940131, -10.04625721, -10.75684941,-11.01553684 ,-15.81194633,-10.47611131,-10.59403037]
     epochs_rverr_c = [0.68949379 ,   0.75613354 ,1.31100169 ,2.08722546, 2.17375194, 3.64578072,  0.90622151, 1.50326013]
+    epochs_Nexp_c = [10200.0,10800.0, 6000.0, 1800.0, 3000.0, 600.0, 3000.0, 2400.0]#[17, 18, 10, 3, 5, 1, 5]
+    #new reduc
+    epochs_c =  ['20100715' , '20101104' ,'20110723' ,'20110724', '20110725','20130726', '20171103','20200729']
+    mjd_c = [55392.54593533, 55504.30989646 ,55765.54142572 ,55766.56019321,
+ 55767.57188185 ,56499.58103326 ,58060.24997848 ,59059.49647781]
+    epochs_rv_c = [-11.83379878 ,-10.96574302 ,-10.04191934 ,-10.79562603 ,-11.02532861, -15.81365435, -10.46482626, -10.60428596]
+    epochs_rverr_c = [0.68949379 ,0.74757026, 1.28708007 ,2.05115576 ,2.15724189 ,3.49881652 ,0.90371626, 1.28972365]
     epochs_Nexp_c = [10200.0,10800.0, 6000.0, 1800.0, 3000.0, 600.0, 3000.0, 2400.0]#[17, 18, 10, 3, 5, 1, 5]
 
 
@@ -192,13 +234,20 @@ if 1:
     # [         nan -10.15767679          nan -17.01463235 -14.33700864]
     # [       nan 2.65915811        nan 2.64729949 3.41567384]
     # 10
+    #submitted paper
+    # epochs_d =  ['20150720', '20150723', '20150828','20200729', '20200730', '20200731','20200803']
+    # mjd_d = [57223.50944342, 57226.52222732, 57262.54376946, 59059.58694853,
+    #         59060.55855772, 59061.53826443, 59064.54864401]
+    # epochs_rv_d = [-13.81186852, -18.30012132, -13.60937274, -14.42853693 ,-17.69367862, -13.55751892,-10.59615452]
+    # epochs_rverr_d = [2.79074779,2.69400271, 3.48607747,  1.81554366, 2.04721357, 1.17071597, 1.90036611]
+    # epochs_Nexp_d = [ 4800.0, 3000.0, 1800.0, 4800.0, 4800.0, 9600.0,4200.0]
+    # new reduc
     epochs_d =  ['20150720', '20150723', '20150828','20200729', '20200730', '20200731','20200803']
     mjd_d = [57223.50944342, 57226.52222732, 57262.54376946, 59059.58694853,
             59060.55855772, 59061.53826443, 59064.54864401]
-    epochs_rv_d = [-13.81186852, -18.30012132, -13.60937274, -14.42853693 ,-17.69367862, -13.55751892,-10.59615452]
-    epochs_rverr_d = [2.79074779,2.69400271, 3.48607747,  1.81554366, 2.04721357, 1.17071597, 1.90036611]
+    epochs_rv_d = [-13.81186852, -18.30012132, -13.60937274 ,-11.3665167 , -12.87549241, -10.79862078 ,-10.13396842]
+    epochs_rverr_d = [2.79074779, 2.69400271, 3.48607747, 1.62667106, 1.87067805, 1.07605615, 1.8088658]
     epochs_Nexp_d = [ 4800.0, 3000.0, 1800.0, 4800.0, 4800.0, 9600.0,4200.0]
-
 
 
     allepochs = np.unique(np.concatenate([epochs_b,epochs_c,epochs_d]))
@@ -241,7 +290,7 @@ if 1:
 
     plt.figure(1,figsize=(6,6))
     if 1:
-        plt.plot(rv_b,linestyle="",color="#0099cc",marker="x") #"#ff9900" "#0099cc" "#6600ff"
+        plt.plot(numbasis_list,rv_b,linestyle="",color="#0099cc",marker="x") #"#ff9900" "#0099cc" "#6600ff"
         plt.errorbar(numbasis_list,rv_b,yerr=rverr_b,color="#0099cc",label="b: RV")
         # plt.plot(numbasis_list+0.02,rv_fake_b,linestyle="",color="#0099cc",marker="x")
         # eb = plt.errorbar(numbasis_list+0.02,rv_fake_b,yerr=rverr_fake_b,color="#0099cc",fmt="",linestyle="--",label="c: corrected RV")
@@ -273,14 +322,14 @@ if 1:
     rv_dmc_std = np.std(rv_dmc_list_data)
     plt.fill_between(numbasis_list,
                      rv_c+rv_bmc_med-rv_bmc_std,
-                     rv_c+rv_bmc_med+rv_bmc_std,alpha=0.4,facecolor="none",edgecolor="#006699",label="Wang et al. 2018 ($RV_b-RV_c$)",hatch="\\") # (Astrometry; bcde coplanar & stable)
+                     rv_c+rv_bmc_med+rv_bmc_std,alpha=0.4,facecolor="none",edgecolor="#006699",label="b: Wang et al. 2018",hatch="\\") # (Astrometry; bcde coplanar & stable)
     plt.fill_between(numbasis_list,
                      rv_c+rv_dmc_med-rv_dmc_std,
-                     rv_c+rv_dmc_med+rv_dmc_std,alpha=0.4,facecolor="none",edgecolor="#6600ff",label="Wang et al. 2018 ($RV_d-RV_c$)",hatch="/") # (Astrometry; bcde coplanar & stable)
+                     rv_c+rv_dmc_med+rv_dmc_std,alpha=0.4,facecolor="none",edgecolor="#6600ff",label="d: Wang et al. 2018",hatch="/") # (Astrometry; bcde coplanar & stable)
 
     plt.legend(loc="upper left",frameon=True,fontsize=fontsize)
     plt.xlabel("# PCA modes",fontsize=fontsize)
-    plt.xticks([0,1,2],[0,1,10])
+    plt.xticks(numbasis_list,numbasis_list)
     plt.ylim([-15,-5])
     plt.ylabel("RV (km/s)",fontsize=fontsize)
     plt.tick_params(axis="x",labelsize=fontsize)

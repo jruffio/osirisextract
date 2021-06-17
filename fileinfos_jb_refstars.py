@@ -69,6 +69,7 @@ if 1: # add filename
     filelist.extend(glob.glob(os.path.join("/data/osiris_data/51_Eri_*","*",reductionname,"*",filenamefilter)))
     filelist.extend(glob.glob(os.path.join("/data/osiris_data/kap_And","*",reductionname,"*",filenamefilter)))
     filelist.extend(glob.glob(os.path.join("/data/osiris_data/GJ_504_b","*",reductionname,"*",filenamefilter)))
+    filelist.extend(glob.glob(os.path.join("/data/osiris_data/HD_1160","*",reductionname,"*",filenamefilter)))
     filelist.sort()
     for filename in filelist:
         if filename not in old_filelist:
@@ -286,6 +287,14 @@ if 1:
             new_list_data[k][Hmag_id] = 7.975
             new_list_data[k][Kmag_id] = 7.938
             new_list_data[k][hipnum_id] = 65599
+        elif refstar_name == "HD_1160":
+            new_list_data[k][rv_simbad_id] =12.6
+            new_list_data[k][vsini_fixed_id] = np.nan#actually dunno np.nan
+            new_list_data[k][type_id] = "A0"
+            new_list_data[k][Jmag_id] = 6.983
+            new_list_data[k][Hmag_id] = 7.013
+            new_list_data[k][Kmag_id] = 7.040
+            new_list_data[k][hipnum_id] = 1272
         else:
             new_list_data[k][rv_simbad_id] =  np.nan
             new_list_data[k][vsini_fixed_id] = np.nan

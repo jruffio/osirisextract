@@ -7,12 +7,13 @@ import multiprocessing as mp
 import astropy.io.fits as pyfits
 from astropy.time import Time
 if len(sys.argv) == 1:
-    # osiris_data_dir = "/data/osiris_data"
-    osiris_data_dir = "/scr3/jruffio/data/osiris_data"
+    osiris_data_dir = "/data/osiris_data"
+    # osiris_data_dir = "/scr3/jruffio/data/osiris_data"
     astrometry_DATADIR = os.path.join(osiris_data_dir,"astrometry")
     uservs = False
     # planet = "b"
-    planet = "c"
+    # planet = "c"
+    planet = "d"
     # planet = "bc"
     coplanar = False
     if uservs and (planet == "b" or planet =="c" or planet == "bc"):
@@ -26,7 +27,8 @@ if len(sys.argv) == 1:
     burn_steps = 0 # steps to burn in per walker
     thin = 50 # only save every 2nd step
     num_threads = 16#mp.cpu_count() # or a different number if you prefer
-    suffix = "single_planet"
+    # suffix = "single_planet"
+    suffix = "single_planet2"
     # suffix = "sherlock"
     # suffix = "sherlock_ptemceefix_16_512_78125_50"
     suffix = suffix+"_{0}_{1}_{2}_{3}_{4}".format(num_temps,num_walkers,total_orbits//num_walkers,thin,uservs)

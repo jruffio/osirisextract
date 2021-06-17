@@ -14,8 +14,8 @@ from copy import copy
 out_pngs = "/home/sda/jruffio/pyOSIRIS/figures/"
 
 # planet = "HR_8799_b"
-planet = "HR_8799_c"
-# planet = "HR_8799_d"
+# planet = "HR_8799_c"
+planet = "HR_8799_d"
 # planet = "kap_And"
 # planet = "51_Eri_b"
 # planet = "GJ_504_b"
@@ -71,8 +71,9 @@ new_list_data = []
 for filename in filelist_sorted:
     if 0 or "Kbb" in list_data[filelist.index(filename)][ifs_filter_id] or \
        "Hbb" in list_data[filelist.index(filename)][ifs_filter_id]:
-        if "20201006" in list_data[filelist.index(filename)][cen_filename_id]:
-            new_list_data.append(list_data[filelist.index(filename)])
+        # if "20201006" in list_data[filelist.index(filename)][cen_filename_id]:
+        #     new_list_data.append(list_data[filelist.index(filename)])
+        new_list_data.append(list_data[filelist.index(filename)])
 list_data=new_list_data
 # print(new_list_data)
 # exit()
@@ -102,18 +103,20 @@ list_data=new_list_data
 N_lines =  len(list_data)
 
 
-# plot 2D images
-if 1:
+
+if 0: # for  HR 8799 e
 
     # seq_list = np.array([item[sequence_id] for item in list_data])
-    seq_list = np.concatenate([np.zeros(5),np.ones(5),2*np.ones(5),3*np.ones(5),4*np.ones(5)])
-    # seq_list = np.concatenate([np.zeros(15),3*np.ones(5),4*np.ones(5)])
+    # seq_list = np.concatenate([np.zeros(5),np.ones(5),2*np.ones(5),3*np.ones(5),4*np.ones(5)])
+    seq_list = np.concatenate([np.zeros(15),3*np.ones(5),4*np.ones(5)])
     seqit_list = np.array([item[seqit_id] for item in list_data])
 
     N_lines =  len(np.unique(seq_list))
     seqref = -1
     Ninarow = 20
-    f,ax_list = plt.subplots(int(np.ceil(N_lines/Ninarow)),Ninarow,sharey="row",sharex="col",figsize=(12,12./Ninarow*64./19.*(N_lines//Ninarow+1)))#figsize=(12,8)
+    # f,ax_list = plt.subplots(int(np.ceil(N_lines/Ninarow)),Ninarow,sharey="row",sharex="col",figsize=(12,12./Ninarow*64./19.*(N_lines//Ninarow+1)))#figsize=(12,8)
+    f = plt.figure(1, figsize=(2,6))#figsize=(12,8)
+    ax_list = [plt.gca()]
     try:
         ax_list = [myax for rowax in ax_list for myax in rowax ]
     except:
@@ -121,12 +124,14 @@ if 1:
 
 
 
-    for k,seq in enumerate(np.unique(seq_list)):
-        cube_hd_list = []
-        cube_list  = []
+    for k,seq in enumerate([0]):#np.unique(seq_list)):
+        mm_hd_list = []
+        dm_hd_list  = []
+        mm_list = []
+        dm_list  = []
         ax = ax_list[k]
         plt.sca(ax)
-        for item in np.array(list_data)[np.where(seq_list==seq)[0]]:
+        for l,item in enumerate(np.array(list_data)[np.where(seq_list==seq)[0]]):
             reducfilename = item[cen_filename_id]
             try:
                 hdulist = pyfits.open(reducfilename.replace(".fits","_planetRV.fits"))
@@ -147,16 +152,60 @@ if 1:
 
             _cube_hd = hdulist[0].data[-1,0,2,0:NplanetRV_hd,:,:]-hdulist[0].data[-1,0,1,0:NplanetRV_hd,:,:]
             _cube = hdulist[0].data[-1,0,2,NplanetRV_hd::,:,:]-hdulist[0].data[-1,0,1,NplanetRV_hd::,:,:]
-            cube_cp = copy(_cube)
+            snr_cube_hd = hdulist[0].data[-1,0,10,0:NplanetRV_hd,:,:]
+            snr_cube = hdulist[0].data[-1,0,10,NplanetRV_hd::,:,:]
+            cont_cube_hd = hdulist[0].data[-1,0,11,0:NplanetRV_hd,:,:]
+            cont_cube = hdulist[0].data[-1,0,11,NplanetRV_hd::,:,:]
+            cont_cube_hd = cont_cube_hd - np.nanmedian(cont_cube_hd,axis=(1,2))[:,None,None]
+            cont_cube = cont_cube - np.nanmedian(cont_cube,axis=(1,2))[:,None,None]
+            snr_cube_hd = snr_cube_hd - np.nanmedian(snr_cube_hd,axis=(1,2))[:,None,None]
+            snr_cube = snr_cube - np.nanmedian(snr_cube,axis=(1,2))[:,None,None]
+            cube_cp = copy(snr_cube)
             cube_cp[np.where(np.abs(planetRV)<500)[0],:,:] = np.nan
-            offsets = np.nanmedian(cube_cp,axis=0)[None,:,:]
-            _cube_hd = _cube_hd - offsets
-            _cube = _cube - offsets
-            cube_hd_list.append(_cube_hd)
-            cube_list.append(_cube)
+            offsets = np.nanstd(cube_cp,axis=0)[None,:,:]
+            snr_cube_hd = snr_cube_hd/offsets
+            snr_cube = snr_cube/ offsets
+            mm_hd = (snr_cube_hd/cont_cube_hd)**2
+            dm_hd = snr_cube_hd**2/cont_cube_hd
+            mm = (snr_cube/cont_cube)**2
+            dm = snr_cube**2/cont_cube
+            # print(_cube_hd.shape)
+            # exit()
+            if l>=5 and l<10:
+                tmp_mm_hd = np.zeros(mm_hd.shape)
+                tmp_dm_hd = np.zeros(dm_hd.shape)
+                tmp_mm_hd[:,1::,:] = mm_hd[:,0:63,:]
+                tmp_dm_hd[:,1::,:] = dm_hd[:,0:63,:]
+                mm_hd = tmp_mm_hd
+                dm_hd = tmp_dm_hd
+                tmp_mm = np.zeros(mm.shape)
+                tmp_dm = np.zeros(dm.shape)
+                tmp_mm[:,1::,:] = mm[:,0:63,:]
+                tmp_dm[:,1::,:] = dm[:,0:63,:]
+                mm = tmp_mm
+                dm = tmp_dm
+            if l>=10 and l<15:
+                tmp_mm_hd = np.zeros(mm_hd.shape)
+                tmp_dm_hd = np.zeros(dm_hd.shape)
+                tmp_mm_hd[:,3::,0:18] = mm_hd[:,0:61,1::]
+                tmp_dm_hd[:,3::,0:18] = dm_hd[:,0:61,1::]
+                mm_hd = tmp_mm_hd
+                dm_hd = tmp_dm_hd
+                tmp_mm = np.zeros(mm.shape)
+                tmp_dm = np.zeros(dm.shape)
+                tmp_mm[:,3::,0:18] = mm[:,0:61,1::]
+                tmp_dm[:,3::,0:18] = dm[:,0:61,1::]
+                mm = tmp_mm
+                dm = tmp_dm
+            mm_hd_list.append(mm_hd)
+            dm_hd_list.append(dm_hd)
+            mm_list.append(mm)
+            dm_list.append(dm)
 
-        cube = np.nansum(cube_list,axis=0)
-        cube_hd = np.nansum(cube_hd_list,axis=0)
+
+        # cube = np.nanmean(cube_list,axis=0)
+        cube_hd = np.nansum(dm_hd_list,axis=0)/ np.sqrt(np.nansum(mm_hd_list,axis=0))
+        cube = np.nansum(dm_list,axis=0)/ np.sqrt(np.nansum(mm_list,axis=0))
         # if k == 0 or k == 3 or k == 4:
         #     cube = np.nansum(cube_list,axis=0)
         #     cube_hd = np.nansum(cube_hd_list,axis=0)
@@ -200,7 +249,7 @@ if 1:
                 plt.clim([0,np.max([np.nanstd(cube_hd)*10,30])])
             except:
                 plt.clim([0,np.max([np.nanstd(image)*10,30])])
-            plt.clim([0,50])
+            plt.clim([0,10])
             plt.xticks([0,10])
 
 
@@ -213,31 +262,50 @@ if 1:
         else:
             color = "grey"
             circlelinestyle = "--"
-        plt.gca().text(3,10,os.path.basename(item[filename_id]).split("bb_")[0],ha="left",va="bottom",rotation=90,size=fontsize/3*2,color=color)
-        try:
-            circle = plt.Circle((lcen,kcen),5,color=color, fill=False,linestyle=circlelinestyle)
-            ax.add_artist(circle)
-            # print(hdulist[0].data[0,0,11,zcen,kcen,lcen])
-        except:
-            pass
+        # plt.gca().text(3,10,os.path.basename(item[filename_id]).split("bb_")[0],ha="left",va="bottom",rotation=90,size=fontsize/3*2,color=color)
+        # try:
+        #     circle = plt.Circle((lcen,kcen),5,color=color, fill=False,linestyle=circlelinestyle)
+        #     ax.add_artist(circle)
+        #     # print(hdulist[0].data[0,0,11,zcen,kcen,lcen])
+        # except:
+        #     pass
         # plt.title(os.path.basename(item[filename_id]).split(IFSfilter)[0])
 
     for ax in ax_list:
         plt.sca(ax)
-        plt.tick_params(axis="x",which="both",bottom=False,top=False,labelbottom=False)
-        plt.tick_params(axis="y",which="both",left=False,right=False,labelleft=False)
-        plt.gca().spines["right"].set_visible(False)
-        plt.gca().spines["left"].set_visible(False)
-        plt.gca().spines["top"].set_visible(False)
-        plt.gca().spines["bottom"].set_visible(False)
+        # plt.tick_params(axis="x",which="both",bottom=False,top=False,labelbottom=False)
+        # plt.tick_params(axis="y",which="both",left=False,right=False,labelleft=False)
+        # plt.gca().spines["right"].set_visible(False)
+        # plt.gca().spines["left"].set_visible(False)
+        # plt.gca().spines["top"].set_visible(False)
+        # plt.gca().spines["bottom"].set_visible(False)
+        plt.xlabel(r"x (pix)",fontsize=fontsize)
+        plt.ylabel(r"y (pix)",fontsize=fontsize)
+        plt.gca().tick_params(axis='x', labelsize=fontsize)
+        plt.gca().tick_params(axis='y', labelsize=fontsize)
+        plt.colorbar()
 
     # f.subplots_adjust(wspace=0,hspace=0)
     # plt.show()
-    if not os.path.exists(os.path.join(out_pngs,planet)):
-        os.makedirs(os.path.join(out_pngs,planet))
-    print("Saving "+os.path.join(out_pngs,planet,planet+"_"+suffix+"_images_kl{0}.pdf".format(resnumbasis)))
-    plt.savefig(os.path.join(out_pngs,planet,planet+"_"+suffix+"_images_kl{0}.png".format(resnumbasis)),bbox_inches='tight')
-    plt.savefig(os.path.join(out_pngs,planet,planet+"_"+suffix+"_images_kl{0}.pdf".format(resnumbasis)),bbox_inches='tight')
+    # if not os.path.exists(os.path.join(out_pngs,planet)):
+    #     os.makedirs(os.path.join(out_pngs,planet))
+    # print("Saving "+os.path.join(out_pngs,planet,planet+"_"+suffix+"_images_kl{0}.pdf".format(resnumbasis)))
+    # plt.savefig(os.path.join(out_pngs,planet,planet+"_"+suffix+"_images_kl{0}.png".format(resnumbasis)),bbox_inches='tight')
+    # plt.savefig(os.path.join(out_pngs,planet,planet+"_"+suffix+"_images_kl{0}.pdf".format(resnumbasis)),bbox_inches='tight')
+
+    plt.figure(2) #"#006699","#ff9900","#6600ff"
+    plt.plot(cube[:,33,9],label="HR 8799 e",color="#ff9900")
+    plt.plot(cube[:,51,12],label="HR 8799 c",color="#ff99cc")
+
+    hdulist = pyfits.HDUList()
+    hdulist.append(pyfits.PrimaryHDU(data=planetRV))
+    hdulist.append(pyfits.ImageHDU(data=cube[:,33,9]))
+    try:
+        hdulist.writeto("/home/sda/jruffio/pyOSIRIS/figures/HR_8799_e/CCF_e.fits", overwrite=True)
+    except TypeError:
+        hdulist.writeto("/home/sda/jruffio/pyOSIRIS/figures/HR_8799_e/CCF_e.fits", clobber=True)
+    hdulist.close()
+
     plt.show()
     exit()
 
@@ -318,13 +386,20 @@ if 1:
             # cube_hd = hdulist[0].data[-1,0,0,0:NplanetRV_hd,:,:]
             # cube = hdulist[0].data[-1,0,0,NplanetRV_hd::,:,:]
 
-            cube_hd = hdulist[0].data[-1,0,2,0:NplanetRV_hd,:,:]-hdulist[0].data[-1,0,1,0:NplanetRV_hd,:,:]
-            cube = hdulist[0].data[-1,0,2,NplanetRV_hd::,:,:]-hdulist[0].data[-1,0,1,NplanetRV_hd::,:,:]
+            # cube_hd = hdulist[0].data[-1,0,2,0:NplanetRV_hd,:,:]-hdulist[0].data[-1,0,1,0:NplanetRV_hd,:,:]
+            # cube = hdulist[0].data[-1,0,2,NplanetRV_hd::,:,:]-hdulist[0].data[-1,0,1,NplanetRV_hd::,:,:]
+            cube_hd = hdulist[0].data[-1,0,10,0:NplanetRV_hd,:,:]-hdulist[0].data[-1,0,1,0:NplanetRV_hd,:,:]
+            cube = hdulist[0].data[-1,0,10,NplanetRV_hd::,:,:]-hdulist[0].data[-1,0,1,NplanetRV_hd::,:,:]
             cube_cp = copy(cube)
             cube_cp[np.where(np.abs(planetRV)<500)[0],:,:] = np.nan
             offsets = np.nanmedian(cube_cp,axis=0)[None,:,:]
             cube_hd = cube_hd - offsets
             cube = cube - offsets
+
+            offsets = np.nanstd(cube_cp,axis=0)[None,:,:]
+            cube_hd = cube_hd/offsets
+            cube = cube/ offsets
+
             cube_hd_list.append(cube_hd)
 
             bary_rv = -float(item[bary_rv_id])/1000. # RV in km/s
@@ -368,11 +443,11 @@ if 1:
             # plt.clim([0,cube_hd[zcen,kcen,lcen]/2.0])
             # plt.clim([0,np.nanstd(cube_hd)*10])
             # plt.clim([0,30])
-            try:
-                plt.clim([0,np.max([np.nanstd(cube_hd)*10,30])])
-            except:
-                plt.clim([0,np.max([np.nanstd(image)*10,30])])
-            plt.clim([0,30])
+            # try:
+            #     plt.clim([0,np.max([np.nanstd(cube_hd)*10,30])])
+            # except:
+            #     plt.clim([0,np.max([np.nanstd(image)*10,30])])
+            plt.clim([0,15])
             plt.xticks([0,10])
 
 
@@ -443,11 +518,11 @@ if 1:
 
     f.subplots_adjust(wspace=0,hspace=0)
     # plt.show()
-    if not os.path.exists(os.path.join(out_pngs,planet)):
-        os.makedirs(os.path.join(out_pngs,planet))
-    print("Saving "+os.path.join(out_pngs,planet,planet+"_"+suffix+"_images_kl{0}.pdf".format(resnumbasis)))
-    plt.savefig(os.path.join(out_pngs,planet,planet+"_"+suffix+"_images_kl{0}.png".format(resnumbasis)),bbox_inches='tight')
-    plt.savefig(os.path.join(out_pngs,planet,planet+"_"+suffix+"_images_kl{0}.pdf".format(resnumbasis)),bbox_inches='tight')
+    # if not os.path.exists(os.path.join(out_pngs,planet)):
+    #     os.makedirs(os.path.join(out_pngs,planet))
+    # print("Saving "+os.path.join(out_pngs,planet,planet+"_"+suffix+"_images_kl{0}.pdf".format(resnumbasis)))
+    # plt.savefig(os.path.join(out_pngs,planet,planet+"_"+suffix+"_images_kl{0}.png".format(resnumbasis)),bbox_inches='tight')
+    # plt.savefig(os.path.join(out_pngs,planet,planet+"_"+suffix+"_images_kl{0}.pdf".format(resnumbasis)),bbox_inches='tight')
 
     # print("Saving "+os.path.join(out_pngs,"HR8799"+planet+"_"+suffix+"_images_tentativedetec.pdf"))
     # plt.savefig(os.path.join(out_pngs,"HR8799"+planet+"_"+suffix+"_images_tentativedetec.pdf"),bbox_inches='tight')

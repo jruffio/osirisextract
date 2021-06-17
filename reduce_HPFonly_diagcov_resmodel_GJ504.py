@@ -1031,7 +1031,8 @@ if __name__ == "__main__":
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20190228_mol_temp/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20200729_livereduc/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20200823_test/"
-        outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20200914_res/"
+        # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20200914_res/"
+        outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb/20210616_new/"
 
         # inputDir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb_pairsub/"
         # outputdir = "/data/osiris_data/"+planet+"/20"+date+"/reduced_jb_pairsub/20190228_HPF_only/"
@@ -1039,7 +1040,7 @@ if __name__ == "__main__":
         print(os.path.join(inputDir,"s"+date+"*"+IFSfilter+"_"+scale+".fits"))
         filelist = glob.glob(os.path.join(inputDir,"s"+date+"*"+IFSfilter+"_"+scale+".fits"))
         filelist.sort()
-        # filelist = [filelist[7],]
+        filelist = filelist[4::]
         # filelist = [filelist[2],]
         print(filelist)
         # exit()
